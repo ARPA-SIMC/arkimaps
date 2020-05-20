@@ -16,10 +16,11 @@ class EccodesNameMap:
     re_entry = re.compile(r"'(?P<name>[^']+)' = {\s*(?P<matches>[^}]+)}")
     re_key = re.compile(r"^\s*(?P<key>\w+) = (?P<val>[^ ;]+)\s*;\s*$")
 
-    def __init__(self, src: str):
-        self.src = src
+    def __init__(self):
         self.rules = []
-        for name, matches in self.parse(self.src):
+
+    def load(self, src: str):
+        for name, matches in self.parse(src):
             self.rules.append((name, matches))
 
     def parse(self, src: str):
@@ -30,7 +31,7 @@ class EccodesNameMap:
             for line in entry.group("matches").strip().splitlines():
                 mo = self.re_key.match(line)
                 if not mo:
-                    log.error("%s: line not parsed: %r", self.src, line)
+                    log.error("%s: line not parsed: %r", src, line)
                     continue
                 matches[mo.group("key")] = int(mo.group("val"))
             yield entry.group("name"), matches
@@ -38,7 +39,9 @@ class EccodesNameMap:
 
 class Grib1Names(EccodesNameMap):
     def __init__(self):
-        super().__init__("/usr/share/eccodes/definitions/grib1/cfVarName.def")
+        super().__init__()
+        self.load("/usr/share/eccodes/definitions/grib1/cfVarName.def")
+        self.load("/usr/share/eccodes/definitions/grib1/localConcepts/ecmf/cfVarName.def")
 
     def match_rule(self, rules: dict, product: dict, level: dict):
         for name, value in rules.items():
@@ -55,7 +58,7 @@ class Grib1Names(EccodesNameMap):
                 if level["l1"] != value:
                     return False
             else:
-                raise NotImplementedError(f"{self.src}: key {name} not supported")
+                raise NotImplementedError(f"cfVarName key {name} not supported")
         return True
 
     def match(self, product: dict, level: dict):
@@ -67,7 +70,8 @@ class Grib1Names(EccodesNameMap):
 
 class Grib2Names(EccodesNameMap):
     def __init__(self):
-        super().__init__("/usr/share/eccodes/definitions/grib2/cfVarName.def")
+        super().__init__()
+        self.load("/usr/share/eccodes/definitions/grib2/cfVarName.def")
 
     def match(self, product: dict, level: dict):
         raise NotImplementedError("GRIB2 name matching")
@@ -130,7 +134,7 @@ class Collector:
             raise NotImplementedError(f"product style {prod['style']} not supported")
 
         if name is None:
-            log.warn("Unrecognized data, prod=%r, lev=%r", prod, lev)
+            log.warning("Unrecognized data, prod=%r, lev=%r", prod, lev)
             fname = f"{prod['origin']}-{prod['table']}-{prod['product']}.grib"
         else:
             fname = f"{name}.grib"
