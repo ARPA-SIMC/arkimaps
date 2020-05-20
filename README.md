@@ -20,5 +20,11 @@ Estrazione dati di prova:
 
 ```
 # Nota: questo estrae circa 3.7GiB
-arki-query --inline 'reftime:=yesterday 00:00' http://arkimet.metarpa:8090/dataset/cleps_grib1 > test.arkimet
+arki-query --inline 'reftime:=yesterday 00:00' http://arkimet.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
 ```
+
+
+## File di dati disponibili e potenzialmente utili
+
+* https://github.com/ARPA-SIMC/libsim/blob/master/data/vargrib2bufr.csv (instalato in /usr/share/libsim)
+* `/usr/share/eccodes/definitions/grib1/cfVarName.def`

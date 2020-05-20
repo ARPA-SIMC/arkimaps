@@ -5,14 +5,87 @@ from typing import Optional
 import contextlib
 import argparse
 import logging
+import os
 import sys
+import re
 
 log = logging.getLogger("arkimaps")
 
 
-class Collector:
+class EccodesNameMap:
+    re_entry = re.compile(r"'(?P<name>[^']+)' = {\s*(?P<matches>[^}]+)}")
+    re_key = re.compile(r"^\s*(?P<key>\w+) = (?P<val>[^ ;]+)\s*;\s*$")
+
+    def __init__(self, src: str):
+        self.src = src
+        self.rules = []
+        for name, matches in self.parse(self.src):
+            self.rules.append((name, matches))
+
+    def parse(self, src: str):
+        with open(src, "rt") as fd:
+            raw = fd.read()
+        for entry in self.re_entry.finditer(raw):
+            matches = {}
+            for line in entry.group("matches").strip().splitlines():
+                mo = self.re_key.match(line)
+                if not mo:
+                    log.error("%s: line not parsed: %r", self.src, line)
+                    continue
+                matches[mo.group("key")] = int(mo.group("val"))
+            yield entry.group("name"), matches
+
+
+class Grib1Names(EccodesNameMap):
     def __init__(self):
-        pass
+        super().__init__("/usr/share/eccodes/definitions/grib1/cfVarName.def")
+
+    def match_rule(self, rules: dict, product: dict, level: dict):
+        for name, value in rules.items():
+            if name == "table2Version":
+                if product["table"] != value:
+                    return False
+            elif name == "indicatorOfParameter":
+                if product["product"] != value:
+                    return False
+            elif name == "indicatorOfTypeOfLevel":
+                if level["type"] != value:
+                    return False
+            elif name == "level":
+                if level["l1"] != value:
+                    return False
+            else:
+                raise NotImplementedError(f"{self.src}: key {name} not supported")
+        return True
+
+    def match(self, product: dict, level: dict):
+        for name, rule in self.rules:
+            if self.match_rule(rule, product, level):
+                return name
+        return None
+
+
+class Grib2Names(EccodesNameMap):
+    def __init__(self):
+        super().__init__("/usr/share/eccodes/definitions/grib2/cfVarName.def")
+
+    def match(self, product: dict, level: dict):
+        raise NotImplementedError("GRIB2 name matching")
+
+
+@contextlib.contextmanager
+def workdir():
+    # TODO: use TemporaryDirectory
+    if not os.path.isdir("workdir"):
+        os.mkdir("workdir")
+    yield os.path.abspath("workdir")
+
+
+class Collector:
+    def __init__(self, workdir: str):
+        self.workdir = workdir
+        self.grib1_map = Grib1Names()
+        self.grib2_map = Grib2Names()
 
     @contextlib.contextmanager
     def input(self, path: Optional[str] = None):
@@ -41,7 +114,29 @@ class Collector:
         """
         counter = getattr(self, "counter", 0)
         self.counter = counter + 1
-        print("ZA", self.counter)
+        tr = md.to_python("timerange")
+        prod = md.to_python("product")
+        lev = md.to_python("level")
+
+        # One directory per step
+        stepdir = os.path.join(self.workdir, f"+{tr['p1']}")
+        os.makedirs(stepdir, exist_ok=True)
+
+        if prod["style"] == "GRIB1":
+            name = self.grib1_map.match(prod, lev)
+        elif prod["style"] == "GRIB2":
+            name = self.grib1_map.match(prod, lev)
+        else:
+            raise NotImplementedError(f"product style {prod['style']} not supported")
+
+        if name is None:
+            log.warn("Unrecognized data, prod=%r, lev=%r", prod, lev)
+            fname = f"{prod['origin']}-{prod['table']}-{prod['product']}.grib"
+        else:
+            fname = f"{name}.grib"
+
+        with open(os.path.join(stepdir, fname), "wb") as fd:
+            fd.write(md.data)
 
 
 def main():
@@ -60,8 +155,9 @@ def main():
     else:
         logging.basicConfig(level=logging.WARN, stream=sys.stderr, format=FORMAT)
 
-    collector = Collector()
-    collector.read()
+    with workdir() as root:
+        collector = Collector(root)
+        collector.read()
 
 
 if __name__ == "__main__":
