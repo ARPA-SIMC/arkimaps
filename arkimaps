@@ -52,7 +52,7 @@ class Grib1Names(EccodesNameMap):
                 if product["product"] != value:
                     return False
             elif name == "indicatorOfTypeOfLevel":
-                if level["type"] != value:
+                if level["level_type"] != value:
                     return False
             elif name == "level":
                 if level["l1"] != value:
