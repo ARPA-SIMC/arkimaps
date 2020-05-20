@@ -1,0 +1,68 @@
+#!/usr/bin/python3
+from __future__ import annotations
+import arkimet
+from typing import Optional
+import contextlib
+import argparse
+import logging
+import sys
+
+log = logging.getLogger("arkimaps")
+
+
+class Collector:
+    def __init__(self):
+        pass
+
+    @contextlib.contextmanager
+    def input(self, path: Optional[str] = None):
+        """
+        Open the binary input stream
+        """
+        if path is None:
+            yield sys.stdin.buffer
+        else:
+            with open(path, "rb") as fd:
+                yield fd
+
+    def read(self, path: Optional[str] = None):
+        """
+        Read data from an input file, or standard input.
+
+        The input file is the output of arki-query --inline, which is the same
+        as is given as input to arkimet processors.
+        """
+        with self.input(path) as infd:
+            arkimet.Metadata.read_bundle(infd, dest=self.collect)
+
+    def collect(self, md: arkimet.Metadata) -> bool:
+        """
+        Process an element from the input file
+        """
+        counter = getattr(self, "counter", 0)
+        self.counter = counter + 1
+        print("ZA", self.counter)
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Render model maps")
+    parser.add_argument("--verbose", "-v", action="store_true", help="verbose output")
+    parser.add_argument("--debug", action="store_true", help="debug output")
+
+    args = parser.parse_args()
+
+    # Setup logging
+    FORMAT = "%(asctime)-15s %(levelname)s %(message)s"
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG, stream=sys.stderr, format=FORMAT)
+    elif args.verbose:
+        logging.basicConfig(level=logging.INFO, stream=sys.stderr, format=FORMAT)
+    else:
+        logging.basicConfig(level=logging.WARN, stream=sys.stderr, format=FORMAT)
+
+    collector = Collector()
+    collector.read()
+
+
+if __name__ == "__main__":
+    main()
