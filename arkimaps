@@ -2,6 +2,7 @@
 from __future__ import annotations
 import arkimet
 from typing import Optional
+from collections import Counter
 import contextlib
 import argparse
 import logging
@@ -96,6 +97,7 @@ class Collector:
         self.workdir = workdir
         self.grib1_map = Grib1Names()
         self.grib2_map = Grib2Names()
+        self.output_stats = Counter()
 
     @contextlib.contextmanager
     def input(self, path: Optional[str] = None):
@@ -145,8 +147,12 @@ class Collector:
         else:
             fname = f"{name}.grib"
 
-        with open(os.path.join(stepdir, fname), "wb") as fd:
+        # Append to output files
+        dest = os.path.join(stepdir, fname)
+        mode = "ab" if dest in self.output_stats else "wb"
+        with open(dest, mode=mode) as fd:
             fd.write(md.data)
+        self.output_stats[dest] += 1
 
 
 def main():
@@ -168,6 +174,9 @@ def main():
     with workdir() as root:
         collector = Collector(root)
         collector.read()
+        for name, count in collector.output_stats.items():
+            if count > 1:
+                log.warning("%s: %d GRIB in output", name, count)
 
 
 if __name__ == "__main__":
