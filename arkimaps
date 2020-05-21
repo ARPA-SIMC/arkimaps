@@ -40,8 +40,14 @@ class EccodesNameMap:
 class Grib1Names(EccodesNameMap):
     def __init__(self):
         super().__init__()
-        self.load("/usr/share/eccodes/definitions/grib1/cfVarName.def")
-        self.load("/usr/share/eccodes/definitions/grib1/localConcepts/ecmf/cfVarName.def")
+        # Example of a hardcoded matching rule:
+        # self.rules.append(("unknown1", {
+        #     "table2Version": 201,
+        #     "indicatorOfParameter": 197,
+        # }))
+        self.load("/usr/share/eccodes/definitions/grib1/shortName.def")
+        self.load("/usr/share/eccodes/definitions/grib1/localConcepts/ecmf/shortName.def")
+        self.load("/usr/share/eccodes/definitions/grib1/localConcepts/cnmc/shortName.def")
 
     def match_rule(self, rules: dict, product: dict, level: dict):
         for name, value in rules.items():
