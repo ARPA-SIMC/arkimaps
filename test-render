@@ -1,0 +1,79 @@
+#!/usr/bin/python3
+from __future__ import annotations
+from Magics import macro
+import argparse
+import logging
+import sys
+import os
+
+map_params = {
+    "subpage_map_projection": "cylindrical",
+    "subpage_lower_left_longitude": -5.,
+    "subpage_lower_left_latitude": 30.,
+    "subpage_upper_right_longitude": 27.,
+    "subpage_upper_right_latitude": 55.,
+    # For an example of more, see skinnywms/plot/magics.py
+}
+
+
+def render(fname):
+    # Settings of the PNG output
+    output = macro.output(
+            output_formats=['png'],
+            output_name=fname,
+            output_name_first_page_number="off",
+    )
+
+    # Loading the msl Grib data
+    data = macro.mgrib(grib_input_file_name=fname)
+
+    # Defining the controur
+    contour = macro.mcont(
+        contour_automatic_setting="ecmwf",
+    )
+
+    macro.plot(
+        output,
+        macro.mmap(**map_params),
+        macro.mcoast(map_coastline_general_style="background"),
+        data, contour,
+        macro.mcoast(map_coastline_general_style="foreground"),
+        macro.mcoast(
+            map_coastline_sea_shade_colour="#f2f2f2",
+            map_grid="off",
+            map_coastline_sea_shade="on",
+            map_label="off",
+            map_coastline_colour="#f2f2f2",
+            map_coastline_resolution="medium",
+        ),
+        macro.mcoast(map_coastline_general_style="grid"),
+        macro.mcoast(map_coastline_general_style="boundaries"),
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Render model maps")
+    parser.add_argument("--verbose", "-v", action="store_true", help="verbose output")
+    parser.add_argument("--debug", action="store_true", help="debug output")
+    parser.add_argument("files", nargs="+", help="files to render")
+
+    args = parser.parse_args()
+
+    # Tell magics not to print noisy banners
+    os.environ["MAGPLUS_QUIET"] = "1"
+
+    # Setup logging
+    FORMAT = "%(asctime)-15s %(levelname)s %(message)s"
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG, stream=sys.stderr, format=FORMAT)
+    elif args.verbose:
+        logging.basicConfig(level=logging.INFO, stream=sys.stderr, format=FORMAT)
+    else:
+        logging.basicConfig(level=logging.WARN, stream=sys.stderr, format=FORMAT)
+
+    for fname in args.files:
+        render(fname)
+
+
+if __name__ == "__main__":
+    main()

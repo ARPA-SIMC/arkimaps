@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 import re
+import time
 
 log = logging.getLogger("arkimaps")
 
@@ -84,15 +85,7 @@ class Grib2Names(EccodesNameMap):
         raise NotImplementedError("GRIB2 name matching")
 
 
-@contextlib.contextmanager
-def workdir():
-    # TODO: use TemporaryDirectory
-    if not os.path.isdir("workdir"):
-        os.mkdir("workdir")
-    yield os.path.abspath("workdir")
-
-
-class Collector:
+class Catalog:
     def __init__(self, workdir: str):
         self.workdir = workdir
         self.grib1_map = Grib1Names()
@@ -141,11 +134,18 @@ class Collector:
         else:
             raise NotImplementedError(f"product style {prod['style']} not supported")
 
+        levname = [str(lev["level_type"])]
+        if "l1" in lev:
+            levname.append(str(lev["l1"]))
+        if "l2" in lev:
+            levname.append(str(lev["l2"]))
+        levname = ":".join(levname)
+
         if name is None:
             log.warning("Unrecognized data, prod=%r, lev=%r", prod, lev)
-            fname = f"{prod['origin']}-{prod['table']}-{prod['product']}.grib"
+            fname = f"{prod['origin']}:{prod['table']}:{prod['product']}-{levname}.grib"
         else:
-            fname = f"{name}.grib"
+            fname = f"{name}-{levname}.grib"
 
         # Append to output files
         dest = os.path.join(stepdir, fname)
@@ -153,6 +153,29 @@ class Collector:
         with open(dest, mode=mode) as fd:
             fd.write(md.data)
         self.output_stats[dest] += 1
+
+
+@contextlib.contextmanager
+def workdir():
+    # TODO: use TemporaryDirectory
+    if not os.path.isdir("workdir"):
+        os.mkdir("workdir")
+    yield os.path.abspath("workdir")
+
+
+class LogCollector(logging.Handler):
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.entries = []
+
+    def emit(self, record: logging.LogRecord):
+        entry = {
+            'ts': time.clock_gettime_ns(time.CLOCK_REALTIME),
+            'level': record.levelno,
+            'msg': self.format(record),
+            'name': record.name
+        }
+        self.entries.append(entry)
 
 
 def main():
@@ -171,8 +194,14 @@ def main():
     else:
         logging.basicConfig(level=logging.WARN, stream=sys.stderr, format=FORMAT)
 
+    # Collect log entries that we can then add to the output data
+    log_collector = LogCollector()
+    root_logger = logging.getLogger()
+    root_logger.addHandler(log_collector)
+
     with workdir() as root:
-        collector = Collector(root)
+        # Dispatch input products into a work directory
+        collector = Catalog(root)
         collector.read()
         for name, count in collector.output_stats.items():
             if count > 1:

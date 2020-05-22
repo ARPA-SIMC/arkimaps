@@ -30,6 +30,14 @@ arki-query --inline 'reftime:=yesterday 00:00' http://arkimet.metarpa:8090/datas
 * `/usr/share/eccodes/definitions/grib1/cfVarName.def`
 
 
+## Uso dei JSON in /usr/share/magics
+
+* `/usr/share/magics/styles/palettes.json`: corrisponde a
+  `contour_shade_palette_name` in <https://confluence.ecmwf.int/display/MAGP/Contouring>
+* `contour_automatic_setting` in
+  <https://confluence.ecmwf.int/display/MAGP/Contouring> è usato per attivare
+  il match delle regole di contouring. V. anche [questo commento in skinnywms](https://github.com/ecmwf/skinnywms/issues/37#issuecomment-562215449)
+
 ## Requisiti di sistema
 
 python3 >= 3.7
