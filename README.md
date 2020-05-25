@@ -38,6 +38,22 @@ arki-query --inline 'reftime:=yesterday 00:00' http://arkimet.metarpa:8090/datas
   <https://confluence.ecmwf.int/display/MAGP/Contouring> è usato per attivare
   il match delle regole di contouring. V. anche [questo commento in skinnywms](https://github.com/ecmwf/skinnywms/issues/37#issuecomment-562215449)
 
+Per scegliere stili diversi, `contour_automatic_setting` deve rimanere settato
+sempre a `"ecmwf"`, e serve invece cambiare il path in `MAGICS_STYLE_PATH`:
+
+```py
+# Questo è quello che fa skinnywms
+if args.style != "":
+    os.environ["MAGICS_STYLE_PATH"] = args.style + ":ecmwf"
+```
+
+Questo un esempio con `test-render`:
+
+```
+cp -a /usr/share/magics/styles/ecmwf prova
+MAGICS_STYLE_PATH=`pwd`/prova ./test-render workdir/+2/t-*.grib
+```
+
 ## Requisiti di sistema
 
 python3 >= 3.7
