@@ -2,7 +2,7 @@
 
 *modelli censiti: cosmo 5M operativo, cosmo 5I backup, cosmo 5M AM, cleps det, cosmo 2I, cosmo 2I ruc, cosmo1ch, ifs_ita010*
 
-Immagini di riferimento dei prodotti nella cartella "images" (output relativo al primo dei modelli citati)
+Immagini di riferimento dei prodotti nella cartella "prodotti" che contiene anche questo README (output relativo al primo dei modelli citati)
 
 TODO (da approfondire):
  - variabili: al momento derivate da descrizione infomet
