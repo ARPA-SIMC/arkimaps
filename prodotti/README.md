@@ -12,7 +12,7 @@ Note sui preprocessing:
 
 Note sul rendering delle immagini:
  - sulle griglie ruotate (cosmo) magics parrebbe comunque fare a livello di backend un'interpolazione su grigliato regolare. Per le precipitazioni e in generale i campi con distribuzione irregolare è necessaria l'opzione `contour_interpolation_ceiling` di `mcont` che però pare essere saltata in CentOS8 (da approfondire)
- - per i vettori del vento, fino a qualche tempo fa il `thinning_factor` non funzionava e veniva effettuato un thinning a monte (sui grib)
+ - per i vettori del vento (che nel caso di cosmo vanno sempre antiruotati), fino a qualche tempo fa il `thinning_factor` non funzionava e veniva effettuato un thinning a monte (sui grib).
  - la legenda dinamica è una feature richiesta per non mostrare un range troppo esteso (stagionalità della temperatura, etc). Un possibile compromesso potrebbe essere calcolare un range min e max sull'intera corsa.
 
 ## Lista prodotti da fare
@@ -32,7 +32,7 @@ Note sul rendering delle immagini:
 | U% + vento 925   | Umidità rel.(925 hPa), Vento(925 hPa) | ifs (ita) |
 | MSLP + vento 10m | Pressione(slm), Vento(10m), Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita), ifs (atl) |
 | Isotache scala Beaufort | Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 5M am, ifs (ita) |
-| Vento massimo | non chiaro, ipotesi: vmax(10m), Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 2I, , ifs (ita) (triorario) |
+| Vento massimo | vmax(10m), Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 2I, , ifs (ita) (triorario) |
 | Precipitazione totale (passi 1,3,6,12,24h)   | Preci tot cum(al suolo), Preci nev cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 24h), cosmo1 CH (solo 3h), ifs (ita) (no 1h), ifs (atl) (no 1, 3h) |
 | Precipitazione nevosa (passi 1,3,6,12,24h)   | Preci nev cum(al suolo)  | cosmo 5M, cosmo 5I backup, cosmo 5M am (solo 6,12,24h), cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 12 e 24h), cosmo1 CH (solo 3h), ifs (ita) (no 3h), ifs (atl) (solo 24h) |
 | Precipitazione convettiva (passi 3,6,12,24h) | Preci conv cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am (solo 6,12h), cleps det, ifs (ita) (no 3h) |
