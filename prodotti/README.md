@@ -4,13 +4,19 @@
 
 Immagini di riferimento dei prodotti nella cartella "prodotti" che contiene anche questo README (output relativo al primo dei modelli citati)
 
-TODO (da approfondire):
- - variabili: al momento derivate da descrizione infomet
- - rapporti modelli/dataset (cambia solo l'area di riferimento o ci sono variabili diverse?)
- - legenda dinamica: è feature globale/necessaria?
- - modelli probabilistici esclusi (necessitano di mappe multi panel)
- - modelli triorari (cosmo 2I RUC, cosmo 1 CH) hanno pannelli di confronto di preci trioraria fra corse 
- - differenze nomi di prodotti (es. Temperatura media 850-700 hpa vs. Topografia relativa tra 850 e 700 hPa)
+Note sui preprocessing:
+ - precipitazioni: differenza di unità di misura ecmwf/cosmo, precipitazioni incrementali tranne cosmo1ch che sono già "spacchettate"
+ - filtro su pressione MSLP (boxregrid con risoluzione variabile a seconda del modello per smoothing isolinee)
+ - l'umidità relativa è da calcolare con metodologie differenti a seconda del livello (da temperatura di rugiada a 2m, da umidità specifica in quota)
+ - le isotache si ottengono con modulo di u e v
+
+Note sul rendering delle immagini:
+ - sulle griglie ruotate (cosmo) magics parrebbe comunque fare a livello di backend un'interpolazione su grigliato regolare. Per le precipitazioni e in generale i campi con distribuzione irregolare è necessaria l'opzione `contour_interpolation_ceiling` di `mcont` che però pare essere saltata in CentOS8 (da approfondire)
+ - per i vettori del vento, fino a qualche tempo fa il `thinning_factor` non funzionava e veniva effettuato un thinning a monte (sui grib)
+ - la legenda dinamica è una feature richiesta per non mostrare un range troppo esteso (stagionalità della temperatura, etc). Un possibile compromesso potrebbe essere calcolare un range min e max sull'intera corsa.
+
+## Lista prodotti da fare
+
 
 | Prodotto       | Variabili | Modello |
 | -------------- | --------- | ------- |
@@ -35,9 +41,22 @@ TODO (da approfondire):
 | Temp 2 metri      | Temperatura a 2m | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, cosmo1 CH, ifs (ita), ifs (atl) |
 | Indice di Thom    | Indice di Thom | cosmo 5M |
 | U% 2 metri        | Umidità relativa 2 metri | cosmo 5M, cosmo 5I backup, cosmo 5M am, cosmo 2I |
+| Visibilità        | Visibilità(m) | cosmo 5M, cosmo 2I, , ifs (ita) |
 | Topografia relativa tra 1000 e 850 hPa | Spessore(1000 hPa), Spessore(850 hPa) | cosmo 5M, ifs (ita) |
 | Topografia relativa tra 850 e 700 hPa  | Spessore(850 hPa), Spessore(700 hPa)  | cosmo 5M, ifs (ita) |
-| Visibilità        | Visibilità(m) | cosmo 5M, cosmo 2I, , ifs (ita) |
+
+
+## Opzionali, complessi, a bassa priorità
+
+ - I modelli probabilistici necessiterebbero di mappe multi panel
+ - I modelli triorari (cosmo 2I RUC, cosmo 1 CH) avrebbero pannelli di confronto di preci trioraria fra corse 
+
+
+Gli indici che seguono (legati prevalentemente a temporali e dintorni) hanno preprocessing particolarmente complesso:
+
+
+| Prodotto       | Variabili | Modello |
+| -------------- | --------- | ------- |
 | Temperatura media giornaliera | media temperatura a 2m | cosmo 5M, ifs (ita) |
 | Variazione Z500 12 ore | Variazione Geopotenziale 500hPa (dam/12 ore)   | cosmo 5M |
 | Delta T500 12 ore      | Variazione temperatura 500hPa (°K/12 ore)      | cosmo 5M |
@@ -60,5 +79,3 @@ TODO (da approfondire):
 | Downward CAPE               | Downburst Available Potential Energy | cosmo 5M |
 | Wet Microburst Index        | Wet Microburst Severity Index (WMSI)  | cosmo 5M |
 | Dry Microburst Index        | Dry Microburst Index (DMI) | cosmo 5M |
-
-
