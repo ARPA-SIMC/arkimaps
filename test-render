@@ -1,11 +1,14 @@
 #!/usr/bin/python3
 from __future__ import annotations
-from typing import Dict, Any
+from typing import Dict, Any, List, Tuple
 from Magics import macro
 import argparse
 import logging
 import sys
 import os
+import re
+import fnmatch
+import yaml
 
 map_params = {
     "subpage_map_projection": "cylindrical",
@@ -17,7 +20,95 @@ map_params = {
 }
 
 
-class Kitchen:
+class Recipe:
+    """
+    A parsed and validated recipe
+    """
+    def __init__(self, data: Dict[str, Any]):
+        # Get the recipe name
+        self.name = data.get("name", "unnamed recipe")
+
+        # Get the list of input globs
+        self.inputs: List[Tuple[str, re.Pattern]] = []
+        for name, glob in data.get("inputs", {}).items():
+            # Convert the globs into regular expressions
+            regex = re.compile(fnmatch.translate(glob))
+            self.inputs.append((name, regex))
+        if len(self.inputs) > 1:
+            raise RuntimeError("Recipes with multiple inputs are not supported yet")
+
+        # Get the recipe steps
+        self.steps: List[Tuple[str, Dict[str, Any]]] = []
+        for s in data.get("recipe", ()):
+            if not isinstance(s, dict):
+                raise RuntimeError("recipe step is not a dict")
+            step = s.pop("step", None)
+            if step is None:
+                raise RuntimeError("recipe step does not contain a 'step' name")
+            self.steps.append((step, s))
+
+    def matches(self, path: str):
+        """
+        Check if the given path matches one of the recipe input regexps
+        """
+        # TODO: change this logic for multi-source recipes
+        for name, input_re in self.inputs:
+            if input_re.match(path):
+                return True
+        return False
+
+    def start_dish(self, src: str, dest: str):
+        """
+        Start an output for this recipe and the given source
+        """
+        dish = Dish(dest)
+        # TODO: change this logic for multi-source recipes
+        dish.sources[self.inputs[0][0]] = src
+        return dish
+
+    def prepare(self, dish: "Dish"):
+        """
+        Run all the steps of the recipe
+        """
+        chef = Chef(dish)
+
+        for name, args in self.steps:
+            meth = getattr(chef, name, None)
+            if meth is None:
+                raise RuntimeError("Recipe " + self.name + " uses unknown step " + name)
+            meth(**args)
+
+        chef.serve()
+
+
+class Recipes:
+    """
+    Repository of all known recipes
+    """
+    def __init__(self):
+        self.recipes = []
+
+    def load(self, path: str):
+        """
+        Load recipes from the given directory
+        """
+        for fn in os.listdir(path):
+            if not fn.endswith(".yaml"):
+                continue
+            with open(os.path.join(path, fn), "rt") as fd:
+                recipe = yaml.load(fd)
+            self.recipes.append(Recipe(recipe))
+
+    def for_path(self, path: str):
+        """
+        Generate all recipes matching the given path
+        """
+        for recipe in self.recipes:
+            if recipe.matches(path):
+                yield recipe
+
+
+class Dish:
     """
     Object holding the final output and intermediate data while the recipes are
     executed
@@ -29,6 +120,8 @@ class Kitchen:
             output_name=fname,
             output_name_first_page_number="off",
         )
+        # List of source paths by name
+        self.sources: Dict[str, str] = {}
         # Loaded GRIB data
         self.gribs: Dict[str, Any] = {}
         # Elements passed after output to macro.plot
@@ -36,27 +129,27 @@ class Kitchen:
 
 
 class Chef:
-    def __init__(self, kitchen: Kitchen):
-        self.kitchen = kitchen
+    def __init__(self, dish: Dish):
+        self.dish = dish
 
-    def add_basemap(self, **params):
+    def add_basemap(self, params):
         """
         Add a base map
         """
-        self.kitchen.parts.append(macro.mmap(**params))
+        self.dish.parts.append(macro.mmap(**params))
 
     def add_coastlines_bg(self):
         """
         Add background coastlines
         """
-        self.kitchen.parts.append(macro.mcoast(map_coastline_general_style="background"))
+        self.dish.parts.append(macro.mcoast(map_coastline_general_style="background"))
 
     def add_coastlines_fg(self):
         """
         Add foreground coastlines
         """
-        self.kitchen.parts.append(macro.mcoast(map_coastline_general_style="foreground"))
-        self.kitchen.parts.append(macro.mcoast(
+        self.dish.parts.append(macro.mcoast(map_coastline_general_style="foreground"))
+        self.dish.parts.append(macro.mcoast(
             map_coastline_sea_shade_colour="#f2f2f2",
             map_grid="off",
             map_coastline_sea_shade="on",
@@ -65,19 +158,20 @@ class Chef:
             map_coastline_resolution="medium",
         ))
 
-    def add_grib(self, name: str, fname: str):
+    def add_grib(self, name: str):
         """
         Add a grib file
         """
+        fname = self.dish.sources[name]
         grib = macro.mgrib(grib_input_file_name=fname)
-        self.kitchen.gribs[name] = grib
-        self.kitchen.parts.append(grib)
+        self.dish.gribs[name] = grib
+        self.dish.parts.append(grib)
 
     def add_contour(self):
         """
         Add contouring of the previous data
         """
-        self.kitchen.parts.append(
+        self.dish.parts.append(
             macro.mcont(
                 contour_automatic_setting="ecmwf",
             )
@@ -87,7 +181,7 @@ class Chef:
         """
         Add a coordinates grid
         """
-        self.kitchen.parts.append(
+        self.dish.parts.append(
             macro.mcoast(map_coastline_general_style="grid"),
         )
 
@@ -95,42 +189,15 @@ class Chef:
         """
         Add a coordinates grid
         """
-        self.kitchen.parts.append(
+        self.dish.parts.append(
             macro.mcoast(map_coastline_general_style="boundaries"),
         )
 
     def serve(self):
         macro.plot(
-            self.kitchen.output,
-            *self.kitchen.parts,
+            self.dish.output,
+            *self.dish.parts,
         )
-
-
-def render(fname, output):
-    kitchen = Kitchen(output)
-    chef = Chef(kitchen)
-
-    # Add a basemap
-    chef.add_basemap(**map_params)
-
-    # Add background coastlines
-    chef.add_coastlines_bg()
-
-    # Add the msl Grib data
-    chef.add_grib("msl", fname)
-
-    # Add contouring
-    chef.add_contour()
-
-    # Add foreground coastlines
-    chef.add_coastlines_fg()
-
-    chef.add_grid()
-    chef.add_boundaries()
-
-    chef.serve()
-
-    print("Rendered", fname, "to", output)
 
 
 def main():
@@ -142,7 +209,7 @@ def main():
     parser.add_argument("--verbose", "-v", action="store_true", help="verbose output")
     parser.add_argument("--debug", action="store_true", help="debug output")
     parser.add_argument("--styles", metavar="dir", action="store", default=default_styles, help="styles directory")
-    parser.add_argument("files", nargs="+", help="files to render")
+    parser.add_argument("workdir", metavar="dir", help="directory with the files to render")
 
     args = parser.parse_args()
 
@@ -160,8 +227,21 @@ def main():
     # Tell magics not to print noisy banners
     os.environ["MAGPLUS_QUIET"] = "1"
 
-    for fname in args.files:
-        render(fname, fname + ".png")
+    recipes = Recipes()
+    recipes.load("recipes")
+
+    # TODO: change this logic for multi-source recipes
+    for dirpath, dirnames, filenames in os.walk(args.workdir):
+        dirpath = dirpath[len(args.workdir):]
+        for fn in filenames:
+            path = os.path.join(dirpath, fn)
+            for recipe in recipes.for_path(path):
+                print("Found recipe", recipe.name, "for", path)
+                src = os.path.join(args.workdir, dirpath, fn)
+                dest = os.path.join(args.workdir, dirpath, fn + ".png")
+                dish = recipe.start_dish(src, dest)
+                recipe.prepare(dish)
+                print("Rendered", src, "to", dest)
 
 
 if __name__ == "__main__":
