@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 from __future__ import annotations
+from typing import Dict, Any
 from Magics import macro
 import argparse
 import logging
@@ -16,39 +17,120 @@ map_params = {
 }
 
 
-def render(fname):
-    # Settings of the PNG output
-    output = macro.output(
+class Kitchen:
+    """
+    Object holding the final output and intermediate data while the recipes are
+    executed
+    """
+    def __init__(self, fname: str):
+        # Settings of the PNG output
+        self.output = macro.output(
             output_formats=['png'],
             output_name=fname,
             output_name_first_page_number="off",
-    )
+        )
+        # Loaded GRIB data
+        self.gribs: Dict[str, Any] = {}
+        # Elements passed after output to macro.plot
+        self.parts = []
 
-    # Loading the msl Grib data
-    data = macro.mgrib(grib_input_file_name=fname)
 
-    # Defining the controur
-    contour = macro.mcont(
-        contour_automatic_setting="ecmwf",
-    )
+class Chef:
+    def __init__(self, kitchen: Kitchen):
+        self.kitchen = kitchen
 
-    macro.plot(
-        output,
-        macro.mmap(**map_params),
-        macro.mcoast(map_coastline_general_style="background"),
-        data, contour,
-        macro.mcoast(map_coastline_general_style="foreground"),
-        macro.mcoast(
+    def add_basemap(self, **params):
+        """
+        Add a base map
+        """
+        self.kitchen.parts.append(macro.mmap(**params))
+
+    def add_coastlines_bg(self):
+        """
+        Add background coastlines
+        """
+        self.kitchen.parts.append(macro.mcoast(map_coastline_general_style="background"))
+
+    def add_coastlines_fg(self):
+        """
+        Add foreground coastlines
+        """
+        self.kitchen.parts.append(macro.mcoast(map_coastline_general_style="foreground"))
+        self.kitchen.parts.append(macro.mcoast(
             map_coastline_sea_shade_colour="#f2f2f2",
             map_grid="off",
             map_coastline_sea_shade="on",
             map_label="off",
             map_coastline_colour="#f2f2f2",
             map_coastline_resolution="medium",
-        ),
-        macro.mcoast(map_coastline_general_style="grid"),
-        macro.mcoast(map_coastline_general_style="boundaries"),
-    )
+        ))
+
+    def add_grib(self, name: str, fname: str):
+        """
+        Add a grib file
+        """
+        grib = macro.mgrib(grib_input_file_name=fname)
+        self.kitchen.gribs[name] = grib
+        self.kitchen.parts.append(grib)
+
+    def add_contour(self):
+        """
+        Add contouring of the previous data
+        """
+        self.kitchen.parts.append(
+            macro.mcont(
+                contour_automatic_setting="ecmwf",
+            )
+        )
+
+    def add_grid(self):
+        """
+        Add a coordinates grid
+        """
+        self.kitchen.parts.append(
+            macro.mcoast(map_coastline_general_style="grid"),
+        )
+
+    def add_boundaries(self):
+        """
+        Add a coordinates grid
+        """
+        self.kitchen.parts.append(
+            macro.mcoast(map_coastline_general_style="boundaries"),
+        )
+
+    def serve(self):
+        macro.plot(
+            self.kitchen.output,
+            *self.kitchen.parts,
+        )
+
+
+def render(fname, output):
+    kitchen = Kitchen(output)
+    chef = Chef(kitchen)
+
+    # Add a basemap
+    chef.add_basemap(**map_params)
+
+    # Add background coastlines
+    chef.add_coastlines_bg()
+
+    # Add the msl Grib data
+    chef.add_grib("msl", fname)
+
+    # Add contouring
+    chef.add_contour()
+
+    # Add foreground coastlines
+    chef.add_coastlines_fg()
+
+    chef.add_grid()
+    chef.add_boundaries()
+
+    chef.serve()
+
+    print("Rendered", fname, "to", output)
 
 
 def main():
@@ -79,7 +161,7 @@ def main():
     os.environ["MAGPLUS_QUIET"] = "1"
 
     for fname in args.files:
-        render(fname)
+        render(fname, fname + ".png")
 
 
 if __name__ == "__main__":
