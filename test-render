@@ -52,15 +52,17 @@ def render(fname):
 
 
 def main():
+    default_styles = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "styles"))
+    if not os.path.isdir(default_styles):
+        default_styles = "/usr/share/magics/styles/ecmwf"
+
     parser = argparse.ArgumentParser(description="Render model maps")
     parser.add_argument("--verbose", "-v", action="store_true", help="verbose output")
     parser.add_argument("--debug", action="store_true", help="debug output")
+    parser.add_argument("--styles", metavar="dir", action="store", default=default_styles, help="styles directory")
     parser.add_argument("files", nargs="+", help="files to render")
 
     args = parser.parse_args()
-
-    # Tell magics not to print noisy banners
-    os.environ["MAGPLUS_QUIET"] = "1"
 
     # Setup logging
     FORMAT = "%(asctime)-15s %(levelname)s %(message)s"
@@ -70,6 +72,11 @@ def main():
         logging.basicConfig(level=logging.INFO, stream=sys.stderr, format=FORMAT)
     else:
         logging.basicConfig(level=logging.WARN, stream=sys.stderr, format=FORMAT)
+
+    # Tell magics where it shuold take its default styles from
+    os.environ["MAGICS_STYLE_PATH"] = args.styles
+    # Tell magics not to print noisy banners
+    os.environ["MAGPLUS_QUIET"] = "1"
 
     for fname in args.files:
         render(fname)

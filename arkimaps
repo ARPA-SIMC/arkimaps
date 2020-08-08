@@ -205,6 +205,8 @@ def main():
 
     # Tell magics where it shuold take its default styles from
     os.environ["MAGICS_STYLE_PATH"] = args.styles
+    # Tell magics not to print noisy banners
+    os.environ["MAGPLUS_QUIET"] = "1"
 
     with workdir() as root:
         # Dispatch input products into a work directory
