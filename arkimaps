@@ -179,10 +179,14 @@ class LogCollector(logging.Handler):
 
 
 def main():
+    default_styles = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "styles"))
+    if not os.path.isdir(default_styles):
+        default_styles = "/usr/share/magics/styles/ecmwf"
+
     parser = argparse.ArgumentParser(description="Render model maps")
     parser.add_argument("--verbose", "-v", action="store_true", help="verbose output")
     parser.add_argument("--debug", action="store_true", help="debug output")
-
+    parser.add_argument("--styles", metavar="dir", action="store", default=default_styles, help="styles directory")
     args = parser.parse_args()
 
     # Setup logging
@@ -198,6 +202,9 @@ def main():
     log_collector = LogCollector()
     root_logger = logging.getLogger()
     root_logger.addHandler(log_collector)
+
+    # Tell magics where it shuold take its default styles from
+    os.environ["MAGICS_STYLE_PATH"] = args.styles
 
     with workdir() as root:
         # Dispatch input products into a work directory
