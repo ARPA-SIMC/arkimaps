@@ -31,11 +31,11 @@ class Recipe:
         self.name = data.get("name", "unnamed recipe")
 
         # Get the list of input globs
-        self.inputs: List[Tuple[str, re.Pattern]] = []
+        self.inputs: List[Tuple[str, str, re.Pattern]] = []
         for name, glob in data.get("inputs", {}).items():
             # Convert the globs into regular expressions
             regex = re.compile(fnmatch.translate(glob))
-            self.inputs.append((name, regex))
+            self.inputs.append((name, glob, regex))
         if len(self.inputs) > 1:
             raise RuntimeError("Recipes with multiple inputs are not supported yet")
 
@@ -54,7 +54,7 @@ class Recipe:
         Check if the given path matches one of the recipe input regexps
         """
         # TODO: change this logic for multi-source recipes
-        for name, input_re in self.inputs:
+        for name, glob, input_re in self.inputs:
             if input_re.match(path):
                 return True
         return False
@@ -88,8 +88,8 @@ class Recipe:
             print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)
-            for name, glob in self.inputs:
-                print(f"* {name}: {glob}", file=fd)
+            for name, glob, input_re in self.inputs:
+                print(f"* **{name}**: `{glob}`", file=fd)
             print(file=fd)
             print("## Steps", file=fd)
             print(file=fd)
