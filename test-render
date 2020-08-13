@@ -1,16 +1,15 @@
 #!/usr/bin/python3
 from __future__ import annotations
 from typing import Dict, Any, List, Tuple
-from Magics import macro
 import argparse
 import inspect
 import logging
 import sys
 import os
-import re
-import fnmatch
 import json
 import yaml
+from Magics import macro
+import arkimet
 
 map_params = {
     "subpage_map_projection": "cylindrical",
@@ -26,16 +25,16 @@ class Recipe:
     """
     A parsed and validated recipe
     """
-    def __init__(self, data: Dict[str, Any]):
-        # Get the recipe name
-        self.name = data.get("name", "unnamed recipe")
+    def __init__(self, name: str, session: arkimet.dataset.Session, data: Dict[str, Any]):
+        self.name = name
 
-        # Get the list of input globs
-        self.inputs: List[Tuple[str, str, re.Pattern]] = []
-        for name, glob in data.get("inputs", {}).items():
-            # Convert the globs into regular expressions
-            regex = re.compile(fnmatch.translate(glob))
-            self.inputs.append((name, glob, regex))
+        # Get the recipe description
+        self.description: str = data.get("description", "Unnamed recipe")
+
+        # Get the list of input queries
+        self.inputs: List[Tuple[str, arkimet.Matcher]] = []
+        for name, query in data.get("inputs", {}).items():
+            self.inputs.append((name, session.matcher(query)))
         if len(self.inputs) > 1:
             raise RuntimeError("Recipes with multiple inputs are not supported yet")
 
@@ -84,7 +83,7 @@ class Recipe:
 
     def document(self, dest: str):
         with open(dest, "wt") as fd:
-            print("#", self.name, file=fd)
+            print(f"# {self.name}: {self.description}", file=fd)
             print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)
@@ -114,7 +113,7 @@ class Recipes:
     def __init__(self):
         self.recipes = []
 
-    def load(self, path: str):
+    def load(self, session: arkimet.dataset.Session, path: str):
         """
         Load recipes from the given directory
         """
@@ -123,7 +122,7 @@ class Recipes:
                 continue
             with open(os.path.join(path, fn), "rt") as fd:
                 recipe = yaml.load(fd)
-            self.recipes.append(Recipe(recipe))
+            self.recipes.append(Recipe(fn[:-5], session, recipe))
 
     def document(self, path: str):
         """
@@ -238,6 +237,38 @@ class Chef:
         )
 
 
+def do_render(args):
+    """
+    Render all recipes for which inputs are available
+    """
+    # Tell magics where it should take its default styles from
+    os.environ["MAGICS_STYLE_PATH"] = args.styles
+    # Tell magics not to print noisy banners
+    os.environ["MAGPLUS_QUIET"] = "1"
+
+    with open(os.path.join(args.workdir, "config")) as fd:
+        config = arkimet.cfg.Section.parse(fd)
+
+    with arkimet.dataset.Session() as session:
+        recipes = Recipes()
+        recipes.load(session, "recipes")
+
+        with session.dataset_reader(cfg=config) as reader:
+            for recipe in recipes.recipes:
+                for name, query in recipe.inputs:
+                    for md in reader.query_data(query):
+                        source = md.to_python("source")
+                        pathname = os.path.join(source["basedir"], source["file"], f"{source['offset']:06d}.grib")
+                        trange = md.to_python("timerange")
+                        dest = f"{recipe.name}+{trange['p1']}"
+                        # TODO: don't pass pathname but fill inputs here, or
+                        # alternatively let Recipe create dishes based on query
+                        # results
+                        dish = recipe.start_dish(pathname, dest)
+                        recipe.prepare(dish)
+                        print("Rendered", pathname, "to", dest)
+
+
 def main():
     default_styles = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "styles"))
     if not os.path.isdir(default_styles):
@@ -265,26 +296,7 @@ def main():
         recipes = Recipes()
         recipes.document(args.workdir)
     else:
-        # Tell magics where it should take its default styles from
-        os.environ["MAGICS_STYLE_PATH"] = args.styles
-        # Tell magics not to print noisy banners
-        os.environ["MAGPLUS_QUIET"] = "1"
-
-        recipes = Recipes()
-        recipes.load("recipes")
-
-        # TODO: change this logic for multi-source recipes
-        for dirpath, dirnames, filenames in os.walk(args.workdir):
-            dirpath = dirpath[len(args.workdir):]
-            for fn in filenames:
-                path = os.path.join(dirpath, fn)
-                for recipe in recipes.for_path(path):
-                    print("Found recipe", recipe.name, "for", path)
-                    src = os.path.join(args.workdir, dirpath, fn)
-                    dest = os.path.join(args.workdir, dirpath, fn + ".png")
-                    dish = recipe.start_dish(src, dest)
-                    recipe.prepare(dish)
-                    print("Rendered", src, "to", dest)
+        do_render(args)
 
 
 if __name__ == "__main__":

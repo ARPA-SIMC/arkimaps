@@ -2,95 +2,20 @@
 from __future__ import annotations
 import arkimet
 from typing import Optional
-from collections import Counter
 import contextlib
 import argparse
 import logging
 import os
 import sys
-import re
 import time
 
 log = logging.getLogger("arkimaps")
 
 
-class EccodesNameMap:
-    re_entry = re.compile(r"'(?P<name>[^']+)' = {\s*(?P<matches>[^}]+)}")
-    re_key = re.compile(r"^\s*(?P<key>\w+) = (?P<val>[^ ;]+)\s*;\s*$")
-
-    def __init__(self):
-        self.rules = []
-
-    def load(self, src: str):
-        for name, matches in self.parse(src):
-            self.rules.append((name, matches))
-
-    def parse(self, src: str):
-        with open(src, "rt") as fd:
-            raw = fd.read()
-        for entry in self.re_entry.finditer(raw):
-            matches = {}
-            for line in entry.group("matches").strip().splitlines():
-                mo = self.re_key.match(line)
-                if not mo:
-                    log.error("%s: line not parsed: %r", src, line)
-                    continue
-                matches[mo.group("key")] = int(mo.group("val"))
-            yield entry.group("name"), matches
-
-
-class Grib1Names(EccodesNameMap):
-    def __init__(self):
-        super().__init__()
-        # Example of a hardcoded matching rule:
-        # self.rules.append(("unknown1", {
-        #     "table2Version": 201,
-        #     "indicatorOfParameter": 197,
-        # }))
-        self.load("/usr/share/eccodes/definitions/grib1/shortName.def")
-        self.load("/usr/share/eccodes/definitions/grib1/localConcepts/ecmf/shortName.def")
-        self.load("/usr/share/eccodes/definitions/grib1/localConcepts/cnmc/shortName.def")
-
-    def match_rule(self, rules: dict, product: dict, level: dict):
-        for name, value in rules.items():
-            if name == "table2Version":
-                if product["table"] != value:
-                    return False
-            elif name == "indicatorOfParameter":
-                if product["product"] != value:
-                    return False
-            elif name == "indicatorOfTypeOfLevel":
-                if level["level_type"] != value:
-                    return False
-            elif name == "level":
-                if level.get("l1", 0) != value:
-                    return False
-            else:
-                raise NotImplementedError(f"cfVarName key {name} not supported")
-        return True
-
-    def match(self, product: dict, level: dict):
-        for name, rule in self.rules:
-            if self.match_rule(rule, product, level):
-                return name
-        return None
-
-
-class Grib2Names(EccodesNameMap):
-    def __init__(self):
-        super().__init__()
-        self.load("/usr/share/eccodes/definitions/grib2/cfVarName.def")
-
-    def match(self, product: dict, level: dict):
-        raise NotImplementedError("GRIB2 name matching")
-
-
-class Catalog:
-    def __init__(self, workdir: str):
-        self.workdir = workdir
-        self.grib1_map = Grib1Names()
-        self.grib2_map = Grib2Names()
-        self.output_stats = Counter()
+class Dispatcher:
+    def __init__(self, workds: arkimet.dataset.Dataset):
+        self.ds = workds
+        self.writer = self.ds.writer()
 
     @contextlib.contextmanager
     def input(self, path: Optional[str] = None):
@@ -103,6 +28,10 @@ class Catalog:
             with open(path, "rb") as fd:
                 yield fd
 
+    def dispatch(self, md: arkimet.Metadata) -> bool:
+        self.writer.acquire(md)
+        return True
+
     def read(self, path: Optional[str] = None):
         """
         Read data from an input file, or standard input.
@@ -111,56 +40,34 @@ class Catalog:
         as is given as input to arkimet processors.
         """
         with self.input(path) as infd:
-            arkimet.Metadata.read_bundle(infd, dest=self.collect)
-
-    def collect(self, md: arkimet.Metadata) -> bool:
-        """
-        Process an element from the input file
-        """
-        counter = getattr(self, "counter", 0)
-        self.counter = counter + 1
-        tr = md.to_python("timerange")
-        prod = md.to_python("product")
-        lev = md.to_python("level")
-
-        # One directory per step
-        stepdir = os.path.join(self.workdir, f"+{tr['p1']}")
-        os.makedirs(stepdir, exist_ok=True)
-
-        if prod["style"] == "GRIB1":
-            name = self.grib1_map.match(prod, lev)
-        elif prod["style"] == "GRIB2":
-            name = self.grib1_map.match(prod, lev)
-        else:
-            raise NotImplementedError(f"product style {prod['style']} not supported")
-
-        levname = [str(lev["level_type"])]
-        if "l1" in lev:
-            levname.append(str(lev["l1"]))
-        if "l2" in lev:
-            levname.append(str(lev["l2"]))
-        levname = ":".join(levname)
-
-        if name is None:
-            log.warning("Unrecognized data, prod=%r, lev=%r", prod, lev)
-            fname = f"{prod['origin']}:{prod['table']}:{prod['product']}-{levname}.grib"
-        else:
-            fname = f"{name}-{levname}.grib"
-
-        # Append to output files
-        dest = os.path.join(stepdir, fname)
-        mode = "ab" if dest in self.output_stats else "wb"
-        with open(dest, mode=mode) as fd:
-            fd.write(md.data)
-        self.output_stats[dest] += 1
+            # TODO: batch multiple writes together?
+            arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
 
 
 @contextlib.contextmanager
-def workdir():
+def workds(session):
     # TODO: use TemporaryDirectory
-    if not os.path.isdir("workdir"):
-        os.mkdir("workdir")
-    yield os.path.abspath("workdir")
+    workdir = os.path.abspath("workdir")
+    if not os.path.isdir(workdir):
+        os.mkdir(workdir)
+
+    config = arkimet.cfg.Sections()
+    config["workdir"] = {
+        "format": "grib",
+        "step": "yearly",
+        "name": "workdir",
+        "path": workdir,
+        "type": "iseg",
+        "unique": "reftime, level, timerange, product",
+        # TODO: add options to tell sqlite and file writes to be fast
+        # and insecure; use eatmydata until then
+    }
+
+    with open(os.path.join(workdir, "config"), "wt") as fd:
+        config["workdir"].write(fd)
+
+    with session.dataset(cfg=config["workdir"]) as ds:
+        yield ds
 
 
 class LogCollector(logging.Handler):
@@ -208,13 +115,11 @@ def main():
     # Tell magics not to print noisy banners
     os.environ["MAGPLUS_QUIET"] = "1"
 
-    with workdir() as root:
-        # Dispatch input products into a work directory
-        collector = Catalog(root)
-        collector.read()
-        for name, count in collector.output_stats.items():
-            if count > 1:
-                log.warning("%s: %d GRIB in output", name, count)
+    # Dispatch input products into a work dataset
+    with arkimet.dataset.Session(force_dir_segments=True) as session:
+        with workds(session) as ds:
+            dispatcher = Dispatcher(ds)
+            dispatcher.read()
 
 
 if __name__ == "__main__":

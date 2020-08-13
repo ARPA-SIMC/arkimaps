@@ -1,7 +1,7 @@
 ---
-name: Temperatura a 2 metri
+description: Temperatura a 2 metri
 inputs:
- msl: "+*/t-*.grib"
+ msl: product:GRIB1,,1,11 or GRIB1,,2,11 or GRIB1,,3,11 or GRIB2,,,11,,3; level:GRIB1,100,200; timerange:GRIB1,0
 recipe:
  - step: add_basemap
    params: 
