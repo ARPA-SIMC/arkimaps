@@ -1,47 +1,20 @@
 #!/usr/bin/python3
 from __future__ import annotations
-import arkimet
-from typing import Optional
-import contextlib
 import argparse
 import logging
+import tempfile
 import os
 import sys
 import time
-from arkimapslib.pantry import Pantry
+from arkimapslib.pantry import Pantry, Dispatcher
+from arkimapslib.recipes import Recipes
+from arkimapslib.chef import Chef
 
 log = logging.getLogger("arkimaps")
 
 
-class Dispatcher:
-    def __init__(self, writer: arkimet.dataset.Writer):
-        self.writer = writer
-
-    @contextlib.contextmanager
-    def input(self, path: Optional[str] = None):
-        """
-        Open the binary input stream
-        """
-        if path is None:
-            yield sys.stdin.buffer
-        else:
-            with open(path, "rb") as fd:
-                yield fd
-
-    def dispatch(self, md: arkimet.Metadata) -> bool:
-        self.writer.acquire(md)
-        return True
-
-    def read(self, path: Optional[str] = None):
-        """
-        Read data from an input file, or standard input.
-
-        The input file is the output of arki-query --inline, which is the same
-        as is given as input to arkimet processors.
-        """
-        with self.input(path) as infd:
-            # TODO: batch multiple writes together?
-            arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
+class Fail(Exception):
+    pass
 
 
 class LogCollector(logging.Handler):
@@ -59,15 +32,80 @@ class LogCollector(logging.Handler):
         self.entries.append(entry)
 
 
+class Arkimaps:
+    def __init__(self, args):
+        self.args = args
+
+        # Collect log entries that we can then add to the output data
+        self.log_collector = LogCollector()
+        root_logger = logging.getLogger()
+        root_logger.addHandler(self.log_collector)
+
+        self.tempdir = None
+        if self.args.workdir is None:
+            self.tempdir = tempfile.TemporaryDirectory()
+            self.pantry = Pantry(self.tempdir.name)
+        else:
+            self.pantry = Pantry(self.args.workdir)
+
+    def do_document_recipes(self):
+        recipes = Recipes()
+        recipes.document(Chef, self.args.recipes)
+
+    def do_dispatch(self):
+        with self.pantry.writer() as writer:
+            dispatcher = Dispatcher(writer)
+            dispatcher.read()
+
+    def do_render(self):
+        """
+        Render all recipes for which inputs are available
+        """
+        # Tell magics where it should take its default styles from
+        os.environ["MAGICS_STYLE_PATH"] = self.args.styles
+        # Tell magics not to print noisy banners
+        os.environ["MAGPLUS_QUIET"] = "1"
+
+        with self.pantry.reader() as reader:
+            recipes = Recipes()
+            recipes.load(self.pantry.session, "recipes")
+            for recipe in recipes.recipes:
+                for name, query in recipe.inputs:
+                    for md in reader.query_data(query):
+                        source = md.to_python("source")
+                        pathname = os.path.join(source["basedir"], source["file"], f"{source['offset']:06d}.grib")
+                        trange = md.to_python("timerange")
+                        dest = f"{recipe.name}+{trange['p1']}"
+                        # TODO: don't pass pathname but fill inputs here, or
+                        # alternatively let Recipe create dishes based on query
+                        # results
+                        dish = recipe.start_dish(pathname, dest)
+                        recipe.prepare(Chef, dish)
+                        print("Rendered", pathname, "to", dest)
+
+
 def main():
     default_styles = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "styles"))
     if not os.path.isdir(default_styles):
         default_styles = "/usr/share/magics/styles/ecmwf"
 
     parser = argparse.ArgumentParser(description="Render model maps")
-    parser.add_argument("--verbose", "-v", action="store_true", help="verbose output")
-    parser.add_argument("--debug", action="store_true", help="debug output")
-    parser.add_argument("--styles", metavar="dir", action="store", default=default_styles, help="styles directory")
+    parser.add_argument("--verbose", "-v", action="store_true",
+                        help="verbose output")
+    parser.add_argument("--debug", action="store_true",
+                        help="debug output")
+    parser.add_argument("--styles", metavar="dir", action="store", default=default_styles,
+                        help="styles directory")
+    parser.add_argument("--workdir", metavar="dir", action="store",
+                        help="working directory. Default: a temporary one")
+    parser.add_argument("--recipes", metavar="dir", action="store", default="recipes",
+                        help="directory with the YAML recipes")
+    parser.add_argument("--render", action="store_true",
+                        help="do not read data: render from an existing working directory")
+    parser.add_argument("--dispatch", action="store_true",
+                        help="do not render: dispatch into a working directory")
+    parser.add_argument("--document-recipes", action="store_true",
+                        help="generate recipes documentation")
     args = parser.parse_args()
 
     # Setup logging
@@ -79,22 +117,26 @@ def main():
     else:
         logging.basicConfig(level=logging.WARN, stream=sys.stderr, format=FORMAT)
 
-    # Collect log entries that we can then add to the output data
-    log_collector = LogCollector()
-    root_logger = logging.getLogger()
-    root_logger.addHandler(log_collector)
+    arkimaps = Arkimaps(args)
 
-    # Tell magics where it shuold take its default styles from
-    os.environ["MAGICS_STYLE_PATH"] = args.styles
-    # Tell magics not to print noisy banners
-    os.environ["MAGPLUS_QUIET"] = "1"
-
-    # Dispatch input products into a work dataset
-    pantry = Pantry("workdir")
-    with pantry.writer() as writer:
-        dispatcher = Dispatcher(writer)
-        dispatcher.read()
+    if args.render:
+        if not args.workdir:
+            raise Fail("Please use --workdir when you use --render")
+        arkimaps.do_render()
+    elif args.dispatch:
+        if not args.workdir:
+            raise Fail("Please use --workdir when you use --render")
+        arkimaps.do_dispatch()
+    elif args.document_recipes:
+        arkimaps.do_document_recipes()
+    else:
+        arkimaps.do_dispatch()
+        arkimaps.do_render()
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Fail as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
