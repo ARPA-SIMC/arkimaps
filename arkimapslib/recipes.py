@@ -4,10 +4,10 @@ import os
 import inspect
 import json
 import yaml
-import arkimet
 
 if TYPE_CHECKING:
     from .chef import Chef
+    import arkimet
 
 
 class Recipes:
