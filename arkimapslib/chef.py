@@ -1,11 +1,36 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any, Type
 
 if TYPE_CHECKING:
     from .recipes import Order
 
 
+class Chefs:
+    registry: Dict[str, Type["Chef"]] = {}
+
+    @classmethod
+    def register(cls, chef_cls: Type["Chef"]):
+        """
+        Add a chef class to the registry
+        """
+        name = getattr(chef_cls, "NAME", None)
+        if name is None:
+            name = str(chef_cls)
+
+        cls.registry[name] = chef_cls
+
+    @classmethod
+    def for_order(cls, order: Order) -> "Chef":
+        chef_cls = cls.registry.get(order.chef)
+        if chef_cls is None:
+            raise KeyError(f"order requires unknown chef {order.chef}")
+        return chef_cls(order)
+
+
+@Chefs.register
 class Chef:
+    NAME = "default"
+
     def __init__(self, order: Order):
         # Do not import Magics at toplevel to prevent accidentally importing it
         # in the main process. We only import Magics in working processes to

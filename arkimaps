@@ -12,7 +12,6 @@ import io
 import os
 import sys
 import time
-from arkimapslib.pantry import Pantry, Dispatcher
 from arkimapslib.recipes import Recipes, Order
 
 log = logging.getLogger("arkimaps")
@@ -47,6 +46,7 @@ class Arkimaps:
     Top-level command line implementation
     """
     def __init__(self, args):
+        from arkimapslib.pantry import Pantry
         self.args = args
 
         # Collect log entries that we can then add to the output data
@@ -77,11 +77,14 @@ class Arkimaps:
             yield pool
 
     def do_document_recipes(self):
-        from arkimapslib.chef import Chef
-        recipes = Recipes()
-        recipes.document(Chef, self.args.recipes)
+        import arkimet
+        with arkimet.dataset.Session() as session:
+            recipes = Recipes()
+            recipes.load(session, "recipes")
+            recipes.document(self.args.recipes)
 
     def do_dispatch(self):
+        from arkimapslib.pantry import Dispatcher
         with self.pantry.writer() as writer:
             dispatcher = Dispatcher(writer)
             dispatcher.read()

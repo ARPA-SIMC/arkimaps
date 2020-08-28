@@ -1,13 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Type, Iterator
+from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Iterator
 import os
 import inspect
 import json
 import yaml
-import arkimet
 
 if TYPE_CHECKING:
-    from .chef import Chef
+    import arkimet
 
 
 class Recipes:
@@ -32,13 +31,9 @@ class Recipes:
         """
         Generate markdown documentation for the recipes found in the given path
         """
-        for fn in os.listdir(path):
-            if not fn.endswith(".yaml"):
-                continue
-            with open(os.path.join(path, fn), "rt") as fd:
-                recipe = yaml.load(fd)
-            recipe = Recipe(recipe)
-            recipe.document(os.path.join(path, fn) + ".md")
+        for recipe in self.recipes:
+            dest = os.path.join(path, recipe.name) + '.yaml.md'
+            recipe.document(dest)
 
 
 class Recipe:
@@ -47,6 +42,9 @@ class Recipe:
     """
     def __init__(self, name: str, session: arkimet.dataset.Session, data: Dict[str, Any]):
         self.name = name
+
+        # Name of the chef to use
+        self.chef: str = data.get("chef", "default")
 
         # Get the recipe description
         self.description: str = data.get("description", "Unnamed recipe")
@@ -80,7 +78,7 @@ class Recipe:
                 dest = os.path.join(workdir, basename)
 
                 yield Order(
-                    chef="Chef",
+                    chef=self.chef,
                     sources=sources,
                     dest=dest,
                     basename=basename,
@@ -88,14 +86,19 @@ class Recipe:
                     steps=self.steps,
                 )
 
-    def document(self, chef: Type[Chef], dest: str):
+    def document(self, dest: str):
+        from .chef import Chefs
+        chef = Chefs.registry[self.chef]
+
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)
             print(file=fd)
+            print(f"Chef: **{self.chef}**", file=fd)
+            print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)
-            for name, glob, input_re in self.inputs:
-                print(f"* **{name}**: `{glob}`", file=fd)
+            for name, matcher in self.inputs:
+                print(f"* **{name}**: `{matcher}`", file=fd)
             print(file=fd)
             print("## Steps", file=fd)
             print(file=fd)
@@ -127,7 +130,6 @@ class Order:
             recipe: str,
             steps: List[Tuple[str, Dict[str, Any]]]):
         # Name of the Chef to use
-        # TODO: currently this is ignored
         self.chef = chef
         # Dict mapping source names to pathnames of GRIB files
         self.sources = sources
@@ -146,10 +148,9 @@ class Order:
         """
         Run all the steps of the recipe and render the resulting file
         """
-        # TODO: replace with a Chef registry to index by self.chef
-        from arkimapslib.chef import Chef
+        from arkimapslib.chef import Chefs
 
-        chef = Chef(self)
+        chef = Chefs.for_order(self)
         for name, args in self.steps:
             meth = getattr(chef, name, None)
             if meth is None:
