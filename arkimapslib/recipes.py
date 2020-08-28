@@ -153,3 +153,6 @@ class Dish:
         self.gribs: Dict[str, Any] = {}
         # Elements passed after output to macro.plot
         self.parts = []
+
+        # Destination file name
+        self.output_file_name = fname + ".png"
