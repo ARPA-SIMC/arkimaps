@@ -2,6 +2,7 @@
 from __future__ import annotations
 import argparse
 import logging
+import tarfile
 import tempfile
 import os
 import sys
@@ -33,6 +34,9 @@ class LogCollector(logging.Handler):
 
 
 class Arkimaps:
+    """
+    Top-level command line implementation
+    """
     def __init__(self, args):
         self.args = args
 
@@ -44,9 +48,11 @@ class Arkimaps:
         self.tempdir = None
         if self.args.workdir is None:
             self.tempdir = tempfile.TemporaryDirectory()
-            self.pantry = Pantry(self.tempdir.name)
+            self.workdir = self.tempdir.name
+            self.pantry = Pantry(self.workdir)
         else:
-            self.pantry = Pantry(self.args.workdir)
+            self.workdir = self.args.workdir
+            self.pantry = Pantry(self.workdir)
 
     def do_document_recipes(self):
         recipes = Recipes()
@@ -57,6 +63,12 @@ class Arkimaps:
             dispatcher = Dispatcher(writer)
             dispatcher.read()
 
+    def open_output(self):
+        if self.args.output:
+            return tarfile.open(self.args.output, mode="x")
+        else:
+            return tarfile.open(mode="x", fileobj=sys.stdout.buffer)
+
     def do_render(self):
         """
         Render all recipes for which inputs are available
@@ -66,22 +78,28 @@ class Arkimaps:
         # Tell magics not to print noisy banners
         os.environ["MAGPLUS_QUIET"] = "1"
 
-        with self.pantry.reader() as reader:
-            recipes = Recipes()
-            recipes.load(self.pantry.session, "recipes")
-            for recipe in recipes.recipes:
-                for name, query in recipe.inputs:
-                    for md in reader.query_data(query):
-                        source = md.to_python("source")
-                        pathname = os.path.join(source["basedir"], source["file"], f"{source['offset']:06d}.grib")
-                        trange = md.to_python("timerange")
-                        dest = f"{recipe.name}+{trange['p1']}"
-                        # TODO: don't pass pathname but fill inputs here, or
-                        # alternatively let Recipe create dishes based on query
-                        # results
-                        dish = recipe.start_dish(pathname, dest)
-                        recipe.prepare(Chef, dish)
-                        print("Rendered", pathname, "to", dest)
+        with self.open_output() as tarout:
+            with self.pantry.reader() as reader:
+                recipes = Recipes()
+                recipes.load(self.pantry.session, "recipes")
+                for recipe in recipes.recipes:
+                    for name, query in recipe.inputs:
+                        for md in reader.query_data(query):
+                            source = md.to_python("source")
+                            pathname = os.path.join(source["basedir"], source["file"], f"{source['offset']:06d}.grib")
+                            trange = md.to_python("timerange")
+                            basename = f"{recipe.name}+{trange['p1']}"
+                            dest = os.path.join(self.workdir, basename)
+                            # TODO: don't pass pathname but fill inputs here, or
+                            # alternatively let Recipe create dishes based on query
+                            # results
+                            dish = recipe.start_dish(pathname, dest)
+                            recipe.prepare(Chef, dish)
+                            log.info("Rendered %s to %s", recipe.name, basename)
+
+                            # Move the generated image to the output tar
+                            tarout.add(dish.output_file_name, os.path.join(recipe.name, basename + ".png"))
+                            os.unlink(dish.output_file_name)
 
 
 def main():
@@ -98,6 +116,8 @@ def main():
                         help="styles directory")
     parser.add_argument("--workdir", metavar="dir", action="store",
                         help="working directory. Default: a temporary one")
+    parser.add_argument("--output", "-o", metavar="file.tar.gz", action="store",
+                        help="write rendered output to the given file. Default: write to stdout")
     parser.add_argument("--recipes", metavar="dir", action="store", default="recipes",
                         help="directory with the YAML recipes")
     parser.add_argument("--render", action="store_true",
