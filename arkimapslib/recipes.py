@@ -48,6 +48,9 @@ class Recipe:
     def __init__(self, name: str, session: arkimet.dataset.Session, data: Dict[str, Any]):
         self.name = name
 
+        # Name of the chef to use
+        self.chef: str = data.get("chef", "default")
+
         # Get the recipe description
         self.description: str = data.get("description", "Unnamed recipe")
 
@@ -80,7 +83,7 @@ class Recipe:
                 dest = os.path.join(workdir, basename)
 
                 yield Order(
-                    chef="Chef",
+                    chef=self.chef,
                     sources=sources,
                     dest=dest,
                     basename=basename,
@@ -91,6 +94,8 @@ class Recipe:
     def document(self, chef: Type[Chef], dest: str):
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)
+            print(file=fd)
+            print(f"Chef: **{self.chef}**", file=fd)
             print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)
@@ -127,7 +132,6 @@ class Order:
             recipe: str,
             steps: List[Tuple[str, Dict[str, Any]]]):
         # Name of the Chef to use
-        # TODO: currently this is ignored
         self.chef = chef
         # Dict mapping source names to pathnames of GRIB files
         self.sources = sources
@@ -146,10 +150,9 @@ class Order:
         """
         Run all the steps of the recipe and render the resulting file
         """
-        # TODO: replace with a Chef registry to index by self.chef
-        from arkimapslib.chef import Chef
+        from arkimapslib.chef import Chefs
 
-        chef = Chef(self)
+        chef = Chefs.for_order(self)
         for name, args in self.steps:
             meth = getattr(chef, name, None)
             if meth is None:
