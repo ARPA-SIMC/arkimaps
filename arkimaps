@@ -4,6 +4,8 @@ import argparse
 import logging
 import tarfile
 import tempfile
+import json
+import io
 import os
 import sys
 import time
@@ -100,6 +102,12 @@ class Arkimaps:
                             # Move the generated image to the output tar
                             tarout.add(dish.output_file_name, os.path.join(recipe.name, basename + ".png"))
                             os.unlink(dish.output_file_name)
+
+            if self.log_collector.entries:
+                with io.BytesIO(json.dumps(self.log_collector.entries, indent=1).encode()) as buf:
+                    info = tarfile.TarInfo(name="log.json")
+                    info.size = len(buf.getvalue())
+                    tarout.addfile(tarinfo=info, fileobj=buf)
 
 
 def main():
