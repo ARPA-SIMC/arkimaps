@@ -77,9 +77,11 @@ class Arkimaps:
             yield pool
 
     def do_document_recipes(self):
-        from arkimapslib.chef import Chef
-        recipes = Recipes()
-        recipes.document(Chef, self.args.recipes)
+        import arkimet
+        with arkimet.dataset.Session() as session:
+            recipes = Recipes()
+            recipes.load(session, "recipes")
+            recipes.document(self.args.recipes)
 
     def do_dispatch(self):
         from arkimapslib.pantry import Dispatcher
