@@ -1,99 +1,13 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Type
+from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Type, Iterator
 import os
 import inspect
 import json
 import yaml
-from Magics import macro
 import arkimet
 
 if TYPE_CHECKING:
     from .chef import Chef
-
-
-class Recipe:
-    """
-    A parsed and validated recipe
-    """
-    def __init__(self, name: str, session: arkimet.dataset.Session, data: Dict[str, Any]):
-        self.name = name
-
-        # Get the recipe description
-        self.description: str = data.get("description", "Unnamed recipe")
-
-        # Get the list of input queries
-        self.inputs: List[Tuple[str, arkimet.Matcher]] = []
-        for name, query in data.get("inputs", {}).items():
-            self.inputs.append((name, session.matcher(query)))
-        if len(self.inputs) > 1:
-            raise RuntimeError("Recipes with multiple inputs are not supported yet")
-
-        # Get the recipe steps
-        self.steps: List[Tuple[str, Dict[str, Any]]] = []
-        for s in data.get("recipe", ()):
-            if not isinstance(s, dict):
-                raise RuntimeError("recipe step is not a dict")
-            step = s.pop("step", None)
-            if step is None:
-                raise RuntimeError("recipe step does not contain a 'step' name")
-            self.steps.append((step, s))
-
-    def matches(self, path: str):
-        """
-        Check if the given path matches one of the recipe input regexps
-        """
-        # TODO: change this logic for multi-source recipes
-        for name, glob, input_re in self.inputs:
-            if input_re.match(path):
-                return True
-        return False
-
-    def start_dish(self, src: str, dest: str):
-        """
-        Start an output for this recipe and the given source
-        """
-        dish = Dish(dest)
-        # TODO: change this logic for multi-source recipes
-        dish.sources[self.inputs[0][0]] = src
-        return dish
-
-    def prepare(self, chef: Type[Chef], dish: "Dish"):
-        """
-        Run all the steps of the recipe
-        """
-        chef = chef(dish)
-
-        for name, args in self.steps:
-            meth = getattr(chef, name, None)
-            if meth is None:
-                raise RuntimeError("Recipe " + self.name + " uses unknown step " + name)
-            meth(**args)
-
-        chef.serve()
-
-    def document(self, chef: Type[Chef], dest: str):
-        with open(dest, "wt") as fd:
-            print(f"# {self.name}: {self.description}", file=fd)
-            print(file=fd)
-            print("## Inputs", file=fd)
-            print(file=fd)
-            for name, glob, input_re in self.inputs:
-                print(f"* **{name}**: `{glob}`", file=fd)
-            print(file=fd)
-            print("## Steps", file=fd)
-            print(file=fd)
-            for name, args in self.steps:
-                print(f"### {name}", file=fd)
-                print(file=fd)
-                print(inspect.getdoc(getattr(chef, name)), file=fd)
-                print(file=fd)
-                if args:
-                    print("With arguments:", file=fd)
-                    print("```", file=fd)
-                    # FIXME: dump as yaml?
-                    print(json.dumps(args, indent=2), file=fd)
-                    print("```", file=fd)
-                print(file=fd)
 
 
 class Recipes:
@@ -126,33 +40,120 @@ class Recipes:
             recipe = Recipe(recipe)
             recipe.document(os.path.join(path, fn) + ".md")
 
-    def for_path(self, path: str):
-        """
-        Generate all recipes matching the given path
-        """
-        for recipe in self.recipes:
-            if recipe.matches(path):
-                yield recipe
 
-
-class Dish:
+class Recipe:
     """
-    Object holding the final output and intermediate data while the recipes are
-    executed
+    A parsed and validated recipe
     """
-    def __init__(self, fname: str):
-        # Settings of the PNG output
-        self.output = macro.output(
-            output_formats=['png'],
-            output_name=fname,
-            output_name_first_page_number="off",
-        )
-        # List of source paths by name
-        self.sources: Dict[str, str] = {}
-        # Loaded GRIB data
-        self.gribs: Dict[str, Any] = {}
-        # Elements passed after output to macro.plot
-        self.parts = []
+    def __init__(self, name: str, session: arkimet.dataset.Session, data: Dict[str, Any]):
+        self.name = name
 
-        # Destination file name
-        self.output_file_name = fname + ".png"
+        # Get the recipe description
+        self.description: str = data.get("description", "Unnamed recipe")
+
+        # Get the list of input queries
+        self.inputs: List[Tuple[str, arkimet.Matcher]] = []
+        for name, query in data.get("inputs", {}).items():
+            self.inputs.append((name, session.matcher(query)))
+        if len(self.inputs) > 1:
+            raise RuntimeError("Recipes with multiple inputs are not supported yet")
+
+        # Get the recipe steps
+        self.steps: List[Tuple[str, Dict[str, Any]]] = []
+        for s in data.get("recipe", ()):
+            if not isinstance(s, dict):
+                raise RuntimeError("recipe step is not a dict")
+            step = s.pop("step", None)
+            if step is None:
+                raise RuntimeError("recipe step does not contain a 'step' name")
+            self.steps.append((step, s))
+
+    def make_orders(self, reader: arkimet.dataset.Reader, workdir: str) -> Iterator["Order"]:
+        for name, query in self.inputs:
+            for md in reader.query_data(query):
+                source = md.to_python("source")
+                pathname = os.path.join(source["basedir"], source["file"], f"{source['offset']:06d}.grib")
+                sources = {name: pathname}
+
+                trange = md.to_python("timerange")
+                basename = f"{self.name}+{trange['p1']}"
+                dest = os.path.join(workdir, basename)
+
+                yield Order(
+                    chef="Chef",
+                    sources=sources,
+                    dest=dest,
+                    basename=basename,
+                    recipe=self.name,
+                    steps=self.steps,
+                )
+
+    def document(self, chef: Type[Chef], dest: str):
+        with open(dest, "wt") as fd:
+            print(f"# {self.name}: {self.description}", file=fd)
+            print(file=fd)
+            print("## Inputs", file=fd)
+            print(file=fd)
+            for name, glob, input_re in self.inputs:
+                print(f"* **{name}**: `{glob}`", file=fd)
+            print(file=fd)
+            print("## Steps", file=fd)
+            print(file=fd)
+            for name, args in self.steps:
+                print(f"### {name}", file=fd)
+                print(file=fd)
+                print(inspect.getdoc(getattr(chef, name)), file=fd)
+                print(file=fd)
+                if args:
+                    print("With arguments:", file=fd)
+                    print("```", file=fd)
+                    # FIXME: dump as yaml?
+                    print(json.dumps(args, indent=2), file=fd)
+                    print("```", file=fd)
+                print(file=fd)
+
+
+class Order:
+    """
+    Serializable instructions to prepare a product, based on a recipe and its
+    input files
+    """
+    def __init__(
+            self,
+            chef: str,
+            sources: Dict[str, str],
+            dest: str,
+            basename: str,
+            recipe: str,
+            steps: List[Tuple[str, Dict[str, Any]]]):
+        # Name of the Chef to use
+        # TODO: currently this is ignored
+        self.chef = chef
+        # Dict mapping source names to pathnames of GRIB files
+        self.sources = sources
+        # Destination file path (without .png extension)
+        self.dest = dest
+        # Destination file name (without path or .png extension)
+        self.basename = basename
+        # Recipe name
+        self.recipe = recipe
+        # Recipe steps
+        self.steps = steps
+        # Output file name, set after the product has been rendered
+        self.output = None
+
+    def prepare(self):
+        """
+        Run all the steps of the recipe and render the resulting file
+        """
+        # TODO: replace with a Chef registry to index by self.chef
+        from arkimapslib.chef import Chef
+
+        chef = Chef(self)
+        for name, args in self.steps:
+            meth = getattr(chef, name, None)
+            if meth is None:
+                raise RuntimeError("Recipe " + self.name + " uses unknown step " + name)
+            meth(**args)
+
+        chef.serve()
