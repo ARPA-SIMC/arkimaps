@@ -8,14 +8,14 @@ import logging
 import os
 import sys
 import time
+from arkimapslib.pantry import Pantry
 
 log = logging.getLogger("arkimaps")
 
 
 class Dispatcher:
-    def __init__(self, workds: arkimet.dataset.Dataset):
-        self.ds = workds
-        self.writer = self.ds.writer()
+    def __init__(self, writer: arkimet.dataset.Writer):
+        self.writer = writer
 
     @contextlib.contextmanager
     def input(self, path: Optional[str] = None):
@@ -42,32 +42,6 @@ class Dispatcher:
         with self.input(path) as infd:
             # TODO: batch multiple writes together?
             arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
-
-
-@contextlib.contextmanager
-def workds(session):
-    # TODO: use TemporaryDirectory
-    workdir = os.path.abspath("workdir")
-    if not os.path.isdir(workdir):
-        os.mkdir(workdir)
-
-    config = arkimet.cfg.Sections()
-    config["workdir"] = {
-        "format": "grib",
-        "step": "yearly",
-        "name": "workdir",
-        "path": workdir,
-        "type": "iseg",
-        "unique": "reftime, level, timerange, product",
-        # TODO: add options to tell sqlite and file writes to be fast
-        # and insecure; use eatmydata until then
-    }
-
-    with open(os.path.join(workdir, "config"), "wt") as fd:
-        config["workdir"].write(fd)
-
-    with session.dataset(cfg=config["workdir"]) as ds:
-        yield ds
 
 
 class LogCollector(logging.Handler):
@@ -116,10 +90,10 @@ def main():
     os.environ["MAGPLUS_QUIET"] = "1"
 
     # Dispatch input products into a work dataset
-    with arkimet.dataset.Session(force_dir_segments=True) as session:
-        with workds(session) as ds:
-            dispatcher = Dispatcher(ds)
-            dispatcher.read()
+    pantry = Pantry("workdir")
+    with pantry.writer() as writer:
+        dispatcher = Dispatcher(writer)
+        dispatcher.read()
 
 
 if __name__ == "__main__":
