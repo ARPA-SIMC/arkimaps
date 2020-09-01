@@ -22,8 +22,10 @@ class Pantry:
             "path": self.ds_root,
             "type": "iseg",
             "unique": "reftime, level, timerange, product",
-            # TODO: add options to tell sqlite and file writes to be fast
-            # and insecure; use eatmydata until then
+            # Tell datasets to be fast at the cost of leaving an inconsistent
+            # state in case of errors. We can do that since we work on a
+            # temporary directory.
+            "eatmydata": "yes",
         })
 
     @contextlib.contextmanager
