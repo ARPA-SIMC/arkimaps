@@ -134,7 +134,7 @@ def main():
     parser.add_argument("--debug", action="store_true",
                         help="debug output")
     parser.add_argument("--styles", metavar="dir", action="store", default=default_styles,
-                        help="styles directory")
+                        help="styles directory. Default: styles (if existing) or /usr/share/magics/styles/ecmwf")
     parser.add_argument("--workdir", metavar="dir", action="store",
                         help="working directory. Default: a temporary one")
     parser.add_argument("--output", "-o", metavar="file.tar.gz", action="store",
