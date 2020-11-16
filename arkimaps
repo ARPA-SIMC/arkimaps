@@ -91,9 +91,9 @@ class Arkimaps:
 
     def open_output(self):
         if self.args.output:
-            return tarfile.open(self.args.output, mode="x")
+            return tarfile.open(self.args.output, mode="w|")
         else:
-            return tarfile.open(mode="x", fileobj=sys.stdout.buffer)
+            return tarfile.open(mode="w|", fileobj=sys.stdout.buffer)
 
     def do_render(self):
         """
