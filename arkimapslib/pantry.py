@@ -4,6 +4,9 @@ import contextlib
 import sys
 import os
 import arkimet
+import logging
+
+log = logging.getLogger("arkimaps.pantry")
 
 
 class Pantry:
@@ -53,6 +56,7 @@ class Dispatcher:
     """
     def __init__(self, writer: arkimet.dataset.Writer):
         self.writer = writer
+        self.batch = []
 
     @contextlib.contextmanager
     def input(self, path: Optional[str] = None):
@@ -66,8 +70,20 @@ class Dispatcher:
             with open(path, "rb") as fd:
                 yield fd
 
+    def flush_batch(self):
+        if not self.batch:
+            return
+        res = self.writer.acquire_batch(self.batch, drop_cached_data_on_commit=True)
+        count_nok = sum(1 for x in res if x != "ok")
+        if count_nok > 0:
+            raise RuntimeError(f"{count_nok} elements not imported correctly")
+        log.debug("imported %d items into pantry", len(self.batch))
+        self.batch = []
+
     def dispatch(self, md: arkimet.Metadata) -> bool:
-        self.writer.acquire(md)
+        self.batch.append(md)
+        if len(self.batch) >= 200:
+            self.flush_batch()
         return True
 
     def read(self, path: Optional[str] = None):
@@ -80,3 +96,4 @@ class Dispatcher:
         with self.input(path) as infd:
             # TODO: batch multiple writes together?
             arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
+            self.flush_batch()
