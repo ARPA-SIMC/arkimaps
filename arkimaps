@@ -51,6 +51,7 @@ class Arkimaps:
 
         # Collect log entries that we can then add to the output data
         self.log_collector = LogCollector()
+        self.log_collector.setLevel(logging.DEBUG)
         root_logger = logging.getLogger()
         root_logger.addHandler(self.log_collector)
 
@@ -151,12 +152,17 @@ def main():
 
     # Setup logging
     FORMAT = "%(asctime)-15s %(levelname)s %(message)s"
+    log_handler = logging.StreamHandler(sys.stderr)
+    log_handler.setFormatter(logging.Formatter(FORMAT))
     if args.debug:
-        logging.basicConfig(level=logging.DEBUG, stream=sys.stderr, format=FORMAT)
+        log_handler.setLevel(logging.DEBUG)
     elif args.verbose:
-        logging.basicConfig(level=logging.INFO, stream=sys.stderr, format=FORMAT)
+        log_handler.setLevel(logging.INFO)
     else:
-        logging.basicConfig(level=logging.WARN, stream=sys.stderr, format=FORMAT)
+        log_handler.setLevel(logging.WARN)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(log_handler)
+    root_logger.setLevel(logging.DEBUG)
 
     arkimaps = Arkimaps(args)
 
