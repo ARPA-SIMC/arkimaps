@@ -29,7 +29,7 @@ class Pantry:
         """
         raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
 
-    def orders(self) -> Iterable[Order]:
+    def orders(self, recipes: Recipes) -> Iterable[Order]:
         """
         Return all orders that can be made with this pantry
         """
@@ -78,14 +78,14 @@ class ArkimetPantry(Pantry):
             dispatcher = ArkimetDispatcher(writer)
             dispatcher.read()
 
-    def orders(self) -> Iterable[Order]:
+    def orders(self, recipes: Recipes) -> Iterable[Order]:
         """
         Return all orders that can be made with this pantry
         """
         with self.reader() as reader:
             # List of products that should be rendered
-            for recipe in self.recipes.recipes:
-                yield from recipe.make_orders(reader, self.workdir)
+            for recipe in recipes.recipes:
+                yield from recipe.make_orders_from_arkimet(reader, self.root)
 
     @contextlib.contextmanager
     def reader(self) -> ContextManager[arkimet.dataset.Reader]:
@@ -180,3 +180,11 @@ class GribPantry(Pantry):
             proc.wait()
             if proc.returncode != 0:
                 raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
+
+    def orders(self, recipes: Recipes) -> Iterable[Order]:
+        """
+        Return all orders that can be made with this pantry
+        """
+        # List of products that should be rendered
+        for recipe in recipes.recipes:
+            yield from recipe.make_orders_from_grib(self.root)

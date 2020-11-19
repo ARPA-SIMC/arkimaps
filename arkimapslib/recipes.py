@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Iterator, Optional
+from collections import defaultdict
 import os
 import inspect
 import json
@@ -73,7 +74,7 @@ class Recipe:
                 raise RuntimeError("recipe step does not contain a 'step' name")
             self.steps.append((step, s))
 
-    def make_orders(self, reader: arkimet.dataset.Reader, workdir: str) -> Iterator["Order"]:
+    def make_orders_from_arkimet(self, reader: arkimet.dataset.Reader, workdir: str) -> Iterator["Order"]:
         for name, query in self.inputs:
             for md in reader.query_data(query):
                 source = md.to_python("source")
@@ -82,6 +83,36 @@ class Recipe:
 
                 trange = md.to_python("timerange")
                 basename = f"{self.name}+{trange['p1']}"
+                dest = os.path.join(workdir, basename)
+
+                yield Order(
+                    chef=self.chef,
+                    sources=sources,
+                    dest=dest,
+                    basename=basename,
+                    recipe=self.name,
+                    steps=self.steps,
+                )
+
+    def make_orders_from_grib(self, workdir: str) -> Iterator["Order"]:
+        input_dir = os.path.join(workdir, self.name)
+
+        # Read all available input files in a dict indexed by inputs_grib name
+        # and step: {input_name: {step: filename}}
+        files = defaultdict(dict)
+        for fname in os.listdir(input_dir):
+            if not fname.endswith(".grib"):
+                continue
+            name, step = fname[:-5].rsplit("+")
+            files[name][int(step)] = fname
+
+        # Build orders for each step of each input grib found
+        for name, query in self.inputs_grib:
+            for step, fname in files[name].items():
+                pathname = os.path.join(input_dir, fname)
+                sources = {name: pathname}
+
+                basename = f"{self.name}+{step}"
                 dest = os.path.join(workdir, basename)
 
                 yield Order(

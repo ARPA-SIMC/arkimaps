@@ -110,7 +110,7 @@ class Arkimaps:
         """
         with self.open_output() as tarout:
             # List of products that should be rendered
-            orders = list(self.pantry.orders())
+            orders = list(self.pantry.orders(self.recipes))
 
             with self.magics_worker_pool() as pool:
                 for order in pool.imap_unordered(prepare_order, orders):
@@ -151,6 +151,8 @@ def main():
                         help="do not render: dispatch into a working directory")
     parser.add_argument("--document-recipes", action="store_true",
                         help="generate recipes documentation")
+    parser.add_argument("--filter", metavar="{arkimet|eccodes}", default="arkimet",
+                        help="backend to use to organise data into recipe inputs. Default: %(default)s")
     args = parser.parse_args()
 
     # Setup logging
