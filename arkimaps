@@ -46,7 +46,13 @@ class Arkimaps:
     Top-level command line implementation
     """
     def __init__(self, args):
-        from arkimapslib.pantry import Pantry
+        from arkimapslib.pantry import ArkimetPantry, GribPantry
+        if args.filter == "arkimet":
+            Pantry = ArkimetPantry
+        elif args.filter == "eccodes":
+            Pantry = GribPantry
+        else:
+            raise Fail(f"Unsupported value `{args.filter}` for --filter")
         self.args = args
 
         # Collect log entries that we can then add to the output data
@@ -55,6 +61,7 @@ class Arkimaps:
         root_logger = logging.getLogger()
         root_logger.addHandler(self.log_collector)
 
+        # Set up working directory
         self.tempdir = None
         if self.args.workdir is None:
             self.tempdir = tempfile.TemporaryDirectory()
@@ -63,6 +70,10 @@ class Arkimaps:
         else:
             self.workdir = self.args.workdir
             self.pantry = Pantry(self.workdir)
+
+        # Load recipes
+        self.recipes = Recipes()
+        self.recipes.load(self.pantry.session, "recipes")
 
     @contextlib.contextmanager
     def magics_worker_pool(self) -> ContextManager[multiprocessing.pool.Pool]:
@@ -78,17 +89,16 @@ class Arkimaps:
             yield pool
 
     def do_document_recipes(self):
-        import arkimet
-        with arkimet.dataset.Session() as session:
-            recipes = Recipes()
-            recipes.load(session, "recipes")
-            recipes.document(self.args.recipes)
+        """
+        Generate recipes documentation
+        """
+        self.recipes.document(self.args.recipes)
 
     def do_dispatch(self):
-        from arkimapslib.pantry import Dispatcher
-        with self.pantry.writer() as writer:
-            dispatcher = Dispatcher(writer)
-            dispatcher.read()
+        """
+        Acquire input data
+        """
+        self.pantry.fill(self.recipes)
 
     def open_output(self):
         if self.args.output:
@@ -101,13 +111,8 @@ class Arkimaps:
         Render all recipes for which inputs are available
         """
         with self.open_output() as tarout:
-            with self.pantry.reader() as reader:
-                recipes = Recipes()
-                recipes.load(self.pantry.session, "recipes")
-                # List of products that should be rendered
-                orders = []
-                for recipe in recipes.recipes:
-                    orders.extend(recipe.make_orders(reader, self.workdir))
+            # List of products that should be rendered
+            orders = list(self.pantry.orders(self.recipes))
 
             with self.magics_worker_pool() as pool:
                 for order in pool.imap_unordered(prepare_order, orders):
@@ -122,6 +127,9 @@ class Arkimaps:
                     info = tarfile.TarInfo(name="log.json")
                     info.size = len(buf.getvalue())
                     tarout.addfile(tarinfo=info, fileobj=buf)
+
+            # Let the Pantry store processing artifacts if it has any
+            self.pantry.store_processing_artifacts(tarout)
 
 
 def main():
@@ -138,7 +146,7 @@ def main():
                         help="styles directory. Default: styles (if existing) or /usr/share/magics/styles/ecmwf")
     parser.add_argument("--workdir", metavar="dir", action="store",
                         help="working directory. Default: a temporary one")
-    parser.add_argument("--output", "-o", metavar="file.tar.gz", action="store",
+    parser.add_argument("--output", "-o", metavar="file.tar", action="store",
                         help="write rendered output to the given file. Default: write to stdout")
     parser.add_argument("--recipes", metavar="dir", action="store", default="recipes",
                         help="directory with the YAML recipes")
@@ -148,6 +156,8 @@ def main():
                         help="do not render: dispatch into a working directory")
     parser.add_argument("--document-recipes", action="store_true",
                         help="generate recipes documentation")
+    parser.add_argument("--filter", metavar="{arkimet|eccodes}", default="arkimet",
+                        help="backend to use to organise data into recipe inputs. Default: %(default)s")
     args = parser.parse_args()
 
     # Setup logging

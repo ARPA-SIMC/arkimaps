@@ -1,10 +1,14 @@
 from __future__ import annotations
-from typing import ContextManager, Optional
+from typing import TYPE_CHECKING, ContextManager, Optional, Iterable, BinaryIO
 import contextlib
+import subprocess
 import sys
 import os
 import arkimet
 import logging
+
+if TYPE_CHECKING:
+    from .recipes import Recipes, Order
 
 log = logging.getLogger("arkimaps.pantry")
 
@@ -14,7 +18,48 @@ class Pantry:
     Storage of GRIB files to be processed
     """
     def __init__(self, root: str):
+        # Root directory where inputs are stored
         self.root = root
+        # Arkimet session (if using arkimet, else None)
+        self.session: Optional[arkimet.dataset.Session] = None
+
+    def fill(self, recipes: Recipes):
+        """
+        Read data from standard input and acquire it into the pantry
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
+
+    def orders(self, recipes: Recipes) -> Iterable[Order]:
+        """
+        Return all orders that can be made with this pantry
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.orders() not implemented")
+
+    def store_processing_artifacts(self, tarout):
+        """
+        Store relevant processing artifacts in the output tarball
+        """
+        pass
+
+    @contextlib.contextmanager
+    def input(self, path: Optional[str] = None):
+        """
+        Open the binary input stream, from a file, or standard input if path is
+        None
+        """
+        if path is None:
+            yield sys.stdin.buffer
+        else:
+            with open(path, "rb") as fd:
+                yield fd
+
+
+class ArkimetPantry(Pantry):
+    """
+    Arkimet-based storage of GRIB files to be processed
+    """
+    def __init__(self, root: str):
+        super().__init__(root)
         self.session = arkimet.dataset.Session(force_dir_segments=True)
         self.ds_root = os.path.join(self.root, 'pantry')
 
@@ -30,6 +75,24 @@ class Pantry:
             # temporary directory.
             "eatmydata": "yes",
         })
+
+    def fill(self, recipes: Recipes):
+        """
+        Read data from standard input and acquire it into the pantry
+        """
+        with self.writer() as writer:
+            dispatcher = ArkimetDispatcher(writer)
+            with self.input(path=None) as infd:
+                dispatcher.read(infd)
+
+    def orders(self, recipes: Recipes) -> Iterable[Order]:
+        """
+        Return all orders that can be made with this pantry
+        """
+        with self.reader() as reader:
+            # List of products that should be rendered
+            for recipe in recipes.recipes:
+                yield from recipe.make_orders_from_arkimet(reader, self.root)
 
     @contextlib.contextmanager
     def reader(self) -> ContextManager[arkimet.dataset.Reader]:
@@ -50,25 +113,13 @@ class Pantry:
             yield writer
 
 
-class Dispatcher:
+class ArkimetDispatcher:
     """
     Read a stream of arkimet metadata and store its data into a dataset
     """
     def __init__(self, writer: arkimet.dataset.Writer):
         self.writer = writer
         self.batch = []
-
-    @contextlib.contextmanager
-    def input(self, path: Optional[str] = None):
-        """
-        Open the binary input stream, from a file, or standard input if path is
-        None
-        """
-        if path is None:
-            yield sys.stdin.buffer
-        else:
-            with open(path, "rb") as fd:
-                yield fd
 
     def flush_batch(self):
         if not self.batch:
@@ -86,14 +137,66 @@ class Dispatcher:
             self.flush_batch()
         return True
 
-    def read(self, path: Optional[str] = None):
+    def read(self, infd: BinaryIO):
         """
         Read data from an input file, or standard input.
 
         The input file is the output of arki-query --inline, which is the same
         as is given as input to arkimet processors.
         """
-        with self.input(path) as infd:
-            # TODO: batch multiple writes together?
-            arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
-            self.flush_batch()
+        arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
+        self.flush_batch()
+
+
+class GribPantry(Pantry):
+    """
+    eccodes-based storage of GRIB files to be processed
+    """
+    def __init__(self, root: str):
+        super().__init__(root)
+        self.grib_filter_rules = os.path.join(self.root, "grib_filter_rules")
+
+    def fill(self, recipes: Recipes):
+        """
+        Read data from standard input and acquire it into the pantry
+        """
+        # Build grib_filter rules
+        with open(self.grib_filter_rules, "w") as f:
+            for recipe in recipes.recipes:
+                # Create one directory per recipe
+                recipe_dir = os.path.join(self.root, recipe.name)
+                os.makedirs(recipe_dir, exist_ok=True)
+                for name, expr in recipe.inputs_grib:
+                    print(f"if ( {expr} ) {{", file=f)
+                    print(f'  write "{recipe_dir}/{name}+[endStep].grib";', file=f)
+                    print(f"}}", file=f)
+
+        # Run grib_filter on input
+        try:
+            proc = subprocess.Popen(["grib_filter", self.grib_filter_rules, "-"], stdin=subprocess.PIPE)
+
+            def dispatch(md: arkimet.Metadata) -> bool:
+                proc.stdin.write(md.data)
+                return True
+
+            with self.input(path=None) as infd:
+                arkimet.Metadata.read_bundle(infd, dest=dispatch)
+        finally:
+            proc.stdin.close()
+            proc.wait()
+            if proc.returncode != 0:
+                raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
+
+    def orders(self, recipes: Recipes) -> Iterable[Order]:
+        """
+        Return all orders that can be made with this pantry
+        """
+        # List of products that should be rendered
+        for recipe in recipes.recipes:
+            yield from recipe.make_orders_from_grib(self.root)
+
+    def store_processing_artifacts(self, tarout):
+        """
+        Store relevant processing artifacts in the output tarball
+        """
+        tarout.add(name=self.grib_filter_rules, arcname="grib_filter_rules")
