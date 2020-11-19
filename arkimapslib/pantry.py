@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, ContextManager, Optional
+from typing import TYPE_CHECKING, ContextManager, Optional, Iterable
 import contextlib
 import subprocess
 import sys
@@ -8,7 +8,7 @@ import arkimet
 import logging
 
 if TYPE_CHECKING:
-    from .recipes import Recipes
+    from .recipes import Recipes, Order
 
 log = logging.getLogger("arkimaps.pantry")
 
@@ -28,6 +28,12 @@ class Pantry:
         Read data from standard input and acquire it into the pantry
         """
         raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
+
+    def orders(self) -> Iterable[Order]:
+        """
+        Return all orders that can be made with this pantry
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.orders() not implemented")
 
     @contextlib.contextmanager
     def input(self, path: Optional[str] = None):
@@ -71,6 +77,15 @@ class ArkimetPantry(Pantry):
         with self.writer() as writer:
             dispatcher = ArkimetDispatcher(writer)
             dispatcher.read()
+
+    def orders(self) -> Iterable[Order]:
+        """
+        Return all orders that can be made with this pantry
+        """
+        with self.reader() as reader:
+            # List of products that should be rendered
+            for recipe in self.recipes.recipes:
+                yield from recipe.make_orders(reader, self.workdir)
 
     @contextlib.contextmanager
     def reader(self) -> ContextManager[arkimet.dataset.Reader]:
@@ -160,7 +175,6 @@ class GribPantry(Pantry):
 
             with self.input(path=None) as infd:
                 arkimet.Metadata.read_bundle(infd, dest=dispatch)
-
         finally:
             proc.stdin.close()
             proc.wait()

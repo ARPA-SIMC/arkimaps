@@ -109,11 +109,8 @@ class Arkimaps:
         Render all recipes for which inputs are available
         """
         with self.open_output() as tarout:
-            with self.pantry.reader() as reader:
-                # List of products that should be rendered
-                orders = []
-                for recipe in self.recipes.recipes:
-                    orders.extend(recipe.make_orders(reader, self.workdir))
+            # List of products that should be rendered
+            orders = list(self.pantry.orders())
 
             with self.magics_worker_pool() as pool:
                 for order in pool.imap_unordered(prepare_order, orders):
