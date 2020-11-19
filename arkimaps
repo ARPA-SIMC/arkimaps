@@ -96,7 +96,7 @@ class Arkimaps:
         """
         Acquire input data
         """
-        self.pantry.fill()
+        self.pantry.fill(self.recipes)
 
     def open_output(self):
         if self.args.output:

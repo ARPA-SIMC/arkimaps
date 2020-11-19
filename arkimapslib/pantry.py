@@ -1,10 +1,13 @@
 from __future__ import annotations
-from typing import ContextManager, Optional
+from typing import TYPE_CHECKING, ContextManager, Optional
 import contextlib
 import sys
 import os
 import arkimet
 import logging
+
+if TYPE_CHECKING:
+    from .recipes import Recipes
 
 log = logging.getLogger("arkimaps.pantry")
 
@@ -19,7 +22,7 @@ class Pantry:
         # Arkimet session (if using arkimet, else None)
         self.session: Optional[arkimet.dataset.Session] = None
 
-    def fill(self):
+    def fill(self, recipes: Recipes):
         """
         Read data from standard input and acquire it into the pantry
         """
@@ -48,7 +51,7 @@ class ArkimetPantry(Pantry):
             "eatmydata": "yes",
         })
 
-    def fill(self):
+    def fill(self, recipes: Recipes):
         """
         Read data from standard input and acquire it into the pantry
         """
@@ -128,10 +131,25 @@ class GribPantry(Pantry):
     """
     eccodes-based storage of GRIB files to be processed
     """
-    def fill(self):
+    def __init__(self, root: str):
+        super().__init__(root)
+        self.grib_filter_rules = os.path.join(self.root, "grib_filter_rules")
+
+    def fill(self, recipes: Recipes):
         """
         Read data from standard input and acquire it into the pantry
         """
-        with self.writer() as writer:
-            dispatcher = ArkimetDispatcher(writer)
-            dispatcher.read()
+        # Build grib_filter rules
+        with open(self.grib_filter_rules, "w") as f:
+            for recipe in recipes.recipes:
+                # Create one directory per recipe
+                recipe_dir = os.path.join(self.root, recipe.name)
+                os.makedirs(recipe_dir, exist_ok=True)
+                for name, expr in recipe.inputs_grib:
+                    print(f"if ( {expr} ) {{", file=f)
+                    print(f'  write "{recipe_dir}/{name}_[endStep].grib";', file=f)
+                    print(f"}}", file=f)
+
+        # TODO: run grib_filter on input
+        # 
+        ...
