@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, ContextManager, Optional, Iterable
+from typing import TYPE_CHECKING, ContextManager, Optional, Iterable, BinaryIO
 import contextlib
 import subprocess
 import sys
@@ -34,6 +34,12 @@ class Pantry:
         Return all orders that can be made with this pantry
         """
         raise NotImplementedError(f"{self.__class__.__name__}.orders() not implemented")
+
+    def store_processing_artifacts(self, tarout):
+        """
+        Store relevant processing artifacts in the output tarball
+        """
+        pass
 
     @contextlib.contextmanager
     def input(self, path: Optional[str] = None):
@@ -76,7 +82,8 @@ class ArkimetPantry(Pantry):
         """
         with self.writer() as writer:
             dispatcher = ArkimetDispatcher(writer)
-            dispatcher.read()
+            with self.input(path=None) as infd:
+                dispatcher.read(infd)
 
     def orders(self, recipes: Recipes) -> Iterable[Order]:
         """
@@ -130,16 +137,15 @@ class ArkimetDispatcher:
             self.flush_batch()
         return True
 
-    def read(self, path: Optional[str] = None):
+    def read(self, infd: BinaryIO):
         """
         Read data from an input file, or standard input.
 
         The input file is the output of arki-query --inline, which is the same
         as is given as input to arkimet processors.
         """
-        with self.input(path) as infd:
-            arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
-            self.flush_batch()
+        arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
+        self.flush_batch()
 
 
 class GribPantry(Pantry):
@@ -188,3 +194,9 @@ class GribPantry(Pantry):
         # List of products that should be rendered
         for recipe in recipes.recipes:
             yield from recipe.make_orders_from_grib(self.root)
+
+    def store_processing_artifacts(self, tarout):
+        """
+        Store relevant processing artifacts in the output tarball
+        """
+        tarout.add(name=self.grib_filter_rules, arcname="grib_filter_rules")

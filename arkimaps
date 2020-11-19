@@ -47,10 +47,12 @@ class Arkimaps:
     """
     def __init__(self, args):
         from arkimapslib.pantry import ArkimetPantry, GribPantry
-        if False:
+        if args.filter == "arkimet":
             Pantry = ArkimetPantry
-        else:
+        elif args.filter == "eccodes":
             Pantry = GribPantry
+        else:
+            raise Fail(f"Unsupported value `{args.filter}` for --filter")
         self.args = args
 
         # Collect log entries that we can then add to the output data
@@ -125,6 +127,9 @@ class Arkimaps:
                     info = tarfile.TarInfo(name="log.json")
                     info.size = len(buf.getvalue())
                     tarout.addfile(tarinfo=info, fileobj=buf)
+
+            # Let the Pantry store processing artifacts if it has any
+            self.pantry.store_processing_artifacts(tarout)
 
 
 def main():
