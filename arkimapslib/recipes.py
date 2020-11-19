@@ -56,6 +56,13 @@ class Recipe:
         if len(self.inputs) > 1:
             raise RuntimeError("Recipes with multiple inputs are not supported yet")
 
+        # Get the list of grib_filter input queries
+        self.inputs_grib: List[Tuple[str, str]] = []
+        for name, query in data.get("inputs_grib", {}).items():
+            self.inputs_grib.append((name, query))
+        if len(self.inputs_grib) > 1:
+            raise RuntimeError("Recipes with multiple inputs are not supported yet")
+
         # Get the recipe steps
         self.steps: List[Tuple[str, Dict[str, Any]]] = []
         for s in data.get("recipe", ()):
@@ -98,7 +105,9 @@ class Recipe:
             print("## Inputs", file=fd)
             print(file=fd)
             for name, matcher in self.inputs:
-                print(f"* **{name}**: `{matcher}`", file=fd)
+                print(f"* **{name}**: [arkimet] `{matcher}`", file=fd)
+            for name, expr in self.inputs_grib:
+                print(f"* **{name}**: [grib_filter] `{expr}`", file=fd)
             print(file=fd)
             print("## Steps", file=fd)
             print(file=fd)
