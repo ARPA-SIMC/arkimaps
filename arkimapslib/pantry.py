@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, ContextManager, Optional
 import contextlib
+import subprocess
 import sys
 import os
 import arkimet
@@ -27,6 +28,18 @@ class Pantry:
         Read data from standard input and acquire it into the pantry
         """
         raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
+
+    @contextlib.contextmanager
+    def input(self, path: Optional[str] = None):
+        """
+        Open the binary input stream, from a file, or standard input if path is
+        None
+        """
+        if path is None:
+            yield sys.stdin.buffer
+        else:
+            with open(path, "rb") as fd:
+                yield fd
 
 
 class ArkimetPantry(Pantry):
@@ -86,18 +99,6 @@ class ArkimetDispatcher:
         self.writer = writer
         self.batch = []
 
-    @contextlib.contextmanager
-    def input(self, path: Optional[str] = None):
-        """
-        Open the binary input stream, from a file, or standard input if path is
-        None
-        """
-        if path is None:
-            yield sys.stdin.buffer
-        else:
-            with open(path, "rb") as fd:
-                yield fd
-
     def flush_batch(self):
         if not self.batch:
             return
@@ -122,7 +123,6 @@ class ArkimetDispatcher:
         as is given as input to arkimet processors.
         """
         with self.input(path) as infd:
-            # TODO: batch multiple writes together?
             arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
             self.flush_batch()
 
@@ -147,9 +147,22 @@ class GribPantry(Pantry):
                 os.makedirs(recipe_dir, exist_ok=True)
                 for name, expr in recipe.inputs_grib:
                     print(f"if ( {expr} ) {{", file=f)
-                    print(f'  write "{recipe_dir}/{name}_[endStep].grib";', file=f)
+                    print(f'  write "{recipe_dir}/{name}+[endStep].grib";', file=f)
                     print(f"}}", file=f)
 
-        # TODO: run grib_filter on input
-        # 
-        ...
+        # Run grib_filter on input
+        try:
+            proc = subprocess.Popen(["grib_filter", self.grib_filter_rules, "-"], stdin=subprocess.PIPE)
+
+            def dispatch(md: arkimet.Metadata) -> bool:
+                proc.stdin.write(md.data)
+                return True
+
+            with self.input(path=None) as infd:
+                arkimet.Metadata.read_bundle(infd, dest=dispatch)
+
+        finally:
+            proc.stdin.close()
+            proc.wait()
+            if proc.returncode != 0:
+                raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
