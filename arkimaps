@@ -55,6 +55,7 @@ class Arkimaps:
         root_logger = logging.getLogger()
         root_logger.addHandler(self.log_collector)
 
+        # Set up working directory
         self.tempdir = None
         if self.args.workdir is None:
             self.tempdir = tempfile.TemporaryDirectory()
@@ -63,6 +64,10 @@ class Arkimaps:
         else:
             self.workdir = self.args.workdir
             self.pantry = Pantry(self.workdir)
+
+        # Load recipes
+        self.recipes = Recipes()
+        self.recipes.load(self.pantry.session, "recipes")
 
     @contextlib.contextmanager
     def magics_worker_pool(self) -> ContextManager[multiprocessing.pool.Pool]:
@@ -78,11 +83,10 @@ class Arkimaps:
             yield pool
 
     def do_document_recipes(self):
-        import arkimet
-        with arkimet.dataset.Session() as session:
-            recipes = Recipes()
-            recipes.load(session, "recipes")
-            recipes.document(self.args.recipes)
+        """
+        Generate recipes documentation
+        """
+        self.recipes.document(self.args.recipes)
 
     def do_dispatch(self):
         from arkimapslib.pantry import Dispatcher
@@ -102,11 +106,9 @@ class Arkimaps:
         """
         with self.open_output() as tarout:
             with self.pantry.reader() as reader:
-                recipes = Recipes()
-                recipes.load(self.pantry.session, "recipes")
                 # List of products that should be rendered
                 orders = []
-                for recipe in recipes.recipes:
+                for recipe in self.recipes.recipes:
                     orders.extend(recipe.make_orders(reader, self.workdir))
 
             with self.magics_worker_pool() as pool:
