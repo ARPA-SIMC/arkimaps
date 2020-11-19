@@ -46,7 +46,11 @@ class Arkimaps:
     Top-level command line implementation
     """
     def __init__(self, args):
-        from arkimapslib.pantry import Pantry
+        from arkimapslib.pantry import ArkimetPantry, GribPantry
+        if False:
+            Pantry = ArkimetPantry
+        else:
+            Pantry = GribPantry
         self.args = args
 
         # Collect log entries that we can then add to the output data
@@ -89,10 +93,10 @@ class Arkimaps:
         self.recipes.document(self.args.recipes)
 
     def do_dispatch(self):
-        from arkimapslib.pantry import Dispatcher
-        with self.pantry.writer() as writer:
-            dispatcher = Dispatcher(writer)
-            dispatcher.read()
+        """
+        Acquire input data
+        """
+        self.pantry.fill()
 
     def open_output(self):
         if self.args.output:
@@ -140,7 +144,7 @@ def main():
                         help="styles directory. Default: styles (if existing) or /usr/share/magics/styles/ecmwf")
     parser.add_argument("--workdir", metavar="dir", action="store",
                         help="working directory. Default: a temporary one")
-    parser.add_argument("--output", "-o", metavar="file.tar.gz", action="store",
+    parser.add_argument("--output", "-o", metavar="file.tar", action="store",
                         help="write rendered output to the given file. Default: write to stdout")
     parser.add_argument("--recipes", metavar="dir", action="store", default="recipes",
                         help="directory with the YAML recipes")

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Iterator
+from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Iterator, Optional
 import os
 import inspect
 import json
@@ -16,7 +16,7 @@ class Recipes:
     def __init__(self):
         self.recipes = []
 
-    def load(self, session: arkimet.dataset.Session, path: str):
+    def load(self, session: Optional[arkimet.dataset.Session], path: str):
         """
         Load recipes from the given directory
         """
@@ -40,7 +40,7 @@ class Recipe:
     """
     A parsed and validated recipe
     """
-    def __init__(self, name: str, session: arkimet.dataset.Session, data: Dict[str, Any]):
+    def __init__(self, name: str, session: Optional[arkimet.dataset.Session], data: Dict[str, Any]):
         self.name = name
 
         # Name of the chef to use
@@ -52,7 +52,7 @@ class Recipe:
         # Get the list of input queries
         self.inputs: List[Tuple[str, arkimet.Matcher]] = []
         for name, query in data.get("inputs", {}).items():
-            self.inputs.append((name, session.matcher(query)))
+            self.inputs.append((name, session.matcher(query) if session else query))
         if len(self.inputs) > 1:
             raise RuntimeError("Recipes with multiple inputs are not supported yet")
 

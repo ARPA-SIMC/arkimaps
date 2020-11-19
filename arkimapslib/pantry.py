@@ -14,7 +14,24 @@ class Pantry:
     Storage of GRIB files to be processed
     """
     def __init__(self, root: str):
+        # Root directory where inputs are stored
         self.root = root
+        # Arkimet session (if using arkimet, else None)
+        self.session: Optional[arkimet.dataset.Session] = None
+
+    def fill(self):
+        """
+        Read data from standard input and acquire it into the pantry
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
+
+
+class ArkimetPantry(Pantry):
+    """
+    Arkimet-based storage of GRIB files to be processed
+    """
+    def __init__(self, root: str):
+        super().__init__(root)
         self.session = arkimet.dataset.Session(force_dir_segments=True)
         self.ds_root = os.path.join(self.root, 'pantry')
 
@@ -30,6 +47,14 @@ class Pantry:
             # temporary directory.
             "eatmydata": "yes",
         })
+
+    def fill(self):
+        """
+        Read data from standard input and acquire it into the pantry
+        """
+        with self.writer() as writer:
+            dispatcher = ArkimetDispatcher(writer)
+            dispatcher.read()
 
     @contextlib.contextmanager
     def reader(self) -> ContextManager[arkimet.dataset.Reader]:
@@ -50,7 +75,7 @@ class Pantry:
             yield writer
 
 
-class Dispatcher:
+class ArkimetDispatcher:
     """
     Read a stream of arkimet metadata and store its data into a dataset
     """
@@ -97,3 +122,16 @@ class Dispatcher:
             # TODO: batch multiple writes together?
             arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
             self.flush_batch()
+
+
+class GribPantry(Pantry):
+    """
+    eccodes-based storage of GRIB files to be processed
+    """
+    def fill(self):
+        """
+        Read data from standard input and acquire it into the pantry
+        """
+        with self.writer() as writer:
+            dispatcher = ArkimetDispatcher(writer)
+            dispatcher.read()
