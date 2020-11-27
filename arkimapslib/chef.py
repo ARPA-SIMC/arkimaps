@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Type
+from typing import TYPE_CHECKING, Dict, Any, Type, Optional
 
 if TYPE_CHECKING:
     from .recipes import Order
@@ -85,14 +85,14 @@ class Chef:
         self.gribs[name] = grib
         self.parts.append(grib)
 
-    def add_contour(self):
+    def add_contour(self, params: Optional[Dict[str, Any]] = None):
         """
         Add contouring of the previous data
         """
+        if params is None:
+            params = {"contour_automatic_setting": "ecmwf"}
         self.parts.append(
-            self.macro.mcont(
-                contour_automatic_setting="ecmwf",
-            )
+            self.macro.mcont(**params)
         )
 
     def add_grid(self):
