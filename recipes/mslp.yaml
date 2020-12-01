@@ -1,9 +1,9 @@
 ---
 description: Temperatura a 2 metri
 inputs:
- mslp: product:GRIB1,98,128,151 or GRIB1,,2,2
-# inputs_grib:
-#  msl: shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 200 and timeRangeIndicator == 0
+ msl: product:GRIB1,98,128,151 or GRIB1,,2,2
+inputs_grib:
+ msl: shortName is "pmsl" or shortName is "msl"
 recipe:
  - step: add_basemap
    params: 
@@ -15,7 +15,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: mslp
+   name: msl
  - step: add_contour
  - step: add_coastlines_fg
  - step: add_grid
