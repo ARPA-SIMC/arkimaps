@@ -1,0 +1,33 @@
+---
+description: Maximum wind gust speed
+inputs:
+ mcont: product:GRIB1,98,228,28 or GRIB1,,201,187
+inputs_grib:
+ mcont: shortName is "mcont"
+recipe:
+ - step: add_basemap
+   params: 
+    subpage_map_projection: cylindrical
+    subpage_lower_left_longitude: -5.0
+    subpage_lower_left_latitude: 30.0
+    subpage_upper_right_longitude: 27.0
+    subpage_upper_right_latitude: 55.0
+    # For an example of more, see skinnywms/plot/magics.py
+ - step: add_coastlines_bg
+ - step: add_grib
+   name: mcont
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: ["green", "yellow", "orange", "red"]
+    contour_level_list: [13.9, 17.1, 20.6, 24.2, 70.0]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
