@@ -82,7 +82,7 @@ class Recipe:
                 sources = {name: pathname}
 
                 trange = md.to_python("timerange")
-                basename = f"{self.name}+{trange['p1']}"
+                basename = f"{self.name}+{trange['p1']:03d}"
                 dest = os.path.join(workdir, basename)
 
                 yield Order(
