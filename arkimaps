@@ -5,6 +5,7 @@ import argparse
 import logging
 import tarfile
 import tempfile
+import subprocess
 import contextlib
 import multiprocessing.pool
 import json
@@ -100,6 +101,22 @@ class Arkimaps:
         """
         self.pantry.fill(self.recipes)
 
+    def do_preview(self, name: str, step: int):
+        """
+        Generate the given product only, and preview it with xdg-open
+        """
+        # Make an order
+        order = self.pantry.order(self.recipes, name, step)
+
+        # Prepare it
+        order.prepare()
+        log.info("Rendered %s to %s", order.recipe, order.basename)
+
+        # Display it
+        subprocess.run(["xdg-open", order.output], check=True)
+        input("Press enter when done:")
+        os.unlink(order.output)
+
     def open_output(self):
         if self.args.output:
             return tarfile.open(self.args.output, mode="w|")
@@ -158,6 +175,8 @@ def main():
                         help="generate recipes documentation")
     parser.add_argument("--filter", metavar="{arkimet|eccodes}", default="arkimet",
                         help="backend to use to organise data into recipe inputs. Default: %(default)s")
+    parser.add_argument("--preview", metavar="name+nnn",
+                        help="generate the given product only, and display it with xdg-open")
     args = parser.parse_args()
 
     # Setup logging
@@ -186,6 +205,9 @@ def main():
         arkimaps.do_dispatch()
     elif args.document_recipes:
         arkimaps.do_document_recipes()
+    elif args.preview:
+        name, step = args.preview.split("+")
+        arkimaps.do_preview(name, int(step, 10))
     else:
         arkimaps.do_dispatch()
         arkimaps.do_render()

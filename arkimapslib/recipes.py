@@ -17,6 +17,15 @@ class Recipes:
     def __init__(self):
         self.recipes = []
 
+    def get(self, name: str):
+        """
+        Return a recipe by name
+        """
+        for r in self.recipes:
+            if r.name == name:
+                return r
+        raise KeyError(f"Recipe `{name}` does not exist")
+
     def load(self, session: Optional[arkimet.dataset.Session], path: str):
         """
         Load recipes from the given directory
@@ -74,7 +83,11 @@ class Recipe:
                 raise RuntimeError("recipe step does not contain a 'step' name")
             self.steps.append((step, s))
 
-    def make_orders_from_arkimet(self, reader: arkimet.dataset.Reader, workdir: str) -> Iterator["Order"]:
+    def make_orders_from_arkimet(
+            self,
+            reader: arkimet.dataset.Reader,
+            workdir: str,
+            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
         for name, query in self.inputs:
             for md in reader.query_data(query):
                 source = md.to_python("source")
@@ -82,7 +95,10 @@ class Recipe:
                 sources = {name: pathname}
 
                 trange = md.to_python("timerange")
-                basename = f"{self.name}+{trange['p1']:03d}"
+                output_step = trange['p1']
+                if output_steps is not None and output_step not in output_steps:
+                    continue
+                basename = f"{self.name}+{output_step:03d}"
                 dest = os.path.join(workdir, basename)
 
                 yield Order(
@@ -94,7 +110,10 @@ class Recipe:
                     steps=self.steps,
                 )
 
-    def make_orders_from_grib(self, workdir: str) -> Iterator["Order"]:
+    def make_orders_from_grib(
+            self,
+            workdir: str,
+            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
         input_dir = os.path.join(workdir, self.name)
 
         # Read all available input files in a dict indexed by inputs_grib name
@@ -104,7 +123,10 @@ class Recipe:
             if not fname.endswith(".grib"):
                 continue
             name, step = fname[:-5].rsplit("+")
-            files[name][int(step)] = fname
+            step = int(step)
+            if output_steps is not None and step not in output_steps:
+                continue
+            files[name][step] = fname
 
         # Build orders for each step of each input grib found
         for name, query in self.inputs_grib:

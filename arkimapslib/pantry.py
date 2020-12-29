@@ -29,6 +29,12 @@ class Pantry:
         """
         raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
 
+    def order(self, name: str, step: int) -> Order:
+        """
+        Return an order for the given recipe name and output step
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.order() not implemented")
+
     def orders(self, recipes: Recipes) -> Iterable[Order]:
         """
         Return all orders that can be made with this pantry
@@ -84,6 +90,21 @@ class ArkimetPantry(Pantry):
             dispatcher = ArkimetDispatcher(writer)
             with self.input(path=None) as infd:
                 dispatcher.read(infd)
+
+    def order(self, recipes: Recipes, name: str, step: int) -> Order:
+        """
+        Return an order for the given recipe name and output step
+        """
+        recipe = recipes.get(name)
+        order = None
+        with self.reader() as reader:
+            for o in recipe.make_orders_from_arkimet(reader, self.root, output_steps=[step]):
+                if order is not None:
+                    raise RuntimeError(f"Multiple options found to generate {name}+{step:03d}")
+                order = o
+        if order is None:
+            raise KeyError(f"No option found to generate {name}+{step:03d}")
+        return order
 
     def orders(self, recipes: Recipes) -> Iterable[Order]:
         """
@@ -186,6 +207,20 @@ class GribPantry(Pantry):
             proc.wait()
             if proc.returncode != 0:
                 raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
+
+    def order(self, recipes: Recipes, name: str, step: int) -> Order:
+        """
+        Return an order for the given recipe name and output step
+        """
+        recipe = recipes.get(name)
+        order = None
+        for o in recipe.make_orders_from_grib(self.root, output_steps=[step]):
+            if order is not None:
+                raise RuntimeError(f"Multiple options found to generate {name}+{step:03d}")
+            order = o
+        if order is None:
+            raise KeyError(f"No option found to generate {name}+{step:03d}")
+        return order
 
     def orders(self, recipes: Recipes) -> Iterable[Order]:
         """

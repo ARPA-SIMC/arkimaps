@@ -79,3 +79,19 @@ if args.style != "":
     os.environ["MAGICS_STYLE_PATH"] = args.style + ":ecmwf"
 ```
 
+## Creazione di nuove ricette
+
+In `arkimapslib/chef.py` sono definiti e commentati i vari `step` possibili. I
+parametri passati agli `step` diventano parametri alle funzioni metodo della
+classe `Chef`.
+
+Per velocizzare le prove, ci sono alcune opzioni di `arkimaps`:
+
+ * `arkimaps --verbose --dispatch --workdir workdir` per smistare l'input in
+   una directory di lavoro
+ * `arkimaps --verbose --workdir workdir preview t2m+000` per fare la preview
+   di un output solo data una directory di lavoro già smistata
+
+La preview viene fatta con `xdg-open`, che usa l'applicazione preferita
+configurata nel sistema. Solitamente si può usare il file manager per cambiarla
+se quella di default non è l'ideale.
