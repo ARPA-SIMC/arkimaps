@@ -16,6 +16,9 @@ recipe:
  - step: add_coastlines_bg
  - step: add_grib
    name: msl
+   params:
+    grib_automatic_scaling: off
+    grib_scaling_factor: 0.01
  - step: add_contour
  - step: add_coastlines_fg
  - step: add_grid

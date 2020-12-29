@@ -76,12 +76,14 @@ class Chef:
             map_coastline_resolution="medium",
         ))
 
-    def add_grib(self, name: str):
+    def add_grib(self, name: str, params: Optional[Dict[str, Any]] = None):
         """
         Add a grib file
         """
+        if params is None:
+            params = {}
         fname = self.order.sources[name]
-        grib = self.macro.mgrib(grib_input_file_name=fname)
+        grib = self.macro.mgrib(grib_input_file_name=fname, **params)
         self.gribs[name] = grib
         self.parts.append(grib)
 
