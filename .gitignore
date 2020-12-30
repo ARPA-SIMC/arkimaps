@@ -130,3 +130,6 @@ dmypy.json
 
 # Experiments directory
 /workdir
+
+# Recipes documentation
+/recipes/*.md
