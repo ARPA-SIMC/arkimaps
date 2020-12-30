@@ -11,9 +11,9 @@ Idealmente agganciabile ad arkimet e più performante della produzione attuale a
 python3 >= 3.7
 python3-magics
 
-## Guida rapidissima
+## Note sulle prove
 
-### Estrazione dati di prova
+# Estrazione dati di prova
 
 corsa intera (circa 3.7GiB)
 ```
@@ -31,24 +31,8 @@ t2m (circa 24Mib):
 arki-query --inline 'Reftime:=2020-09-03 00:00;product:GRIB1,80,2,11;level:g02' http://arkimet.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
 ```
 
-### Generazione mappe
 
-```
-./arkimaps -o out.tar --filter=eccodes < test.arkimet
-```
-
-per spacchettare automaticamente il file tar:
-```
-./arkimaps --filter=eccodes < test.arkimet |tar -xf - -C out/
-```
-
-per altre opzioni vedi:
-```
-./arkimaps -h
-```
-
-## Riferimenti esterni e cenni storici
-
+## Riferimenti
 Primi tentativi fatti con cineca: https://github.com/ARPA-SIMC/magics-maps
 
 Stili di contouring predefiniti integrati in Magics:https://confluence.ecmwf.int/display/MAGP/Predefined+palettes+in+Magics 
@@ -56,13 +40,14 @@ Stili di contouring predefiniti integrati in Magics:https://confluence.ecmwf.int
 Tracce di documentazione su contouring custom: https://github.com/ecmwf/skinnywms/issues/37
 
 
-### File di dati disponibili e potenzialmente utili
+
+## File di dati disponibili e potenzialmente utili
 
 * https://github.com/ARPA-SIMC/libsim/blob/master/data/vargrib2bufr.csv (instalato in /usr/share/libsim)
 * `/usr/share/eccodes/definitions/grib1/cfVarName.def`
 
 
-### Uso dei JSON in /usr/share/magics
+## Uso dei JSON in /usr/share/magics
 
 * `/usr/share/magics/styles/palettes.json`: corrisponde a
   `contour_shade_palette_name` in <https://confluence.ecmwf.int/display/MAGP/Contouring>
@@ -95,3 +80,12 @@ Per velocizzare le prove, ci sono alcune opzioni di `arkimaps`:
 La preview viene fatta con `xdg-open`, che usa l'applicazione preferita
 configurata nel sistema. Solitamente si può usare il file manager per cambiarla
 se quella di default non è l'ideale.
+
+
+## Struttura del codice
+
+* `Kitchen` contiene il contesto generale del run
+* `Pantry` è l'interfaccia per l'accesso ai GRIB in input
+* `Recipe` è la ricetta caricata da YAML
+* `Chef` è l'implementazione dei vari passi possibili per le ricette
+* `Order` è un prodotto in output

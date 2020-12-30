@@ -13,7 +13,7 @@ import io
 import os
 import sys
 import time
-from arkimapslib.recipes import Recipes, Order
+from arkimapslib.recipes import Order
 
 log = logging.getLogger("arkimaps")
 
@@ -47,14 +47,27 @@ class Arkimaps:
     Top-level command line implementation
     """
     def __init__(self, args):
-        from arkimapslib.pantry import ArkimetPantry, GribPantry
+        from arkimapslib.kitchen import Kitchen
+
+        self.args = args
+        self.kitchen: Kitchen
+
+        # Set up working directory
+        self.tempdir = None
+        if self.args.workdir is None:
+            self.tempdir = tempfile.TemporaryDirectory()
+            self.workdir = self.tempdir.name
+        else:
+            self.workdir = self.args.workdir
+
         if args.filter == "arkimet":
-            Pantry = ArkimetPantry
+            from arkimapslib.kitchen import ArkimetKitchen
+            self.kitchen = ArkimetKitchen(self.workdir)
         elif args.filter == "eccodes":
-            Pantry = GribPantry
+            from arkimapslib.kitchen import EccodesKitchen
+            self.kitchen = EccodesKitchen(self.workdir)
         else:
             raise Fail(f"Unsupported value `{args.filter}` for --filter")
-        self.args = args
 
         # Collect log entries that we can then add to the output data
         self.log_collector = LogCollector()
@@ -62,19 +75,8 @@ class Arkimaps:
         root_logger = logging.getLogger()
         root_logger.addHandler(self.log_collector)
 
-        # Set up working directory
-        self.tempdir = None
-        if self.args.workdir is None:
-            self.tempdir = tempfile.TemporaryDirectory()
-            self.workdir = self.tempdir.name
-            self.pantry = Pantry(self.workdir)
-        else:
-            self.workdir = self.args.workdir
-            self.pantry = Pantry(self.workdir)
-
         # Load recipes
-        self.recipes = Recipes()
-        self.recipes.load(self.pantry.session, "recipes")
+        self.kitchen.load_recipes("recipes")
 
     @contextlib.contextmanager
     def magics_worker_pool(self) -> ContextManager[multiprocessing.pool.Pool]:
@@ -93,20 +95,20 @@ class Arkimaps:
         """
         Generate recipes documentation
         """
-        self.recipes.document(self.args.recipes)
+        self.kitchen.recipes.document(self.args.recipes)
 
     def do_dispatch(self):
         """
         Acquire input data
         """
-        self.pantry.fill(self.recipes)
+        self.kitchen.pantry.fill(self.kitchen.recipes)
 
     def do_preview(self, name: str, step: int):
         """
         Generate the given product only, and preview it with xdg-open
         """
         # Make an order
-        order = self.pantry.order(self.recipes, name, step)
+        order = self.kitchen.pantry.order(self.kitchen.recipes, name, step)
 
         # Prepare it
         order.prepare()
@@ -114,7 +116,7 @@ class Arkimaps:
 
         # Display it
         subprocess.run(["xdg-open", order.output], check=True)
-        input("Press enter when done:")
+        input("Press enter when done> ")
         os.unlink(order.output)
 
     def open_output(self):
@@ -129,7 +131,7 @@ class Arkimaps:
         """
         with self.open_output() as tarout:
             # List of products that should be rendered
-            orders = list(self.pantry.orders(self.recipes))
+            orders = list(self.kitchen.pantry.orders(self.kitchen.recipes))
 
             with self.magics_worker_pool() as pool:
                 for order in pool.imap_unordered(prepare_order, orders):
@@ -146,7 +148,7 @@ class Arkimaps:
                     tarout.addfile(tarinfo=info, fileobj=buf)
 
             # Let the Pantry store processing artifacts if it has any
-            self.pantry.store_processing_artifacts(tarout)
+            self.kitchen.pantry.store_processing_artifacts(tarout)
 
 
 def main():

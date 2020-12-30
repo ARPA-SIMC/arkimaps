@@ -9,6 +9,7 @@ import logging
 
 if TYPE_CHECKING:
     from .recipes import Recipes, Order
+    from .kitchen import Kitchen
 
 log = logging.getLogger("arkimaps.pantry")
 
@@ -17,11 +18,11 @@ class Pantry:
     """
     Storage of GRIB files to be processed
     """
-    def __init__(self, root: str):
+    def __init__(self, kitchen: Kitchen, root: str):
+        # General run state
+        self.kitchen = kitchen
         # Root directory where inputs are stored
         self.root = root
-        # Arkimet session (if using arkimet, else None)
-        self.session: Optional[arkimet.dataset.Session] = None
 
     def fill(self, recipes: Recipes):
         """
@@ -64,10 +65,9 @@ class ArkimetPantry(Pantry):
     """
     Arkimet-based storage of GRIB files to be processed
     """
-    def __init__(self, root: str):
-        super().__init__(root)
-        self.session = arkimet.dataset.Session(force_dir_segments=True)
-        self.ds_root = os.path.join(self.root, 'pantry')
+    def __init__(self, kitchen: Kitchen, root: str):
+        super().__init__(kitchen, root)
+        self.ds_root = os.path.join(self.root, 'arkimet_pantry')
 
         self.config = arkimet.cfg.Section({
             "format": "grib",
@@ -98,7 +98,7 @@ class ArkimetPantry(Pantry):
         recipe = recipes.get(name)
         order = None
         with self.reader() as reader:
-            for o in recipe.make_orders_from_arkimet(reader, self.root, output_steps=[step]):
+            for o in recipe.make_orders(reader, self.root, output_steps=[step]):
                 if order is not None:
                     raise RuntimeError(f"Multiple options found to generate {name}+{step:03d}")
                 order = o
@@ -113,7 +113,7 @@ class ArkimetPantry(Pantry):
         with self.reader() as reader:
             # List of products that should be rendered
             for recipe in recipes.recipes:
-                yield from recipe.make_orders_from_arkimet(reader, self.root)
+                yield from recipe.make_orders(reader, self.root)
 
     @contextlib.contextmanager
     def reader(self) -> ContextManager[arkimet.dataset.Reader]:
@@ -121,7 +121,7 @@ class ArkimetPantry(Pantry):
         Create and return a dataset reader to query the data stored in the
         pantry
         """
-        with self.session.dataset_reader(cfg=self.config) as reader:
+        with self.kitchen.session.dataset_reader(cfg=self.config) as reader:
             yield reader
 
     @contextlib.contextmanager
@@ -130,7 +130,7 @@ class ArkimetPantry(Pantry):
         Create and return a dataset writer to store new data in the pantry
         """
         os.makedirs(self.ds_root, exist_ok=True)
-        with self.session.dataset_writer(cfg=self.config) as writer:
+        with self.kitchen.session.dataset_writer(cfg=self.config) as writer:
             yield writer
 
 
@@ -169,28 +169,34 @@ class ArkimetDispatcher:
         self.flush_batch()
 
 
-class GribPantry(Pantry):
+class EccodesPantry(Pantry):
     """
     eccodes-based storage of GRIB files to be processed
     """
-    def __init__(self, root: str):
-        super().__init__(root)
-        self.grib_filter_rules = os.path.join(self.root, "grib_filter_rules")
+    def __init__(self, kitchen: Kitchen, root: str):
+        super().__init__(kitchen, root)
+        self.data_root = os.path.join(self.root, 'eccodes_pantry')
+        self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
     def fill(self, recipes: Recipes):
         """
         Read data from standard input and acquire it into the pantry
         """
+        os.makedirs(self.data_root, exist_ok=True)
         # Build grib_filter rules
         with open(self.grib_filter_rules, "w") as f:
             for recipe in recipes.recipes:
                 # Create one directory per recipe
-                recipe_dir = os.path.join(self.root, recipe.name)
+                recipe_dir = os.path.join(self.data_root, recipe.name)
                 os.makedirs(recipe_dir, exist_ok=True)
-                for name, expr in recipe.inputs_grib:
-                    print(f"if ( {expr} ) {{", file=f)
-                    print(f'  write "{recipe_dir}/{name}+[endStep].grib";', file=f)
-                    print(f"}}", file=f)
+                for name, inputs in recipe.inputs.items():
+                    for idx, i in enumerate(inputs, start=1):
+                        if not i.eccodes:
+                            log.info("%s:%s:%d: skipping input with no eccodes filter", recipe.name, name, idx)
+                            continue
+                        print(f"if ( {i.eccodes} ) {{", file=f)
+                        print(f'  write "{recipe_dir}/{name}+[endStep].grib";', file=f)
+                        print(f"}}", file=f)
 
         # Run grib_filter on input
         try:
@@ -214,7 +220,7 @@ class GribPantry(Pantry):
         """
         recipe = recipes.get(name)
         order = None
-        for o in recipe.make_orders_from_grib(self.root, output_steps=[step]):
+        for o in recipe.make_orders(self.data_root, output_steps=[step]):
             if order is not None:
                 raise RuntimeError(f"Multiple options found to generate {name}+{step:03d}")
             order = o
@@ -228,7 +234,7 @@ class GribPantry(Pantry):
         """
         # List of products that should be rendered
         for recipe in recipes.recipes:
-            yield from recipe.make_orders_from_grib(self.root)
+            yield from recipe.make_orders(self.data_root)
 
     def store_processing_artifacts(self, tarout):
         """

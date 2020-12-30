@@ -4,6 +4,9 @@ from typing import TYPE_CHECKING, Dict, Any, Type, Optional
 if TYPE_CHECKING:
     from .recipes import Order
 
+    # Used for kwargs-style dicts
+    Kwargs = Dict[str, Any]
+
 
 class Chefs:
     registry: Dict[str, Type["Chef"]] = {}
@@ -44,13 +47,13 @@ class Chef:
             output_name_first_page_number="off",
         )
         # Loaded GRIB data
-        self.gribs: Dict[str, Any] = {}
+        self.gribs: Kwargs = {}
         # Order with the steps to execute
         self.order = order
         # Elements passed after output to macro.plot
         self.parts = []
 
-    def add_basemap(self, params: Dict[str, Any]):
+    def add_basemap(self, params: Kwargs):
         """
         Add a base map
         """
@@ -76,18 +79,24 @@ class Chef:
             map_coastline_resolution="medium",
         ))
 
-    def add_grib(self, name: str, params: Optional[Dict[str, Any]] = None):
+    def add_grib(self, name: str, params: Optional[Kwargs] = None):
         """
         Add a grib file
         """
-        if params is None:
-            params = {}
-        fname = self.order.sources[name]
-        grib = self.macro.mgrib(grib_input_file_name=fname, **params)
+        source_info = self.order.sources[name]
+        source_input = source_info["input"]
+
+        kwargs = {}
+        if source_input.mgrib:
+            kwargs.update(source_input.mgrib)
+        if params is not None:
+            kwargs.update(params)
+
+        grib = self.macro.mgrib(grib_input_file_name=source_info["source"], **kwargs)
         self.gribs[name] = grib
         self.parts.append(grib)
 
-    def add_contour(self, params: Optional[Dict[str, Any]] = None):
+    def add_contour(self, params: Optional[Kwargs] = None):
         """
         Add contouring of the previous data
         """

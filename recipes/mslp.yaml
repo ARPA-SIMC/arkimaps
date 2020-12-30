@@ -1,9 +1,9 @@
 ---
 description: Temperatura a 2 metri
 inputs:
- msl: product:GRIB1,98,128,151 or GRIB1,,2,2
-inputs_grib:
- msl: shortName is "pmsl" or shortName is "msl"
+ msl:
+  - arkimet: product:GRIB1,98,128,151 or GRIB1,,2,2
+    eccodes: shortName is "pmsl" or shortName is "msl"
 recipe:
  - step: add_basemap
    params: 
