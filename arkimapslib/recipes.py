@@ -77,8 +77,9 @@ class Input:
         ind = " " * indent
         print(f"{ind}* **Arkimet matcher**: `{self.arkimet}`", file=file)
         print(f"{ind}* **grib_filter matcher**: `{self.eccodes}`", file=file)
-        for k, v in self.mgrib.items():
-            print(f"{ind}* **mgrib {{k}}**: `{v}`", file=file)
+        if self.mgrib:
+            for k, v in self.mgrib.items():
+                print(f"{ind}* **mgrib {{k}}**: `{v}`", file=file)
 
 
 class Recipe:
@@ -121,7 +122,7 @@ class Recipe:
             print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)
-            for name, inputs in self.inputs:
+            for name, inputs in self.inputs.items():
                 print(f"* **{name}**:", file=fd)
                 if len(inputs) == 1:
                     inputs[0].document(indent=4, file=fd)
