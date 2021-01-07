@@ -11,19 +11,18 @@ Idealmente agganciabile ad arkimet e più performante della produzione attuale a
 python3 >= 3.7
 python3-magics
 
-## Note sulle prove
+## Uso rapido
 
-# Estrazione dati di prova
+### Estrazione dati di prova
 
 corsa intera (circa 3.7GiB)
 ```
-arki-query --inline 'reftime:=2020-09-03 00:00' http://arkimet.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
+arki-query --inline 'reftime:=today 00:00' http://arkimet.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
 ```
 
-query ridotta (circa 350MiB):
-
+query ridotta (circa 840MiB):
 ```
-arki-query --inline 'Reftime:=2020-09-03 00:00;product:GRIB1,80,2,2 or GRIB1,80,2,11 or GRIB1,80,2,17 or GRIB1,80,2,15 or GRIB1,80,2,16 or GRIB1,80,2,61 or GRIB1,80,2,65 or GRIB1,80,2,78 or GRIB1,80,2,79 or GRIB1,80,2,33 or GRIB1,80,2,34 or GRIB1,80,201,187 or GRIB1,80,201,84 or GRIB1,80,2,73 or GRIB1,80,2,71;level:g00 or g02 or g10 or msl or 0isot' http://arkimet.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
+arki-query --inline 'Reftime:=today 00:00;product:GRIB1,,2,75 or GRIB1,,2,73 or GRIB1,,2,74 or GRIB1,,2,2 or GRIB1,,1,11 or GRIB1,,2,11 or GRIB1,,3,11 or GRIB2,,,11,,3 or GRIB1,,2,71 or GRIB1,,201,187 or GRIB1,,2,6' http://arkiope.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
 ```
 
 t2m (circa 24Mib):
@@ -31,15 +30,22 @@ t2m (circa 24Mib):
 arki-query --inline 'Reftime:=2020-09-03 00:00;product:GRIB1,80,2,11;level:g02' http://arkimet.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
 ```
 
+### Generazione mappe
+
+```
+./arkimaps --filter eccodes -o out/out.tar
+```
+
+(vedi `./arkimaps -h` per tutte le opzioni)
+
 
 ## Riferimenti
+
 Primi tentativi fatti con cineca: https://github.com/ARPA-SIMC/magics-maps
 
 Stili di contouring predefiniti integrati in Magics:https://confluence.ecmwf.int/display/MAGP/Predefined+palettes+in+Magics 
 
 Tracce di documentazione su contouring custom: https://github.com/ecmwf/skinnywms/issues/37
-
-
 
 ## File di dati disponibili e potenzialmente utili
 
@@ -72,9 +78,9 @@ classe `Chef`.
 
 Per velocizzare le prove, ci sono alcune opzioni di `arkimaps`:
 
- * `arkimaps --verbose --dispatch --workdir workdir` per smistare l'input in
+ * `./arkimaps --verbose --dispatch --workdir workdir` per smistare l'input in
    una directory di lavoro
- * `arkimaps --verbose --workdir workdir preview t2m+000` per fare la preview
+ * `./arkimaps --verbose --workdir workdir --preview t2m+000` per fare la preview
    di un output solo data una directory di lavoro già smistata
 
 La preview viene fatta con `xdg-open`, che usa l'applicazione preferita
