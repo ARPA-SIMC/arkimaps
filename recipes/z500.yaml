@@ -1,5 +1,5 @@
 ---
-description: Geopotenziale
+description: Geopotential 500hPa
 inputs:
  z:
   # COSMO
