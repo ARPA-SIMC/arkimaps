@@ -73,9 +73,9 @@ class Chef:
         self.parts.append(self.macro.mcoast(
             map_coastline_sea_shade_colour="#f2f2f2",
             map_grid="off",
-            map_coastline_sea_shade="on",
+            map_coastline_sea_shade="off",
             map_label="off",
-            map_coastline_colour="#f2f2f2",
+            map_coastline_colour="#000000",
             map_coastline_resolution="medium",
         ))
 
