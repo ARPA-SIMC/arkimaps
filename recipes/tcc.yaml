@@ -1,10 +1,10 @@
 ---
-description: Temperatura a 2 metri
+description: Total cloud cover
 inputs:
  tcc:
   # COSMO
   - arkimet: product:GRIB1,,2,71
-    eccodes: shortName is "tcc"
+    eccodes: shortName is "clct"
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08

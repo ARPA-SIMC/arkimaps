@@ -4,7 +4,7 @@ inputs:
  mcc:
   # COSMO
   - arkimet: product:GRIB1,,2,74
-    eccodes: shortName is "mcc"
+    eccodes: shortName is "clcm"
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
