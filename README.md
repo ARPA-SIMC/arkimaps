@@ -33,12 +33,12 @@ arki-query --inline 'Reftime:=2020-09-03 00:00;product:GRIB1,80,2,11;level:g02' 
 ### Generazione mappe
 
 ```
-./arkimaps -o out.tar --filter=eccodes < test.arkimet
+./arkimaps process -o out.tar --filter=eccodes < test.arkimet
 ```
 
 per spacchettare automaticamente il file tar:
 ```
-./arkimaps --filter=eccodes < test.arkimet |tar -xf - -C out/
+./arkimaps process --filter=eccodes < test.arkimet |tar -xf - -C out/
 ```
 
 per altre opzioni vedi:
@@ -85,9 +85,9 @@ classe `Chef`.
 
 Per velocizzare le prove, ci sono alcune opzioni di `arkimaps`:
 
- * `./arkimaps --verbose --dispatch --workdir workdir` per smistare l'input in
+ * `./arkimaps --debug dispatch workdir` per smistare l'input in
    una directory di lavoro
- * `./arkimaps --verbose --workdir workdir --preview t2m+000` per fare la preview
+ * `./arkimaps --debug preview workdir --preview t2m+000` per fare la preview
    di un output solo data una directory di lavoro già smistata
 
 La preview viene fatta con `xdg-open`, che usa l'applicazione preferita

@@ -14,12 +14,9 @@ import os
 import sys
 import time
 from arkimapslib.recipes import Order
+from arkimapslib.cmdline import Command, Fail, Success
 
 log = logging.getLogger("arkimaps")
-
-
-class Fail(Exception):
-    pass
 
 
 class LogCollector(logging.Handler):
@@ -37,52 +34,76 @@ class LogCollector(logging.Handler):
         self.entries.append(entry)
 
 
+#
+# Mixins used to compose the various command line actions
+#
+
+class RecipesMixin:
+    """
+    Command line options and code to load recipes into a kitchen
+    """
+
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("--recipes", metavar="dir", action="store", default="recipes",
+                            help="directory with the YAML recipes")
+        return parser
+
+    def load_recipes(self):
+        """
+        Load recipes into the already created kitchen
+        """
+        self.kitchen.load_recipes(self.args.recipes)
+
+
 def prepare_order(order: Order) -> Order:
     order.prepare()
     return order
 
 
-class Arkimaps:
+class RenderMixin:
     """
-    Top-level command line implementation
+    Command line options to control rendering of recipes
     """
-    def __init__(self, args):
-        from arkimapslib.kitchen import Kitchen
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
 
-        self.args = args
-        self.kitchen: Kitchen
+        default_styles = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "styles"))
+        if not os.path.isdir(default_styles):
+            default_styles = "/usr/share/magics/styles/ecmwf"
 
-        # Set up working directory
-        self.tempdir = None
-        if self.args.workdir is None:
-            self.tempdir = tempfile.TemporaryDirectory()
-            self.workdir = self.tempdir.name
-        else:
-            self.workdir = self.args.workdir
+        parser.add_argument("--styles", metavar="dir", action="store", default=default_styles,
+                            help="styles directory. Default: styles (if existing) or /usr/share/magics/styles/ecmwf")
+        parser.add_argument("--output", "-o", metavar="file.tar", action="store",
+                            help="write rendered output to the given file. Default: write to stdout")
 
-        if args.filter == "arkimet":
-            from arkimapslib.kitchen import ArkimetKitchen
-            self.kitchen = ArkimetKitchen(self.workdir)
-        elif args.filter == "eccodes":
-            from arkimapslib.kitchen import EccodesKitchen
-            self.kitchen = EccodesKitchen(self.workdir)
-        else:
-            raise Fail(f"Unsupported value `{args.filter}` for --filter")
+        return parser
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
 
         # Collect log entries that we can then add to the output data
+        # TODO: save intermediate log in workdir
         self.log_collector = LogCollector()
         self.log_collector.setLevel(logging.DEBUG)
         root_logger = logging.getLogger()
         root_logger.addHandler(self.log_collector)
 
-        # Load recipes
-        self.kitchen.load_recipes("recipes")
+    def get_styles_directory(self):
+        """
+        Return the directory where Magics styles are stored
+        """
+        return self.args.styles
 
     @contextlib.contextmanager
     def magics_worker_pool(self) -> ContextManager[multiprocessing.pool.Pool]:
+        styles_dir = self.get_styles_directory()
+
         def initializer():
             # Tell magics where it should take its default styles from
-            os.environ["MAGICS_STYLE_PATH"] = self.args.styles
+            os.environ["MAGICS_STYLE_PATH"] = styles_dir
             # Tell magics not to print noisy banners
             os.environ["MAGPLUS_QUIET"] = "1"
 
@@ -91,57 +112,15 @@ class Arkimaps:
         with multiprocessing.pool.Pool(initializer=initializer, maxtasksperchild=16) as pool:
             yield pool
 
-    def do_document_recipes(self):
-        """
-        Generate recipes documentation
-        """
-        self.kitchen.recipes.document(self.args.recipes)
-
-    def do_dispatch(self):
-        """
-        Acquire input data
-        """
-        self.kitchen.pantry.fill(self.kitchen.recipes)
-
-    def do_preview(self, name: str, step: int):
-        """
-        Generate the given product only, and preview it with xdg-open
-        """
-        # Make an order
-        order = self.kitchen.pantry.order(self.kitchen.recipes, name, step)
-
-        # Prepare it
-        order.prepare()
-        log.info("Rendered %s to %s", order.recipe, order.basename)
-
-        # Display it
-        subprocess.run(["xdg-open", order.output], check=True)
-        input("Press enter when done> ")
-        os.unlink(order.output)
-
-    def do_print_arki_query(self):
-        merged = None
-        for r in self.kitchen.recipes.recipes:
-            for name, inputs in r.inputs.items():
-                for inp in inputs:
-                    matcher = inp.arkimet_matcher
-                    if matcher is None:
-                        continue
-                    if merged is None:
-                        merged = matcher
-                    else:
-                        merged = merged.merge(matcher)
-        print(merged)
-
     def open_output(self):
         if self.args.output:
             return tarfile.open(self.args.output, mode="w|")
         else:
             return tarfile.open(mode="w|", fileobj=sys.stdout.buffer)
 
-    def do_render(self):
+    def render_tarball(self):
         """
-        Render all recipes for which inputs are available
+        Render all recipes for which inputs are available, into a tarball
         """
         with self.open_output() as tarout:
             # List of products that should be rendered
@@ -165,72 +144,250 @@ class Arkimaps:
             self.kitchen.pantry.store_processing_artifacts(tarout)
 
 
-def main():
-    default_styles = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "styles"))
-    if not os.path.isdir(default_styles):
-        default_styles = "/usr/share/magics/styles/ecmwf"
+class WorkingKitchenMixin:
+    """
+    Mixin for commands that need a kitchen that can be used to generate
+    products
+    """
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("--filter", metavar="{arkimet|eccodes}", default="arkimet",
+                            help="backend to use to organise data into recipe inputs. Default: %(default)s")
+        return parser
 
-    parser = argparse.ArgumentParser(description="Render model maps")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                        help="verbose output")
-    parser.add_argument("--debug", action="store_true",
-                        help="debug output")
-    parser.add_argument("--styles", metavar="dir", action="store", default=default_styles,
-                        help="styles directory. Default: styles (if existing) or /usr/share/magics/styles/ecmwf")
-    parser.add_argument("--workdir", metavar="dir", action="store",
-                        help="working directory. Default: a temporary one")
-    parser.add_argument("--output", "-o", metavar="file.tar", action="store",
-                        help="write rendered output to the given file. Default: write to stdout")
-    parser.add_argument("--recipes", metavar="dir", action="store", default="recipes",
-                        help="directory with the YAML recipes")
-    parser.add_argument("--render", action="store_true",
-                        help="do not read data: render from an existing working directory")
-    parser.add_argument("--dispatch", action="store_true",
-                        help="do not render: dispatch into a working directory")
-    parser.add_argument("--document-recipes", action="store_true",
-                        help="generate recipes documentation")
-    parser.add_argument("--filter", metavar="{arkimet|eccodes}", default="arkimet",
-                        help="backend to use to organise data into recipe inputs. Default: %(default)s")
-    parser.add_argument("--preview", metavar="name+nnn",
-                        help="generate the given product only, and display it with xdg-open")
-    parser.add_argument("--print-arki-query", action="store_true",
-                        help="print an arkimet query to query data that can be used by the recipes found")
+    def make_kitchen(self, workdir):
+        if self.args.filter == "arkimet":
+            from arkimapslib.kitchen import ArkimetKitchen
+            return ArkimetKitchen(workdir)
+        elif self.args.filter == "eccodes":
+            from arkimapslib.kitchen import EccodesKitchen
+            return EccodesKitchen(workdir)
+        else:
+            raise Fail(f"Unsupported value `{self.args.filter}` for --filter")
+
+
+#
+# Command line actions
+#
+
+
+class PrintArkiQuery(RecipesMixin, Command):
+    """
+    print an arkimet query to query data that can be used by the recipes found
+    """
+    NAME = "print-arki-query"
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
+        from arkimapslib.kitchen import ArkimetEmptyKitchen
+        self.kitchen = ArkimetEmptyKitchen()
+
+        self.load_recipes()
+
+    def run(self):
+        merged = None
+        for r in self.kitchen.recipes.recipes:
+            for name, inputs in r.inputs.items():
+                for inp in inputs:
+                    matcher = inp.arkimet_matcher
+                    if matcher is None:
+                        continue
+                    if merged is None:
+                        merged = matcher
+                    else:
+                        merged = merged.merge(matcher)
+        print(merged)
+
+
+class DocumentRecipes(RecipesMixin, Command):
+    """
+    generate recipes documentation
+    """
+    NAME = "document-recipes"
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
+        from arkimapslib.kitchen import EccodesEmptyKitchen
+        self.kitchen = EccodesEmptyKitchen()
+
+        self.load_recipes()
+
+    def run(self):
+        self.kitchen.recipes.document(self.args.recipes)
+
+
+class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):
+    """
+    do not render: dispatch into a working directory
+    """
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("workdir", metavar="dir", action="store",
+                            help="working directory")
+        return parser
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.kitchen = self.make_kitchen(self.args.workdir)
+        self.load_recipes()
+
+    def run(self):
+        """
+        Acquire input data
+        """
+        self.kitchen.pantry.fill(self.kitchen.recipes)
+
+
+class Render(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
+    """
+    render data that was already dispatched
+    """
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("workdir", metavar="dir", action="store",
+                            help="working directory")
+        return parser
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.kitchen = self.make_kitchen(self.args.workdir)
+        self.load_recipes()
+
+    def run(self):
+        """
+        Render all recipes for which inputs are available
+        """
+        self.render_tarball()
+
+
+class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
+    """
+    generate the given product only, and display it with xdg-open
+    """
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("workdir", metavar="dir", action="store",
+                            help="working directory")
+        parser.add_argument("name", metavar="prod+step", action="store",
+                            help="name of the product to preview")
+        return parser
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.kitchen = self.make_kitchen(self.args.workdir)
+        self.load_recipes()
+
+    def run(self):
+        """
+        Generate the given product only, and preview it with xdg-open
+        """
+        name, step = self.args.name.split("+")
+        step = int(step, 10)
+
+        # Make an order
+        order = self.kitchen.pantry.order(self.kitchen.recipes, name, step)
+
+        # Prepare it
+        order.prepare()
+        log.info("Rendered %s to %s", order.recipe, order.basename)
+
+        # Display it
+        subprocess.run(["xdg-open", order.output], check=True)
+        input("Press enter when done> ")
+        os.unlink(order.output)
+
+
+class Process(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
+    """
+    draw maps based on GRIB data
+    """
+
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("--workdir", metavar="dir", action="store",
+                            help="working directory. Default: a temporary one")
+        return parser
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
+        # Set up working directory
+        self.tempdir = None
+        if self.args.workdir is None:
+            self.tempdir = tempfile.TemporaryDirectory()
+            self.workdir = self.tempdir.name
+        else:
+            self.workdir = self.args.workdir
+
+        self.kitchen = self.make_kitchen(self.workdir)
+        self.load_recipes()
+
+    def run(self):
+        # Acquire input data
+        self.kitchen.pantry.fill(self.kitchen.recipes)
+        self.render_tarball()
+
+
+class Postprocessor(RenderMixin, Command):
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
+        # Hardcode choices to be run as arkimet postprocessor
+
+        # Working directory is temporary
+        self.tempdir = tempfile.TemporaryDirectory()
+        self.workdir = self.tempdir.name
+
+        # Pantry uses arkimet as a backend
+        from arkimapslib.kitchen import ArkimetKitchen
+        self.kitchen = ArkimetKitchen(self.workdir)
+
+        # Recipes are loaded from a fixed directory
+        # TODO: define where it is
+        self.kitchen.load_recipes("recipes")
+
+    def get_styles_directory(self):
+        return "/usr/share/magics/styles/ecmwf"
+
+    def open_output(self):
+        return tarfile.open(mode="w|", fileobj=sys.stdout.buffer)
+
+    def run(self):
+        # Acquire input data
+        self.kitchen.pantry.fill(self.kitchen.recipes)
+        self.render_tarball()
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Render maps from model output.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
+    parser.add_argument("--debug", action="store_true", help="verbose output")
+    subparsers = parser.add_subparsers(help="sub-command help", dest="command")
+
+    Process.make_subparser(subparsers)
+    PrintArkiQuery.make_subparser(subparsers)
+    DocumentRecipes.make_subparser(subparsers)
+    Dispatch.make_subparser(subparsers)
+    Render.make_subparser(subparsers)
+    Preview.make_subparser(subparsers)
+
     args = parser.parse_args()
 
-    # Setup logging
-    FORMAT = "%(asctime)-15s %(levelname)s %(message)s"
-    log_handler = logging.StreamHandler(sys.stderr)
-    log_handler.setFormatter(logging.Formatter(FORMAT))
-    if args.debug:
-        log_handler.setLevel(logging.DEBUG)
-    elif args.verbose:
-        log_handler.setLevel(logging.INFO)
+    if args.command is None:
+        handler = Postprocessor(args)
     else:
-        log_handler.setLevel(logging.WARN)
-    root_logger = logging.getLogger()
-    root_logger.addHandler(log_handler)
-    root_logger.setLevel(logging.DEBUG)
+        handler = args.handler(args)
 
-    arkimaps = Arkimaps(args)
-
-    if args.render:
-        if not args.workdir:
-            raise Fail("Please use --workdir when you use --render")
-        arkimaps.do_render()
-    elif args.dispatch:
-        if not args.workdir:
-            raise Fail("Please use --workdir when you use --render")
-        arkimaps.do_dispatch()
-    elif args.document_recipes:
-        arkimaps.do_document_recipes()
-    elif args.preview:
-        name, step = args.preview.split("+")
-        arkimaps.do_preview(name, int(step, 10))
-    elif args.print_arki_query:
-        arkimaps.do_print_arki_query()
-    else:
-        arkimaps.do_dispatch()
-        arkimaps.do_render()
+    res = handler.run()
+    if res is not None:
+        sys.exit(res)
 
 
 if __name__ == "__main__":
@@ -239,3 +396,5 @@ if __name__ == "__main__":
     except Fail as e:
         print(e, file=sys.stderr)
         sys.exit(1)
+    except Success:
+        pass
