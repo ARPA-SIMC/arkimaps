@@ -119,6 +119,20 @@ class Arkimaps:
         input("Press enter when done> ")
         os.unlink(order.output)
 
+    def do_print_arki_query(self):
+        merged = None
+        for r in self.kitchen.recipes.recipes:
+            for name, inputs in r.inputs.items():
+                for inp in inputs:
+                    matcher = inp.arkimet_matcher
+                    if matcher is None:
+                        continue
+                    if merged is None:
+                        merged = matcher
+                    else:
+                        merged = merged.merge(matcher)
+        print(merged)
+
     def open_output(self):
         if self.args.output:
             return tarfile.open(self.args.output, mode="w|")
@@ -179,6 +193,8 @@ def main():
                         help="backend to use to organise data into recipe inputs. Default: %(default)s")
     parser.add_argument("--preview", metavar="name+nnn",
                         help="generate the given product only, and display it with xdg-open")
+    parser.add_argument("--print-arki-query", action="store_true",
+                        help="print an arkimet query to query data that can be used by the recipes found")
     args = parser.parse_args()
 
     # Setup logging
@@ -210,6 +226,8 @@ def main():
     elif args.preview:
         name, step = args.preview.split("+")
         arkimaps.do_preview(name, int(step, 10))
+    elif args.print_arki_query:
+        arkimaps.do_print_arki_query()
     else:
         arkimaps.do_dispatch()
         arkimaps.do_render()
