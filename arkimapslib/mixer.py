@@ -86,6 +86,10 @@ class Mixer:
         source_info = self.order.sources[name]
         source_input = source_info["input"]
 
+        # TODO: if source_input has preprocessing steps, apply them here
+        # source_input: Input
+        # source_info["source"]: source file
+
         kwargs = {}
         if source_input.mgrib:
             kwargs.update(source_input.mgrib)
