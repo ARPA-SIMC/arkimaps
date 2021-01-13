@@ -8,30 +8,30 @@ if TYPE_CHECKING:
     Kwargs = Dict[str, Any]
 
 
-class Chefs:
-    registry: Dict[str, Type["Chef"]] = {}
+class Mixers:
+    registry: Dict[str, Type["Mixer"]] = {}
 
     @classmethod
-    def register(cls, chef_cls: Type["Chef"]):
+    def register(cls, mixer_cls: Type["Mixer"]):
         """
-        Add a chef class to the registry
+        Add a mixer class to the registry
         """
-        name = getattr(chef_cls, "NAME", None)
+        name = getattr(mixer_cls, "NAME", None)
         if name is None:
-            name = str(chef_cls)
+            name = str(mixer_cls)
 
-        cls.registry[name] = chef_cls
+        cls.registry[name] = mixer_cls
 
     @classmethod
-    def for_order(cls, order: Order) -> "Chef":
-        chef_cls = cls.registry.get(order.chef)
-        if chef_cls is None:
-            raise KeyError(f"order requires unknown chef {order.chef}")
-        return chef_cls(order)
+    def for_order(cls, order: Order) -> "Mixer":
+        mixer_cls = cls.registry.get(order.mixer)
+        if mixer_cls is None:
+            raise KeyError(f"order requires unknown mixer {order.mixer}")
+        return mixer_cls(order)
 
 
-@Chefs.register
-class Chef:
+@Mixers.register
+class Mixer:
     NAME = "default"
 
     def __init__(self, order: Order):

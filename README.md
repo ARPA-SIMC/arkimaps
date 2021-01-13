@@ -84,9 +84,9 @@ if args.style != "":
 
 ## Creazione di nuove ricette
 
-In `arkimapslib/chef.py` sono definiti e commentati i vari `step` possibili. I
+In `arkimapslib/mixer.py` sono definiti e commentati i vari `step` possibili. I
 parametri passati agli `step` diventano parametri alle funzioni metodo della
-classe `Chef`.
+classe `Mixer`.
 
 Per velocizzare le prove, ci sono alcune opzioni di `arkimaps`:
 
@@ -105,5 +105,5 @@ se quella di default non è l'ideale.
 * `Kitchen` contiene il contesto generale del run
 * `Pantry` è l'interfaccia per l'accesso ai GRIB in input
 * `Recipe` è la ricetta caricata da YAML
-* `Chef` è l'implementazione dei vari passi possibili per le ricette
+* `Mixer` è l'implementazione dei vari passi possibili per le ricette
 * `Order` è un prodotto in output

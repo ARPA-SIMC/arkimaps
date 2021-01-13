@@ -89,8 +89,8 @@ class Recipe:
     def __init__(self, name: str, data: Kwargs):
         self.name = name
 
-        # Name of the chef to use
-        self.chef: str = data.get("chef", "default")
+        # Name of the mixer to use
+        self.mixer: str = data.get("mixer", "default")
 
         # Get the recipe description
         self.description: str = data.get("description", "Unnamed recipe")
@@ -112,13 +112,13 @@ class Recipe:
             self.steps.append((step, s))
 
     def document(self, dest: str):
-        from .chef import Chefs
-        chef = Chefs.registry[self.chef]
+        from .mixer import Mixers
+        mixer = Mixers.registry[self.mixer]
 
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)
             print(file=fd)
-            print(f"Chef: **{self.chef}**", file=fd)
+            print(f"Mixer: **{self.mixer}**", file=fd)
             print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)
@@ -136,7 +136,7 @@ class Recipe:
             for name, args in self.steps:
                 print(f"### {name}", file=fd)
                 print(file=fd)
-                print(inspect.getdoc(getattr(chef, name)), file=fd)
+                print(inspect.getdoc(getattr(mixer, name)), file=fd)
                 print(file=fd)
                 if args:
                     print("With arguments:", file=fd)
@@ -175,7 +175,7 @@ class Recipe:
             count_generated += 1
 
             yield Order(
-                chef=self.chef,
+                mixer=self.mixer,
                 sources=sources,
                 dest=dest,
                 basename=basename,
@@ -323,14 +323,14 @@ class Order:
     """
     def __init__(
             self,
-            chef: str,
+            mixer: str,
             sources: Dict[str, str],
             dest: str,
             basename: str,
             recipe: str,
             steps: List[Tuple[str, Kwargs]]):
-        # Name of the Chef to use
-        self.chef = chef
+        # Name of the Mixer to use
+        self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
         self.sources = sources
         # Destination file path (without .png extension)
@@ -348,13 +348,13 @@ class Order:
         """
         Run all the steps of the recipe and render the resulting file
         """
-        from arkimapslib.chef import Chefs
+        from arkimapslib.mixer import Mixers
 
-        chef = Chefs.for_order(self)
+        mixer = Mixers.for_order(self)
         for name, args in self.steps:
-            meth = getattr(chef, name, None)
+            meth = getattr(mixer, name, None)
             if meth is None:
                 raise RuntimeError("Recipe " + self.name + " uses unknown step " + name)
             meth(**args)
 
-        chef.serve()
+        mixer.serve()
