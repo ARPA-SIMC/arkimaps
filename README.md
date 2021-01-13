@@ -15,19 +15,24 @@ python3-magics
 
 ### Estrazione dati di prova
 
-corsa intera (circa 3.7GiB)
+COSMO, corsa intera (circa 3.7GiB)
 ```
 arki-query --inline 'reftime:=today 00:00' http://arkimet.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
 ```
 
-query ridotta (circa 840MiB):
+COSMO, query ridotta (circa 840MiB):
 ```
 arki-query --inline 'Reftime:=today 00:00;product:GRIB1,,2,75 or GRIB1,,2,73 or GRIB1,,2,74 or GRIB1,,2,2 or GRIB1,,1,11 or GRIB1,,2,11 or GRIB1,,3,11 or GRIB2,,,11,,3 or GRIB1,,2,71 or GRIB1,,201,187 or GRIB1,,2,6' http://arkiope.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
 ```
 
-t2m (circa 24Mib):
+COSMO, t2m (circa 24Mib):
 ```
 arki-query --inline 'Reftime:=2020-09-03 00:00;product:GRIB1,80,2,11;level:g02' http://arkimet.metarpa:8090/dataset/cosmo_5M_ita > test.arkimet
+```
+
+IFS (run completo):
+```
+arki-query --inline 'reftime:=2020-09-03 00:00"' http://arkiope:8090/dataset/ifs_ita010 > test.arkimet
 ```
 
 ### Generazione mappe
