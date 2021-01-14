@@ -1,19 +1,16 @@
 #!/usr/bin/python3
 from __future__ import annotations
-from typing import ContextManager
 import argparse
 import logging
 import tarfile
 import subprocess
-import contextlib
-import multiprocessing.pool
 import json
 import io
 import os
 import sys
 import time
-from arkimapslib.recipes import Order
 from arkimapslib.cmdline import Command, Fail, Success
+from arkimapslib.render import Renderer
 
 log = logging.getLogger("arkimaps")
 
@@ -56,11 +53,6 @@ class RecipesMixin:
         self.kitchen.load_recipes(self.args.recipes)
 
 
-def prepare_order(order: Order) -> Order:
-    order.prepare()
-    return order
-
-
 class RenderMixin:
     """
     Command line options to control rendering of recipes
@@ -96,21 +88,6 @@ class RenderMixin:
         """
         return self.args.styles
 
-    @contextlib.contextmanager
-    def magics_worker_pool(self) -> ContextManager[multiprocessing.pool.Pool]:
-        styles_dir = self.get_styles_directory()
-
-        def initializer():
-            # Tell magics where it should take its default styles from
-            os.environ["MAGICS_STYLE_PATH"] = styles_dir
-            # Tell magics not to print noisy banners
-            os.environ["MAGPLUS_QUIET"] = "1"
-
-        # Using maxtasksperchild to regularly restart the workers, to mitigate
-        # possible Magics memory leaks
-        with multiprocessing.pool.Pool(initializer=initializer, maxtasksperchild=16) as pool:
-            yield pool
-
     def open_output(self):
         if self.args.output:
             return tarfile.open(self.args.output, mode="w|")
@@ -125,13 +102,13 @@ class RenderMixin:
             # List of products that should be rendered
             orders = list(self.kitchen.pantry.orders(self.kitchen.recipes))
 
-            with self.magics_worker_pool() as pool:
-                for order in pool.imap_unordered(prepare_order, orders):
-                    log.info("Rendered %s to %s", order.recipe, order.basename)
+            renderer = Renderer(styles_dir=self.get_styles_directory())
+            for order in renderer.render(orders):
+                log.info("Rendered %s to %s", order.recipe, order.basename)
 
-                    # Move the generated image to the output tar
-                    tarout.add(order.output, os.path.join(order.recipe, order.basename + ".png"))
-                    os.unlink(order.output)
+                # Move the generated image to the output tar
+                tarout.add(order.output, os.path.join(order.recipe, order.basename + ".png"))
+                os.unlink(order.output)
 
             if self.log_collector.entries:
                 with io.BytesIO(json.dumps(self.log_collector.entries, indent=1).encode()) as buf:
@@ -293,7 +270,8 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         order = self.kitchen.pantry.order(self.kitchen.recipes, name, step)
 
         # Prepare it
-        order.prepare()
+        renderer = Renderer(styles_dir=self.get_styles_directory())
+        renderer.render_one(order)
         log.info("Rendered %s to %s", order.recipe, order.basename)
 
         # Display it

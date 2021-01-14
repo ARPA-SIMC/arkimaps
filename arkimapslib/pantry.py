@@ -24,7 +24,7 @@ class Pantry:
         # Root directory where inputs are stored
         self.root = root
 
-    def fill(self, recipes: Recipes):
+    def fill(self, recipes: Recipes, path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
@@ -82,13 +82,13 @@ class ArkimetPantry(Pantry):
             "eatmydata": "yes",
         })
 
-    def fill(self, recipes: Recipes):
+    def fill(self, recipes: Recipes, path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
         with self.writer() as writer:
             dispatcher = ArkimetDispatcher(writer)
-            with self.input(path=None) as infd:
+            with self.input(path=path) as infd:
                 dispatcher.read(infd)
 
     def order(self, recipes: Recipes, name: str, step: int) -> Order:
@@ -178,7 +178,7 @@ class EccodesPantry(Pantry):
         self.data_root = os.path.join(self.root, 'eccodes_pantry')
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
-    def fill(self, recipes: Recipes):
+    def fill(self, recipes: Recipes, path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
@@ -206,7 +206,7 @@ class EccodesPantry(Pantry):
                 proc.stdin.write(md.data)
                 return True
 
-            with self.input(path=None) as infd:
+            with self.input(path=path) as infd:
                 arkimet.Metadata.read_bundle(infd, dest=dispatch)
         finally:
             proc.stdin.close()
