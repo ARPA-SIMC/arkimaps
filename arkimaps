@@ -4,7 +4,6 @@ from typing import ContextManager
 import argparse
 import logging
 import tarfile
-import tempfile
 import subprocess
 import contextlib
 import multiprocessing.pool
@@ -319,14 +318,7 @@ class Process(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         super().__init__(*args, **kw)
 
         # Set up working directory
-        self.tempdir = None
-        if self.args.workdir is None:
-            self.tempdir = tempfile.TemporaryDirectory()
-            self.workdir = self.tempdir.name
-        else:
-            self.workdir = self.args.workdir
-
-        self.kitchen = self.make_kitchen(self.workdir)
+        self.kitchen = self.make_kitchen(self.args.workdir)
         self.load_recipes()
 
     def run(self):
@@ -341,13 +333,9 @@ class Postprocessor(RenderMixin, Command):
 
         # Hardcode choices to be run as arkimet postprocessor
 
-        # Working directory is temporary
-        self.tempdir = tempfile.TemporaryDirectory()
-        self.workdir = self.tempdir.name
-
         # Pantry uses arkimet as a backend
         from arkimapslib.kitchen import ArkimetKitchen
-        self.kitchen = ArkimetKitchen(self.workdir)
+        self.kitchen = ArkimetKitchen()
 
         # Recipes are loaded from a fixed directory
         # TODO: define where it is
@@ -385,7 +373,11 @@ def main():
     else:
         handler = args.handler(args)
 
-    res = handler.run()
+    if getattr(handler, "kitchen", None) is not None:
+        with handler.kitchen:
+            res = handler.run()
+    else:
+        res = handler.run()
     if res is not None:
         sys.exit(res)
 
