@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Iterator, Optional
+from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Optional
 from collections import defaultdict
 import os
 import inspect
