@@ -1,7 +1,9 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any
+from typing import TYPE_CHECKING, Dict, Any, Optional
+import tempfile
 import os
 import yaml
+import contextlib
 try:
     import arkimet
 except ModuleNotFoundError:
@@ -19,6 +21,13 @@ class Kitchen:
     def __init__(self):
         from .recipes import Recipes
         self.recipes = Recipes()
+        self.context_stack = contextlib.ExitStack()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return self.context_stack.__exit__(*args)
 
     def _build_recipe(self, name: str, info: Kwargs):
         raise NotImplementedError(f"{self.__class__.__name__}._build_recipe() not implemented")
@@ -36,11 +45,19 @@ class Kitchen:
 
 
 class WorkingKitchen(Kitchen):
-    def __init__(self, workdir: str):
+    def __init__(self, workdir: Optional[str] = None):
+        """
+        If no working directory is provided, it uses a temporary one
+        """
         super().__init__()
         from .pantry import Pantry
-        self.workdir = workdir
-        self.pantry: Pantry = self._build_pantry(workdir)
+        if workdir is None:
+            self.tempdir = tempfile.TemporaryDirectory()
+            self.workdir = self.context_stack.enter_context(self.tempdir)
+        else:
+            self.tempdir = None
+            self.workdir = workdir
+        self.pantry: Pantry = self._build_pantry(self.workdir)
 
     def _build_pantry(self, workdir: str):
         raise NotImplementedError(f"{self.__class__.__name__}._build_pantry() not implemented")
@@ -55,7 +72,7 @@ if arkimet is not None:
             #
             # Force directory segments so we can access each data by filesystem
             # path
-            self.session = arkimet.dataset.Session(force_dir_segments=True)
+            self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
 
         def _build_recipe(self, name: str, info: Kwargs):
             from .recipes import ArkimetRecipe

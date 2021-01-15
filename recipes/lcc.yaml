@@ -2,14 +2,14 @@
 description: Low Cloud Cover
 inputs:
  lcc:
-  # COSMO
-  - arkimet: product:GRIB1,,2,73
+  - name: cosmo
+    arkimet: product:GRIB1,,2,73
     eccodes: shortName is "clcl"
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
-  # IFS-ECMWF
-  - arkimet: product:GRIB1,98,128,186
+  - name: ifs
+    arkimet: product:GRIB1,98,128,186
     eccodes: shortName is "lcc"
     mgrib:
         grib_automatic_scaling: off

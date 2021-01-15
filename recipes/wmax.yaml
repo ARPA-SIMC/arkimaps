@@ -2,7 +2,8 @@
 description: Maximum wind gust speed
 inputs:
  mcont:
-  - arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187
+  - name: any
+    arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187
     eccodes: shortName is "mcont" or shortName is "vmax_10m"
 recipe:
  - step: add_basemap

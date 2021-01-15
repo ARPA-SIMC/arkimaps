@@ -2,11 +2,11 @@
 description: Geopotenziale
 inputs:
  z:
-  # COSMO
-  - arkimet: product:GRIB1,,2,6
+  - name: cosmo
+    arkimet: product:GRIB1,,2,6
     eccodes: shortName is "z" # FIXME: discriminate
-  # IFS-ECMWF
-  - arkimet: product:GRIB1,98,128,156
+  - name: ifs
+    arkimet: product:GRIB1,98,128,156
     eccodes: shortName is "z" # FIXME: discriminate
     mgrib:
         grib_automatic_scaling: off

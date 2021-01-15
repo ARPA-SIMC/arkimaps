@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Iterator, Optional
+from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Optional
 from collections import defaultdict
 import os
 import inspect
@@ -46,9 +46,12 @@ class Input:
     """
     def __init__(
             self,
+            name: str,
             arkimet: str,
             eccodes: str,
             mgrib: Optional[Kwargs] = None):
+        # name, identifying this instance among other alternatives for this input
+        self.name = name
         # arkimet matcher filter
         self.arkimet = arkimet
         # Compiled arkimet matcher, when available/used
@@ -61,6 +64,7 @@ class Input:
     def __getstate__(self):
         # Don't pickle arkimet_matcher, which is unpicklable and undeeded
         return {
+            "name": self.name,
             "arkimet": self.arkimet,
             "arkimet_matcher": None,
             "eccodes": self.eccodes,
@@ -146,106 +150,6 @@ class Recipe:
                     print("```", file=fd)
                 print(file=fd)
 
-    def _orders_from_scanner(self, workdir: str, scanner: "Scanner") -> Iterator["Order"]:
-        """
-        Given a scanner, scan inputs and generate orders with the results
-        """
-        # Enumerate sources for all inputs, and aggregate them by step and input name
-        for name, inputs in self.inputs.items():
-            # Enumerate all the options and use the first that gives us data
-            for idx, i in enumerate(inputs, start=1):
-                count = scanner.scan(name, idx, i)
-                if not count:
-                    continue
-
-                log.info("%s input %s#%d: %d sources found", self.name, name, idx, count)
-
-        # Generate orders based on the data we found
-        count_generated = 0
-        for output_step, sources in scanner.by_step.items():
-            if len(sources) != len(self.inputs):
-                log.debug(
-                    "%s+%03d: only %d/%d inputs satisfied: skipping",
-                    self.name, output_step, len(sources), len(self.inputs))
-                continue
-
-            basename = f"{self.name}+{output_step:03d}"
-            dest = os.path.join(workdir, basename)
-
-            count_generated += 1
-
-            yield Order(
-                mixer=self.mixer,
-                sources=sources,
-                dest=dest,
-                basename=basename,
-                recipe=self.name,
-                steps=self.steps,
-            )
-
-        log.info("%s: %d orders created", self.name, count_generated)
-
-
-class Scanner:
-    """
-    Generate and aggregate input data
-    """
-    def __init__(
-            self,
-            recipe: Recipe,
-            output_steps: Optional[List[int]] = None):
-        self.recipe = recipe
-        self.output_steps = output_steps
-
-        # Order information by step
-        # by_step[step][input_name][key] = val
-        self.by_step: Dict[int, Dict[str, Dict[str, Any]]] = defaultdict(dict)
-
-
-class ArkimetInputScanner(Scanner):
-    """
-    Query the arkimet reader for an input and generate orders based on the data
-    that comes out
-    """
-    def __init__(
-            self,
-            recipe: Recipe,
-            reader: arkimet.dataset.Reader,
-            output_steps: Optional[List[int]] = None):
-        super().__init__(recipe, output_steps)
-        self.reader = reader
-
-        # Order information by step
-        # by_step[step][input_name][key] = val
-        self.by_step: Dict[int, Dict[str, Dict[str, Any]]] = defaultdict(dict)
-
-    def scan(self, name: str, idx: int, i: Input):
-        if i.arkimet_matcher is None:
-            log.debug("%s input %s#%d: skipping input with no arkimet matcher", self.recipe.name, name, idx)
-            return 0
-
-        count = 0
-        for md in self.reader.query_data(i.arkimet_matcher):
-            trange = md.to_python("timerange")
-            output_step = trange['p1']
-            if self.output_steps is not None and output_step not in self.output_steps:
-                continue
-
-            source = md.to_python("source")
-            pathname = os.path.join(source["basedir"], source["file"], f"{source['offset']:06d}.grib")
-
-            count += 1
-
-            # Don't replace a source found by a previous input
-            if name in self.by_step:
-                continue
-            self.by_step[output_step][name] = {
-                "input": i,
-                "source": pathname,
-            }
-
-        return count
-
 
 class ArkimetRecipe(Recipe):
     def __init__(self, name: str, data: Kwargs, session: Optional[arkimet.dataset.Session]):
@@ -254,66 +158,9 @@ class ArkimetRecipe(Recipe):
             for i in input_list:
                 i.compile_arkimet_matcher(session)
 
-    def make_orders(
-            self,
-            reader: arkimet.dataset.Reader,
-            workdir: str,
-            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
-        scanner = ArkimetInputScanner(self, reader, output_steps)
-        yield from self._orders_from_scanner(workdir, scanner)
-
-
-class EccodesInputScanner(Scanner):
-    """
-    Query the arkimet reader for an input and generate orders based on the data
-    that comes out
-    """
-    def __init__(
-            self,
-            recipe: Recipe,
-            input_dir: str,
-            output_steps: Optional[List[int]] = None):
-        super().__init__(recipe, output_steps)
-        self.input_dir = input_dir
-
-        # Read all available input files in a dict indexed by input name
-        # and step: {input_name: {step: filename}}
-        self.files = defaultdict(dict)
-        for fname in os.listdir(input_dir):
-            if not fname.endswith(".grib"):
-                continue
-            name, step = fname[:-5].rsplit("+")
-            step = int(step)
-            if output_steps is not None and step not in output_steps:
-                continue
-            self.files[name][step] = fname
-
-    def scan(self, name: str, idx: int, i: Input):
-        count = 0
-        for step, fname in self.files[name].items():
-            pathname = os.path.join(self.input_dir, fname)
-
-            count += 1
-
-            # Don't replace a source found by a previous input
-            if name in self.by_step:
-                continue
-            self.by_step[step][name] = {
-                "input": i,
-                "source": pathname,
-            }
-
-        return count
-
 
 class EccodesRecipe(Recipe):
-    def make_orders(
-            self,
-            workdir: str,
-            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
-        input_dir = os.path.join(workdir, self.name)
-        scanner = EccodesInputScanner(self, input_dir, output_steps)
-        yield from self._orders_from_scanner(workdir, scanner)
+    pass
 
 
 class Order:
@@ -343,6 +190,8 @@ class Order:
         self.steps = steps
         # Output file name, set after the product has been rendered
         self.output = None
+        # Logger for this output
+        self.log = logging.getLogger(f"arkimaps.order.{basename}")
 
     def prepare(self):
         """
@@ -352,6 +201,7 @@ class Order:
 
         mixer = Mixers.for_order(self)
         for name, args in self.steps:
+            self.log.info("%s %r", name, args)
             meth = getattr(mixer, name, None)
             if meth is None:
                 raise RuntimeError("Recipe " + self.name + " uses unknown step " + name)
