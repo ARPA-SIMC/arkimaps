@@ -343,6 +343,8 @@ class Order:
         self.steps = steps
         # Output file name, set after the product has been rendered
         self.output = None
+        # Logger for this output
+        self.log = logging.getLogger(f"arkimaps.order.{basename}")
 
     def prepare(self):
         """
@@ -352,6 +354,7 @@ class Order:
 
         mixer = Mixers.for_order(self)
         for name, args in self.steps:
+            self.log.info("%s %r", name, args)
             meth = getattr(mixer, name, None)
             if meth is None:
                 raise RuntimeError("Recipe " + self.name + " uses unknown step " + name)

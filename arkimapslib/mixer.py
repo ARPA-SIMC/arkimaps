@@ -96,6 +96,8 @@ class Mixer:
         if params is not None:
             kwargs.update(params)
 
+        self.order.log.info("add_grib mgrib %r", kwargs)
+
         grib = self.macro.mgrib(grib_input_file_name=source_info["source"], **kwargs)
         self.gribs[name] = grib
         self.parts.append(grib)
