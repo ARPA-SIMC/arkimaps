@@ -299,7 +299,8 @@ class EccodesInputScanner(Scanner):
         for fname in os.listdir(input_dir):
             if not fname.endswith(".grib"):
                 continue
-            name, step = fname[:-5].rsplit("+")
+            name, step = fname[:-5].rsplit("+", 1)
+            model, name = name.split("_", 1)
             step = int(step)
             if output_steps is not None and step not in output_steps:
                 continue
@@ -349,7 +350,7 @@ class EccodesPantry(Pantry):
                             log.info("%s:%s:%d: skipping input with no eccodes filter", recipe.name, name, idx)
                             continue
                         print(f"if ( {i.eccodes} ) {{", file=f)
-                        print(f'  write "{recipe_dir}/{name}+[endStep].grib";', file=f)
+                        print(f'  write "{recipe_dir}/{i.name}_{name}+[endStep].grib";', file=f)
                         print(f"}}", file=f)
 
         # Run grib_filter on input
