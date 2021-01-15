@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, ContextManager, Optional, Iterable, BinaryIO, List, Iterator, Dict, Any
+from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Dict, Any, Tuple
 from collections import defaultdict
 import contextlib
 import subprocess
@@ -118,80 +118,34 @@ class Scanner:
         self.by_step: Dict[int, Dict[str, Dict[str, Any]]] = defaultdict(dict)
 
 
-class ArkimetInputScanner(Scanner):
-    """
-    Query the arkimet reader for an input and generate orders based on the data
-    that comes out
-    """
-    def __init__(
-            self,
-            recipe: Recipe,
-            reader: arkimet.dataset.Reader,
-            output_steps: Optional[List[int]] = None):
-        super().__init__(recipe, output_steps)
-        self.reader = reader
-
-        # Order information by step
-        # by_step[step][input_name][key] = val
-        self.by_step: Dict[int, Dict[str, Dict[str, Any]]] = defaultdict(dict)
-
-    def scan(self, name: str, idx: int, i: Input):
-        if i.arkimet_matcher is None:
-            log.debug("%s input %s#%d: skipping input with no arkimet matcher", self.recipe.name, name, idx)
-            return 0
-
-        count = 0
-        for md in self.reader.query_data(i.arkimet_matcher):
-            trange = md.to_python("timerange")
-            output_step = trange['p1']
-            if self.output_steps is not None and output_step not in self.output_steps:
-                continue
-
-            source = md.to_python("source")
-            pathname = os.path.join(source["basedir"], source["file"], f"{source['offset']:06d}.grib")
-
-            count += 1
-
-            # Don't replace a source found by a previous input
-            if name in self.by_step:
-                continue
-            self.by_step[output_step][name] = {
-                "input": i,
-                "source": pathname,
-            }
-
-        return count
-
-
 class ArkimetPantry(Pantry):
     """
     Arkimet-based storage of GRIB files to be processed
     """
     def __init__(self, kitchen: Kitchen, root: str):
         super().__init__(kitchen, root)
-        self.ds_root = os.path.join(self.root, 'arkimet_pantry')
-
-        self.config = arkimet.cfg.Section({
-            "format": "grib",
-            "step": "yearly",
-            "name": "pantry",
-            "path": self.ds_root,
-            "type": "iseg",
-            "unique": "reftime, level, timerange, product",
-            # Tell datasets to be fast at the cost of leaving an inconsistent
-            # state in case of errors. We can do that since we work on a
-            # temporary directory.
-            "eatmydata": "yes",
-        })
+        self.data_root = os.path.join(self.root, 'arkimet_pantry')
 
     def fill(self, recipes: Recipes, path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
-        with self.writer() as writer:
-            dispatcher = ArkimetDispatcher(writer)
-            with self.input(path=path) as infd:
-                dispatcher.read(infd)
+        # Dispatch TODO-list
+        match: List[Tuple[Input, str, str]] = []
+        for recipe in recipes.recipes:
+            # Create one directory per recipe
+            recipe_dir = os.path.join(self.data_root, recipe.name)
+            os.makedirs(recipe_dir, exist_ok=True)
+            for name, inputs in recipe.inputs.items():
+                for idx, i in enumerate(inputs, start=1):
+                    if not i.arkimet_matcher:
+                        log.info("%s:%s:%d: skipping input with no arkimet matcher filter", recipe.name, name, idx)
+                        continue
+                    match.append((i, recipe_dir, name))
+
+        dispatcher = ArkimetDispatcher(match)
+        with self.input(path=path) as infd:
+            dispatcher.read(infd)
 
     def order(self, recipes: Recipes, name: str, step: int) -> Order:
         """
@@ -212,61 +166,39 @@ class ArkimetPantry(Pantry):
         """
         Return all orders that can be made with this pantry
         """
-        with self.reader() as reader:
-            # List of products that should be rendered
-            for recipe in recipes.recipes:
-                yield from self.make_orders(recipe, reader, self.root)
+        # List of products that should be rendered
+        for recipe in recipes.recipes:
+            yield from self.make_orders(recipe, self.data_root)
 
     def make_orders(
             self,
             recipe: Recipe,
-            reader: arkimet.dataset.Reader,
             workdir: str,
             output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
-        scanner = ArkimetInputScanner(recipe, reader, output_steps)
+        input_dir = os.path.join(workdir, recipe.name)
+        scanner = EccodesInputScanner(recipe, input_dir, output_steps)
         yield from self._orders_from_scanner(recipe, workdir, scanner)
-
-    @contextlib.contextmanager
-    def reader(self) -> ContextManager[arkimet.dataset.Reader]:
-        """
-        Create and return a dataset reader to query the data stored in the
-        pantry
-        """
-        with self.kitchen.session.dataset_reader(cfg=self.config) as reader:
-            yield reader
-
-    @contextlib.contextmanager
-    def writer(self) -> ContextManager[arkimet.dataset.Writer]:
-        """
-        Create and return a dataset writer to store new data in the pantry
-        """
-        os.makedirs(self.ds_root, exist_ok=True)
-        with self.kitchen.session.dataset_writer(cfg=self.config) as writer:
-            yield writer
 
 
 class ArkimetDispatcher:
     """
     Read a stream of arkimet metadata and store its data into a dataset
     """
-    def __init__(self, writer: arkimet.dataset.Writer):
-        self.writer = writer
-        self.batch = []
-
-    def flush_batch(self):
-        if not self.batch:
-            return
-        res = self.writer.acquire_batch(self.batch, drop_cached_data_on_commit=True)
-        count_nok = sum(1 for x in res if x != "ok")
-        if count_nok > 0:
-            raise RuntimeError(f"{count_nok} elements not imported correctly")
-        log.debug("imported %d items into pantry", len(self.batch))
-        self.batch = []
+    def __init__(self, todo_list: List[Tuple[Input, str, str]]):
+        self.todo_list = todo_list
 
     def dispatch(self, md: arkimet.Metadata) -> bool:
-        self.batch.append(md)
-        if len(self.batch) >= 200:
-            self.flush_batch()
+        for inp, recipe_dir, name in self.todo_list:
+            if inp.arkimet_matcher.match(md):
+                trange = md.to_python("timerange")
+                output_step = trange['p1']
+                source = md.to_python("source")
+
+                dest = os.path.join(recipe_dir, f"{inp.name}_{name}+{output_step}.{source['format']}")
+                # TODO: implement Metadata.write_data to write directly without
+                # needing to create an intermediate python bytes object
+                with open(dest, "wb") as out:
+                    out.write(md.data)
         return True
 
     def read(self, infd: BinaryIO):
@@ -277,7 +209,6 @@ class ArkimetDispatcher:
         as is given as input to arkimet processors.
         """
         arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
-        self.flush_batch()
 
 
 class EccodesInputScanner(Scanner):
