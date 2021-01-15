@@ -304,11 +304,13 @@ class EccodesInputScanner(Scanner):
             step = int(step)
             if output_steps is not None and step not in output_steps:
                 continue
-            self.files[name][step] = fname
+            self.files[name][step] = (model, fname)
 
     def scan(self, name: str, idx: int, i: Input):
         count = 0
-        for step, fname in self.files[name].items():
+        for step, (model, fname) in self.files[name].items():
+            if model != i.name:
+                continue
             pathname = os.path.join(self.input_dir, fname)
 
             count += 1
