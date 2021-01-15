@@ -2,11 +2,11 @@
 description: Geopotential 500hPa
 inputs:
  z:
-  # COSMO
-  - arkimet: product:GRIB1,,2,6; level:GRIB1,100,500
+  - name: cosmo
+    arkimet: product:GRIB1,,2,6; level:GRIB1,100,500
     eccodes: shortName is "z" && centre != 98
-  # IFS-ECMWF
-  - arkimet: product:GRIB1,98,128,156; level:GRIB1,100,500
+  - name: ifs
+    arkimet: product:GRIB1,98,128,156; level:GRIB1,100,500
     eccodes: shortName is "z" && centre == 98
     mgrib:
         grib_automatic_scaling: off

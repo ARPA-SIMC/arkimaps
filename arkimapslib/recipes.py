@@ -46,9 +46,12 @@ class Input:
     """
     def __init__(
             self,
+            name: str,
             arkimet: str,
             eccodes: str,
             mgrib: Optional[Kwargs] = None):
+        # name, identifying this instance among other alternatives for this input
+        self.name = name
         # arkimet matcher filter
         self.arkimet = arkimet
         # Compiled arkimet matcher, when available/used
@@ -61,6 +64,7 @@ class Input:
     def __getstate__(self):
         # Don't pickle arkimet_matcher, which is unpicklable and undeeded
         return {
+            "name": self.name,
             "arkimet": self.arkimet,
             "arkimet_matcher": None,
             "eccodes": self.eccodes,
