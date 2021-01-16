@@ -24,7 +24,7 @@ class Pantry:
         # General run state
         self.kitchen = kitchen
         # Root directory where inputs are stored
-        self.root = root
+        self.data_root = os.path.join(root, "pantry")
 
     def fill(self, recipes: Recipes, path: Optional[str] = None):
         """
@@ -32,17 +32,27 @@ class Pantry:
         """
         raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
 
-    def order(self, name: str, step: int) -> Order:
+    def order(self, recipes: Recipes, name: str, step: int) -> Order:
         """
         Return an order for the given recipe name and output step
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.order() not implemented")
+        recipe = recipes.get(name)
+        order = None
+        for o in self.make_orders(recipe, self.data_root, output_steps=[step]):
+            if order is not None:
+                raise RuntimeError(f"Multiple options found to generate {name}+{step:03d}")
+            order = o
+        if order is None:
+            raise KeyError(f"No option found to generate {name}+{step:03d}")
+        return order
 
     def orders(self, recipes: Recipes) -> Iterable[Order]:
         """
         Return all orders that can be made with this pantry
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.orders() not implemented")
+        # List of products that should be rendered
+        for recipe in recipes.recipes:
+            yield from self.make_orders(recipe, self.data_root)
 
     def store_processing_artifacts(self, tarout):
         """
@@ -61,6 +71,15 @@ class Pantry:
         else:
             with open(path, "rb") as fd:
                 yield fd
+
+    def make_orders(
+            self,
+            recipe: Recipe,
+            workdir: str,
+            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
+        input_dir = os.path.join(workdir, recipe.name)
+        scanner = Scanner(recipe, input_dir, output_steps)
+        yield from self._orders_from_scanner(recipe, workdir, scanner)
 
     def _orders_from_scanner(self, recipe, workdir: str, scanner: "Scanner") -> Iterator["Order"]:
         """
@@ -109,120 +128,15 @@ class Scanner:
     def __init__(
             self,
             recipe: Recipe,
+            input_dir: str,
             output_steps: Optional[List[int]] = None):
         self.recipe = recipe
+        self.input_dir = input_dir
         self.output_steps = output_steps
 
         # Order information by step
         # by_step[step][input_name][key] = val
         self.by_step: Dict[int, Dict[str, Dict[str, Any]]] = defaultdict(dict)
-
-
-class ArkimetPantry(Pantry):
-    """
-    Arkimet-based storage of GRIB files to be processed
-    """
-    def __init__(self, kitchen: Kitchen, root: str):
-        super().__init__(kitchen, root)
-        self.data_root = os.path.join(self.root, 'arkimet_pantry')
-
-    def fill(self, recipes: Recipes, path: Optional[str] = None):
-        """
-        Read data from standard input and acquire it into the pantry
-        """
-        # Dispatch TODO-list
-        match: List[Tuple[Input, str, str]] = []
-        for recipe in recipes.recipes:
-            # Create one directory per recipe
-            recipe_dir = os.path.join(self.data_root, recipe.name)
-            os.makedirs(recipe_dir, exist_ok=True)
-            for name, inputs in recipe.inputs.items():
-                for idx, i in enumerate(inputs, start=1):
-                    if not i.arkimet_matcher:
-                        log.info("%s:%s:%d: skipping input with no arkimet matcher filter", recipe.name, name, idx)
-                        continue
-                    match.append((i, recipe_dir, name))
-
-        dispatcher = ArkimetDispatcher(match)
-        with self.input(path=path) as infd:
-            dispatcher.read(infd)
-
-    def order(self, recipes: Recipes, name: str, step: int) -> Order:
-        """
-        Return an order for the given recipe name and output step
-        """
-        recipe = recipes.get(name)
-        order = None
-        with self.reader() as reader:
-            for o in recipe.make_orders(reader, self.root, output_steps=[step]):
-                if order is not None:
-                    raise RuntimeError(f"Multiple options found to generate {name}+{step:03d}")
-                order = o
-        if order is None:
-            raise KeyError(f"No option found to generate {name}+{step:03d}")
-        return order
-
-    def orders(self, recipes: Recipes) -> Iterable[Order]:
-        """
-        Return all orders that can be made with this pantry
-        """
-        # List of products that should be rendered
-        for recipe in recipes.recipes:
-            yield from self.make_orders(recipe, self.data_root)
-
-    def make_orders(
-            self,
-            recipe: Recipe,
-            workdir: str,
-            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
-        input_dir = os.path.join(workdir, recipe.name)
-        scanner = EccodesInputScanner(recipe, input_dir, output_steps)
-        yield from self._orders_from_scanner(recipe, workdir, scanner)
-
-
-class ArkimetDispatcher:
-    """
-    Read a stream of arkimet metadata and store its data into a dataset
-    """
-    def __init__(self, todo_list: List[Tuple[Input, str, str]]):
-        self.todo_list = todo_list
-
-    def dispatch(self, md: arkimet.Metadata) -> bool:
-        for inp, recipe_dir, name in self.todo_list:
-            if inp.arkimet_matcher.match(md):
-                trange = md.to_python("timerange")
-                output_step = trange['p1']
-                source = md.to_python("source")
-
-                dest = os.path.join(recipe_dir, f"{inp.name}_{name}+{output_step}.{source['format']}")
-                # TODO: implement Metadata.write_data to write directly without
-                # needing to create an intermediate python bytes object
-                with open(dest, "wb") as out:
-                    out.write(md.data)
-        return True
-
-    def read(self, infd: BinaryIO):
-        """
-        Read data from an input file, or standard input.
-
-        The input file is the output of arki-query --inline, which is the same
-        as is given as input to arkimet processors.
-        """
-        arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
-
-
-class EccodesInputScanner(Scanner):
-    """
-    Query the arkimet reader for an input and generate orders based on the data
-    that comes out
-    """
-    def __init__(
-            self,
-            recipe: Recipe,
-            input_dir: str,
-            output_steps: Optional[List[int]] = None):
-        super().__init__(recipe, output_steps)
-        self.input_dir = input_dir
 
         # Read all available input files in a dict indexed by input name
         # and step: {input_name: {step: filename}}
@@ -257,13 +171,69 @@ class EccodesInputScanner(Scanner):
         return count
 
 
+class ArkimetPantry(Pantry):
+    """
+    Arkimet-based storage of GRIB files to be processed
+    """
+    def fill(self, recipes: Recipes, path: Optional[str] = None):
+        """
+        Read data from standard input and acquire it into the pantry
+        """
+        # Dispatch TODO-list
+        match: List[Tuple[Input, str, str]] = []
+        for recipe in recipes.recipes:
+            # Create one directory per recipe
+            recipe_dir = os.path.join(self.data_root, recipe.name)
+            os.makedirs(recipe_dir, exist_ok=True)
+            for name, inputs in recipe.inputs.items():
+                for idx, i in enumerate(inputs, start=1):
+                    if not i.arkimet_matcher:
+                        log.info("%s:%s:%d: skipping input with no arkimet matcher filter", recipe.name, name, idx)
+                        continue
+                    match.append((i, recipe_dir, name))
+
+        dispatcher = ArkimetDispatcher(match)
+        with self.input(path=path) as infd:
+            dispatcher.read(infd)
+
+
+class ArkimetDispatcher:
+    """
+    Read a stream of arkimet metadata and store its data into a dataset
+    """
+    def __init__(self, todo_list: List[Tuple[Input, str, str]]):
+        self.todo_list = todo_list
+
+    def dispatch(self, md: arkimet.Metadata) -> bool:
+        for inp, recipe_dir, name in self.todo_list:
+            if inp.arkimet_matcher.match(md):
+                trange = md.to_python("timerange")
+                output_step = trange['p1']
+                source = md.to_python("source")
+
+                dest = os.path.join(recipe_dir, f"{inp.name}_{name}+{output_step}.{source['format']}")
+                # TODO: implement Metadata.write_data to write directly without
+                # needing to create an intermediate python bytes object
+                with open(dest, "wb") as out:
+                    out.write(md.data)
+        return True
+
+    def read(self, infd: BinaryIO):
+        """
+        Read data from an input file, or standard input.
+
+        The input file is the output of arki-query --inline, which is the same
+        as is given as input to arkimet processors.
+        """
+        arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
+
+
 class EccodesPantry(Pantry):
     """
     eccodes-based storage of GRIB files to be processed
     """
     def __init__(self, kitchen: Kitchen, root: str):
         super().__init__(kitchen, root)
-        self.data_root = os.path.join(self.root, 'eccodes_pantry')
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
     def fill(self, recipes: Recipes, path: Optional[str] = None):
@@ -301,37 +271,6 @@ class EccodesPantry(Pantry):
             proc.wait()
             if proc.returncode != 0:
                 raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
-
-    def order(self, recipes: Recipes, name: str, step: int) -> Order:
-        """
-        Return an order for the given recipe name and output step
-        """
-        recipe = recipes.get(name)
-        order = None
-        for o in recipe.make_orders(self.data_root, output_steps=[step]):
-            if order is not None:
-                raise RuntimeError(f"Multiple options found to generate {name}+{step:03d}")
-            order = o
-        if order is None:
-            raise KeyError(f"No option found to generate {name}+{step:03d}")
-        return order
-
-    def orders(self, recipes: Recipes) -> Iterable[Order]:
-        """
-        Return all orders that can be made with this pantry
-        """
-        # List of products that should be rendered
-        for recipe in recipes.recipes:
-            yield from self.make_orders(recipe, self.data_root)
-
-    def make_orders(
-            self,
-            recipe: Recipe,
-            workdir: str,
-            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
-        input_dir = os.path.join(workdir, recipe.name)
-        scanner = EccodesInputScanner(recipe, input_dir, output_steps)
-        yield from self._orders_from_scanner(recipe, workdir, scanner)
 
     def store_processing_artifacts(self, tarout):
         """
