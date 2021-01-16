@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Dict, Any, Tuple
+from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Dict, Tuple, NamedTuple
 from collections import defaultdict
 import contextlib
 import subprocess
@@ -77,38 +77,22 @@ class Pantry:
             recipe: Recipe,
             workdir: str,
             output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
+        """
+        Look at what input files are available for the given recipe, and
+        generate a sequence of orders for all steps for which there are enough
+        inputs to make the order
+        """
+        # List the data files in the pantry
         input_dir = os.path.join(workdir, recipe.name)
-        scanner = Scanner(recipe, input_dir, output_steps)
-        yield from self._orders_from_scanner(recipe, workdir, scanner)
-
-    def _orders_from_scanner(self, recipe, workdir: str, scanner: "Scanner") -> Iterator["Order"]:
-        """
-        Given a scanner, scan inputs and generate orders with the results
-        """
-        # Enumerate sources for all inputs, and aggregate them by step and input name
-        for name, inputs in recipe.inputs.items():
-            # Enumerate all the options and use the first that gives us data
-            for idx, i in enumerate(inputs, start=1):
-                count = scanner.scan(name, idx, i)
-                if not count:
-                    continue
-
-                log.info("%s input %s#%d: %d sources found", recipe.name, name, idx, count)
+        inputs = Inputs(recipe, input_dir, output_steps)
 
         # Generate orders based on the data we found
         count_generated = 0
-        for output_step, sources in scanner.by_step.items():
-            if len(sources) != len(recipe.inputs):
-                log.debug(
-                    "%s+%03d: only %d/%d inputs satisfied: skipping",
-                    recipe.name, output_step, len(sources), len(recipe.inputs))
-                continue
-
-            basename = f"{recipe.name}+{output_step:03d}"
+        for step, files in inputs.steps.items():
+            sources = inputs.for_step(step)
+            basename = f"{recipe.name}+{step:03d}"
             dest = os.path.join(workdir, basename)
-
             count_generated += 1
-
             yield Order(
                 mixer=recipe.mixer,
                 sources=sources,
@@ -121,7 +105,18 @@ class Pantry:
         log.info("%s: %d orders created", recipe.name, count_generated)
 
 
-class Scanner:
+class InputFile(NamedTuple):
+    # Pathname to the file
+    pathname: str
+    # Input name in the recipe
+    name: str
+    # Forecast step
+    step: int
+    # Input with information about the file
+    info: Input
+
+
+class Inputs:
     """
     Generate and aggregate input data
     """
@@ -130,17 +125,15 @@ class Scanner:
             recipe: Recipe,
             input_dir: str,
             output_steps: Optional[List[int]] = None):
+        """
+        Look into the pantry filesystem storage and take note of what files are
+        available
+        """
         self.recipe = recipe
         self.input_dir = input_dir
         self.output_steps = output_steps
+        self.steps: Dict[int, List[InputFile]] = defaultdict(list)
 
-        # Order information by step
-        # by_step[step][input_name][key] = val
-        self.by_step: Dict[int, Dict[str, Dict[str, Any]]] = defaultdict(dict)
-
-        # Read all available input files in a dict indexed by input name
-        # and step: {input_name: {step: filename}}
-        self.files = defaultdict(dict)
         for fname in os.listdir(input_dir):
             if not fname.endswith(".grib"):
                 continue
@@ -149,26 +142,49 @@ class Scanner:
             step = int(step)
             if output_steps is not None and step not in output_steps:
                 continue
-            self.files[name][step] = (model, fname)
 
-    def scan(self, name: str, idx: int, i: Input):
-        count = 0
-        for step, (model, fname) in self.files[name].items():
-            if model != i.name:
+            # Lookup the right Input in the recipe, by model name
+            for i in self.recipe.inputs[name]:
+                if i.name == model:
+                    info = i
+                    break
+            else:
                 continue
-            pathname = os.path.join(self.input_dir, fname)
 
-            count += 1
+            self.steps[step].append(InputFile(
+                pathname=os.path.join(input_dir, fname),
+                name=name,
+                step=step,
+                info=info))
 
-            # Don't replace a source found by a previous input
-            if name in self.by_step:
-                continue
-            self.by_step[step][name] = {
-                "input": i,
-                "source": pathname,
-            }
+    def for_step(self, step):
+        """
+        Return input files for the given step.
 
-        return count
+        Return None if some of the inputs are not satisfied for this step
+        """
+        files = self.steps.get(step)
+        if files is None:
+            return None
+
+        res = {}
+        for name, inputs in self.recipe.inputs.items():
+            found = None
+            # Try all input alternatives in order
+            for i in inputs:
+                # Look for files that satisfy this input
+                for f in files:
+                    if f.name == name and f.info == i:
+                        found = f
+                        break
+                if found:
+                    break
+            if not found:
+                log.debug("%s+%03d: data for input %s not found: skipping", self.recipe.name, step, name)
+                return None
+            res[name] = found
+
+        return res
 
 
 class ArkimetPantry(Pantry):
