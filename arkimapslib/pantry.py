@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Dict, Tuple, NamedTuple
+from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Dict, Tuple
 from collections import defaultdict
 import contextlib
 import subprocess
@@ -8,9 +8,11 @@ import os
 import arkimet
 import logging
 from .recipes import Order
+from .inputs import InputFile
 
 if TYPE_CHECKING:
-    from .recipes import Recipes, Recipe, Input
+    from .recipes import Recipes, Recipe
+    from .inputs import Input
     from .kitchen import Kitchen
 
 log = logging.getLogger("arkimaps.pantry")
@@ -84,11 +86,13 @@ class Pantry:
         """
         # List the data files in the pantry
         input_dir = os.path.join(workdir, recipe.name)
-        inputs = Inputs(recipe, input_dir, output_steps)
+        inputs = Inputs(recipe, input_dir)
 
         # Generate orders based on the data we found
         count_generated = 0
         for step, files in inputs.steps.items():
+            if output_steps is not None and step not in output_steps:
+                continue
             sources = inputs.for_step(step)
             basename = f"{recipe.name}+{step:03d}"
             dest = os.path.join(workdir, basename)
@@ -105,17 +109,6 @@ class Pantry:
         log.info("%s: %d orders created", recipe.name, count_generated)
 
 
-class InputFile(NamedTuple):
-    # Pathname to the file
-    pathname: str
-    # Input name in the recipe
-    name: str
-    # Forecast step
-    step: int
-    # Input with information about the file
-    info: Input
-
-
 class Inputs:
     """
     Generate and aggregate input data
@@ -123,25 +116,25 @@ class Inputs:
     def __init__(
             self,
             recipe: Recipe,
-            input_dir: str,
-            output_steps: Optional[List[int]] = None):
+            input_dir: str):
         """
         Look into the pantry filesystem storage and take note of what files are
         available
         """
         self.recipe = recipe
         self.input_dir = input_dir
-        self.output_steps = output_steps
         self.steps: Dict[int, List[InputFile]] = defaultdict(list)
 
-        for fname in os.listdir(input_dir):
+        for input_file in self.read():
+            self.steps[input_file.step].append(input_file)
+
+    def read(self) -> Iterator[InputFile]:
+        for fname in os.listdir(self.input_dir):
             if not fname.endswith(".grib"):
                 continue
             name, step = fname[:-5].rsplit("+", 1)
             model, name = name.split("_", 1)
             step = int(step)
-            if output_steps is not None and step not in output_steps:
-                continue
 
             # Lookup the right Input in the recipe, by model name
             for i in self.recipe.inputs[name]:
@@ -151,11 +144,11 @@ class Inputs:
             else:
                 continue
 
-            self.steps[step].append(InputFile(
-                pathname=os.path.join(input_dir, fname),
-                name=name,
-                step=step,
-                info=info))
+            yield InputFile(
+                    pathname=os.path.join(self.input_dir, fname),
+                    name=name,
+                    step=step,
+                    info=info)
 
     def for_step(self, step):
         """
@@ -172,11 +165,8 @@ class Inputs:
             found = None
             # Try all input alternatives in order
             for i in inputs:
-                # Look for files that satisfy this input
-                for f in files:
-                    if f.name == name and f.info == i:
-                        found = f
-                        break
+                found = i.select_file(name, step, files)
+                # Stop at the first matching input alternative
                 if found:
                     break
             if not found:
