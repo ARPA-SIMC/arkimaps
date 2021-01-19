@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Iterable, ContextManager
 import contextlib
 import os
 import multiprocessing
+import multiprocessing.pool
 
 if TYPE_CHECKING:
     from arkimapslib.recipes import Order
