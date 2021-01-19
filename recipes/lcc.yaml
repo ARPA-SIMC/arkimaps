@@ -30,17 +30,20 @@ recipe:
    params:
     contour: off
     contour_highlight: off
+    contour_hilo: off
     contour_label: off
-    contour_level_list: [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0]
-    contour_min_level: 50.0
-    contour_max_level: 100.0
+    contour_level_list: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+    contour_min_level: 2.0
+    contour_max_level: 8.0
     contour_level_selection_type: level_list
     contour_shade: on
     contour_shade_max_level_colour: rgba(255,0,0,0.2)
     contour_shade_min_level_colour: rgba(255,0,0,0.0)
     contour_shade_method: area_fill
-    contour_shade_technique: polygon_shading
+    contour_interpolation_ceiling: 7.99
     legend: on
+    legend_title: on
+    legend_title_text: "Low cloud cover [okta]"
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
