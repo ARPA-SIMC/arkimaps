@@ -220,7 +220,7 @@ class ArkimetDispatcher:
                 dest = os.path.join(recipe_dir, f"{inp.name}_{name}+{output_step}.{source['format']}")
                 # TODO: implement Metadata.write_data to write directly without
                 # needing to create an intermediate python bytes object
-                with open(dest, "wb") as out:
+                with open(dest, "ab") as out:
                     out.write(md.data)
         return True
 
