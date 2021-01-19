@@ -83,8 +83,8 @@ class Mixer:
         """
         Add a grib file
         """
-        source_info = self.order.sources[name]
-        source_input = source_info["input"]
+        input_file = self.order.sources[name]
+        source_input = input_file.info
 
         # TODO: if source_input has preprocessing steps, apply them here
         # source_input: Input
@@ -98,7 +98,7 @@ class Mixer:
 
         self.order.log.info("add_grib mgrib %r", kwargs)
 
-        grib = self.macro.mgrib(grib_input_file_name=source_info["source"], **kwargs)
+        grib = self.macro.mgrib(grib_input_file_name=input_file.pathname, **kwargs)
         self.gribs[name] = grib
         self.parts.append(grib)
 

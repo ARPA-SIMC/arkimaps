@@ -5,6 +5,7 @@ import os
 import inspect
 import json
 import logging
+from .inputs import Input
 
 if TYPE_CHECKING:
     import arkimet
@@ -38,52 +39,6 @@ class Recipes:
         for recipe in self.recipes:
             dest = os.path.join(path, recipe.name) + '.yaml.md'
             recipe.document(dest)
-
-
-class Input:
-    """
-    An input element to a recipe
-    """
-    def __init__(
-            self,
-            name: str,
-            arkimet: str,
-            eccodes: str,
-            mgrib: Optional[Kwargs] = None):
-        # name, identifying this instance among other alternatives for this input
-        self.name = name
-        # arkimet matcher filter
-        self.arkimet = arkimet
-        # Compiled arkimet matcher, when available/used
-        self.arkimet_matcher: Optional[arkimet.Matcher] = None
-        # grib_filter if expression
-        self.eccodes = eccodes
-        # Extra arguments passed to mgrib on loading
-        self.mgrib = mgrib
-
-    def __getstate__(self):
-        # Don't pickle arkimet_matcher, which is unpicklable and undeeded
-        return {
-            "name": self.name,
-            "arkimet": self.arkimet,
-            "arkimet_matcher": None,
-            "eccodes": self.eccodes,
-            "mgrib": self.mgrib,
-        }
-
-    def compile_arkimet_matcher(self, session: arkimet.Session):
-        self.arkimet_matcher = session.matcher(self.arkimet)
-
-    def document(self, file, indent=4):
-        """
-        Document the details about this input in Markdown
-        """
-        ind = " " * indent
-        print(f"{ind}* **Arkimet matcher**: `{self.arkimet}`", file=file)
-        print(f"{ind}* **grib_filter matcher**: `{self.eccodes}`", file=file)
-        if self.mgrib:
-            for k, v in self.mgrib.items():
-                print(f"{ind}* **mgrib {{k}}**: `{v}`", file=file)
 
 
 class Recipe:
