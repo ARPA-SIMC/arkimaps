@@ -1,19 +1,23 @@
-# ArkiMaps (alfa)
-Generazione mappe meteorologiche da modelli previsionali
+# ArkiMaps (α)
+Generazione mappe meteorologiche da modelli previsionali.
 
-## Scopo
-Produzione di (quasi) tutti i plottaggi su mappa (leggi: no grafici) disponibili su infomet alla sezione "Previsioni" e voce "Modelli ad area limitata" e "Modelli globali di circolazione generale"
+Attualmente implementati:
+ * COSMO-LAMI
+ * IFS-ECMWF (nella versione distribuita ai Centri Funzionali)
 
-Idealmente agganciabile ad arkimet e più performante della produzione attuale al SIMC
+Funziona sia come programma standalone che come postprocessatore per https://github.com/ARPA-SIMC/arkimet
 
 ## Requisiti di sistema
 
-python3 >= 3.7
-python3-magics
+ - python3 >= 3.7
+ - python3-magics
+ - eccodes
+ - https://github.com/ARPA-SIMC/libsim (per il preprocessing di alcuni prodotti)
+ - https://github.com/ARPA-SIMC/arkimet (opzionale)
 
 ## Guida rapida
 
-### Estrazione dati di prova
+### Estrazione dati di prova (arkimet)
 
 COSMO, corsa intera (circa 3.7GiB)
 ```
@@ -51,37 +55,6 @@ per altre opzioni vedi:
 ./arkimaps -h
 ```
 
-## Riferimenti esterni e cenni storici
-
-Primi tentativi fatti con cineca: https://github.com/ARPA-SIMC/magics-maps
-
-Stili di contouring predefiniti integrati in Magics:https://confluence.ecmwf.int/display/MAGP/Predefined+palettes+in+Magics 
-
-Tracce di documentazione su contouring custom: https://github.com/ecmwf/skinnywms/issues/37
-
-### File di dati disponibili e potenzialmente utili
-
-* https://github.com/ARPA-SIMC/libsim/blob/master/data/vargrib2bufr.csv (instalato in /usr/share/libsim)
-* `/usr/share/eccodes/definitions/grib1/cfVarName.def`
-
-
-### Uso dei JSON in /usr/share/magics
-
-* `/usr/share/magics/styles/palettes.json`: corrisponde a
-  `contour_shade_palette_name` in <https://confluence.ecmwf.int/display/MAGP/Contouring>
-* `contour_automatic_setting` in
-  <https://confluence.ecmwf.int/display/MAGP/Contouring> è usato per attivare
-  il match delle regole di contouring. V. anche [questo commento in skinnywms](https://github.com/ecmwf/skinnywms/issues/37#issuecomment-562215449)
-
-Per scegliere stili diversi, `contour_automatic_setting` deve rimanere settato
-sempre a `"ecmwf"`, e serve invece cambiare il path in `MAGICS_STYLE_PATH`:
-
-```py
-# Questo è quello che fa skinnywms
-if args.style != "":
-    os.environ["MAGICS_STYLE_PATH"] = args.style + ":ecmwf"
-```
-
 ## Creazione di nuove ricette
 
 In `arkimapslib/mixer.py` sono definiti e commentati i vari `step` possibili. I
@@ -107,3 +80,28 @@ se quella di default non è l'ideale.
 * `Recipe` è la ricetta caricata da YAML
 * `Mixer` è l'implementazione dei vari passi possibili per le ricette
 * `Order` è un prodotto in output
+
+## Riferimenti esterni e cenni storici
+
+Primi tentativi fatti con cineca: https://github.com/ARPA-SIMC/magics-maps
+
+Stili di contouring predefiniti integrati in Magics:https://confluence.ecmwf.int/display/MAGP/Predefined+palettes+in+Magics 
+
+Tracce di documentazione su contouring custom: https://github.com/ecmwf/skinnywms/issues/37
+
+### Uso dei JSON in /usr/share/magics
+
+* `/usr/share/magics/styles/palettes.json`: corrisponde a
+  `contour_shade_palette_name` in <https://confluence.ecmwf.int/display/MAGP/Contouring>
+* `contour_automatic_setting` in
+  <https://confluence.ecmwf.int/display/MAGP/Contouring> è usato per attivare
+  il match delle regole di contouring. V. anche [questo commento in skinnywms](https://github.com/ecmwf/skinnywms/issues/37#issuecomment-562215449)
+
+Per scegliere stili diversi, `contour_automatic_setting` deve rimanere settato
+sempre a `"ecmwf"`, e serve invece cambiare il path in `MAGICS_STYLE_PATH`:
+
+```py
+# Questo è quello che fa skinnywms
+if args.style != "":
+    os.environ["MAGICS_STYLE_PATH"] = args.style + ":ecmwf"
+```
