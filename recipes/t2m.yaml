@@ -2,9 +2,12 @@
 description: Temperature at 2 metres
 inputs:
  t2m:
-   - name: any
-     arkimet: product:GRIB1,,1,11 or GRIB1,,2,11 or GRIB1,,3,11 or GRIB2,,,11,,3; level:GRIB1,100,200; timerange:GRIB1,0
-     eccodes: (shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2) or (shortName is "2t" and indicatorOfTypeOfLevel == 1 and level == 0 and timeRangeIndicator == 0)
+  - name: cosmo
+    arkimet: product:GRIB1,,2,11;level:GRIB1,105,2
+    eccodes: shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2
+  - name: ifs 
+    arkimet: product:GRIB1,98,128,167;level:GRIB1,1
+    eccodes: shortName is "2t" and indicatorOfTypeOfLevel == 1 and level == 0 and timeRangeIndicator == 0
 recipe:
  - step: add_basemap
    params: 
@@ -53,6 +56,10 @@ recipe:
     contour_shade_method: area_fill
     contour_shade_min_level: -30.0
     legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_title_text: "Temperature at 2m [°C]"
+    legend_automatic_position: right
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
