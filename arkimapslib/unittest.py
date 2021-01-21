@@ -38,4 +38,5 @@ def add_recipe_test_cases(module_name, recipe_name):
             test_mixin = getattr(module, f"{recipe_name}Mixin")
 
             test_case = type(cls_name, (dispatch_mixin, model_mixin, test_mixin, unittest.TestCase), {})
+            test_case.__module__ = module_name
             setattr(module, cls_name, test_case)
