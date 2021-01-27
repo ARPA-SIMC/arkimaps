@@ -37,7 +37,7 @@ class Recipes:
         Generate markdown documentation for the recipes found in the given path
         """
         for recipe in self.recipes:
-            dest = os.path.join(path, recipe.name) + '.yaml.md'
+            dest = os.path.join(path, recipe.name) + '.md'
             recipe.document(dest)
 
 
