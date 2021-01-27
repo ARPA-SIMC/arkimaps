@@ -133,3 +133,7 @@ dmypy.json
 
 # Recipes documentation
 /recipes/*.md
+
+# Emacs
+*~
+\#*\#

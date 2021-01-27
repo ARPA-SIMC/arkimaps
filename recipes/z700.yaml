@@ -1,15 +1,15 @@
 ---
-description: Geopotential 500hPa
+description: Geopotential 700hPa
 inputs:
  z:
   - name: cosmo
-    arkimet: product:GRIB1,,2,6; level:GRIB1,100,500
+    arkimet: product:GRIB1,,2,6; level:GRIB1,100,700
     eccodes: shortName is "z" and centre != 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.01
   - name: ifs
-    arkimet: product:GRIB1,98,128,156; level:GRIB1,100,500
+    arkimet: product:GRIB1,98,128,156; level:GRIB1,100,700
     eccodes: shortName is "z" and centre == 98
     mgrib:
        grib_automatic_scaling: off
