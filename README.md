@@ -65,8 +65,8 @@ Per una descrizione delle opzioni vedi:
 Informazioni sulla composizione delle singole ricette sono disponibili nei file 
 `.md` dentro alla directory [recipes](../master/recipes/)
 
-Informazioni sull'inventario dei prodotti in corso di implementazione sono disponibili
-nella directory [prodotti](../master/prodotti/)
+Informazioni sull'inventario dei prodotti in corso di implementazione sono
+disponibili nella directory [prodotti](../master/prodotti/)
 
 ## Creazione di nuove ricette
 
@@ -113,5 +113,5 @@ if args.style != "":
 
 arkimaps is Copyright (C) 2020-2021 ARPAE-SIMC <urpsim@arpae.it>
 
-arkimaps is Free Software, licensed under the terms of the GNU General Public License version
-2.
+arkimaps is Free Software, licensed under the terms of the GNU General Public
+License version 3.
