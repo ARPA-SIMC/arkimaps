@@ -49,18 +49,24 @@ Per spacchettare automaticamente il file tar:
 ./arkimaps process --filter=eccodes < test.arkimet |tar -xf - -C out/
 ```
 
-### Help
+### Documentazione
 
-per una descrizione delle opzioni vedi:
+Per una descrizione delle opzioni vedi:
 ```
 ./arkimaps -h
 ```
 
-è disponibile un ulteriore descrizione per ogni subcommand, ad es.:
+É anche disponibile un ulteriore descrizione per ogni subcommand, ad es.:
 
 ```
 ./arkimaps process -h
 ```
+
+Informazioni sulla composizione delle singole ricette sono disponibili nei file 
+`.md` dentro alla directory [recipes](../master/recipes/)
+
+Informazioni sull'inventario dei prodotti in corso di implementazione sono disponibili
+nella directory [prodotti](../master/prodotti/)
 
 ## Creazione di nuove ricette
 
@@ -87,14 +93,6 @@ se quella di default non è l'ideale.
 * `Recipe` è la ricetta caricata da YAML
 * `Mixer` è l'implementazione dei vari passi possibili per le ricette
 * `Order` è un prodotto in output
-
-## Riferimenti esterni e cenni storici
-
-Primi tentativi fatti con cineca: https://github.com/ARPA-SIMC/magics-maps
-
-Stili di contouring predefiniti integrati in Magics:https://confluence.ecmwf.int/display/MAGP/Predefined+palettes+in+Magics 
-
-Tracce di documentazione su contouring custom: https://github.com/ecmwf/skinnywms/issues/37
 
 ## Note su uso dei JSON in /usr/share/magics
 
