@@ -58,7 +58,7 @@ class Recipe:
         self.inputs: Dict[str, List[Input]] = defaultdict(list)
         for name, inputs in data.get("inputs", {}).items():
             for info in inputs:
-                self.inputs[name].append(Input(**info))
+                self.inputs[name].append(Input.create(**info))
 
         # Get the recipe steps
         self.steps: List[Tuple[str, Kwargs]] = []

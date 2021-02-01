@@ -8,7 +8,9 @@ class ClassRegistry(Generic[T]):
     """
     Registry of classes
     """
-    registry: Dict[str, Type[T]] = {}
+    # To be implemented by subclassers, otherwise we end up with a common
+    # registry storage for all implementations
+    registry: Dict[str, Type[T]]
 
     @classmethod
     def register(cls, impl_cls: Type[T]):
@@ -19,6 +21,7 @@ class ClassRegistry(Generic[T]):
         if name is None:
             name = impl_cls.__name__.lower()
         cls.registry[name] = impl_cls
+        return impl_cls
 
     @classmethod
     def by_name(cls, name: str) -> Type[T]:

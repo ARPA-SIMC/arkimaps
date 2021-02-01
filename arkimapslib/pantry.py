@@ -1,6 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Dict, Tuple
-from collections import defaultdict
+from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Tuple
 import contextlib
 import subprocess
 import sys
@@ -8,7 +7,7 @@ import os
 import arkimet
 import logging
 from .recipes import Order
-from .inputs import InputFile
+from .inputs import Inputs
 
 if TYPE_CHECKING:
     from .recipes import Recipes, Recipe
@@ -107,74 +106,6 @@ class Pantry:
             )
 
         log.info("%s: %d orders created", recipe.name, count_generated)
-
-
-class Inputs:
-    """
-    Generate and aggregate input data
-    """
-    def __init__(
-            self,
-            recipe: Recipe,
-            input_dir: str):
-        """
-        Look into the pantry filesystem storage and take note of what files are
-        available
-        """
-        self.recipe = recipe
-        self.input_dir = input_dir
-        self.steps: Dict[int, List[InputFile]] = defaultdict(list)
-
-        for input_file in self.read():
-            self.steps[input_file.step].append(input_file)
-
-    def read(self) -> Iterator[InputFile]:
-        for fname in os.listdir(self.input_dir):
-            if not fname.endswith(".grib"):
-                continue
-            name, step = fname[:-5].rsplit("+", 1)
-            model, name = name.split("_", 1)
-            step = int(step)
-
-            # Lookup the right Input in the recipe, by model name
-            for i in self.recipe.inputs[name]:
-                if i.name == model:
-                    info = i
-                    break
-            else:
-                continue
-
-            yield InputFile(
-                    pathname=os.path.join(self.input_dir, fname),
-                    name=name,
-                    step=step,
-                    info=info)
-
-    def for_step(self, step):
-        """
-        Return input files for the given step.
-
-        Return None if some of the inputs are not satisfied for this step
-        """
-        files = self.steps.get(step)
-        if files is None:
-            return None
-
-        res = {}
-        for name, inputs in self.recipe.inputs.items():
-            found = None
-            # Try all input alternatives in order
-            for i in inputs:
-                found = i.select_file(name, step, files)
-                # Stop at the first matching input alternative
-                if found:
-                    break
-            if not found:
-                log.debug("%s+%03d: data for input %s not found: skipping", self.recipe.name, step, name)
-                return None
-            res[name] = found
-
-        return res
 
 
 class ArkimetPantry(Pantry):
