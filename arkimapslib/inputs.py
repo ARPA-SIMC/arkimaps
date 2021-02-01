@@ -2,6 +2,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Iterator
 from collections import defaultdict
 import os
+import re
+import subprocess
+import shutil
 import logging
 from .utils import ClassRegistry
 
@@ -62,6 +65,14 @@ class Inputs:
                     name=name,
                     step=step,
                     info=info)
+
+    def preprocess(self):
+        """
+        Hook into inputs to run preprocessors if needed
+        """
+        for name, inputs in self.recipe.inputs.items():
+            for i in inputs:
+                i.preprocess(self)
 
     def for_step(self, step):
         """
@@ -132,6 +143,13 @@ class Input:
             "mgrib": self.mgrib,
         }
 
+    def preprocess(self, inputs: Inputs):
+        """
+        Run preprocessing commands if needed by this input type
+        """
+        # Default implementation is no preprocessing
+        pass
+
     def select_file(self, inputs: Inputs, name: str, step: int) -> "InputFile":
         """
         Given a recipe input name, a step, and available input files for that
@@ -170,20 +188,89 @@ class Decumulate(Input):
     """
     NAME = "decumulate"
 
+    def __init__(self, comp_step: str = None, **kw):
+        if comp_step is None:
+            raise RuntimeError("comp_step must be present for 'decumulate' inputs")
+        super().__init__(**kw)
+        self.comp_step = comp_step
+        self.dirname = f"{self.name}_decumulate_" + re.sub(r"[^a-zA-Z0-9]+", "_", self.comp_step)
+
+    def preprocess(self, inputs: Inputs):
+        """
+        Run preprocessing commands if needed by this input type
+        """
+        super().preprocess(inputs)
+
+        # List inputs that need preprocessing
+        sources = []
+        for input_files in inputs.steps.values():
+            for f in input_files:
+                if f.info != self:
+                    continue
+                sources.append(f)
+
+        # Don't run preprocessing if we don't have data to preprocess
+        if not sources:
+            return
+
+        data_dir = os.path.join(inputs.input_dir, self.dirname)
+        stamp_file = os.path.join(data_dir, "done")
+        if os.path.exists(stamp_file):
+            return
+
+        os.makedirs(data_dir, exist_ok=True)
+
+        grib_filter_rules = os.path.join(data_dir, "filter_rules")
+        with open(grib_filter_rules, "wt") as fd:
+            print(f'write "{data_dir}/[endStep].grib";', file=fd)
+
+        # We could pipe the output of vg6d_transform directly into grib_filter,
+        # but grib_filter errors in case of empty input with the same exit code
+        # as having a nonexisting file as input, so we can't tell the ok
+        # situation in which vg6d_transform doesn't find enough data, from a
+        # bug causing a wrong invocation.
+        # As a workaround, we need a temporary file, so we can check if it's
+        # empty before passing it to grib_filter
+        decumulated_data = os.path.join(data_dir, "decumulated.grib")
+        if os.path.exists(decumulated_data):
+            os.unlink(decumulated_data)
+
+        v6t = subprocess.Popen(
+                ["vg6d_transform", "--comp-stat-proc=1",
+                    "--comp-step="+self.comp_step, "--comp-full-steps",
+                    "--comp-frac-valid=0", "-", decumulated_data],
+                stdin=subprocess.PIPE,
+                env={"LOG4C_PRIORITY": "debug"},
+                )
+        for f in sources:
+            with open(f.pathname, "rb") as fd:
+                shutil.copyfileobj(fd, v6t.stdin)
+        v6t.stdin.close()
+        v6t.wait()
+        if v6t.returncode != 0:
+            raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
+
+        if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
+            return
+
+        subprocess.run(["grib_filter", grib_filter_rules, decumulated_data], check=True)
+
+        with open(stamp_file, "wb"):
+            pass
+
     def select_file(self, inputs: Inputs, name: str, step: int) -> "InputFile":
         """
         Given a recipe input name, a step, and available input files for that
         step, select the input file (or generate a new one) that can be used as
         input for the recipe
         """
-        input_files = inputs.steps.get(step)
-        if input_files is None:
-            return None
-
-        # Look for files that satisfy this input
-        for f in input_files:
-            if f.name == name and f.info == self:
-                return f
+        f = os.path.join(inputs.input_dir, self.dirname, f"{step}.grib")
+        if os.path.exists(f):
+            return InputFile(
+                    pathname=f,
+                    name=name,
+                    step=step,
+                    info=self)
         return None
 
     def document(self, file, indent=4):

@@ -1,0 +1,89 @@
+---
+# https://github.com/ARPA-SIMC/arkimaps/issues/23
+#
+#
+# * Cose da fare per la precipitazione tp1h
+# 
+# Cosmo
+# 
+# vg6d_transform --comp-stat-proc=1 --comp-step='0 01' --comp-full-steps --comp-frac-valid=0 cosmo_tp+0.grib tp_1h.grib
+# 
+# L'output mi genera un prodotto per ogni step (quindi un prodotto ogni ora)
+# 
+# IFS
+# 
+# Ho grib divisi per step. L'input a vg6d è un file unico, quindi dovrei comunque concatenarli. A quel punto in fase di dispatch posso aggiungere un modo per dire "verrà preprocessato, fai un file unico"
+# 
+# LOG4C_PRIORITY=debug vg6d_transform --comp-stat-proc=1 --comp-step='0 01' --comp-full-steps --comp-frac-valid=0 z.grib tp_1h.grib
+# 
+#   IFS è a passo triorario, quindi la 1h non si applica
+# 
+#   Se fosse per la 3h:
+#   LOG4C_PRIORITY=debug vg6d_transform --comp-stat-proc=1 --comp-step='0 03' --comp-full-steps --comp-frac-valid=0 input.grib tp_3h.grib
+# 
+#   E poi per l'unità di misura, agire su mgrib con grib_scaling_factor
+# 
+# 
+# * Cose da fare per la precipitazione tp12h
+# 
+# Cosmo
+# 
+# vg6d_transform --comp-stat-proc=1 --comp-step='0 12' --comp-full-steps --comp-frac-valid=0 cosmo_tp+0.grib tp_1h.grib
+# 
+# L'output mi genera un prodotto per ogni step (quindi un prodotto ogni 12 ore)
+# 
+# -------------------------------------------------------------------------
+# 
+# Per la neve:
+# 
+# Somma convettiva e large scale:
+# vg6d_transform --output-variable-list=B13205 lcsf.grib tsf.grib
+#
+#
+description: Total precipitation 1h
+inputs:
+ tp:
+   - name: cosmo
+     type: decumulate
+     comp_step: "0 01"
+     arkimet: product:GRIB1,,2,61
+     eccodes: shortName is "tp"
+   - name: ifs
+     type: decumulate
+     comp_step: "0 01"
+     arkimet: product:GRIB1,98,128,228
+     eccodes: shortName is "tp"
+recipe:
+ - step: add_basemap
+   params: 
+    subpage_map_projection: cylindrical
+    subpage_lower_left_longitude: -5.0
+    subpage_lower_left_latitude: 30.0
+    subpage_upper_right_longitude: 27.0
+    subpage_upper_right_latitude: 55.0
+    # For an example of more, see skinnywms/plot/magics.py
+ - step: add_coastlines_bg
+ - step: add_grib
+   name: tp
+ - step: add_contour
+   params:
+    contour: "off"
+    contour_highlight: "off"
+    contour_hilo: "off"
+    contour_label: "off"
+    contour_level_selection_type: "level_list"
+    contour_shade: "on"
+    contour_shade_colour_method: "list"
+    contour_shade_method: "area_fill"
+    contour_shade_min_level: 0.5
+    contour_level_list: [0.5, 1.0 ,2.0, 5.0, 10.0 ,20.0, 30.0, 50.0, 70.0, 100.0, 150.0, 200.0]
+    contour_shade_colour_list: [ "rgb( 0.686,1.000,1.000)", "rgb( 0.000,1.000,1.000)",
+            "rgb( 0.447,0.639,1.000)", "rgb( 0.000,0.498,1.000)",
+            "rgb( 0.145,0.000,1.000)", "rgb( 0.145,0.435,0.435)",
+            "rgb( 1.000,1.000,0.000)", "rgb( 1.000,0.498,0.000)",
+            "rgb( 1.000,0.000,0.000)", "rgb(1.000,0.000,1.000)",
+            "rgb(0.615,0.403,0.937)" ]
+    legend: on
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries

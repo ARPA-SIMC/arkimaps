@@ -87,12 +87,17 @@ class Pantry:
         input_dir = os.path.join(workdir, recipe.name)
         inputs = Inputs(recipe, input_dir)
 
+        # Run preprocessors if needed
+        inputs.preprocess()
+
         # Generate orders based on the data we found
         count_generated = 0
         for step, files in inputs.steps.items():
             if output_steps is not None and step not in output_steps:
                 continue
             sources = inputs.for_step(step)
+            if sources is None:
+                continue
             basename = f"{recipe.name}+{step:03d}"
             dest = os.path.join(workdir, basename)
             count_generated += 1
