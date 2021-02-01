@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Type, Optional
+from typing import TYPE_CHECKING, Dict, Any, Optional, Type
+from .utils import ClassRegistry
 
 if TYPE_CHECKING:
     from .recipes import Order
@@ -8,25 +9,18 @@ if TYPE_CHECKING:
     Kwargs = Dict[str, Any]
 
 
-class Mixers:
+class Mixers(ClassRegistry["Mixer"]):
+    """
+    Registry of available Mixer implementations
+    """
     registry: Dict[str, Type["Mixer"]] = {}
 
     @classmethod
-    def register(cls, mixer_cls: Type["Mixer"]):
-        """
-        Add a mixer class to the registry
-        """
-        name = getattr(mixer_cls, "NAME", None)
-        if name is None:
-            name = str(mixer_cls)
-
-        cls.registry[name] = mixer_cls
-
-    @classmethod
     def for_order(cls, order: Order) -> "Mixer":
-        mixer_cls = cls.registry.get(order.mixer)
-        if mixer_cls is None:
-            raise KeyError(f"order requires unknown mixer {order.mixer}")
+        try:
+            mixer_cls = cls.by_name(order.mixer)
+        except KeyError as e:
+            raise KeyError(f"order requires unknown mixer {order.mixer}") from e
         return mixer_cls(order)
 
 
