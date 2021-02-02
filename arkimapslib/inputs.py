@@ -237,8 +237,8 @@ class Decumulate(Input):
 
         v6t = subprocess.Popen(
                 ["vg6d_transform", "--comp-stat-proc=1",
-                    "--comp-step="+self.comp_step, "--comp-full-steps",
-                    "--comp-frac-valid=0", "-", decumulated_data],
+                 "--comp-step="+self.comp_step, "--comp-frac-valid=0", "-",
+                 decumulated_data],
                 stdin=subprocess.PIPE,
                 env={"LOG4C_PRIORITY": "debug"},
                 )
