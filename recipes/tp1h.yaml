@@ -84,6 +84,10 @@ recipe:
             "rgb( 1.000,0.000,0.000)", "rgb(1.000,0.000,1.000)",
             "rgb(0.615,0.403,0.937)" ]
     legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_title_text: "Precipitation [mm]"
+    legend_automatic_position: right
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
