@@ -2,7 +2,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Iterator
 from collections import defaultdict
 import os
-import re
 import subprocess
 import shutil
 import logging
@@ -188,12 +187,12 @@ class Decumulate(Input):
     """
     NAME = "decumulate"
 
-    def __init__(self, comp_step: str = None, **kw):
-        if comp_step is None:
-            raise RuntimeError("comp_step must be present for 'decumulate' inputs")
+    def __init__(self, step: int = None, **kw):
+        if step is None:
+            raise RuntimeError("step must be present for 'decumulate' inputs")
         super().__init__(**kw)
-        self.comp_step = comp_step
-        self.dirname = f"{self.name}_decumulate_" + re.sub(r"[^a-zA-Z0-9]+", "_", self.comp_step)
+        self.step = int(step)
+        self.dirname = f"{self.name}_decumulate_{self.step}"
 
     def preprocess(self, inputs: Inputs):
         """
@@ -235,13 +234,10 @@ class Decumulate(Input):
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 
-        v6t = subprocess.Popen(
-                ["vg6d_transform", "--comp-stat-proc=1",
-                 "--comp-step="+self.comp_step, "--comp-frac-valid=0", "-",
-                 decumulated_data],
-                stdin=subprocess.PIPE,
-                env={"LOG4C_PRIORITY": "debug"},
-                )
+        cmd = ["vg6d_transform", "--comp-stat-proc=1",
+               f"--comp-step=0 {self.step:02d}", "--comp-frac-valid=0", "-",
+               decumulated_data]
+        v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
         for f in sources:
             with open(f.pathname, "rb") as fd:
                 shutil.copyfileobj(fd, v6t.stdin)
