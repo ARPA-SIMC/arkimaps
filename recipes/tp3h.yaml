@@ -1,15 +1,15 @@
 ---
-description: Total precipitation 1h
+description: Total precipitation 3h
 inputs:
  tp:
    - name: cosmo
      type: decumulate
-     step: 1
+     step: 3
      arkimet: product:GRIB1,,2,61
      eccodes: shortName is "tp"
    - name: ifs
      type: decumulate
-     step: 1
+     step: 3
      arkimet: product:GRIB1,98,128,228
      eccodes: shortName is "tp"
 recipe:
