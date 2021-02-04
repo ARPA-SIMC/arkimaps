@@ -235,8 +235,10 @@ class Decumulate(Input):
             os.unlink(decumulated_data)
 
         cmd = ["vg6d_transform", "--comp-stat-proc=1",
-               f"--comp-step=0 {self.step:02d}", "--comp-frac-valid=0", "-",
-               decumulated_data]
+               f"--comp-step=0 {self.step:02d}", "--comp-frac-valid=0"]
+        if self.step != 24:
+            cmd.append("--comp-full-steps")
+        cmd += ["-", decumulated_data]
         v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
         for f in sources:
             with open(f.pathname, "rb") as fd:
