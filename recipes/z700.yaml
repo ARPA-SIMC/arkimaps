@@ -14,7 +14,6 @@ inputs:
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
-       #TODO: verify
        #grib_scaling_factor: 0.098066
 
 recipe:
