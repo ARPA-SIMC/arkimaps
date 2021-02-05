@@ -1,0 +1,34 @@
+---
+description: Vertical integral of eastward water vapour flux
+inputs:
+ mcont:
+  - name: any
+    arkimet: product:GRIB2,98,192,162,71,5
+    eccodes: shortName is "viwve"
+recipe:
+ - step: add_basemap
+   params: 
+    subpage_map_projection: cylindrical
+    subpage_lower_left_longitude: -5.0
+    subpage_lower_left_latitude: 30.0
+    subpage_upper_right_longitude: 27.0
+    subpage_upper_right_latitude: 55.0
+    # For an example of more, see skinnywms/plot/magics.py
+ - step: add_coastlines_bg
+ - step: add_grib
+   name: mcont
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_shade_method: area_fill
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_title_text: 'Vertical integral of eastward water vapour flux'
+    legend_display_type: continuous
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
