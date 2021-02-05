@@ -2,10 +2,14 @@
 # https://confluence.ecmwf.int/pages/viewpage.action?pageId=106611148
 description: Vertical integral of eastward water vapour flux
 inputs:
- mcont:
+ viwve:
   - name: any
     arkimet: product:GRIB2,98,192,162,71,5
     eccodes: shortName is "viwve"
+ mslp:
+  - name: any
+    arkimet: product:GRIB1,98,128,151 or GRIB1,,2,2
+    eccodes: shortName is "pmsl" or shortName is "msl"
 recipe:
  - step: add_basemap
    params: 
@@ -17,7 +21,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: mcont
+   name: viwve
  - step: add_contour
    params:
     contour: off
@@ -37,6 +41,26 @@ recipe:
     legend_title_text: 'Averaged total lightning in the last 3h'
     legend_display_type: continuous
     legend_automatic_position: right
+ - step: add_grib
+   name: mslp
+   params:
+    grib_automatic_scaling: off
+    grib_scaling_factor: 0.01
+ - step: add_contour
+   params:
+    contour_shade: off
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 4
+    contour_line_colour: black
+    contour_line_thickness: 2
+    contour_highlight: off
+    contour_label: on
+    contour_label_height: 0.4
+    contour_label_frequency: 2
+    contour_label_blanking: on
+    contour_label_colour: navy
+    legend: off
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries

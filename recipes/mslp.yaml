@@ -1,7 +1,7 @@
 ---
 description: Mean Sea Level Pressure
 inputs:
- msl:
+ mslp:
   - name: any
     arkimet: product:GRIB1,98,128,151 or GRIB1,,2,2
     eccodes: shortName is "pmsl" or shortName is "msl"
@@ -16,7 +16,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: msl
+   name: mslp
    params:
     grib_automatic_scaling: off
     grib_scaling_factor: 0.01
@@ -34,7 +34,7 @@ recipe:
     contour_label_frequency: 2
     contour_label_blanking: on
     contour_label_colour: navy
-    legend: off   
+    legend: off
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
