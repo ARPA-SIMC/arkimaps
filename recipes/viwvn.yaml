@@ -22,11 +22,18 @@ recipe:
     contour: off
     contour_shade: on
     contour_shade_method: area_fill
+    contour_level_selection_type: level_list
+    contour_level_list: [-1100.0, -700.0, -500.0, -300.0, -100.0,
+            100.0, 300.0, 500.0, 700.0, 1100.0]
+    contour_shade_colour_method: list
+    contour_shade_colour_list: [ "#FF00FB", "#3300F9", "#72A1FB",
+            "#00FFFE", "#FFFFFF", "#FFB12F", "#FF4F21", "#F8241D",
+            "#9D1513" ]
     contour_highlight: off
     contour_hilo: off
     legend: on
     legend_title: on
-    legend_title_text: 'Vertical integral of northward water vapour flux'
+    legend_title_text: 'Averaged total lightning in the last 3h'
     legend_display_type: continuous
     legend_automatic_position: right
  - step: add_coastlines_fg

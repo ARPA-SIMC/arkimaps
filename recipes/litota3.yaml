@@ -1,4 +1,5 @@
 ---
+# https://confluence.ecmwf.int/pages/viewpage.action?pageId=106611144
 description: Averaged total lightning flash density in the last 3 hours
 inputs:
  mcont:
@@ -22,6 +23,11 @@ recipe:
     contour: off
     contour_shade: on
     contour_shade_method: area_fill
+    contour_level_selection_type: level_list
+    contour_level_list: [0.1, 0.5, 1.0, 2.0, 5.0, 10.0 ,20.0, 50.0, 100.0]
+    contour_shade_colour_method: list
+    contour_shade_colour_list: [ "#CC97A1", "#610B1D", "#A90528",
+            "#FF032F", "#FF7126", "#FFA12D", "#FFDA37", "#FDFC3F" ]
     contour_highlight: off
     contour_hilo: off
     legend: on
