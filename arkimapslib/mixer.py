@@ -72,7 +72,6 @@ class Mixer:
             map_coastline_colour="#000000",
             map_coastline_resolution="medium",
         ))
-
     def add_grib(self, name: str, params: Optional[Kwargs] = None):
         """
         Add a grib file
@@ -121,6 +120,14 @@ class Mixer:
         self.parts.append(
             self.macro.mcoast(map_coastline_general_style="boundaries"),
         )
+        self.parts.append(self.macro.mcoast(
+            map_boundaries="on",
+            map_boundaries_colour="#504040",
+            map_administrative_boundaries_countries_list=["ITA"],
+            map_administrative_boundaries_colour="#504040",
+            map_administrative_boundaries_style="solid",
+            map_administrative_boundaries="on",
+        ))
 
     def serve(self):
         """
