@@ -26,7 +26,7 @@ With arguments:
     "subpage_map_projection": "cylindrical",
     "subpage_lower_left_longitude": 2.5,
     "subpage_lower_left_latitude": 35.0,
-    "subpage_upper_right_longitude": 22.0,
+    "subpage_upper_right_longitude": 20.0,
     "subpage_upper_right_latitude": 50.0,
     "map_grid": true,
     "map_grid_latitude_reference": 45.0,
