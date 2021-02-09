@@ -1,15 +1,12 @@
-# viwvn: Vertical integral of northward water vapour flux
+# litota3_ita: Averaged total lightning flash density in the last 3 hours
 
 Mixer: **default**
 
 ## Inputs
 
 * **mcont**:
-    * **Arkimet matcher**: `product:GRIB2,98,192,162,72,6`
-    * **grib_filter matcher**: `shortName is "viwvn"`
-* **mslp**:
-    * **Arkimet matcher**: `product:GRIB1,98,128,151 or GRIB1,,2,2`
-    * **grib_filter matcher**: `shortName is "pmsl" or shortName is "msl"`
+    * **Arkimet matcher**: `product:GRIB2,98,0,17,4,5`
+    * **grib_filter matcher**: `shortName is "litota3"`
 
 ## Steps
 
@@ -71,78 +68,36 @@ With arguments:
     "contour_shade_method": "area_fill",
     "contour_level_selection_type": "level_list",
     "contour_level_list": [
-      -1100.0,
-      -700.0,
-      -500.0,
-      -300.0,
-      -100.0,
-      100.0,
-      300.0,
-      500.0,
-      700.0,
-      1100.0
+      0.1,
+      0.5,
+      1.0,
+      2.0,
+      5.0,
+      10.0,
+      20.0,
+      50.0,
+      100.0
     ],
     "contour_shade_colour_method": "list",
     "contour_shade_colour_list": [
-      "#FF00FB",
-      "#3300F9",
-      "#72A1FB",
-      "#00FFFE",
-      "#FFFFFF",
-      "#FFB12F",
-      "#FF4F21",
-      "#F8241D",
-      "#9D1513"
+      "#CC97A1",
+      "#610B1D",
+      "#A90528",
+      "#FF032F",
+      "#FF7126",
+      "#FFA12D",
+      "#FFDA37",
+      "#FDFC3F"
     ],
     "contour_highlight": false,
     "contour_hilo": false,
     "legend": true,
     "legend_title": true,
-    "legend_title_text": "Vertical integral of northward water vapour flux",
+    "legend_title_text": "Averaged total lightning in the last 3h",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right",
     "legend_text_colour": "black",
     "legend_title_font_size": 0.8
-  }
-}
-```
-
-### add_grib
-
-Add a grib file
-
-With arguments:
-```
-{
-  "name": "mslp",
-  "params": {
-    "grib_automatic_scaling": false,
-    "grib_scaling_factor": 0.01
-  }
-}
-```
-
-### add_contour
-
-Add contouring of the previous data
-
-With arguments:
-```
-{
-  "params": {
-    "contour_shade": false,
-    "contour": true,
-    "contour_level_selection_type": "interval",
-    "contour_interval": 4,
-    "contour_line_colour": "black",
-    "contour_line_thickness": 2,
-    "contour_highlight": false,
-    "contour_label": true,
-    "contour_label_height": 0.4,
-    "contour_label_frequency": 2,
-    "contour_label_blanking": true,
-    "contour_label_colour": "navy",
-    "legend": false
   }
 }
 ```

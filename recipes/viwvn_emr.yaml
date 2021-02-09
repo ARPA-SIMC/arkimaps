@@ -1,0 +1,84 @@
+---
+description: Vertical integral of northward water vapour flux
+inputs:
+ mcont:
+  - name: any
+    arkimet: product:GRIB2,98,192,162,72,6
+    eccodes: shortName is "viwvn"
+ mslp:
+  - name: any
+    arkimet: product:GRIB1,98,128,151 or GRIB1,,2,2
+    eccodes: shortName is "pmsl" or shortName is "msl"
+recipe:
+ - step: add_basemap
+   params:
+    page_id_line: off
+    output_width: 900
+    page_y_length: 19.0
+    subpage_map_projection: polar_stereographic
+    subpage_lower_left_longitude: 9.0
+    subpage_lower_left_latitude: 43.4
+    subpage_upper_right_longitude: 13.2
+    subpage_upper_right_latitude: 45.2
+    subpage_map_vertical_longitude: 11.0
+    map_grid: on
+    map_grid_latitude_reference: 45.0 
+    map_grid_longitude_reference: 0.0
+    map_grid_longitude_increment: 2.5
+    map_grid_latitude_increment: 2.5
+    map_grid_colour: grey
+    map_grid_line_style: dash
+    map_label_colour: black
+    map_label_height: 0.4
+    map_label_latitude_frequency : 1
+ - step: add_coastlines_bg
+ - step: add_grib
+   name: mcont
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_shade_method: area_fill
+    contour_level_selection_type: level_list
+    contour_level_list: [-1100.0, -700.0, -500.0, -300.0, -100.0,
+            100.0, 300.0, 500.0, 700.0, 1100.0]
+    contour_shade_colour_method: list
+    contour_shade_colour_list: [ "#FF00FB", "#3300F9", "#72A1FB",
+            "#00FFFE", "#FFFFFF", "#FFB12F", "#FF4F21", "#F8241D",
+            "#9D1513" ]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_title_text: 'Vertical integral of northward water vapour flux'
+    legend_display_type: continuous
+    legend_automatic_position: right
+    legend_text_colour: black
+    legend_title_font_size: 0.8
+ - step: add_grib
+   name: mslp
+   params:
+    grib_automatic_scaling: off
+    grib_scaling_factor: 0.01
+ - step: add_contour
+   params:
+    contour_shade: off
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 4
+    contour_line_colour: black
+    contour_line_thickness: 2
+    contour_highlight: off
+    contour_label: on
+    contour_label_height: 0.4
+    contour_label_frequency: 2
+    contour_label_blanking: on
+    contour_label_colour: navy
+    legend: off
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+   params:
+    map_user_layer: on
+    map_user_layer_name: "/usr/local/share/libsim-1.1/Sottozone_allerta_ER"
+    map_user_layer_colour: blue
