@@ -113,7 +113,7 @@ class Mixer:
             self.macro.mcoast(map_coastline_general_style="grid"),
         )
 
-    def add_boundaries(self):
+    def add_boundaries(self, params: Optional[Kwargs] = None):
         """
         Add a coordinates grid
         """
@@ -128,6 +128,9 @@ class Mixer:
             map_administrative_boundaries_style="solid",
             map_administrative_boundaries="on",
         ))
+        #FIX: group all mcoasts?
+        if params is not None:
+            self.parts.append(self.macro.mcoast(**params))
 
     def serve(self):
         """
