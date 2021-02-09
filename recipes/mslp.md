@@ -4,7 +4,7 @@ Mixer: **default**
 
 ## Inputs
 
-* **msl**:
+* **mslp**:
     * **Arkimet matcher**: `product:GRIB1,98,128,151 or GRIB1,,2,2`
     * **grib_filter matcher**: `shortName is "pmsl" or shortName is "msl"`
 
@@ -39,7 +39,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "msl",
+  "name": "mslp",
   "params": {
     "grib_automatic_scaling": false,
     "grib_scaling_factor": 0.01
