@@ -57,3 +57,7 @@ recipe:
     map_user_layer: on
     map_user_layer_name: "/usr/local/share/libsim-1.1/Sottozone_allerta_ER"
     map_user_layer_colour: blue
+ - step: add_geopoints
+   params:
+    geo_input_file_name: "/tmp/puntiCitta.geo"
+ - step: add_symbols
