@@ -174,3 +174,21 @@ With arguments:
 }
 ```
 
+### add_geopoints
+
+Add geopoint file
+
+With arguments:
+```
+{
+  "params": {
+    "geo_input_file_name": "/tmp/puntiCitta.geo"
+  }
+}
+```
+
+### add_symbols
+
+Add symbols settings
+
+

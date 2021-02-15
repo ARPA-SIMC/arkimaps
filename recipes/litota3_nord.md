@@ -1,4 +1,4 @@
-# litota3_emr: Averaged total lightning flash density in the last 3 hours
+# litota3_nord: Averaged total lightning flash density in the last 3 hours
 
 Mixer: **default**
 
@@ -22,11 +22,11 @@ With arguments:
     "output_width": 900,
     "page_y_length": 19.0,
     "subpage_map_projection": "polar_stereographic",
-    "subpage_lower_left_longitude": 9.0,
-    "subpage_lower_left_latitude": 43.4,
-    "subpage_upper_right_longitude": 13.2,
-    "subpage_upper_right_latitude": 45.2,
-    "subpage_map_vertical_longitude": 11.0,
+    "subpage_lower_left_longitude": 6.0,
+    "subpage_lower_left_latitude": 42.5,
+    "subpage_upper_right_longitude": 18.0,
+    "subpage_upper_right_latitude": 48.0,
+    "subpage_map_vertical_longitude": 10.3,
     "map_grid": true,
     "map_grid_latitude_reference": 45.0,
     "map_grid_longitude_reference": 0.0,
