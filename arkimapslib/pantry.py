@@ -1,4 +1,4 @@
-from __future__ import annotations
+#from __future__ import annotations
 from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Tuple
 import contextlib
 import subprocess
@@ -9,7 +9,10 @@ import logging
 from .recipes import Order
 from .inputs import Inputs
 
-if TYPE_CHECKING:
+def type_check():
+    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
+    
+if type_check():
     from .recipes import Recipes, Recipe
     from .inputs import Input
     from .kitchen import Kitchen

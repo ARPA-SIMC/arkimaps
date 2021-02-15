@@ -1,8 +1,11 @@
-from __future__ import annotations
+#from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, Optional, Type
 from .utils import ClassRegistry
 
-if TYPE_CHECKING:
+def type_check():
+    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
+    
+if type_check():
     from .recipes import Order
 
     # Used for kwargs-style dicts

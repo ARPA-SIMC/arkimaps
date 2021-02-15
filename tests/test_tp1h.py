@@ -1,4 +1,4 @@
-from __future__ import annotations
+#from __future__ import annotations
 from arkimapslib.render import Renderer
 from arkimapslib.unittest import add_recipe_test_cases
 import unittest
