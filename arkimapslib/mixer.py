@@ -2,10 +2,7 @@
 from typing import TYPE_CHECKING, Dict, Any, Optional, Type
 from .utils import ClassRegistry
 
-def type_check():
-    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
-    
-if type_check():
+if TYPE_CHECKING:
     from .recipes import Order
 
     # Used for kwargs-style dicts

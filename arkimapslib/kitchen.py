@@ -10,10 +10,7 @@ try:
 except ModuleNotFoundError:
     arkimet = None
 
-def type_check():
-    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
-    
-if type_check():
+if TYPE_CHECKING:
     # Used for kwargs-style dicts
     Kwargs = Dict[str, Any]
 
@@ -33,7 +30,7 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def _build_recipe(self, name: str, info: Kwargs):
+    def _build_recipe(self, name: str, info: 'Kwargs'):
         raise NotImplementedError(f"{self.__class__.__name__}._build_recipe() not implemented")
 
     def load_recipes(self, path: str):
@@ -78,7 +75,7 @@ if arkimet is not None:
             # path
             self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
 
-        def _build_recipe(self, name: str, info: Kwargs):
+        def _build_recipe(self, name: str, info: 'Kwargs'):
             from .recipes import ArkimetRecipe
             return ArkimetRecipe(name, info, self.session)
 
@@ -95,7 +92,7 @@ if arkimet is not None:
 
 
 class EccodesRecipesMixin:
-    def _build_recipe(self, name: str, info: Kwargs):
+    def _build_recipe(self, name: str, info: 'Kwargs'):
         from .recipes import EccodesRecipe
         return EccodesRecipe(name, info)
 

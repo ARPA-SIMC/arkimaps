@@ -7,11 +7,8 @@ import inspect
 import json
 import logging
 from .inputs import Input
-
-def type_check():
-    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
-    
-if type_check():
+  
+if TYPE_CHECKING:
     import arkimet
 
     # Used for kwargs-style dicts
@@ -49,7 +46,7 @@ class Recipe:
     """
     A parsed and validated recipe
     """
-    def __init__(self, name: str, data: Kwargs):
+    def __init__(self, name: str, data: 'Kwargs'):
         self.name = name
 
         # Name of the mixer to use
@@ -65,7 +62,7 @@ class Recipe:
                 self.inputs[name].append(Input.create(**info))
 
         # Get the recipe steps
-        self.steps: List[Tuple[str, Kwargs]] = []
+        self.steps: List[Tuple[str, 'Kwargs']] = []
         for s in data.get("recipe", ()):
             if not isinstance(s, dict):
                 raise RuntimeError("recipe step is not a dict")
@@ -111,7 +108,7 @@ class Recipe:
 
 
 class ArkimetRecipe(Recipe):
-    def __init__(self, name: str, data: Kwargs, session: Optional[arkimet.dataset.Session]):
+    def __init__(self, name: str, data: 'Kwargs', session: Optional['arkimet.dataset.Session']):
         super().__init__(name, data)
         for input_list in self.inputs.values():
             for i in input_list:
@@ -134,7 +131,7 @@ class Order:
             dest: str,
             basename: str,
             recipe: str,
-            steps: List[Tuple[str, Kwargs]]):
+            steps: List[Tuple[str, 'Kwargs']]):
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files

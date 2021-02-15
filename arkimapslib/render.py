@@ -6,14 +6,11 @@ import sys
 import multiprocessing
 import multiprocessing.pool
 
-def type_check():
-    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
-    
-if type_check():
+if TYPE_CHECKING:
     from arkimapslib.recipes import Order
 
 
-def prepare_order(order: Order) -> Order:
+def prepare_order(order: 'Order') -> 'Order':
     order.prepare()
     return order
 
@@ -55,12 +52,12 @@ class Renderer:
         with multiprocessing.pool.Pool(initializer=initializer, maxtasksperchild=16) as pool:
             yield pool
 
-    def render_one(self, order: Order):
+    def render_one(self, order: 'Order'):
         with override_env(
                 MAGICS_STYLE_PATH=self.styles_dir,
                 MAGPLUS_QUIET="1"):
             order.prepare()
 
-    def render(self, orders: Iterable[Order]):
+    def render(self, orders: Iterable['Order']):
         with self.magics_worker_pool() as pool:
             yield from pool.imap_unordered(prepare_order, orders)
