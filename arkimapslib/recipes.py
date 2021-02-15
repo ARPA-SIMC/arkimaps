@@ -1,13 +1,17 @@
-from __future__ import annotations
+#from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Optional
 from collections import defaultdict
 import os
+import sys
 import inspect
 import json
 import logging
 from .inputs import Input
 
-if TYPE_CHECKING:
+def type_check():
+    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
+    
+if type_check():
     import arkimet
 
     # Used for kwargs-style dicts

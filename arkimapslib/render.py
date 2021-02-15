@@ -1,11 +1,15 @@
-from __future__ import annotations
+#from __future__ import annotations
 from typing import TYPE_CHECKING, Iterable, ContextManager
 import contextlib
 import os
+import sys
 import multiprocessing
 import multiprocessing.pool
 
-if TYPE_CHECKING:
+def type_check():
+    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
+    
+if type_check():
     from arkimapslib.recipes import Order
 
 
