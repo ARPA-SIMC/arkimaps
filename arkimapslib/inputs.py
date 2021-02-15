@@ -8,10 +8,7 @@ import shutil
 import logging
 from .utils import ClassRegistry
 
-def type_check():
-    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
-
-if type_check():
+if TYPE_CHECKING:
     import arkimet
     from .recipes import Recipe
 
@@ -34,7 +31,7 @@ class Inputs:
     """
     def __init__(
             self,
-            recipe: Recipe,
+            recipe: 'Recipe',
             input_dir: str):
         """
         Look into the pantry filesystem storage and take note of what files are
@@ -112,7 +109,7 @@ class Input:
             name: str,
             arkimet: str,
             eccodes: str,
-            mgrib: Optional[Kwargs] = None):
+            mgrib: Optional['Kwargs'] = None):
         # name, identifying this instance among other alternatives for this input
         self.name = name
         # arkimet matcher filter
@@ -169,7 +166,7 @@ class Input:
                 return f
         return None
 
-    def compile_arkimet_matcher(self, session: arkimet.Session):
+    def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         self.arkimet_matcher = session.matcher(self.arkimet)
 
     def document(self, file, indent=4):

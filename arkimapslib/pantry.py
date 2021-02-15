@@ -9,10 +9,7 @@ import logging
 from .recipes import Order
 from .inputs import Inputs
 
-def type_check():
-    return (sys.version_info[0] == 3 and sys.version_info[1] < 7) or TYPE_CHECKING
-    
-if type_check():
+if TYPE_CHECKING:
     from .recipes import Recipes, Recipe
     from .inputs import Input
     from .kitchen import Kitchen
@@ -24,19 +21,19 @@ class Pantry:
     """
     Storage of GRIB files to be processed
     """
-    def __init__(self, kitchen: Kitchen, root: str):
+    def __init__(self, kitchen: 'Kitchen', root: str):
         # General run state
         self.kitchen = kitchen
         # Root directory where inputs are stored
         self.data_root = os.path.join(root, "pantry")
 
-    def fill(self, recipes: Recipes, path: Optional[str] = None):
+    def fill(self, recipes: 'Recipes', path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
         raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
 
-    def order(self, recipes: Recipes, name: str, step: int) -> Order:
+    def order(self, recipes: 'Recipes', name: str, step: int) -> Order:
         """
         Return an order for the given recipe name and output step
         """
@@ -50,7 +47,7 @@ class Pantry:
             raise KeyError(f"No option found to generate {name}+{step:03d}")
         return order
 
-    def orders(self, recipes: Recipes) -> Iterable[Order]:
+    def orders(self, recipes: 'Recipes') -> Iterable[Order]:
         """
         Return all orders that can be made with this pantry
         """
@@ -78,7 +75,7 @@ class Pantry:
 
     def make_orders(
             self,
-            recipe: Recipe,
+            recipe: 'Recipe',
             workdir: str,
             output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
         """
@@ -120,7 +117,7 @@ class ArkimetPantry(Pantry):
     """
     Arkimet-based storage of GRIB files to be processed
     """
-    def fill(self, recipes: Recipes, path: Optional[str] = None):
+    def fill(self, recipes: 'Recipes', path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
@@ -146,7 +143,7 @@ class ArkimetDispatcher:
     """
     Read a stream of arkimet metadata and store its data into a dataset
     """
-    def __init__(self, todo_list: List[Tuple[Input, str, str]]):
+    def __init__(self, todo_list: List[Tuple['Input', str, str]]):
         self.todo_list = todo_list
 
     def dispatch(self, md: arkimet.Metadata) -> bool:
@@ -184,11 +181,11 @@ class EccodesPantry(Pantry):
     """
     eccodes-based storage of GRIB files to be processed
     """
-    def __init__(self, kitchen: Kitchen, root: str):
+    def __init__(self, kitchen: 'Kitchen', root: str):
         super().__init__(kitchen, root)
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
-    def fill(self, recipes: Recipes, path: Optional[str] = None):
+    def fill(self, recipes: 'Recipes', path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
