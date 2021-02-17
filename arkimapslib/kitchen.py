@@ -1,7 +1,8 @@
-from __future__ import annotations
+#from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, Optional
 import tempfile
 import os
+import sys
 import yaml
 import contextlib
 try:
@@ -29,7 +30,7 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def _build_recipe(self, name: str, info: Kwargs):
+    def _build_recipe(self, name: str, info: 'Kwargs'):
         raise NotImplementedError(f"{self.__class__.__name__}._build_recipe() not implemented")
 
     def load_recipes(self, path: str):
@@ -74,7 +75,7 @@ if arkimet is not None:
             # path
             self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
 
-        def _build_recipe(self, name: str, info: Kwargs):
+        def _build_recipe(self, name: str, info: 'Kwargs'):
             from .recipes import ArkimetRecipe
             return ArkimetRecipe(name, info, self.session)
 
@@ -91,7 +92,7 @@ if arkimet is not None:
 
 
 class EccodesRecipesMixin:
-    def _build_recipe(self, name: str, info: Kwargs):
+    def _build_recipe(self, name: str, info: 'Kwargs'):
         from .recipes import EccodesRecipe
         return EccodesRecipe(name, info)
 

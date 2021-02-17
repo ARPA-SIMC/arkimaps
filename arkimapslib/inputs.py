@@ -1,7 +1,8 @@
-from __future__ import annotations
+#from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Iterator
 from collections import defaultdict
 import os
+import sys
 import subprocess
 import shutil
 import logging
@@ -30,7 +31,7 @@ class Inputs:
     """
     def __init__(
             self,
-            recipe: Recipe,
+            recipe: 'Recipe',
             input_dir: str):
         """
         Look into the pantry filesystem storage and take note of what files are
@@ -108,7 +109,7 @@ class Input:
             name: str,
             arkimet: str,
             eccodes: str,
-            mgrib: Optional[Kwargs] = None):
+            mgrib: Optional['Kwargs'] = None):
         # name, identifying this instance among other alternatives for this input
         self.name = name
         # arkimet matcher filter
@@ -165,7 +166,7 @@ class Input:
                 return f
         return None
 
-    def compile_arkimet_matcher(self, session: arkimet.Session):
+    def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         self.arkimet_matcher = session.matcher(self.arkimet)
 
     def document(self, file, indent=4):
