@@ -22,7 +22,7 @@ class LogCollector(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         entry = {
-            'ts': time.clock_gettime_ns(time.CLOCK_REALTIME),
+            'ts': time.clock_gettime(time.CLOCK_REALTIME),
             'level': record.levelno,
             'msg': self.format(record),
             'name': record.name
