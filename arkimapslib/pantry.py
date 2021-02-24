@@ -150,12 +150,19 @@ class ArkimetDispatcher:
         for inp, recipe_dir, name in self.todo_list:
             if inp.arkimet_matcher.match(md):
                 trange = md.to_python("timerange")
-                if trange['trange_type'] in (0, 1):
-                    output_step = trange['p1']
-                elif trange['trange_type'] in (2, 3, 4, 5, 6, 7):
-                    output_step = trange['p2']
+                style = trange["style"]
+                if style == "GRIB1":
+                    if trange['trange_type'] in (0, 1):
+                        output_step = trange['p1']
+                    elif trange['trange_type'] in (2, 3, 4, 5, 6, 7):
+                        output_step = trange['p2']
+                    else:
+                        log.warning("unsupported timerange %s: skipping input", trange)
+                        continue
+                elif style == "Timedef":
+                    output_step = trange["step_len"]
                 else:
-                    log.warning("unsupported timerange %s: skipping input", trange)
+                    log.warning("unsupported timerange style in %s: skipping input", trange)
                     continue
 
                 source = md.to_python("source")
