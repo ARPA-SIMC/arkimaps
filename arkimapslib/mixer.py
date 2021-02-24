@@ -1,12 +1,13 @@
-#from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Optional, Type
+# from __future__ import annotations
+from typing import Dict, Any, Optional, Type
 from .utils import ClassRegistry
 
-if TYPE_CHECKING:
-    from .recipes import Order
-
-    # Used for kwargs-style dicts
-    Kwargs = Dict[str, Any]
+# if TYPE_CHECKING:
+#     from .recipes import Order
+#
+#     # Used for kwargs-style dicts
+from .recipes import Order
+Kwargs = Dict[str, Any]
 
 
 class Mixers(ClassRegistry["Mixer"]):
@@ -72,6 +73,7 @@ class Mixer:
             map_coastline_colour="#000000",
             map_coastline_resolution="medium",
         ))
+
     def add_grib(self, name: str, params: Optional[Kwargs] = None):
         """
         Add a grib file
@@ -128,7 +130,7 @@ class Mixer:
             map_administrative_boundaries_style="solid",
             map_administrative_boundaries="on",
         ))
-        #FIX: group all mcoasts?
+        # FIX: group all mcoasts?
         if params is not None:
             self.parts.append(self.macro.mcoast(**params))
 
