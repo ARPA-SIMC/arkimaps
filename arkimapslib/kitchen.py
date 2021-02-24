@@ -1,5 +1,5 @@
-#from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Optional
+# from __future__ import annotations
+from typing import Dict, Any, Optional
 import tempfile
 import os
 import sys
@@ -10,9 +10,9 @@ try:
 except ModuleNotFoundError:
     arkimet = None
 
-if TYPE_CHECKING:
+# if TYPE_CHECKING:
     # Used for kwargs-style dicts
-    Kwargs = Dict[str, Any]
+Kwargs = Dict[str, Any]
 
 
 class Kitchen:

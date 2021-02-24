@@ -1,4 +1,4 @@
-#from __future__ import annotations
+# from __future__ import annotations
 from arkimapslib.render import Renderer
 from arkimapslib.unittest import add_recipe_test_cases
 import unittest
@@ -38,7 +38,7 @@ class TP2HMixin:
                 self.assertEqual(len(orders), 0)
                 return
             else:
-                self.assertEqual(len(orders), 12)
+                self.assertGreaterEqual(len(orders), 12)
             orders = [o for o in orders if o.basename == "tp1h+012"]
             self.assertEqual(len(orders), 1)
 

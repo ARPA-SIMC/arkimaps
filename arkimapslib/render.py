@@ -1,13 +1,13 @@
-#from __future__ import annotations
-from typing import TYPE_CHECKING, Iterable, ContextManager
+# from __future__ import annotations
+from typing import Iterable, ContextManager
 import contextlib
 import os
 import sys
 import multiprocessing
 import multiprocessing.pool
 
-if TYPE_CHECKING:
-    from arkimapslib.recipes import Order
+# if TYPE_CHECKING:
+from arkimapslib.recipes import Order
 
 
 def prepare_order(order: 'Order') -> 'Order':
