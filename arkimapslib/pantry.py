@@ -1,5 +1,5 @@
-#from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, Iterable, BinaryIO, List, Iterator, Tuple
+# from __future__ import annotations
+from typing import Optional, Iterable, BinaryIO, List, Iterator, Tuple
 import contextlib
 import subprocess
 import sys
@@ -9,10 +9,10 @@ import logging
 from .recipes import Order
 from .inputs import Inputs
 
-if TYPE_CHECKING:
-    from .recipes import Recipes, Recipe
-    from .inputs import Input
-    from .kitchen import Kitchen
+# if TYPE_CHECKING:
+from .recipes import Recipes, Recipe
+from .inputs import Input
+from .kitchen import Kitchen
 
 log = logging.getLogger("arkimaps.pantry")
 

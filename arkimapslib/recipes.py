@@ -1,18 +1,20 @@
-#from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, List, Tuple, Optional
+# from __future__ import annotations
+from typing import Dict, Any, List, Tuple, Optional
 from collections import defaultdict
 import os
-import sys
 import inspect
 import json
 import logging
-from .inputs import Input
-  
-if TYPE_CHECKING:
-    import arkimet
 
-    # Used for kwargs-style dicts
-    Kwargs = Dict[str, Any]
+# if TYPE_CHECKING:
+#    import arkimet
+try:
+    import arkimet
+except ModuleNotFoundError:
+    arkimet = None
+
+# Used for kwargs-style dicts
+Kwargs = Dict[str, Any]
 
 log = logging.getLogger("arkimaps.recipes")
 
@@ -47,6 +49,8 @@ class Recipe:
     A parsed and validated recipe
     """
     def __init__(self, name: str, data: 'Kwargs'):
+        from .inputs import Input
+
         self.name = name
 
         # Name of the mixer to use

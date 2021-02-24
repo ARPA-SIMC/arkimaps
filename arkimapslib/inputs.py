@@ -1,19 +1,22 @@
-#from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Iterator
+# from __future__ import annotations
+from typing import Dict, Any, Optional, NamedTuple, Type, List, Iterator
 from collections import defaultdict
 import os
-import sys
 import subprocess
 import shutil
 import logging
 from .utils import ClassRegistry
 
-if TYPE_CHECKING:
+# if TYPE_CHECKING:
+#     import arkimet
+try:
     import arkimet
-    from .recipes import Recipe
+except ModuleNotFoundError:
+    pass
+from .recipes import Recipe
 
-    # Used for kwargs-style dicts
-    Kwargs = Dict[str, Any]
+# Used for kwargs-style dicts
+Kwargs = Dict[str, Any]
 
 log = logging.getLogger("arkimaps.inputs")
 
