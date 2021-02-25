@@ -2,13 +2,13 @@
 description: High Cloud Cover
 inputs:
  hcc:
-  - name: cosmo
+  - model: cosmo
     arkimet: product:GRIB1,,2,75
     eccodes: shortName is "clch"
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
-  - name: ifs
+  - model: ifs
     arkimet: product:GRIB1,98,128,188
     eccodes: shortName is "hcc"
     mgrib:

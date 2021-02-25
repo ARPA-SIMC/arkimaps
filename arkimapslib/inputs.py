@@ -48,6 +48,10 @@ class Inputs:
             self.steps[input_file.step].append(input_file)
 
     def read(self) -> Iterator["InputFile"]:
+        """
+        Scan an input directory in the pantry and generate InputFile objects
+        for each input found
+        """
         for fname in os.listdir(self.input_dir):
             if not fname.endswith(".grib"):
                 continue
@@ -55,9 +59,10 @@ class Inputs:
             model, name = name.split("_", 1)
             step = int(step)
 
-            # Lookup the right Input in the recipe, by model name
+            # Lookup the corresponding Input in the recipe, by input name and
+            # model name, and associate it with this input
             for i in self.recipe.inputs[name]:
-                if i.name == model:
+                if i.model == model:
                     info = i
                     break
             else:
@@ -79,19 +84,23 @@ class Inputs:
 
     def for_step(self, step):
         """
-        Return input files for the given step.
+        Return available input files for the given step.
 
         Return None if some of the inputs are not satisfied for this step
         """
         res = {}
+        # For each of the recipe required inputs...
         for name, inputs in self.recipe.inputs.items():
             found = None
-            # Try all input alternatives in order
+            # ...try all its alternatives in order...
             for i in inputs:
+                # ...and see if we have data for it
                 found = i.select_file(self, name, step)
                 # Stop at the first matching input alternative
                 if found:
                     break
+            # One of the required inputs for this recipe has no data for this
+            # step: give up
             if not found:
                 log.debug("%s+%03d: data for input %s not found: skipping", self.recipe.name, step, name)
                 return None
@@ -109,12 +118,12 @@ class Input:
 
     def __init__(
             self,
-            name: str,
+            model: str,
             arkimet: str,
             eccodes: str,
             mgrib: Optional['Kwargs'] = None):
-        # name, identifying this instance among other alternatives for this input
-        self.name = name
+        # model, identifying this instance among other alternatives for this input
+        self.model = model
         # arkimet matcher filter
         self.arkimet = arkimet
         # Compiled arkimet matcher, when available/used
@@ -139,7 +148,7 @@ class Input:
     def __getstate__(self):
         # Don't pickle arkimet_matcher, which is unpicklable and undeeded
         return {
-            "name": self.name,
+            "model": self.model,
             "arkimet": self.arkimet,
             "arkimet_matcher": None,
             "eccodes": self.eccodes,
@@ -196,7 +205,7 @@ class Decumulate(Input):
             raise RuntimeError("step must be present for 'decumulate' inputs")
         super().__init__(**kw)
         self.step = int(step)
-        self.dirname = f"{self.name}_decumulate_{self.step}"
+        self.dirname = f"{self.model}_decumulate_{self.step}"
 
     def preprocess(self, inputs: Inputs):
         """
@@ -262,7 +271,7 @@ class Decumulate(Input):
 
     def select_file(self, inputs: Inputs, name: str, step: int) -> "InputFile":
         """
-        Given a recipe input name, a step, and available input files for that
+        Given a recipe input model, a step, and available input files for that
         step, select the input file (or generate a new one) that can be used as
         input for the recipe
         """

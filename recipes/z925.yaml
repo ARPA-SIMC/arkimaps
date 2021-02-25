@@ -2,13 +2,13 @@
 description: Geopotential 925hPa
 inputs:
  z:
-  - name: cosmo
+  - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,925
     eccodes: shortName is "z" and centre != 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.01
-  - name: ifs
+  - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,925
     eccodes: shortName is "z" and centre == 98
     mgrib:

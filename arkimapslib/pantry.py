@@ -167,7 +167,7 @@ class ArkimetDispatcher:
 
                 source = md.to_python("source")
 
-                dest = os.path.join(recipe_dir, f"{inp.name}_{name}+{output_step}.{source['format']}")
+                dest = os.path.join(recipe_dir, f"{inp.model}_{name}+{output_step}.{source['format']}")
                 # TODO: implement Metadata.write_data to write directly without
                 # needing to create an intermediate python bytes object
                 with open(dest, "ab") as out:
@@ -209,7 +209,7 @@ class EccodesPantry(Pantry):
                             log.info("%s:%s:%d: skipping input with no eccodes filter", recipe.name, name, idx)
                             continue
                         print(f"if ( {i.eccodes} ) {{", file=f)
-                        print(f'  write "{recipe_dir}/{i.name}_{name}+[endStep].grib";', file=f)
+                        print(f'  write "{recipe_dir}/{i.model}_{name}+[endStep].grib";', file=f)
                         print(f"}}", file=f)
 
         # Run grib_filter on input

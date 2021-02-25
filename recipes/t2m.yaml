@@ -2,10 +2,10 @@
 description: Temperature at 2 metres
 inputs:
  t2m:
-  - name: cosmo
+  - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,105,2
     eccodes: shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2
-  - name: ifs 
+  - model: ifs 
     arkimet: product:GRIB1,98,128,167;level:GRIB1,1
     eccodes: shortName is "2t" and indicatorOfTypeOfLevel == 1 and level == 0 and timeRangeIndicator == 0
 recipe:

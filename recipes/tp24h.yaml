@@ -2,12 +2,12 @@
 description: Total precipitation 24h
 inputs:
  tp:
-   - name: cosmo
+   - model: cosmo
      type: decumulate
      step: 24
      arkimet: product:GRIB1,,2,61
      eccodes: shortName is "tp"
-   - name: ifs
+   - model: ifs
      type: decumulate
      step: 24
      arkimet: product:GRIB1,98,128,228

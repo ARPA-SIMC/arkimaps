@@ -2,12 +2,12 @@
 description: Convective precipitation 6h
 inputs:
  cp:
-   - name: cosmo
+   - model: cosmo
      type: decumulate
      step: 6
      arkimet: product:GRIB1,,201,113
      eccodes: shortName is "rain_con"
-   - name: ifs
+   - model: ifs
      type: decumulate
      step: 6
      arkimet: product:GRIB1,98,128,143

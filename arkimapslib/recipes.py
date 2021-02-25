@@ -59,7 +59,7 @@ class Recipe:
         # Get the recipe description
         self.description: str = data.get("description", "Unnamed recipe")
 
-        # Get the list of input queries
+        # Get the list of input data, and index it by name
         self.inputs: Dict[str, List[Input]] = defaultdict(list)
         for name, inputs in data.get("inputs", {}).items():
             for info in inputs:

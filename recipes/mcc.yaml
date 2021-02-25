@@ -2,13 +2,13 @@
 description: Medium Cloud Cover
 inputs:
  mcc:
-  - name: cosmo
+  - model: cosmo
     arkimet: product:GRIB1,,2,74
     eccodes: shortName is "clcm"
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
-  - name: ifs
+  - model: ifs
     arkimet: product:GRIB1,98,128,187
     eccodes: shortName is "mcc"
     mgrib:
