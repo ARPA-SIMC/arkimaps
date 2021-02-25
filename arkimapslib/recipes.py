@@ -153,6 +153,12 @@ class Order:
         # Logger for this output
         self.log = logging.getLogger(f"arkimaps.order.{basename}")
 
+    def __str__(self):
+        return self.basename
+
+    def __repr__(self):
+        return self.basename
+
     def prepare(self):
         """
         Run all the steps of the recipe and render the resulting file
