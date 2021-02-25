@@ -5,7 +5,7 @@ import unittest
 import os
 
 
-class TP2HMixin:
+class TP1HMixin:
     kitchen_class = None
 
     def test_dispatch(self):
@@ -64,4 +64,4 @@ class TP2HMixin:
             self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
 
 
-add_recipe_test_cases(__name__, "TP2H")
+add_recipe_test_cases(__name__, "tp1h")

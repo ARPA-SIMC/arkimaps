@@ -36,4 +36,4 @@ class MSLPMixin:
             self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
 
 
-add_recipe_test_cases(__name__, "MSLP")
+add_recipe_test_cases(__name__, "mslp")

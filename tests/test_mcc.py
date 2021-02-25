@@ -36,4 +36,4 @@ class MCCMixin:
             self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
 
 
-add_recipe_test_cases(__name__, "MCC")
+add_recipe_test_cases(__name__, "mcc")

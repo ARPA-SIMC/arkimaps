@@ -45,4 +45,4 @@ class CP3HMixin:
             self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
 
 
-add_recipe_test_cases(__name__, "CP3H")
+add_recipe_test_cases(__name__, "cp3h")

@@ -36,4 +36,4 @@ class T2MMixin:
             self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
 
 
-add_recipe_test_cases(__name__, "T2M")
+add_recipe_test_cases(__name__, "t2m")
