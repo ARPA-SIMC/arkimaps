@@ -1,7 +1,7 @@
 ---
 description: Temperature at 850hPa
 inputs:
- t2m:
+ t850:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,100,850
     eccodes: shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 850
@@ -19,7 +19,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: t2m
+   name: t850
  - step: add_contour
    params:
     contour: off

@@ -1,0 +1,26 @@
+---
+description: Convective Precipitation
+inputs:
+ cp:
+   - model: cosmo
+     arkimet: product:GRIB1,,201,113
+     eccodes: shortName is "rain_con"
+   - model: ifs
+     arkimet: product:GRIB1,98,128,143
+     eccodes: shortName is "cp"
+ cpdec3h:
+   type: decumulate
+   step: 3
+   inputs: cp
+ cpdec6h:
+   type: decumulate
+   step: 6
+   inputs: cp
+ cpdec12h:
+   type: decumulate
+   step: 12
+   inputs: cp
+ cpdec24h:
+   type: decumulate
+   step: 24
+   inputs: cp

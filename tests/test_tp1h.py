@@ -6,8 +6,6 @@ import os
 
 
 class TP1HMixin:
-    kitchen_class = None
-
     def test_dispatch(self):
         # For IFS and Eccodes, we have a problem:
         #  - IFS has a 3h resolution, so does not provide data for tp1h
@@ -17,20 +15,18 @@ class TP1HMixin:
         # we're running the IFS case with grib_filter dispatch. Rather than
         # handling this corner case, which is mostly test specific, we skip
         # that test
-        if self.model_name == "ifs" and self.kitchen_class.__name__ == "EccodesKitchen":
-            raise unittest.SkipTest("tp1h tests for IFS+Eccodes skipped, see code for reason")
+        if self.model_name == "ifs":
+            raise unittest.SkipTest("tp1h tests for IFS skipped, see code for reason")
 
         with self.kitchen_class() as kitchen:
-            kitchen.load_recipes("recipes")
+            self.fill_pantry(kitchen, expected=[f"{self.model_name}_tp+{step}.grib" for step in range(0, 13)])
 
             # Check that the right input was selected
-            recipe = kitchen.recipes.get("tp1h")
-            for i in recipe.inputs["tp"]:
+            tpdec1h = kitchen.pantry.inputs.get("tpdec1h")
+            for i in tpdec1h:
                 self.assertEqual(i.__class__.__name__, "Decumulate")
 
-            kitchen.pantry.fill(kitchen.recipes, path=self.get_sample_path("tp1h", 12))
-
-            orders = list(kitchen.pantry.orders(kitchen.recipes))
+            orders = self.make_orders(kitchen)
             # Preprocessing means we cannot reduce test input to only get one
             # order, so we get orders from every step from 0 to 12. We filter
             # later to keep only +12h to test
@@ -42,7 +38,7 @@ class TP1HMixin:
             orders = [o for o in orders if o.basename == "tp1h+012"]
             self.assertEqual(len(orders), 1)
 
-            renderer = Renderer()
+            renderer = Renderer(kitchen.workdir)
             with self.assertLogs() as log:
                 renderer.render_one(orders[0])
 

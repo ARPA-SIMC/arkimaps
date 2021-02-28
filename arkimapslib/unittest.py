@@ -4,6 +4,24 @@ import sys
 import os
 
 
+class RecipeTestMixin:
+    def make_orders(self, kitchen):
+        """
+        Create all satisfiable orders from the currently tested recipe
+        """
+        from .mixer import Mixers
+        recipe = kitchen.recipes.get(self.recipe_name)
+        return Mixers.make_orders(recipe, kitchen.pantry)
+
+    def fill_pantry(self, kitchen, step=12, expected=None):
+        if expected is None:
+            expected = [f"{self.model_name}_{self.recipe_name}+{step}.grib"]
+        kitchen.load_recipes("recipes")
+        kitchen.pantry.fill(path=self.get_sample_path(self.recipe_name, 12))
+        for fn in expected:
+            self.assertIn(fn, os.listdir(os.path.join(kitchen.pantry.data_root)))
+
+
 class ArkimetMixin:
     from arkimapslib.kitchen import ArkimetKitchen
     kitchen_class = ArkimetKitchen
@@ -40,7 +58,7 @@ def add_recipe_test_cases(module_name, recipe_name):
 
             test_case = type(
                     cls_name,
-                    (dispatch_mixin, model_mixin, test_mixin, unittest.TestCase),
+                    (dispatch_mixin, model_mixin, RecipeTestMixin, test_mixin, unittest.TestCase),
                     {"recipe_name": recipe_name})
             test_case.__module__ = module_name
             setattr(module, cls_name, test_case)

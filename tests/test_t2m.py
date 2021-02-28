@@ -8,13 +8,12 @@ class T2MMixin:
 
     def test_dispatch(self):
         with self.kitchen_class() as kitchen:
-            kitchen.load_recipes("recipes")
-            kitchen.pantry.fill(kitchen.recipes, path=self.get_sample_path("t2m", 12))
+            self.fill_pantry(kitchen)
 
-            orders = list(kitchen.pantry.orders(kitchen.recipes))
+            orders = self.make_orders(kitchen)
             self.assertEqual(len(orders), 1)
 
-            renderer = Renderer()
+            renderer = Renderer(kitchen.workdir)
             with self.assertLogs() as log:
                 renderer.render_one(orders[0])
 

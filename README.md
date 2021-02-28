@@ -68,6 +68,13 @@ Informazioni sulla composizione delle singole ricette sono disponibili nei file
 Informazioni sull'inventario dei prodotti in corso di implementazione sono
 disponibili nella directory [prodotti](../master/prodotti/)
 
+## Informazion sulle ricette
+
+Gli input definiti nelle ricette sono comuni a tutte le ricette: un input con
+lo stesso nome definito in piú ricette dà errore. Una ricetta può usare input
+definiti in un'altra ricetta. È possibile fare ricette senza step solo per
+definire degli input comuni.
+
 ## Creazione di nuove ricette
 
 In `arkimapslib/mixer.py` sono definiti e commentati i vari `step` possibili. I

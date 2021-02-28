@@ -2,20 +2,6 @@
 
 Mixer: **default**
 
-## Inputs
-
-* **mcc**:
-    * **Option 1**:
-        * **Arkimet matcher**: `product:GRIB1,,2,74`
-        * **grib_filter matcher**: `shortName is "clcm"`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.08`
-    * **Option 2**:
-        * **Arkimet matcher**: `product:GRIB1,,2,74`
-        * **grib_filter matcher**: `shortName is "clcm"`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.08`
-
 ## Steps
 
 ### add_basemap

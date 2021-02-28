@@ -2,18 +2,6 @@
 
 Mixer: **default**
 
-## Inputs
-
-* **tp**:
-    * **Option 1**:
-        * **Preprocessing**: decumulation
-        * **Arkimet matcher**: `product:GRIB1,,2,61`
-        * **grib_filter matcher**: `shortName is "tp"`
-    * **Option 2**:
-        * **Preprocessing**: decumulation
-        * **Arkimet matcher**: `product:GRIB1,,2,61`
-        * **grib_filter matcher**: `shortName is "tp"`
-
 ## Steps
 
 ### add_basemap
@@ -45,7 +33,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "tp"
+  "name": "tpdec24h"
 }
 ```
 

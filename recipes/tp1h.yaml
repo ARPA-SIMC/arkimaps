@@ -1,17 +1,5 @@
 ---
 description: Total precipitation 1h
-inputs:
- tp:
-   - model: cosmo
-     type: decumulate
-     step: 1
-     arkimet: product:GRIB1,,2,61
-     eccodes: shortName is "tp"
-   - model: ifs
-     type: decumulate
-     step: 1
-     arkimet: product:GRIB1,98,128,228
-     eccodes: shortName is "tp"
 recipe:
  - step: add_basemap
    params: 
@@ -23,7 +11,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: tp
+   name: tpdec1h
  - step: add_contour
    params:
     contour: "off"

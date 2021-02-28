@@ -1,17 +1,5 @@
 ---
 description: Convective precipitation 12h
-inputs:
- cp:
-   - model: cosmo
-     type: decumulate
-     step: 12
-     arkimet: product:GRIB1,,201,113
-     eccodes: shortName is "rain_con"
-   - model: ifs
-     type: decumulate
-     step: 12
-     arkimet: product:GRIB1,98,128,143
-     eccodes: shortName is "cp"
 recipe:
  - step: add_basemap
    params: 
@@ -23,7 +11,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: cp
+   name: cpdec12h
  - step: add_contour
    params:
     contour: "off"

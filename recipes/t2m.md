@@ -2,16 +2,6 @@
 
 Mixer: **default**
 
-## Inputs
-
-* **t2m**:
-    * **Option 1**:
-        * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
-        * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
-    * **Option 2**:
-        * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
-        * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
-
 ## Steps
 
 ### add_basemap

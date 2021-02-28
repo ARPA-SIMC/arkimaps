@@ -1,7 +1,7 @@
 ---
 description: Geopotential 925hPa
 inputs:
- z:
+ z925:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,925
     eccodes: shortName is "z" and centre != 98
@@ -27,7 +27,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: z
+   name: z925
  - step: add_contour
    params:
     contour_shade: off

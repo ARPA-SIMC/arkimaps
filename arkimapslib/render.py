@@ -1,6 +1,7 @@
 # from __future__ import annotations
 from typing import Iterable, ContextManager
 import contextlib
+import functools
 import os
 import multiprocessing
 import multiprocessing.pool
@@ -9,8 +10,8 @@ import multiprocessing.pool
 from arkimapslib.recipes import Order
 
 
-def prepare_order(order: 'Order') -> 'Order':
-    order.prepare()
+def prepare_order(workdir: str, order: 'Order') -> 'Order':
+    order.prepare(workdir)
     return order
 
 
@@ -31,7 +32,8 @@ def override_env(**kw):
 
 
 class Renderer:
-    def __init__(self, styles_dir: str = None):
+    def __init__(self, workdir: str, styles_dir: str = None):
+        self.workdir = workdir
         if styles_dir is None:
             styles_dir = "/usr/share/magics/styles/ecmwf"
         self.styles_dir = styles_dir
@@ -55,8 +57,9 @@ class Renderer:
         with override_env(
                 MAGICS_STYLE_PATH=self.styles_dir,
                 MAGPLUS_QUIET="1"):
-            order.prepare()
+            order.prepare(self.workdir)
 
     def render(self, orders: Iterable['Order']):
+        prepare = functools.partial(prepare_order, self.workdir)
         with self.magics_worker_pool() as pool:
-            yield from pool.imap_unordered(prepare_order, orders)
+            yield from pool.imap_unordered(prepare, orders)
