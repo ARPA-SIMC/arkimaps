@@ -2,6 +2,16 @@
 
 Mixer: **default**
 
+## Inputs
+
+* **mslp**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,2`
+        * **grib_filter matcher**: `shortName is "pmsl"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,,2,2`
+        * **grib_filter matcher**: `shortName is "pmsl"`
+
 ## Steps
 
 ### add_basemap

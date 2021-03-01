@@ -192,7 +192,7 @@ class DocumentRecipes(RecipesMixin, Command):
         self.load_recipes()
 
     def run(self):
-        self.kitchen.recipes.document(self.args.recipes)
+        self.kitchen.document_recipes(self.args.recipes)
 
 
 class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):

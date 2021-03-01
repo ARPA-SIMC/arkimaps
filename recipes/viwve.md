@@ -2,6 +2,19 @@
 
 Mixer: **default**
 
+## Inputs
+
+* **viwve**:
+    * **Arkimet matcher**: `product:GRIB2,98,192,162,71,5`
+    * **grib_filter matcher**: `shortName is "viwve"`
+* **mslp**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,2`
+        * **grib_filter matcher**: `shortName is "pmsl"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,,2,2`
+        * **grib_filter matcher**: `shortName is "pmsl"`
+
 ## Steps
 
 ### add_basemap

@@ -34,6 +34,14 @@ class Mixers(ClassRegistry["Mixer"]):
         mixer_cls = cls.by_name(recipe.mixer)
         return mixer_cls.make_orders(recipe, pantry)
 
+    @classmethod
+    def list_inputs(cls, recipe: Recipe) -> List[str]:
+        """
+        List inputs used by a recipe
+        """
+        mixer_cls = cls.by_name(recipe.mixer)
+        return mixer_cls.list_inputs(recipe)
+
 
 @Mixers.register
 class Mixer:
@@ -58,6 +66,25 @@ class Mixer:
         self.order = order
         # Elements passed after output to macro.plot
         self.parts = []
+
+    @classmethod
+    def list_inputs(cls, recipe: Recipe) -> List[str]:
+        """
+        List inputs used by this recipe.
+
+        Inputs are listed in usage order, without duplicates
+        """
+        input_names = []
+
+        # Collect the inputs needed for all steps
+        for step_name, args in recipe.steps:
+            if step_name == "add_grib":
+                input_name = args["name"]
+                if input_name in input_names:
+                    continue
+                input_names.append(input_name)
+
+        return input_names
 
     @classmethod
     def make_orders(cls, recipe: Recipe, pantry: Pantry) -> List[Order]:

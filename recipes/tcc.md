@@ -2,6 +2,20 @@
 
 Mixer: **default**
 
+## Inputs
+
+* **tcc**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,71`
+        * **grib_filter matcher**: `shortName is "clct"`
+        * **mgrib {k}**: `False`
+        * **mgrib {k}**: `0.08`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,,2,71`
+        * **grib_filter matcher**: `shortName is "clct"`
+        * **mgrib {k}**: `False`
+        * **mgrib {k}**: `0.08`
+
 ## Steps
 
 ### add_basemap

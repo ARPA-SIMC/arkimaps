@@ -60,6 +60,16 @@ class Kitchen:
             if "recipe" in recipe:
                 self.recipes.add(self._build_recipe(fn[:-5], recipe, recipe["recipe"]))
 
+    def document_recipes(self, path: str):
+        """
+        Generate markdown documentation for all the recipes found.
+
+        Write documentation to the given path
+        """
+        for recipe in self.recipes.recipes:
+            dest = os.path.join(path, recipe.name) + '.md'
+            recipe.document(self.pantry, dest)
+
     def make_orders(self) -> List[Order]:
         """
         Generate all possible orders for all available recipes

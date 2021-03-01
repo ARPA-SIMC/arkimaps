@@ -2,6 +2,13 @@
 
 Mixer: **default**
 
+## Inputs
+
+* **cpdec3h**:
+    * **Decumulation step**: 3
+    * **Preprocessing**: decumulate
+    * **Inputs**: cp
+
 ## Steps
 
 ### add_basemap

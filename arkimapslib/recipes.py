@@ -1,11 +1,11 @@
 # from __future__ import annotations
 from typing import Dict, Any, List, Tuple
-import os
 import inspect
 import json
 import logging
 
 # Used for kwargs-style dicts
+from . import pantry
 Kwargs = Dict[str, Any]
 
 log = logging.getLogger("arkimaps.recipes")
@@ -33,14 +33,6 @@ class Recipes:
                 return r
         raise KeyError(f"Recipe `{name}` does not exist")
 
-    def document(self, path: str):
-        """
-        Generate markdown documentation for the recipes found in the given path
-        """
-        for recipe in self.recipes:
-            dest = os.path.join(path, recipe.name) + '.md'
-            recipe.document(dest)
-
 
 class Recipe:
     """
@@ -65,7 +57,7 @@ class Recipe:
                 raise RuntimeError("recipe step does not contain a 'step' name")
             self.steps.append((step, s))
 
-    def document(self, dest: str):
+    def document(self, p: "pantry.Pantry", dest: str):
         from .mixer import Mixers
         mixer = Mixers.registry[self.mixer]
 
@@ -74,17 +66,21 @@ class Recipe:
             print(file=fd)
             print(f"Mixer: **{self.mixer}**", file=fd)
             print(file=fd)
-            # TODO print("## Inputs", file=fd)
-            # TODO print(file=fd)
-            # TODO for name, inputs in self.inputs.items():
-            # TODO     print(f"* **{name}**:", file=fd)
-            # TODO     if len(inputs) == 1:
-            # TODO         inputs[0].document(indent=4, file=fd)
-            # TODO     else:
-            # TODO         for idx, i in enumerate(inputs, start=1):
-            # TODO             print(f"    * **Option {idx}**:", file=fd)
-            # TODO             inputs[0].document(indent=8, file=fd)
-            # TODO print(file=fd)
+            print("## Inputs", file=fd)
+            print(file=fd)
+            for name in Mixers.list_inputs(self):
+                inputs = p.inputs.get(name)
+                if inputs is None:
+                    print(f"* **{name}** (input details are missing)", file=fd)
+                else:
+                    print(f"* **{name}**:", file=fd)
+                    if len(inputs) == 1:
+                        inputs[0].document(indent=4, file=fd)
+                    else:
+                        for i in inputs:
+                            print(f"    * Model **{i.model}**:", file=fd)
+                            inputs[0].document(indent=8, file=fd)
+            print(file=fd)
             print("## Steps", file=fd)
             print(file=fd)
             for name, args in self.steps:

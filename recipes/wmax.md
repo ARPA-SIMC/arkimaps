@@ -2,6 +2,12 @@
 
 Mixer: **default**
 
+## Inputs
+
+* **wmax**:
+    * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187`
+    * **grib_filter matcher**: `shortName is "10fg3" or shortName is "vmax_10m"`
+
 ## Steps
 
 ### add_basemap

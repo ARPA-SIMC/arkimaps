@@ -2,6 +2,18 @@
 
 Mixer: **default**
 
+## Inputs
+
+* **rh2m**:
+    * Model **cosmo**:
+        * **vg6d_transform arguments**: --output-variable-list=B13003
+        * **Preprocessing**: vg6d_transform
+        * **Inputs**: t2m, 2d, mslp
+    * Model **ifs**:
+        * **vg6d_transform arguments**: --output-variable-list=B13003
+        * **Preprocessing**: vg6d_transform
+        * **Inputs**: t2m, 2d, mslp
+
 ## Steps
 
 ### add_basemap
