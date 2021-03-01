@@ -276,10 +276,11 @@ class VG6DTransform(Derived):
 
         # For each step, run vg6d_transform to generate its output
         for step, input_files in available_steps.items():
-            log.info("input %s: generating step %d", self.name, step)
+            output_name = f"{self.pantry_basename}+{step}.grib"
 
-            output_pathname = f"{self.pantry_basename}+{step}.grib"
+            log.info("input %s: generating step %d as %s", self.name, step, output_name)
 
+            output_pathname = os.path.join(p.data_root, output_name)
             cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
             log.debug("running %s", ' '.join(shlex.quote(x) for x in cmd))
 
@@ -293,10 +294,10 @@ class VG6DTransform(Derived):
                 raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
 
             if not os.path.exists(output_pathname):
-                log.warning("input %s: %s not found after running vg6d_transform", self.name, output_pathname)
+                log.warning("input %s: %s not found after running vg6d_transform", self.name, output_name)
                 pass
             if os.path.getsize(output_pathname) == 0:
-                log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_pathname)
+                log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_name)
                 os.unlink(output_pathname)
 
     def document(self, file, indent=4):
