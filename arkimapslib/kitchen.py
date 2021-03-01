@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import tempfile
 import os
 import yaml
@@ -11,6 +11,7 @@ except ModuleNotFoundError:
 
 # if TYPE_CHECKING:
     # Used for kwargs-style dicts
+from .recipes import Order
 Kwargs = Dict[str, Any]
 
 
@@ -58,6 +59,16 @@ class Kitchen:
                         self.pantry.add_input(self._build_input(name, fn, recipe, input_contents))
             if "recipe" in recipe:
                 self.recipes.add(self._build_recipe(fn[:-5], recipe, recipe["recipe"]))
+
+    def make_orders(self) -> List[Order]:
+        """
+        Generate all possible orders for all available recipes
+        """
+        res = []
+        from .mixer import Mixers
+        for recipe in self.recipes.recipes:
+            res.extend(Mixers.make_orders(recipe, self.pantry))
+        return res
 
 
 class EmptyKitchen(Kitchen):

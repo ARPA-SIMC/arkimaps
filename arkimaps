@@ -100,7 +100,7 @@ class RenderMixin:
         """
         with self.open_output() as tarout:
             # List of products that should be rendered
-            orders = list(self.kitchen.pantry.orders(self.kitchen.recipes))
+            orders = self.kitchen.make_orders()
 
             renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
             for order in renderer.render(orders):
@@ -301,7 +301,7 @@ class Process(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
 
     def run(self):
         # Acquire input data
-        self.kitchen.pantry.fill(self.kitchen.recipes)
+        self.kitchen.pantry.fill()
         self.render_tarball()
 
 
