@@ -8,6 +8,13 @@ Mixer: **default**
     * **Decumulation step**: 6
     * **Preprocessing**: decumulate
     * **Inputs**: tp
+* **tp**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,61`
+        * **grib_filter matcher**: `shortName is "tp"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,,2,61`
+        * **grib_filter matcher**: `shortName is "tp"`
 
 ## Steps
 

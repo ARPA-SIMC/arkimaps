@@ -68,7 +68,7 @@ class Recipe:
             print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)
-            for name in Mixers.list_inputs(self):
+            for name in p.list_all_inputs(self):
                 inputs = p.inputs.get(name)
                 if inputs is None:
                     print(f"* **{name}** (input details are missing)", file=fd)

@@ -68,6 +68,24 @@ class Input:
             "mgrib": self.mgrib,
         }
 
+    def get_all_inputs(self) -> List[str]:
+        """
+        Return all names of inputs used by this input
+        """
+        return []
+
+    def add_all_inputs(self, p: "pantry.Pantry", res: List[str]):
+        """
+        Add to res the name of this input, and all inputs of this input, and
+        their inputs, recursively
+        """
+        if self.name in res:
+            return
+        res.append(self.name)
+        for name in self.get_all_inputs():
+            for inp in p.inputs[name]:
+                inp.add_all_inputs(p, res)
+
     def get_steps(self, p: "pantry.Pantry") -> Dict[int, "InputFile"]:
         """
         Scan the pantry to check what input files are available for this input.
@@ -137,6 +155,11 @@ class Derived(Input):
             raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
         self.inputs = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
+
+    def get_all_inputs(self) -> List[str]:
+        res = super().get_all_inputs()
+        res.extend(self.inputs)
+        return res
 
     def generate(self, p: "pantry.Pantry"):
         """

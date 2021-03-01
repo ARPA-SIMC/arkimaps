@@ -9,6 +9,7 @@ import logging
 
 # if TYPE_CHECKING:
 from .inputs import Input, InputFile
+from . import recipes
 try:
     import arkimet
 except ModuleNotFoundError:
@@ -49,6 +50,17 @@ class Pantry:
 
         # Input for a new model: store it
         old.append(inp)
+
+    def list_all_inputs(self, recipe: "recipes.Recipe") -> List[str]:
+        """
+        List inputs used by a recipe, and all their inputs, recursively
+        """
+        from .mixer import Mixers
+        res = []
+        for input_name in Mixers.list_inputs(recipe):
+            for inp in self.inputs[input_name]:
+                inp.add_all_inputs(self, res)
+        return res
 
     def fill(self, path: Optional[str] = None):
         """

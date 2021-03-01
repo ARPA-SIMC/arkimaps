@@ -8,6 +8,13 @@ Mixer: **default**
     * **Decumulation step**: 24
     * **Preprocessing**: decumulate
     * **Inputs**: cp
+* **cp**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,201,113`
+        * **grib_filter matcher**: `shortName is "rain_con"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,,201,113`
+        * **grib_filter matcher**: `shortName is "rain_con"`
 
 ## Steps
 
