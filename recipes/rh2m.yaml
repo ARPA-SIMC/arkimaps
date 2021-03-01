@@ -1,0 +1,47 @@
+---
+description: Relative humidity at 2 metres
+inputs:
+ 2d:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,17
+    eccodes: shortName is "2d"
+  - model: ifs 
+    arkimet: product:GRIB1,98,128,168
+    eccodes: shortName is "2d"
+ rh2m:
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t2m, 2d, mslp]
+  - model: ifs
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t2m, 2d, mslp]
+recipe:
+ - step: add_basemap
+   params: 
+    subpage_map_projection: cylindrical
+    subpage_lower_left_longitude: -5.0
+    subpage_lower_left_latitude: 30.0
+    subpage_upper_right_longitude: 27.0
+    subpage_upper_right_latitude: 55.0
+    # For an example of more, see skinnywms/plot/magics.py
+ - step: add_coastlines_bg
+ - step: add_grib
+   name: rh2m
+ - step: add_contour
+   params:
+    contour_shade: on
+    contour_shade_method: area_fill
+    contour_level_selection_type: level_list
+    contour_shade_colour_method: list
+    contour_level_list: [0.0, 20.0, 40.0, 60.0, 80.0, 90.0, 100.0]
+    legend: on
+    contour_highlight: off
+    contour_label: off
+    contour_hilo: off
+    contour: off
+    contour_shade_colour_list: [red, orange, yellow, green, cyan, blue]
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries

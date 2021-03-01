@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import tempfile
 import os
 import yaml
@@ -11,6 +11,7 @@ except ModuleNotFoundError:
 
 # if TYPE_CHECKING:
     # Used for kwargs-style dicts
+from .recipes import Order
 Kwargs = Dict[str, Any]
 
 
@@ -20,6 +21,8 @@ class Kitchen:
     """
     def __init__(self):
         from .recipes import Recipes
+        from .pantry import Pantry
+        self.pantry: Pantry
         self.recipes = Recipes()
         self.context_stack = contextlib.ExitStack()
 
@@ -29,8 +32,13 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def _build_recipe(self, name: str, info: 'Kwargs'):
-        raise NotImplementedError(f"{self.__class__.__name__}._build_recipe() not implemented")
+    def _build_input(self, name: str, filename: str, all_contents: Kwargs, input_contents: Kwargs):
+        from .inputs import Input
+        return Input.create(name=name, defined_in=filename, **input_contents)
+
+    def _build_recipe(self, name: str, all_contents: Kwargs, recipe_contents: Kwargs):
+        from .recipes import Recipe
+        return Recipe(name, all_contents)
 
     def load_recipes(self, path: str):
         """
@@ -41,7 +49,37 @@ class Kitchen:
                 continue
             with open(os.path.join(path, fn), "rt") as fd:
                 recipe = yaml.load(fd, Loader=yaml.SafeLoader)
-            self.recipes.recipes.append(self._build_recipe(fn[:-5], recipe))
+            inputs = recipe.get("inputs")
+            if inputs is not None:
+                for name, input_contents in inputs.items():
+                    if isinstance(input_contents, list):
+                        for ic in input_contents:
+                            self.pantry.add_input(self._build_input(name, fn, recipe, ic))
+                    else:
+                        self.pantry.add_input(self._build_input(name, fn, recipe, input_contents))
+            if "recipe" in recipe:
+                self.recipes.add(self._build_recipe(fn[:-5], recipe, recipe["recipe"]))
+
+    def make_orders(self) -> List[Order]:
+        """
+        Generate all possible orders for all available recipes
+        """
+        res = []
+        from .mixer import Mixers
+        for recipe in self.recipes.recipes:
+            res.extend(Mixers.make_orders(recipe, self.pantry))
+        return res
+
+
+class EmptyKitchen(Kitchen):
+    """
+    Kitchen with an empty pantry, used only to load recipe and input
+    information in order to generate documentation
+    """
+    def __init__(self):
+        super().__init__()
+        from .pantry import Pantry
+        self.pantry: Pantry = Pantry()
 
 
 class WorkingKitchen(Kitchen):
@@ -50,17 +88,12 @@ class WorkingKitchen(Kitchen):
         If no working directory is provided, it uses a temporary one
         """
         super().__init__()
-        from .pantry import Pantry
         if workdir is None:
             self.tempdir = tempfile.TemporaryDirectory()
             self.workdir = self.context_stack.enter_context(self.tempdir)
         else:
             self.tempdir = None
             self.workdir = workdir
-        self.pantry: Pantry = self._build_pantry(self.workdir)
-
-    def _build_pantry(self, workdir: str):
-        raise NotImplementedError(f"{self.__class__.__name__}._build_pantry() not implemented")
 
 
 if arkimet is not None:
@@ -74,36 +107,28 @@ if arkimet is not None:
             # path
             self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
 
-        def _build_recipe(self, name: str, info: 'Kwargs'):
-            from .recipes import ArkimetRecipe
-            return ArkimetRecipe(name, info, self.session)
-
-    class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
+    class ArkimetEmptyKitchen(ArkimetRecipesMixin, EmptyKitchen):
         """
         Arkimet-based kitchen used to load recipes but not prepare products
         """
         pass
 
     class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
-        def _build_pantry(self, workdir: str):
+        def __init__(self, *args, **kw):
+            super().__init__(*args, **kw)
             from .pantry import ArkimetPantry
-            return ArkimetPantry(self, workdir)
+            self.pantry = ArkimetPantry(root=self.workdir, session=self.session)
 
 
-class EccodesRecipesMixin:
-    def _build_recipe(self, name: str, info: 'Kwargs'):
-        from .recipes import EccodesRecipe
-        return EccodesRecipe(name, info)
-
-
-class EccodesEmptyKitchen(EccodesRecipesMixin, Kitchen):
+class EccodesEmptyKitchen(EmptyKitchen):
     """
     Eccodes-based kitchen used to load recipes but not prepare products
     """
     pass
 
 
-class EccodesKitchen(EccodesRecipesMixin, WorkingKitchen):
-    def _build_pantry(self, workdir: str):
+class EccodesKitchen(WorkingKitchen):
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
         from .pantry import EccodesPantry
-        return EccodesPantry(self, workdir)
+        self.pantry = EccodesPantry(root=self.workdir)

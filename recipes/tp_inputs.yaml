@@ -1,0 +1,30 @@
+---
+description: Total Precipitation
+inputs:
+ tp:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,61
+     eccodes: shortName is "tp"
+   - model: ifs
+     arkimet: product:GRIB1,98,128,228
+     eccodes: shortName is "tp"
+ tpdec1h:
+   - type: decumulate
+     step: 1
+     inputs: tp
+ tpdec3h:
+   - type: decumulate
+     step: 3
+     inputs: tp
+ tpdec6h:
+   - type: decumulate
+     step: 6
+     inputs: tp
+ tpdec12h:
+   - type: decumulate
+     step: 12
+     inputs: tp
+ tpdec24h:
+   - type: decumulate
+     step: 24
+     inputs: tp

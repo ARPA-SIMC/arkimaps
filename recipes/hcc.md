@@ -2,20 +2,6 @@
 
 Mixer: **default**
 
-## Inputs
-
-* **hcc**:
-    * **Option 1**:
-        * **Arkimet matcher**: `product:GRIB1,,2,75`
-        * **grib_filter matcher**: `shortName is "clch"`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.08`
-    * **Option 2**:
-        * **Arkimet matcher**: `product:GRIB1,,2,75`
-        * **grib_filter matcher**: `shortName is "clch"`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.08`
-
 ## Steps
 
 ### add_basemap

@@ -2,18 +2,6 @@
 
 Mixer: **default**
 
-## Inputs
-
-* **cp**:
-    * **Option 1**:
-        * **Preprocessing**: decumulation
-        * **Arkimet matcher**: `product:GRIB1,,201,113`
-        * **grib_filter matcher**: `shortName is "rain_con"`
-    * **Option 2**:
-        * **Preprocessing**: decumulation
-        * **Arkimet matcher**: `product:GRIB1,,201,113`
-        * **grib_filter matcher**: `shortName is "rain_con"`
-
 ## Steps
 
 ### add_basemap
@@ -45,7 +33,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "cp"
+  "name": "cpdec12h"
 }
 ```
 

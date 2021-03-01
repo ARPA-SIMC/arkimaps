@@ -2,15 +2,6 @@
 
 Mixer: **default**
 
-## Inputs
-
-* **mcont**:
-    * **Arkimet matcher**: `product:GRIB2,98,192,162,72,6`
-    * **grib_filter matcher**: `shortName is "viwvn"`
-* **mslp**:
-    * **Arkimet matcher**: `product:GRIB1,98,128,151 or GRIB1,,2,2`
-    * **grib_filter matcher**: `shortName is "pmsl" or shortName is "msl"`
-
 ## Steps
 
 ### add_basemap
@@ -54,7 +45,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "mcont"
+  "name": "viwvn"
 }
 ```
 

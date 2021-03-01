@@ -1,4 +1,4 @@
-# z500: Geopotential 500hPa
+# rh2m: Relative humidity at 2 metres
 
 Mixer: **default**
 
@@ -33,7 +33,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "z500"
+  "name": "rh2m"
 }
 ```
 
@@ -45,19 +45,32 @@ With arguments:
 ```
 {
   "params": {
-    "contour_shade": false,
-    "contour": true,
-    "contour_level_selection_type": "interval",
-    "contour_interval": 4,
-    "contour_line_colour": "black",
-    "contour_line_thickness": 2,
+    "contour_shade": true,
+    "contour_shade_method": "area_fill",
+    "contour_level_selection_type": "level_list",
+    "contour_shade_colour_method": "list",
+    "contour_level_list": [
+      0.0,
+      20.0,
+      40.0,
+      60.0,
+      80.0,
+      90.0,
+      100.0
+    ],
+    "legend": true,
     "contour_highlight": false,
-    "contour_label": true,
-    "contour_label_height": 0.4,
-    "contour_label_frequency": 2,
-    "contour_label_blanking": true,
-    "contour_label_colour": "navy",
-    "legend": false
+    "contour_label": false,
+    "contour_hilo": false,
+    "contour": false,
+    "contour_shade_colour_list": [
+      "red",
+      "orange",
+      "yellow",
+      "green",
+      "cyan",
+      "blue"
+    ]
   }
 }
 ```

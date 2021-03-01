@@ -1,7 +1,7 @@
 ---
 description: Geopotential 500hPa
 inputs:
- z:
+ z500:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,500
     eccodes: shortName is "z" and centre != 98
@@ -26,7 +26,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: z
+   name: z500
  - step: add_contour
    params:
     contour_shade: off

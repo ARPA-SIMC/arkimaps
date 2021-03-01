@@ -1,13 +1,6 @@
 ---
 description: Temperature and Geopotential at 500hPa
 inputs:
- t2m:
-  - model: cosmo
-    arkimet: product:GRIB1,,2,11;level:GRIB1,100,500
-    eccodes: shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 500
-  - model: ifs 
-    arkimet: product:GRIB1,98,128,130;level:GRIB1,100,500
-    eccodes: shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 500
  z:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,500
@@ -32,7 +25,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: t2m
+   name: t500
  - step: add_contour
    params:
     contour: off

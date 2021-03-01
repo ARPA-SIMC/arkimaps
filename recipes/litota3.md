@@ -2,12 +2,6 @@
 
 Mixer: **default**
 
-## Inputs
-
-* **mcont**:
-    * **Arkimet matcher**: `product:GRIB2,98,0,17,4,5`
-    * **grib_filter matcher**: `shortName is "litota3"`
-
 ## Steps
 
 ### add_basemap

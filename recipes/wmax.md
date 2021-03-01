@@ -2,12 +2,6 @@
 
 Mixer: **default**
 
-## Inputs
-
-* **mcont**:
-    * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187`
-    * **grib_filter matcher**: `shortName is "10fg3" or shortName is "vmax_10m"`
-
 ## Steps
 
 ### add_basemap
@@ -39,7 +33,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "mcont"
+  "name": "wmax"
 }
 ```
 

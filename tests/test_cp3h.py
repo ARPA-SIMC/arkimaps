@@ -5,25 +5,21 @@ import os
 
 
 class CP3HMixin:
-    kitchen_class = None
-
     def test_dispatch(self):
         with self.kitchen_class() as kitchen:
-            kitchen.load_recipes("recipes")
+            self.fill_pantry(kitchen, expected=[f"{self.model_name}_cp+{step}.grib" for step in range(3, 13, 3)])
 
             # Check that the right input was selected
-            recipe = kitchen.recipes.get("cp3h")
-            for i in recipe.inputs["cp"]:
+            cpdec3h = kitchen.pantry.inputs.get("cpdec3h")
+            for i in cpdec3h:
                 self.assertEqual(i.__class__.__name__, "Decumulate")
 
-            kitchen.pantry.fill(kitchen.recipes, path=self.get_sample_path("cp3h", 12))
-
-            orders = list(kitchen.pantry.orders(kitchen.recipes))
+            orders = self.make_orders(kitchen)
             self.assertGreaterEqual(len(orders), 4)
             orders = [o for o in orders if o.basename == "cp3h+012"]
             self.assertEqual(len(orders), 1)
 
-            renderer = Renderer()
+            renderer = Renderer(kitchen.workdir)
             with self.assertLogs() as log:
                 renderer.render_one(orders[0])
 

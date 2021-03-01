@@ -1,10 +1,9 @@
 ---
 description: Maximum wind gust speed
 inputs:
- mcont:
-  - model: any
-    arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187
-    eccodes: shortName is "10fg3" or shortName is "vmax_10m"
+ wmax:
+  arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187
+  eccodes: shortName is "10fg3" or shortName is "vmax_10m"
 recipe:
  - step: add_basemap
    params: 
@@ -16,7 +15,7 @@ recipe:
     # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
-   name: mcont
+   name: wmax
  - step: add_contour
    params:
     contour: off
