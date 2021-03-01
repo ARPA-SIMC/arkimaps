@@ -174,11 +174,11 @@ class Decumulate(Derived):
             raise RuntimeError("step must be present for 'decumulate' inputs")
         super().__init__(**kw)
         self.step = int(step)
+        if len(self.inputs) != 1:
+            raise RuntimeError(
+                    f"input {self.name}: {self.NAME} has inputs {', '.join(self.inputs)} and should have only one")
 
     def generate(self, p: "pantry.Pantry"):
-        if len(self.inputs) != 1:
-            raise RuntimeError(f"input {self.name}: {self.NAME} has inputs {', '.join(self.inputs)} ")
-
         # Get the steps of our source input
         source_steps = p.get_steps(self.inputs[0])
 
@@ -186,7 +186,10 @@ class Decumulate(Derived):
 
         # Don't run preprocessing if we don't have data to preprocess
         if not source_steps:
+            log.info("input %s: missing source data", self.name)
             return
+
+        log.info("input %s: generating from %r", self.name, self.inputs)
 
         # Generate derived input
         grib_filter_rules = os.path.join(p.data_root, f"{self.pantry_basename}.grib_filter_rules")
@@ -215,115 +218,17 @@ class Decumulate(Derived):
                 shutil.copyfileobj(fd, v6t.stdin)
         v6t.stdin.close()
         v6t.wait()
-        if v6t.returncode != 0:
-            raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
+        try:
+            if v6t.returncode != 0:
+                raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
 
-        if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
-            return
+            if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
+                return
 
-        subprocess.run(["grib_filter", grib_filter_rules, decumulated_data], check=True)
-
-        os.unlink(decumulated_data)
-
-#    def preprocess(self, inputs: Inputs):
-#        """
-#        Run preprocessing commands if needed by this input type
-#        """
-#        super().preprocess(inputs)
-#
-#        # List inputs that need preprocessing
-#        sources = []
-#        for input_files in inputs.steps.values():
-#            for f in input_files:
-#                if f.info != self:
-#                    continue
-#                sources.append(f)
-#
-#        # Don't run preprocessing if we don't have data to preprocess
-#        if not sources:
-#            return
-#
-#        data_dir = os.path.join(inputs.input_dir, self.dirname)
-#        stamp_file = os.path.join(data_dir, "done")
-#        if os.path.exists(stamp_file):
-#            return
-#
-#        os.makedirs(data_dir, exist_ok=True)
-#
-#        grib_filter_rules = os.path.join(data_dir, "filter_rules")
-#        with open(grib_filter_rules, "wt") as fd:
-#            print(f'write "{data_dir}/[endStep].grib";', file=fd)
-#
-#        # We could pipe the output of vg6d_transform directly into grib_filter,
-#        # but grib_filter errors in case of empty input with the same exit code
-#        # as having a nonexisting file as input, so we can't tell the ok
-#        # situation in which vg6d_transform doesn't find enough data, from a
-#        # bug causing a wrong invocation.
-#        # As a workaround, we need a temporary file, so we can check if it's
-#        # empty before passing it to grib_filter
-#        decumulated_data = os.path.join(data_dir, "decumulated.grib")
-#        if os.path.exists(decumulated_data):
-#            os.unlink(decumulated_data)
-#
-#        cmd = ["vg6d_transform", "--comp-stat-proc=1",
-#               f"--comp-step=0 {self.step:02d}", "--comp-frac-valid=0"]
-#        if self.step != 24:
-#            cmd.append("--comp-full-steps")
-#        cmd += ["-", decumulated_data]
-#        v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
-#        for f in sources:
-#            with open(f.pathname, "rb") as fd:
-#                shutil.copyfileobj(fd, v6t.stdin)
-#        v6t.stdin.close()
-#        v6t.wait()
-#        if v6t.returncode != 0:
-#            raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
-#
-#        if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
-#            return
-#
-#        subprocess.run(["grib_filter", grib_filter_rules, decumulated_data], check=True)
-#
-#        with open(stamp_file, "wb"):
-#            pass
-#
-#    def select_file(self, inputs: Inputs, name: str, step: int) -> "InputFile":
-#        """
-#        Given a recipe input model, a step, and available input files for that
-#        step, select the input file (or generate a new one) that can be used as
-#        input for the recipe
-#        """
-#        f = os.path.join(inputs.input_dir, self.dirname, f"{step}.grib")
-#        if os.path.exists(f):
-#            return InputFile(
-#                    pathname=f,
-#                    name=name,
-#                    step=step,
-#                    info=self)
-#        return None
-
-#    def preprocess(self, inputs: Inputs):
-#        """
-#        Run preprocessing commands if needed by this input type
-#        """
-#        # Default implementation is no preprocessing
-#        pass
-#
-#    def select_file(self, inputs: Inputs, name: str, step: int) -> "InputFile":
-#        """
-#        Given a recipe input name, a step, and available input files for that
-#        step, select the input file (or generate a new one) that can be used as
-#        input for the recipe
-#        """
-#        input_files = inputs.steps.get(step)
-#        if input_files is None:
-#            return None
-#
-#        # Look for files that satisfy this input
-#        for f in input_files:
-#            if f.name == name and f.info == self:
-#                return f
-#        return None
+            subprocess.run(["grib_filter", grib_filter_rules, decumulated_data], check=True)
+        finally:
+            if os.path.exists(decumulated_data):
+                os.unlink(decumulated_data)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -344,171 +249,60 @@ class VG6DTransform(Derived):
         super().__init__(**kw)
         self.args = [args] if isinstance(args, str) else [str(x) for x in args]
 
-#    def preprocess(self, inputs: Inputs):
-#        """
-#        Run preprocessing commands if needed by this input type
-#        """
-#        super().preprocess(inputs)
-#
-#        # TODO: Find available files for each input for this model
-#        # TODO: match them by step
-#        # TODO: when a step has len(self.inputs) inputs, generate an output
-#
-#        # List inputs that need preprocessing
-#        sources = []
-#        for input_files in inputs.steps.values():
-#            for f in input_files:
-#                if f.info != self:
-#                    continue
-#                sources.append(f)
-#
-#        # Don't run preprocessing if we don't have data to preprocess
-#        if not sources:
-#            return
-#
-#        data_dir = os.path.join(inputs.input_dir, self.dirname)
-#        stamp_file = os.path.join(data_dir, "done")
-#        if os.path.exists(stamp_file):
-#            return
-#
-#        os.makedirs(data_dir, exist_ok=True)
-#
-#        grib_filter_rules = os.path.join(data_dir, "filter_rules")
-#        with open(grib_filter_rules, "wt") as fd:
-#            print(f'write "{data_dir}/[endStep].grib";', file=fd)
-#
-#        # We could pipe the output of vg6d_transform directly into grib_filter,
-#        # but grib_filter errors in case of empty input with the same exit code
-#        # as having a nonexisting file as input, so we can't tell the ok
-#        # situation in which vg6d_transform doesn't find enough data, from a
-#        # bug causing a wrong invocation.
-#        # As a workaround, we need a temporary file, so we can check if it's
-#        # empty before passing it to grib_filter
-#        decumulated_data = os.path.join(data_dir, "decumulated.grib")
-#        if os.path.exists(decumulated_data):
-#            os.unlink(decumulated_data)
-#
-#        cmd = ["vg6d_transform", "--comp-stat-proc=1",
-#               f"--comp-step=0 {self.step:02d}", "--comp-frac-valid=0"]
-#        if self.step != 24:
-#            cmd.append("--comp-full-steps")
-#        cmd += ["-", decumulated_data]
-#        v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
-#        for f in sources:
-#            with open(f.pathname, "rb") as fd:
-#                shutil.copyfileobj(fd, v6t.stdin)
-#        v6t.stdin.close()
-#        v6t.wait()
-#        if v6t.returncode != 0:
-#            raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
-#
-#        if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
-#            return
-#
-#        subprocess.run(["grib_filter", grib_filter_rules, decumulated_data], check=True)
-#
-#        with open(stamp_file, "wb"):
-#            pass
-#
-#    def select_file(self, inputs: Inputs, name: str, step: int) -> "InputFile":
-#        """
-#        Given a recipe input model, a step, and available input files for that
-#        step, select the input file (or generate a new one) that can be used as
-#        input for the recipe
-#        """
-#        f = os.path.join(inputs.input_dir, self.dirname, f"{name}+{step}.grib")
-#        if os.path.exists(f):
-#            return InputFile(
-#                    pathname=f,
-#                    name=name,
-#                    step=step,
-#                    info=self)
-#        return None
-#
+    def generate(self, p: "pantry.Pantry"):
+        # Get the steps for each of our inputs
+        available_steps: Optional[Dict[int, List[InputFile]]] = None
+        for input_name in self.inputs:
+            input_steps = p.get_steps(input_name)
+            # Intersect the steps to get only those for which we have all inputs
+            if available_steps is None:
+                available_steps = {k: [v] for k, v in input_steps.items()}
+            else:
+                steps_to_delete = []
+                for step, inputs in available_steps.items():
+                    input_file = input_steps.get(step)
+                    if input_file is None:
+                        steps_to_delete.append(step)
+                    else:
+                        inputs.append(input_file)
+                for step in steps_to_delete:
+                    log.info("input %s: dropping step %d missing in source input %s", self.name, step, input_name)
+                    del available_steps[step]
+
+        # Don't run preprocessing if we don't have data to preprocess
+        if not available_steps:
+            log.info("input %s: missing source data", self.name)
+            return
+
+        # For each step, run vg6d_transform to generate its output
+        for step, input_files in available_steps.items():
+            log.info("input %s: generating step %d", self.name, step)
+
+            output_pathname = f"{self.pantry_basename}+{step}.grib"
+
+            cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
+            log.debug("running %s", ' '.join(shlex.quote(x) for x in cmd))
+
+            v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
+            for input_file in input_files:
+                with open(input_file.pathname, "rb") as fd:
+                    shutil.copyfileobj(fd, v6t.stdin)
+            v6t.stdin.close()
+            v6t.wait()
+            if v6t.returncode != 0:
+                raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
+
+            if not os.path.exists(output_pathname):
+                log.warning("input %s: %s not found after running vg6d_transform", self.name, output_pathname)
+                pass
+            if os.path.getsize(output_pathname) == 0:
+                log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_pathname)
+                os.unlink(output_pathname)
+
     def document(self, file, indent=4):
         ind = " " * indent
         print(f"{ind}* **vg6d_transform arguments**: {' '.join(shlex.quote(arg) for arg in self.args)}", file=file)
         super().document(file, indent)
-
-# class Inputs:
-#    """
-#    Manage the input of a recipe inside its input directory
-#    """
-#    def __init__(
-#            self,
-#            recipe: 'Recipe',
-#            input_dir: str):
-#        """
-#        Look into the pantry filesystem storage and take note of what files are
-#        available
-#        """
-#        self.recipe = recipe
-#        self.input_dir = input_dir
-#        self.steps: Dict[int, List[InputFile]] = defaultdict(list)
-#
-#        for input_file in self.read():
-#            self.steps[input_file.step].append(input_file)
-#
-#    def read(self) -> Iterator["InputFile"]:
-#        """
-#        Scan an input directory in the pantry and generate InputFile objects
-#        for each input found
-#        """
-#        for fname in os.listdir(self.input_dir):
-#            if not fname.endswith(".grib"):
-#                continue
-#            name, step = fname[:-5].rsplit("+", 1)
-#            model, name = name.split("_", 1)
-#            step = int(step)
-#
-#            # Lookup the corresponding Input in the recipe, by input name and
-#            # model name, and associate it with this input
-#            for i in self.recipe.inputs[name]:
-#                if i.model == model:
-#                    info = i
-#                    break
-#            else:
-#                continue
-#
-#            yield InputFile(
-#                    pathname=os.path.join(self.input_dir, fname),
-#                    name=name,
-#                    step=step,
-#                    info=info)
-#
-#    def preprocess(self):
-#        """
-#        Hook into inputs to run preprocessors if needed
-#        """
-#        for name, inputs in self.recipe.inputs.items():
-#            for i in inputs:
-#                i.preprocess(self)
-#
-#    def for_step(self, step):
-#        """
-#        Return available input files for the given step.
-#
-#        Return None if some of the inputs are not satisfied for this step
-#        """
-#        res = {}
-#        # For each of the recipe required inputs...
-#        for name, inputs in self.recipe.inputs.items():
-#            found = None
-#            # ...try all its alternatives in order...
-#            for i in inputs:
-#                # ...and see if we have data for it
-#                found = i.select_file(self, name, step)
-#                # Stop at the first matching input alternative
-#                if found:
-#                    break
-#            # One of the required inputs for this recipe has no data for this
-#            # step: give up
-#            if not found:
-#                log.debug("%s+%03d: data for input %s not found: skipping", self.recipe.name, step, name)
-#                return None
-#            res[name] = found
-#
-#        return res
 
 
 class InputFile(NamedTuple):
