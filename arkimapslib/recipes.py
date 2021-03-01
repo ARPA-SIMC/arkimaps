@@ -124,6 +124,16 @@ class Order:
         # Logger for this output
         self.log = logging.getLogger(f"arkimaps.order.{basename}")
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # logger objects don't pickle correctly on python 3.6
+        del state['log']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
+
     def __str__(self):
         return self.basename
 
