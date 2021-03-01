@@ -2,6 +2,7 @@
 import unittest
 import sys
 import os
+import pickle
 
 
 class RecipeTestMixin:
@@ -11,7 +12,10 @@ class RecipeTestMixin:
         """
         from .mixer import Mixers
         recipe = kitchen.recipes.get(self.recipe_name)
-        return Mixers.make_orders(recipe, kitchen.pantry)
+        orders = Mixers.make_orders(recipe, kitchen.pantry)
+        for o in orders:
+            pickle.dumps(o)
+        return orders
 
     def fill_pantry(self, kitchen, step=12, expected=None):
         if expected is None:
