@@ -1,0 +1,43 @@
+---
+description: Mean Sea Level Pressure
+inputs:
+ mslp:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,2
+    eccodes: shortName is "pmsl"
+  - model: ifs
+    arkimet: product:GRIB1,98,128,151
+    eccodes: shortName is "msl"
+recipe:
+ - step: add_basemap
+   params: 
+    subpage_map_projection: cylindrical
+    subpage_lower_left_longitude: -5.0
+    subpage_lower_left_latitude: 30.0
+    subpage_upper_right_longitude: 27.0
+    subpage_upper_right_latitude: 55.0
+    # For an example of more, see skinnywms/plot/magics.py
+ - step: add_coastlines_bg
+ - step: add_grib
+   name: mslp
+   params:
+    grib_automatic_scaling: off
+    grib_scaling_factor: 0.01
+ - step: add_contour
+   params:
+    contour_shade: off
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 4
+    contour_line_colour: black
+    contour_line_thickness: 2
+    contour_highlight: off
+    contour_label: on
+    contour_label_height: 0.4
+    contour_label_frequency: 2
+    contour_label_blanking: on
+    contour_label_colour: navy
+    legend: off
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries

@@ -2,7 +2,7 @@
 # https://confluence.ecmwf.int/pages/viewpage.action?pageId=106611144
 description: Averaged total lightning flash density in the last 3 hours
 inputs:
- mcont:
+ litota3:
   - model: any
     arkimet: product:GRIB2,98,0,17,4,5
     eccodes: shortName is "litota3"
@@ -28,7 +28,7 @@ recipe:
     map_label_latitude_frequency : 1
  - step: add_coastlines_bg
  - step: add_grib
-   name: mcont
+   name: litota3
  - step: add_contour
    params:
     contour: off
