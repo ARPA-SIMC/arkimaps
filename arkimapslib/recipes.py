@@ -1,20 +1,11 @@
 # from __future__ import annotations
-from typing import Dict, Any, List, Tuple, Optional
-from collections import defaultdict
-import os
-import sys
+from typing import Dict, Any, List, Tuple
 import inspect
 import json
 import logging
 
-# if TYPE_CHECKING:
-#    import arkimet
-try:
-    import arkimet
-except ModuleNotFoundError:
-    arkimet = None
-
 # Used for kwargs-style dicts
+from . import pantry
 Kwargs = Dict[str, Any]
 
 log = logging.getLogger("arkimaps.recipes")
@@ -27,6 +18,12 @@ class Recipes:
     def __init__(self):
         self.recipes = []
 
+    def add(self, recipe: "Recipe"):
+        """
+        Add a recipe to this recipes collection
+        """
+        self.recipes.append(recipe)
+
     def get(self, name: str):
         """
         Return a recipe by name
@@ -36,22 +33,12 @@ class Recipes:
                 return r
         raise KeyError(f"Recipe `{name}` does not exist")
 
-    def document(self, path: str):
-        """
-        Generate markdown documentation for the recipes found in the given path
-        """
-        for recipe in self.recipes:
-            dest = os.path.join(path, recipe.name) + '.md'
-            recipe.document(dest)
-
 
 class Recipe:
     """
     A parsed and validated recipe
     """
     def __init__(self, name: str, data: 'Kwargs'):
-        from .inputs import Input
-
         self.name = name
 
         # Name of the mixer to use
@@ -59,12 +46,6 @@ class Recipe:
 
         # Get the recipe description
         self.description: str = data.get("description", "Unnamed recipe")
-
-        # Get the list of input queries
-        self.inputs: Dict[str, List[Input]] = defaultdict(list)
-        for name, inputs in data.get("inputs", {}).items():
-            for info in inputs:
-                self.inputs[name].append(Input.create(**info))
 
         # Get the recipe steps
         self.steps: List[Tuple[str, 'Kwargs']] = []
@@ -76,7 +57,7 @@ class Recipe:
                 raise RuntimeError("recipe step does not contain a 'step' name")
             self.steps.append((step, s))
 
-    def document(self, dest: str):
+    def document(self, p: "pantry.Pantry", dest: str):
         from .mixer import Mixers
         mixer = Mixers.registry[self.mixer]
 
@@ -87,14 +68,18 @@ class Recipe:
             print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)
-            for name, inputs in self.inputs.items():
-                print(f"* **{name}**:", file=fd)
-                if len(inputs) == 1:
-                    inputs[0].document(indent=4, file=fd)
+            for name in p.list_all_inputs(self):
+                inputs = p.inputs.get(name)
+                if inputs is None:
+                    print(f"* **{name}** (input details are missing)", file=fd)
                 else:
-                    for idx, i in enumerate(inputs, start=1):
-                        print(f"    * **Option {idx}**:", file=fd)
-                        inputs[0].document(indent=8, file=fd)
+                    print(f"* **{name}**:", file=fd)
+                    if len(inputs) == 1:
+                        inputs[0].document(indent=4, file=fd)
+                    else:
+                        for i in inputs:
+                            print(f"    * Model **{i.model}**:", file=fd)
+                            inputs[0].document(indent=8, file=fd)
             print(file=fd)
             print("## Steps", file=fd)
             print(file=fd)
@@ -112,18 +97,6 @@ class Recipe:
                 print(file=fd)
 
 
-class ArkimetRecipe(Recipe):
-    def __init__(self, name: str, data: 'Kwargs', session: Optional['arkimet.dataset.Session']):
-        super().__init__(name, data)
-        for input_list in self.inputs.values():
-            for i in input_list:
-                i.compile_arkimet_matcher(session)
-
-
-class EccodesRecipe(Recipe):
-    pass
-
-
 class Order:
     """
     Serializable instructions to prepare a product, based on a recipe and its
@@ -133,7 +106,6 @@ class Order:
             self,
             mixer: str,
             sources: Dict[str, str],
-            dest: str,
             basename: str,
             recipe: str,
             steps: List[Tuple[str, 'Kwargs']]):
@@ -141,8 +113,6 @@ class Order:
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
         self.sources = sources
-        # Destination file path (without .png extension)
-        self.dest = dest
         # Destination file name (without path or .png extension)
         self.basename = basename
         # Recipe name
@@ -154,13 +124,29 @@ class Order:
         # Logger for this output
         self.log = logging.getLogger(f"arkimaps.order.{basename}")
 
-    def prepare(self):
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        # logger objects don't pickle correctly on python 3.6
+        del state['log']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
+
+    def __str__(self):
+        return self.basename
+
+    def __repr__(self):
+        return self.basename
+
+    def prepare(self, workdir: str):
         """
         Run all the steps of the recipe and render the resulting file
         """
         from arkimapslib.mixer import Mixers
 
-        mixer = Mixers.for_order(self)
+        mixer = Mixers.for_order(workdir, self)
         for name, args in self.steps:
             self.log.info("%s %r", name, args)
             meth = getattr(mixer, name, None)

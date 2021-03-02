@@ -1,12 +1,14 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, Type
+from typing import Dict, Any, Optional, Type, List
+import os
 from .utils import ClassRegistry
 
 # if TYPE_CHECKING:
 #     from .recipes import Order
-#
-#     # Used for kwargs-style dicts
-from .recipes import Order
+from .recipes import Recipe, Order
+from .pantry import Pantry
+from .inputs import InputFile
+# Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
 
@@ -17,28 +19,45 @@ class Mixers(ClassRegistry["Mixer"]):
     registry: Dict[str, Type["Mixer"]] = {}
 
     @classmethod
-    def for_order(cls, order: Order) -> "Mixer":
+    def for_order(cls, workdir: str, order: Order) -> "Mixer":
         try:
             mixer_cls = cls.by_name(order.mixer)
         except KeyError as e:
             raise KeyError(f"order requires unknown mixer {order.mixer}") from e
-        return mixer_cls(order)
+        return mixer_cls(workdir, order)
+
+    @classmethod
+    def make_orders(cls, recipe: Recipe, pantry: Pantry) -> List[Order]:
+        """
+        Scan a recipe and return a set with all the inputs it needs
+        """
+        mixer_cls = cls.by_name(recipe.mixer)
+        return mixer_cls.make_orders(recipe, pantry)
+
+    @classmethod
+    def list_inputs(cls, recipe: Recipe) -> List[str]:
+        """
+        List inputs used by a recipe
+        """
+        mixer_cls = cls.by_name(recipe.mixer)
+        return mixer_cls.list_inputs(recipe)
 
 
 @Mixers.register
 class Mixer:
     NAME = "default"
 
-    def __init__(self, order: Order):
+    def __init__(self, workdir: str, order: Order):
         # Do not import Magics at toplevel to prevent accidentally importing it
         # in the main process. We only import Magics in working processes to
         # mitigate memory leaks
         from Magics import macro
         self.macro = macro
+        self.output_pathname = os.path.join(workdir, order.basename)
         # Settings of the PNG output
         self.output = self.macro.output(
             output_formats=['png'],
-            output_name=order.dest,
+            output_name=self.output_pathname,
             output_name_first_page_number="off",
         )
         # Loaded GRIB data
@@ -47,6 +66,112 @@ class Mixer:
         self.order = order
         # Elements passed after output to macro.plot
         self.parts = []
+
+    @classmethod
+    def list_inputs(cls, recipe: Recipe) -> List[str]:
+        """
+        List inputs used by this recipe.
+
+        Inputs are listed in usage order, without duplicates
+        """
+        input_names = []
+
+        # Collect the inputs needed for all steps
+        for step_name, args in recipe.steps:
+            if step_name == "add_grib":
+                input_name = args["name"]
+                if input_name in input_names:
+                    continue
+                input_names.append(input_name)
+
+        return input_names
+
+    @classmethod
+    def make_orders(cls, recipe: Recipe, pantry: Pantry) -> List[Order]:
+        inputs: Optional[Dict[str, Dict[str, InputFile]]] = None
+        input_names = set()
+
+        # Collect the inputs needed for all steps
+        for step_name, args in recipe.steps:
+            if step_name == "add_grib":
+                input_name = args["name"]
+                if input_name in input_names:
+                    continue
+                input_names.add(input_name)
+
+                # Find available steps for this input
+                steps = pantry.get_steps(input_name)
+
+                # add_grib needs this input for all steps
+                if inputs is None:
+                    inputs = {}
+                    for step, ifile in steps.items():
+                        inputs[step] = {input_name: ifile}
+                else:
+                    steps_to_delete = []
+                    for step, input_files in inputs.items():
+                        if step not in steps:
+                            # We miss an input for this step, so we cannot
+                            # generate an order for it
+                            steps_to_delete.append(step)
+                        else:
+                            input_files[input_name] = ifile
+                    for step in steps_to_delete:
+                        del inputs[step]
+
+        res = []
+        for step, input_files in inputs.items():
+            basename = f"{recipe.name}+{step:03d}"
+            res.append(Order(
+                mixer=recipe.mixer,
+                sources=input_files,
+                basename=basename,
+                recipe=recipe.name,
+                steps=recipe.steps,
+            ))
+
+        return res
+
+#    def make_orders(
+#            self,
+#            recipe: 'Recipe',
+#            workdir: str,
+#            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
+#        """
+#        Look at what input files are available for the given recipe, and
+#        generate a sequence of orders for all steps for which there are enough
+#        inputs to make the order
+#        """
+#        # List the data files in the pantry
+#        input_dir = os.path.join(workdir, recipe.name)
+#        inputs = Inputs(recipe, input_dir)
+#
+#        # Run preprocessors if needed
+#        inputs.preprocess()
+#
+#        # Generate orders based on the data we found
+#        count_generated = 0
+#        for step, files in inputs.steps.items():
+#            if output_steps is not None and step not in output_steps:
+#                continue
+#            sources = inputs.for_step(step)
+#            if sources is None:
+#                continue
+#            basename = f"{recipe.name}+{step:03d}"
+#            dest = os.path.join(workdir, basename)
+#            count_generated += 1
+#            yield Order(
+#                mixer=recipe.mixer,
+#                sources=sources,
+#                dest=dest,
+#                basename=basename,
+#                recipe=recipe.name,
+#                steps=recipe.steps,
+#            )
+#
+#        log.info("%s: %d orders created", recipe.name, count_generated)
+
+        return res
 
     def add_basemap(self, params: Kwargs):
         """
@@ -161,4 +286,4 @@ class Mixer:
             self.output,
             *self.parts,
         )
-        self.order.output = self.order.dest + ".png"
+        self.order.output = self.output_pathname + ".png"

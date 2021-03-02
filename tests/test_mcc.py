@@ -4,17 +4,14 @@ import os
 
 
 class MCCMixin:
-    kitchen_class = None
-
     def test_dispatch(self):
         with self.kitchen_class() as kitchen:
-            kitchen.load_recipes("recipes")
-            kitchen.pantry.fill(kitchen.recipes, path=self.get_sample_path("mcc", 12))
+            self.fill_pantry(kitchen)
 
-            orders = list(kitchen.pantry.orders(kitchen.recipes))
+            orders = self.make_orders(kitchen)
             self.assertEqual(len(orders), 1)
 
-            renderer = Renderer()
+            renderer = Renderer(kitchen.workdir)
             with self.assertLogs() as log:
                 renderer.render_one(orders[0])
 
@@ -36,4 +33,4 @@ class MCCMixin:
             self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
 
 
-add_recipe_test_cases(__name__, "MCC")
+add_recipe_test_cases(__name__, "mcc")

@@ -68,6 +68,13 @@ Informazioni sulla composizione delle singole ricette sono disponibili nei file
 Informazioni sull'inventario dei prodotti in corso di implementazione sono
 disponibili nella directory [prodotti](../master/prodotti/)
 
+## Informazion sulle ricette
+
+Gli input definiti nelle ricette sono comuni a tutte le ricette: un input con
+lo stesso nome definito in piú ricette dà errore. Una ricetta può usare input
+definiti in un'altra ricetta. È possibile fare ricette senza step solo per
+definire degli input comuni.
+
 ## Creazione di nuove ricette
 
 In `arkimapslib/mixer.py` sono definiti e commentati i vari `step` possibili. I
@@ -85,6 +92,13 @@ La preview viene fatta con `xdg-open`, che usa l'applicazione preferita
 configurata nel sistema. Solitamente si può usare il file manager per cambiarla
 se quella di default non è l'ideale.
 
+### Creazione di test per nuove ricette
+
+1. Fare dispatch di un output di modello per avere i dati di input grezzi
+   (ripetere per COSMO e IFS)
+2. Prendere un campione di dati dalle workdir in `pantry/nomericetta`
+3. Processarli con `arki-scan --inline file.grib > file.arkimet`
+4. Salvarli in `testdata/nomericetta`
 
 ## Struttura del codice
 

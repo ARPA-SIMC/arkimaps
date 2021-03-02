@@ -1,14 +1,10 @@
 ---
 description: Vertical integral of northward water vapour flux
 inputs:
- mcont:
-  - name: any
+ viwvn:
+  - model: any
     arkimet: product:GRIB2,98,192,162,72,6
     eccodes: shortName is "viwvn"
- mslp:
-  - name: any
-    arkimet: product:GRIB1,98,128,151 or GRIB1,,2,2
-    eccodes: shortName is "pmsl" or shortName is "msl"
 recipe:
  - step: add_basemap
    params:
@@ -31,7 +27,7 @@ recipe:
     map_label_latitude_frequency : 1
  - step: add_coastlines_bg
  - step: add_grib
-   name: mcont
+   name: viwvn
  - step: add_contour
    params:
     contour: off
