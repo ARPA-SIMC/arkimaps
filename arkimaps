@@ -215,7 +215,7 @@ class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):
         """
         Acquire input data
         """
-        self.kitchen.pantry.fill(self.kitchen.recipes)
+        self.kitchen.pantry.fill()
 
 
 class Render(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
@@ -327,7 +327,7 @@ class Postprocessor(RenderMixin, Command):
 
     def run(self):
         # Acquire input data
-        self.kitchen.pantry.fill(self.kitchen.recipes)
+        self.kitchen.pantry.fill()
         self.render_tarball()
 
 
