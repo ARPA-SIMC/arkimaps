@@ -11,8 +11,12 @@ from arkimapslib.recipes import Order
 
 
 def prepare_order(workdir: str, order: 'Order') -> 'Order':
-    order.prepare(workdir)
-    return order
+    try:
+        order.prepare(workdir)
+        return order
+    except Exception as e:
+        order.log.error("rendering failed: %s", e, exc_info=e)
+        return None
 
 
 @contextlib.contextmanager
@@ -62,4 +66,6 @@ class Renderer:
     def render(self, orders: Iterable['Order']):
         prepare = functools.partial(prepare_order, self.workdir)
         with self.magics_worker_pool() as pool:
-            yield from pool.imap_unordered(prepare, orders)
+            for order in pool.imap_unordered(prepare, orders):
+                if order is not None:
+                    yield order
