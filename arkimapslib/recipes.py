@@ -106,23 +106,25 @@ class Order:
             self,
             mixer: str,
             sources: Dict[str, str],
-            basename: str,
             recipe: str,
+            step: int,
             steps: List[Tuple[str, 'Kwargs']]):
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
         self.sources = sources
         # Destination file name (without path or .png extension)
-        self.basename = basename
+        self.basename = f"{recipe}+{step:03d}"
         # Recipe name
         self.recipe = recipe
+        # Product step
+        self.step = step
         # Recipe steps
         self.steps = steps
         # Output file name, set after the product has been rendered
         self.output = None
         # Logger for this output
-        self.log = logging.getLogger(f"arkimaps.order.{basename}")
+        self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
 
     def __getstate__(self):
         state = self.__dict__.copy()

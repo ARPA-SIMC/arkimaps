@@ -11,7 +11,7 @@ except ModuleNotFoundError:
 
 # if TYPE_CHECKING:
     # Used for kwargs-style dicts
-from .recipes import Order
+from .recipes import Recipe, Order
 Kwargs = Dict[str, Any]
 
 
@@ -79,6 +79,16 @@ class Kitchen:
         for recipe in self.recipes.recipes:
             res.extend(Mixers.make_orders(recipe, self.pantry))
         return res
+
+    def make_order(self, recipe: Recipe, step: int) -> Order:
+        """
+        Generate all possible orders for all available recipes
+        """
+        from .mixer import Mixers
+        for o in Mixers.make_orders(recipe, self.pantry):
+            if o.step == step:
+                return o
+        raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
 
 
 class EmptyKitchen(Kitchen):

@@ -121,12 +121,11 @@ class Mixer:
 
         res = []
         for step, input_files in inputs.items():
-            basename = f"{recipe.name}+{step:03d}"
             res.append(Order(
                 mixer=recipe.mixer,
                 sources=input_files,
-                basename=basename,
                 recipe=recipe.name,
+                step=step,
                 steps=recipe.steps,
             ))
 
