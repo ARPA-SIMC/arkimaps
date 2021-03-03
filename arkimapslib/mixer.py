@@ -66,6 +66,17 @@ class Mixer:
         self.order = order
         # Elements passed after output to macro.plot
         self.parts = []
+        # Python script to reproduce this product
+        self.py_lines = ["import os"]
+        for name in ("MAGICS_STYLE_PATH", "MAGPLUS_QUIET"):
+            if name in os.environ:
+                self.py_lines.append(f"os.environ[{name!r}] = {os.environ[name]!r}")
+        self.py_lines += [
+            f"from Magics import macro",
+            f"output = macro.output(output_formats=['png'], output_name={self.output_pathname!r},"
+            f" output_name_first_page_number='off')",
+            f"parts = []",
+        ]
 
     @classmethod
     def list_inputs(cls, recipe: Recipe) -> List[str]:
@@ -131,72 +142,36 @@ class Mixer:
 
         return res
 
-#    def make_orders(
-#            self,
-#            recipe: 'Recipe',
-#            workdir: str,
-#            output_steps: Optional[List[int]] = None) -> Iterator["Order"]:
-#        """
-#        Look at what input files are available for the given recipe, and
-#        generate a sequence of orders for all steps for which there are enough
-#        inputs to make the order
-#        """
-#        # List the data files in the pantry
-#        input_dir = os.path.join(workdir, recipe.name)
-#        inputs = Inputs(recipe, input_dir)
-#
-#        # Run preprocessors if needed
-#        inputs.preprocess()
-#
-#        # Generate orders based on the data we found
-#        count_generated = 0
-#        for step, files in inputs.steps.items():
-#            if output_steps is not None and step not in output_steps:
-#                continue
-#            sources = inputs.for_step(step)
-#            if sources is None:
-#                continue
-#            basename = f"{recipe.name}+{step:03d}"
-#            dest = os.path.join(workdir, basename)
-#            count_generated += 1
-#            yield Order(
-#                mixer=recipe.mixer,
-#                sources=sources,
-#                dest=dest,
-#                basename=basename,
-#                recipe=recipe.name,
-#                steps=recipe.steps,
-#            )
-#
-#        log.info("%s: %d orders created", recipe.name, count_generated)
-
-        return res
-
     def add_basemap(self, params: Kwargs):
         """
         Add a base map
         """
         self.parts.append(self.macro.mmap(**params))
+        self.py_lines.append(f"parts.append(macro.mmap(**{params!r}))")
 
     def add_coastlines_bg(self):
         """
         Add background coastlines
         """
         self.parts.append(self.macro.mcoast(map_coastline_general_style="background"))
+        self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='background'))")
 
     def add_coastlines_fg(self):
         """
         Add foreground coastlines
         """
         self.parts.append(self.macro.mcoast(map_coastline_general_style="foreground"))
-        self.parts.append(self.macro.mcoast(
-            map_coastline_sea_shade_colour="#f2f2f2",
-            map_grid="off",
-            map_coastline_sea_shade="off",
-            map_label="off",
-            map_coastline_colour="#000000",
-            map_coastline_resolution="medium",
-        ))
+        args = {
+            "map_coastline_sea_shade_colour": "#f2f2f2",
+            "map_grid": "off",
+            "map_coastline_sea_shade": "off",
+            "map_label": "off",
+            "map_coastline_colour": "#000000",
+            "map_coastline_resolution": "medium",
+        }
+        self.parts.append(self.macro.mcoast(**args))
+        self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
+        self.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
 
     def add_grib(self, name: str, params: Optional[Kwargs] = None):
         """
@@ -220,6 +195,7 @@ class Mixer:
         grib = self.macro.mgrib(grib_input_file_name=input_file.pathname, **kwargs)
         self.gribs[name] = grib
         self.parts.append(grib)
+        self.py_lines.append(f"parts.append(macro.mgrib(grib_input_file_name={input_file.pathname!r}, **{kwargs!r}))")
 
     def add_contour(self, params: Optional[Kwargs] = None):
         """
@@ -230,6 +206,7 @@ class Mixer:
         self.parts.append(
             self.macro.mcont(**params)
         )
+        self.py_lines.append(f"parts.append(macro.mcont(**{params!r}))")
 
     def add_grid(self):
         """
@@ -238,6 +215,7 @@ class Mixer:
         self.parts.append(
             self.macro.mcoast(map_coastline_general_style="grid"),
         )
+        self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='grid'))")
 
     def add_boundaries(self, params: Optional[Kwargs] = None):
         """
@@ -246,22 +224,37 @@ class Mixer:
         self.parts.append(
             self.macro.mcoast(map_coastline_general_style="boundaries"),
         )
-        self.parts.append(self.macro.mcoast(
-            map_boundaries="on",
-            map_boundaries_colour="#504040",
-            map_administrative_boundaries_countries_list=["ITA"],
-            map_administrative_boundaries_colour="#504040",
-            map_administrative_boundaries_style="solid",
-            map_administrative_boundaries="on",
-        ))
+        self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='boundaries'))")
+        args = {
+            'map_boundaries': "on",
+            'map_boundaries_colour': "#504040",
+            'map_administrative_boundaries_countries_list': ["ITA"],
+            'map_administrative_boundaries_colour': "#504040",
+            'map_administrative_boundaries_style': "solid",
+            'map_administrative_boundaries': "on",
+        }
+        self.parts.append(self.macro.mcoast(**args))
+        self.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
         # FIX: group all mcoasts?
         if params is not None:
             self.parts.append(self.macro.mcoast(**params))
+            self.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
     def serve(self):
         """
         Render the file and store the output file name into the order
         """
+        self.py_lines.append(f"macro.plot(output, *parts)")
+
+        code = "\n".join(self.py_lines)
+        try:
+            from yapf.yapflib import yapf_api
+            code, changed = yapf_api.FormatCode(code)
+        except ModuleNotFoundError:
+            pass
+        with open(self.output_pathname + ".py", "wt") as fd:
+            print(code, file=fd)
+
         self.macro.plot(
             self.output,
             *self.parts,
