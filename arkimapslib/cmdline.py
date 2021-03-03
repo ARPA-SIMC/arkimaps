@@ -37,7 +37,7 @@ class Command:
 
     def setup_logging(self):
         # Setup logging
-        FORMAT = "%(asctime)-15s %(levelname)s %(message)s"
+        FORMAT = "%(asctime)-15s %(levelname)s %(name)s %(message)s"
         log_handler = logging.StreamHandler(sys.stderr)
         log_handler.setFormatter(logging.Formatter(FORMAT))
         if self.args.debug:
