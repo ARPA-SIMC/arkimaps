@@ -4,7 +4,7 @@ Mixer: **default**
 
 ## Inputs
 
-* **litota3_nord**:
+* **litota3**:
     * **Arkimet matcher**: `product:GRIB2,98,0,17,4,5`
     * **grib_filter matcher**: `shortName is "litota3"`
 
@@ -53,7 +53,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "litota3_nord"
+  "name": "litota3"
 }
 ```
 

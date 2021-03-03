@@ -3,9 +3,13 @@
 description: Vertical integral of eastward water vapour flux
 inputs:
  viwve:
-  - model: any
+  - name: any
     arkimet: product:GRIB2,98,192,162,71,5
     eccodes: shortName is "viwve"
+ mslp:
+  - name: any
+    arkimet: product:GRIB1,98,128,151 or GRIB1,,2,2
+    eccodes: shortName is "pmsl" or shortName is "msl"
 recipe:
  - step: add_basemap
    params:

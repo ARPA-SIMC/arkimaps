@@ -4,16 +4,12 @@ Mixer: **default**
 
 ## Inputs
 
-* **viwvn_emr**:
+* **viwvn**:
     * **Arkimet matcher**: `product:GRIB2,98,192,162,72,6`
     * **grib_filter matcher**: `shortName is "viwvn"`
 * **mslp**:
-    * Model **cosmo**:
-        * **Arkimet matcher**: `product:GRIB1,,2,2`
-        * **grib_filter matcher**: `shortName is "pmsl"`
-    * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,2,2`
-        * **grib_filter matcher**: `shortName is "pmsl"`
+    * **Arkimet matcher**: `product:GRIB1,98,128,151 or GRIB1,,2,2`
+    * **grib_filter matcher**: `shortName is "pmsl" or shortName is "msl"`
 
 ## Steps
 
