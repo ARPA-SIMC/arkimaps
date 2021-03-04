@@ -126,7 +126,7 @@ class Mixer:
                             # generate an order for it
                             steps_to_delete.append(step)
                         else:
-                            input_files[input_name] = ifile
+                            input_files[input_name] = steps[step]
                     for step in steps_to_delete:
                         del inputs[step]
 
@@ -179,10 +179,6 @@ class Mixer:
         """
         input_file = self.order.sources[name]
         source_input = input_file.info
-
-        # TODO: if source_input has preprocessing steps, apply them here
-        # source_input: Input
-        # source_info["source"]: source file
 
         kwargs = {}
         if source_input.mgrib:
