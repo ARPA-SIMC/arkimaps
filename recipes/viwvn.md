@@ -5,7 +5,7 @@ Mixer: **default**
 ## Inputs
 
 * **viwvn**:
-    * **Arkimet matcher**: `product:GRIB2,98,192,162,72,6`
+    * **Arkimet matcher**: `product:GRIB2,98,192,162,72,5`
     * **grib_filter matcher**: `shortName is "viwvn"`
 * **mslp**:
     * Model **cosmo**:
