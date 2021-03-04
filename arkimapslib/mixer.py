@@ -37,7 +37,7 @@ class Mixers(ClassRegistry["Mixer"]):
     @classmethod
     def list_inputs(cls, recipe: Recipe) -> List[str]:
         """
-        List inputs used by a recipe
+        List the names of inputs used by a recipe
         """
         mixer_cls = cls.by_name(recipe.mixer)
         return mixer_cls.list_inputs(recipe)
