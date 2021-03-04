@@ -247,13 +247,13 @@ class Mixer:
             symbol_colour="black",
             symbol_height=0.28,
         ))
-            
+
     def add_geopoints(self, params: Optional[Kwargs] = None):
         """
         Add geopoint file
         """
         if params is not None:
-            self.parts.append(self.macro.mgeo(**params))          
+            self.parts.append(self.macro.mgeo(**params))
 
     def serve(self):
         """
