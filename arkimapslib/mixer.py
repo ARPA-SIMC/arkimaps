@@ -236,6 +236,25 @@ class Mixer:
             self.parts.append(self.macro.mcoast(**params))
             self.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
+    def add_symbols(self):
+        """
+        Add symbols settings
+        """
+        self.parts.append(self.macro.msymb(
+            symbol_type="marker",
+            symbol_marker_index=15,
+            legend="off",
+            symbol_colour="black",
+            symbol_height=0.28,
+        ))
+            
+    def add_geopoints(self, params: Optional[Kwargs] = None):
+        """
+        Add geopoint file
+        """
+        if params is not None:
+            self.parts.append(self.macro.mgeo(**params))          
+
     def serve(self):
         """
         Render the file and store the output file name into the order
