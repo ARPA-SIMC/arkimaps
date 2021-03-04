@@ -121,6 +121,67 @@ class Input:
 
 
 @InputTypes.register
+class Static(Input):
+    """
+    An input that refers to static files distributed with arkimaps
+    """
+    NAME = "static"
+
+    static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
+
+    def __init__(self, path: str, **kw):
+        super().__init__(**kw)
+        abspath, path = self.clean_path(path)
+        self.abspath = abspath
+        self.path = path
+
+    def clean_path(self, path: str):
+        """
+        Resolve path into an absolute path, and turn it into a clean relative
+        path inside it.
+
+        Also perform any validation expected on this kind of static input paths
+        """
+        abspath = os.path.abspath(os.path.join(self.static_dir, path))
+        cp = os.path.commonpath((abspath, self.static_dir))
+        if not os.path.samefile(cp, self.static_dir):
+            raise RuntimeError(f"{path} leads outside the static directory")
+        if not os.path.exists(abspath):
+            raise RuntimeError(f"{path} does not exist inside {self.static_dir}")
+        return abspath, os.path.relpath(abspath, self.static_dir)
+
+    def document(self, file, indent=4):
+        ind = " " * indent
+        print(f"{ind}* **Path**: `{self.path}`", file=file)
+        super().document(file, indent)
+
+    # TODO: def get_steps(self, p: "pantry.Pantry") -> Dict[int, "InputFile"]:
+
+
+@InputTypes.register
+class Shape(Static):
+    """
+    A special instance of static that deals with shapefiles
+    """
+    NAME = "shape"
+
+    def clean_path(self, path: str):
+        """
+        Resolve path into an absolute path, and turn it into a clean relative
+        path inside it.
+
+        Also perform any validation expected on this kind of static input paths
+        """
+        abspath = os.path.abspath(os.path.join(self.static_dir, path))
+        cp = os.path.commonpath((abspath, self.static_dir))
+        if not os.path.samefile(cp, self.static_dir):
+            raise RuntimeError(f"{path} leads outside the static directory")
+        if not os.path.exists(abspath + ".shp"):
+            raise RuntimeError(f"{path}.shp does not exist inside {self.static_dir}")
+        return abspath, os.path.relpath(abspath, self.static_dir)
+
+
+@InputTypes.register
 class Source(Input):
     """
     An input that is data straight out of a model
