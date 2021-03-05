@@ -5,6 +5,9 @@ inputs:
  sottozone_allerta_er:
   type: shape
   path: shapes/Sottozone_allerta_ER
+ punti_citta:
+  type: static
+  path: puntiCitta.geo
 recipe:
  - step: add_basemap
    params: 
@@ -58,5 +61,5 @@ recipe:
     map_user_layer_colour: blue
  - step: add_geopoints
    params:
-    geo_input_file_name: "/tmp/puntiCitta.geo"
+    geo_input_file_name: punti_citta
  - step: add_symbols
