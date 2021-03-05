@@ -153,7 +153,7 @@ class Order:
             self.log.info("%s %r", name, args)
             meth = getattr(mixer, name, None)
             if meth is None:
-                raise RuntimeError("Recipe " + self.name + " uses unknown step " + name)
+                raise RuntimeError("Recipe " + self.recipe + " uses unknown step " + name)
             meth(**args)
 
         mixer.serve()

@@ -1,6 +1,7 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, Type, List
+from typing import Dict, Any, Optional, Type, List, Sequence
 import os
+import functools
 from .utils import ClassRegistry
 
 # if TYPE_CHECKING:
@@ -43,8 +44,49 @@ class Mixers(ClassRegistry["Mixer"]):
         return mixer_cls.list_inputs(recipe)
 
 
+class Step:
+    def __init__(self):
+        self.name = None
+
+    def __set_name__(self, owner: Type["Mixer"], name: str):
+        owner.steps[name] = self
+        self.name = name
+
+    def __get__(self, instance, owner=None):
+        return functools.partial(self.run, instance)
+
+    def run(self, mixer: "Mixer"):
+        raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
+
+
+class MagicsMacro(Step):
+    def __init__(self, name: str, doc: str, params: Optional[Kwargs] = None):
+        super().__init__()
+        self.macro_name = name
+        self.doc = doc
+        self.params = params
+
+    def run(self, mixer: "Mixer", params: Optional[Kwargs] = None):
+        if params is None:
+            params = self.params
+        mixer.parts.append(getattr(mixer.macro, self.macro_name)(**params))
+        mixer.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
+
+
+class MixerMeta(type):
+    def __new__(cls, name: str, bases: Sequence[Type], dct: Dict[str, Any]):
+        # Create a new 'steps' dict merging all steps of base classes
+        steps = {}
+        for b in bases:
+            b_steps = getattr(b, "steps", None)
+            if b_steps is not None:
+                steps.update(b_steps)
+        dct["steps"] = steps
+        return super().__new__(cls, name, bases, dct)
+
+
 @Mixers.register
-class Mixer:
+class Mixer(metaclass=MixerMeta):
     NAME = "default"
 
     def __init__(self, workdir: str, order: Order):
@@ -142,25 +184,19 @@ class Mixer:
 
         return res
 
-    def add_basemap(self, params: Kwargs):
-        """
-        Add a base map
-        """
-        self.parts.append(self.macro.mmap(**params))
-        self.py_lines.append(f"parts.append(macro.mmap(**{params!r}))")
+    add_basemap = MagicsMacro("mmap", "Add a base map")
 
-    def add_coastlines_bg(self):
-        """
-        Add background coastlines
-        """
-        self.parts.append(self.macro.mcoast(map_coastline_general_style="background"))
-        self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='background'))")
+    add_coastlines_bg = MagicsMacro("mcoast", "Add background coastlines", {
+        "map_coastline_general_style": "background",
+    })
 
     def add_coastlines_fg(self):
         """
         Add foreground coastlines
         """
         self.parts.append(self.macro.mcoast(map_coastline_general_style="foreground"))
+        self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
+
         args = {
             "map_coastline_sea_shade_colour": "#f2f2f2",
             "map_grid": "off",
@@ -170,7 +206,6 @@ class Mixer:
             "map_coastline_resolution": "medium",
         }
         self.parts.append(self.macro.mcoast(**args))
-        self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
         self.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
 
     def add_grib(self, name: str, params: Optional[Kwargs] = None):
@@ -193,25 +228,13 @@ class Mixer:
         self.parts.append(grib)
         self.py_lines.append(f"parts.append(macro.mgrib(grib_input_file_name={input_file.pathname!r}, **{kwargs!r}))")
 
-    def add_contour(self, params: Optional[Kwargs] = None):
-        """
-        Add contouring of the previous data
-        """
-        if params is None:
-            params = {"contour_automatic_setting": "ecmwf"}
-        self.parts.append(
-            self.macro.mcont(**params)
-        )
-        self.py_lines.append(f"parts.append(macro.mcont(**{params!r}))")
+    add_contour = MagicsMacro("mcont", "Add contouring of the previous data", {
+        "contour_automatic_setting": "ecmwf",
+    })
 
-    def add_grid(self):
-        """
-        Add a coordinates grid
-        """
-        self.parts.append(
-            self.macro.mcoast(map_coastline_general_style="grid"),
-        )
-        self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='grid'))")
+    add_grid = MagicsMacro("mcont", "Add a coordinates grid", {
+        "map_coastline_general_style": "grid",
+    })
 
     def add_boundaries(self, params: Optional[Kwargs] = None):
         """
@@ -221,6 +244,7 @@ class Mixer:
             self.macro.mcoast(map_coastline_general_style="boundaries"),
         )
         self.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='boundaries'))")
+
         args = {
             'map_boundaries': "on",
             'map_boundaries_colour': "#504040",
@@ -231,22 +255,19 @@ class Mixer:
         }
         self.parts.append(self.macro.mcoast(**args))
         self.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
+
         # FIX: group all mcoasts?
         if params is not None:
             self.parts.append(self.macro.mcoast(**params))
             self.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
-    def add_symbols(self):
-        """
-        Add symbols settings
-        """
-        self.parts.append(self.macro.msymb(
-            symbol_type="marker",
-            symbol_marker_index=15,
-            legend="off",
-            symbol_colour="black",
-            symbol_height=0.28,
-        ))
+    add_symbols = MagicsMacro("msymb", "Add symbols settings", {
+        "symbol_type": "marker",
+        "symbol_marker_index": 15,
+        "legend": "off",
+        "symbol_colour": "black",
+        "symbol_height": 0.28,
+    })
 
     def add_geopoints(self, params: Optional[Kwargs] = None):
         """
@@ -254,6 +275,7 @@ class Mixer:
         """
         if params is not None:
             self.parts.append(self.macro.mgeo(**params))
+            self.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
 
     def serve(self):
         """
