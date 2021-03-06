@@ -125,6 +125,8 @@ class Static(Input):
     """
     An input that refers to static files distributed with arkimaps
     """
+    # TODO: in newer pythons, use importlib.resources.Resource and copy to
+    # workdir in get_steps
     NAME = "static"
 
     static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
@@ -164,6 +166,8 @@ class Shape(Static):
     """
     A special instance of static that deals with shapefiles
     """
+    # TODO: in newer pythons, use importlib.resources.Resource and copy to
+    # workdir in get_steps
     NAME = "shape"
 
     def clean_path(self, path: str):
