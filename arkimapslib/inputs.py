@@ -155,7 +155,8 @@ class Static(Input):
         print(f"{ind}* **Path**: `{self.path}`", file=file)
         super().document(file, indent)
 
-    # TODO: def get_steps(self, p: "pantry.Pantry") -> Dict[int, "InputFile"]:
+    def get_steps(self, p: "pantry.Pantry") -> Dict[int, "InputFile"]:
+        return {None: InputFile(self.abspath, self, None)}
 
 
 @InputTypes.register

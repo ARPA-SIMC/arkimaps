@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, Type, List, Sequence
+from typing import Dict, Any, Optional, Type, List, Sequence, Set
 import os
 import functools
 from .utils import ClassRegistry
@@ -45,8 +45,12 @@ class Mixers(ClassRegistry["Mixer"]):
 
 
 class Step:
-    def __init__(self):
+    """
+    One recipe step provided by a Mixer
+    """
+    def __init__(self, doc: str):
         self.name = None
+        self.doc = doc
 
     def __set_name__(self, owner: Type["Mixer"], name: str):
         owner.steps[name] = self
@@ -58,12 +62,20 @@ class Step:
     def run(self, mixer: "Mixer"):
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
 
+    def get_input_names(self, args: Optional[Kwargs] = None) -> Set[str]:
+        """
+        Return the list of input names used by this step
+        """
+        return set()
+
 
 class MagicsMacro(Step):
+    """
+    Run a Magics macro with optional default arguments
+    """
     def __init__(self, name: str, doc: str, params: Optional[Kwargs] = None):
-        super().__init__()
+        super().__init__(doc)
         self.macro_name = name
-        self.doc = doc
         self.params = params
 
     def run(self, mixer: "Mixer", params: Optional[Kwargs] = None):
@@ -71,6 +83,61 @@ class MagicsMacro(Step):
             params = self.params
         mixer.parts.append(getattr(mixer.macro, self.macro_name)(**params))
         mixer.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
+
+
+class AddGrib(Step):
+    def __init__(self):
+        super().__init__("Add a grib file")
+
+    def run(self, mixer: "Mixer", name: str, params: Optional[Kwargs] = None):
+        input_file = mixer.order.sources[name]
+        source_input = input_file.info
+
+        kwargs = {}
+        if source_input.mgrib:
+            kwargs.update(source_input.mgrib)
+        if params is not None:
+            kwargs.update(params)
+
+        mixer.order.log.info("add_grib mgrib %r", kwargs)
+
+        grib = mixer.macro.mgrib(grib_input_file_name=input_file.pathname, **kwargs)
+        mixer.parts.append(grib)
+        mixer.py_lines.append(f"parts.append(macro.mgrib(grib_input_file_name={input_file.pathname!r}, **{kwargs!r}))")
+
+    def get_input_names(self, args: Optional[Kwargs] = None) -> Set[str]:
+        res = super().get_input_names(args)
+        name = args.get("name")
+        if name is not None:
+            res.add(name)
+        return res
+
+
+class AddUserBoundaries(Step):
+    def __init__(self):
+        super().__init__("Add user-defined boundaries from a shapefile")
+
+    def run(self, mixer: "Mixer", shape: str, params: Optional[Kwargs] = None):
+        input_file = mixer.order.sources[shape]
+
+        args = {
+            "map_user_layer": "on",
+            "map_user_layer_colour": "blue",
+        }
+        if params is not None:
+            args.update(params)
+
+        args["map_user_layer_name"] = input_file.pathname
+
+        mixer.parts.append(mixer.macro.mcoast(**args))
+        mixer.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
+
+    def get_input_names(self, args: Optional[Kwargs] = None) -> Set[str]:
+        res = super().get_input_names(args)
+        name = args.get("shape")
+        if name is not None:
+            res.add(name)
+        return res
 
 
 class MixerMeta(type):
@@ -102,8 +169,6 @@ class Mixer(metaclass=MixerMeta):
             output_name=self.output_pathname,
             output_name_first_page_number="off",
         )
-        # Loaded GRIB data
-        self.gribs: Kwargs = {}
         # Order with the steps to execute
         self.order = order
         # Elements passed after output to macro.plot
@@ -131,8 +196,10 @@ class Mixer(metaclass=MixerMeta):
 
         # Collect the inputs needed for all steps
         for step_name, args in recipe.steps:
-            if step_name == "add_grib":
-                input_name = args["name"]
+            step = cls.steps.get(step_name)
+            if step is None:
+                continue
+            for input_name in step.get_input_names(args):
                 if input_name in input_names:
                     continue
                 input_names.append(input_name)
@@ -147,8 +214,10 @@ class Mixer(metaclass=MixerMeta):
 
         # Collect the inputs needed for all steps
         for step_name, args in recipe.steps:
-            if step_name == "add_grib":
-                input_name = args["name"]
+            step = cls.steps.get(step_name)
+            if step is None:
+                continue
+            for input_name in step.get_input_names(args):
                 if input_name in input_names:
                     continue
                 input_names.add(input_name)
@@ -218,25 +287,7 @@ class Mixer(metaclass=MixerMeta):
         self.parts.append(self.macro.mcoast(**args))
         self.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
 
-    def add_grib(self, name: str, params: Optional[Kwargs] = None):
-        """
-        Add a grib file
-        """
-        input_file = self.order.sources[name]
-        source_input = input_file.info
-
-        kwargs = {}
-        if source_input.mgrib:
-            kwargs.update(source_input.mgrib)
-        if params is not None:
-            kwargs.update(params)
-
-        self.order.log.info("add_grib mgrib %r", kwargs)
-
-        grib = self.macro.mgrib(grib_input_file_name=input_file.pathname, **kwargs)
-        self.gribs[name] = grib
-        self.parts.append(grib)
-        self.py_lines.append(f"parts.append(macro.mgrib(grib_input_file_name={input_file.pathname!r}, **{kwargs!r}))")
+    add_grib = AddGrib()
 
     add_contour = MagicsMacro("mcont", "Add contouring of the previous data", {
         "contour_automatic_setting": "ecmwf",
@@ -266,10 +317,7 @@ class Mixer(metaclass=MixerMeta):
         self.parts.append(self.macro.mcoast(**args))
         self.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
 
-        # FIX: group all mcoasts?
-        if params is not None:
-            self.parts.append(self.macro.mcoast(**params))
-            self.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+    add_user_boundaries = AddUserBoundaries()
 
     add_symbols = MagicsMacro("msymb", "Add symbols settings", {
         "symbol_type": "marker",

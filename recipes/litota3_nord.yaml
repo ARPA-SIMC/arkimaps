@@ -55,9 +55,9 @@ recipe:
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
+ - step: add_user_boundaries
+   shape: sottozone_allerta_er
    params:
-    map_user_layer: on
-    map_user_layer_name: sottozone_allerta_er
     map_user_layer_colour: blue
  - step: add_geopoints
    params:

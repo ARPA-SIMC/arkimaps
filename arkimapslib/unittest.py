@@ -27,6 +27,8 @@ class RecipeTestMixin:
             expected = []
             for name in input_names:
                 inputs = kitchen.pantry.inputs.get(name)
+                if inputs is None:
+                    self.fail(f"No input found for {name}")
                 for inp in inputs:
                     if inp.NAME != "default":
                         continue

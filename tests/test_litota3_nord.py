@@ -7,14 +7,7 @@ from arkimapslib.unittest import add_recipe_test_cases
 
 class LITOTA3_NORDMixin:
     def test_recipe(self):
-        # For IFS and Eccodes, we have a problem:
-        #  - IFS has a 3h resolution, so does not provide data for tp1h
-        #  - grib_filter errors out if the input is empty, with the same error
-        #    code as other kinds of errors
-        # So we can't successfully run a dispatch from an empty file in case
-        # we're running the IFS case with grib_filter dispatch. Rather than
-        # handling this corner case, which is mostly test specific, we skip
-        # that test
+        # Input for litota3 is not computed by COSMO. See #64
         if self.model_name == "cosmo":
             raise unittest.SkipTest(f"{self.recipe_name} tests for COSMO skipped, we currently miss input data")
 
