@@ -163,17 +163,7 @@ class PrintArkiQuery(RecipesMixin, Command):
         self.load_recipes()
 
     def run(self):
-        merged = None
-        for r in self.kitchen.recipes.recipes:
-            for name, inputs in r.inputs.items():
-                for inp in inputs:
-                    matcher = inp.arkimet_matcher
-                    if matcher is None:
-                        continue
-                    if merged is None:
-                        merged = matcher
-                    else:
-                        merged = merged.merge(matcher)
+        merged = self.kitchen.get_merged_arki_query()
         print(merged)
 
 

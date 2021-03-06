@@ -5,7 +5,8 @@ import contextlib
 import tempfile
 import os
 import yaml
-from arkimapslib.kitchen import EmptyKitchen
+from arkimapslib.kitchen import Kitchen, ArkimetEmptyKitchen
+from arkimapslib.pantry import Pantry
 
 
 class Workdir(contextlib.ExitStack):
@@ -25,7 +26,8 @@ class TestEmptyKitchen(TestCase):
         with Workdir() as workdir:
             workdir.add_file("test.yaml", {"recipe": []})
             workdir.add_file("test/test.yaml", {"recipe": []})
-            kitchen = EmptyKitchen()
+            kitchen = Kitchen()
+            kitchen.pantry = Pantry()
             kitchen.load_recipes(workdir.workdir)
 
         r = kitchen.recipes.get("test")
@@ -38,7 +40,16 @@ class TestEmptyKitchen(TestCase):
     def test_document_recipes(self):
         # Just generate documentation for all shipped recipes, to make sure
         # nothing raises exceptions
-        kitchen = EmptyKitchen()
+        kitchen = Kitchen()
+        kitchen.pantry = Pantry()
         kitchen.load_recipes("recipes")
         with tempfile.TemporaryDirectory() as workdir:
             kitchen.document_recipes(workdir)
+
+
+class TestArkimetEmptyKitchen(TestCase):
+    def test_merged_arki_query(self):
+        kitchen = ArkimetEmptyKitchen()
+        kitchen.load_recipes("recipes")
+        merged = kitchen.get_merged_arki_query()
+        self.assertIsNotNone(merged)

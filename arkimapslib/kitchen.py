@@ -12,6 +12,8 @@ except ModuleNotFoundError:
 # if TYPE_CHECKING:
     # Used for kwargs-style dicts
 from .recipes import Recipe, Order
+from . import pantry
+from . import inputs
 Kwargs = Dict[str, Any]
 
 
@@ -21,10 +23,12 @@ class Kitchen:
     """
     def __init__(self):
         from .recipes import Recipes
-        from .pantry import Pantry
-        self.pantry: Pantry
+        self.pantry: "pantry.Pantry"
         self.recipes = Recipes()
         self.context_stack = contextlib.ExitStack()
+
+    def get_pantry(self) -> "pantry.Pantry":
+        raise NotImplementedError(f"{self.__class__.__name__}.get_pantry() not implemented")
 
     def __enter__(self):
         return self
@@ -92,17 +96,6 @@ class Kitchen:
         raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
 
 
-class EmptyKitchen(Kitchen):
-    """
-    Kitchen with an empty pantry, used only to load recipe and input
-    information in order to generate documentation
-    """
-    def __init__(self):
-        super().__init__()
-        from .pantry import Pantry
-        self.pantry: Pantry = Pantry()
-
-
 class WorkingKitchen(Kitchen):
     def __init__(self, workdir: Optional[str] = None):
         """
@@ -120,19 +113,41 @@ class WorkingKitchen(Kitchen):
 if arkimet is not None:
     class ArkimetRecipesMixin:
         def __init__(self, *args, **kw):
-            super().__init__(*args, **kw)
-
             # Arkimet session
             #
             # Force directory segments so we can access each data by filesystem
             # path
-            self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
+            super().__init__(*args, **kw)
+            self.session = self.context_stack.enter_context(
+                    arkimet.dataset.Session(force_dir_segments=True))
 
-    class ArkimetEmptyKitchen(ArkimetRecipesMixin, EmptyKitchen):
+        def add_input(self, inp: "inputs.Input"):
+            inp.compile_arkimet_matcher(self.session)
+            super().add_input(inp)
+
+        def get_merged_arki_query(self):
+            merged = None
+            input_names = set()
+            for r in self.recipes.recipes:
+                input_names.update(self.pantry.list_all_inputs(r))
+            for input_name in input_names:
+                for inp in self.pantry.inputs[input_name]:
+                    matcher = getattr(inp, "arkimet_matcher", None)
+                    if matcher is None:
+                        continue
+                    if merged is None:
+                        merged = matcher
+                    else:
+                        merged = merged.merge(matcher)
+            return merged
+
+    class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
         """
         Arkimet-based kitchen used to load recipes but not prepare products
         """
-        pass
+        def __init__(self, *args, **kw):
+            super().__init__(*args, **kw)
+            self.pantry = pantry.ArkimetEmptyPantry(self.session)
 
     class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
         def __init__(self, *args, **kw):
@@ -141,15 +156,16 @@ if arkimet is not None:
             self.pantry = ArkimetPantry(root=self.workdir, session=self.session)
 
 
-class EccodesEmptyKitchen(EmptyKitchen):
+class EccodesEmptyKitchen(Kitchen):
     """
     Eccodes-based kitchen used to load recipes but not prepare products
     """
-    pass
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.pantry = pantry.Pantry()
 
 
 class EccodesKitchen(WorkingKitchen):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        from .pantry import EccodesPantry
-        self.pantry = EccodesPantry(root=self.workdir)
+        self.pantry = pantry.EccodesPantry(root=self.workdir)

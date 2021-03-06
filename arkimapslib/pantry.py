@@ -117,6 +117,19 @@ class DiskPantry(Pantry):
         return res
 
 
+class ArkimetEmptyPantry(Pantry):
+    """
+    Storage-less arkimet pantry only used to load recipes
+    """
+    def __init__(self, session: arkimet.dataset.Session, **kw):
+        super().__init__(**kw)
+        self.session = session
+
+    def add_input(self, inp: Input):
+        inp.compile_arkimet_matcher(self.session)
+        super().add_input(inp)
+
+
 class ArkimetPantry(DiskPantry):
     """
     Arkimet-based storage of GRIB files to be processed
