@@ -38,8 +38,9 @@ class Recipe:
     """
     A parsed and validated recipe
     """
-    def __init__(self, name: str, data: 'Kwargs'):
+    def __init__(self, name: str, defined_in: str, data: 'Kwargs'):
         self.name = name
+        self.defined_in = defined_in
 
         # Name of the mixer to use
         self.mixer: str = data.get("mixer", "default")
