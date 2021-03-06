@@ -32,33 +32,34 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def _build_input(self, name: str, filename: str, all_contents: Kwargs, input_contents: Kwargs):
-        from .inputs import Input
-        return Input.create(name=name, defined_in=filename, **input_contents)
-
-    def _build_recipe(self, name: str, all_contents: Kwargs, recipe_contents: Kwargs):
-        from .recipes import Recipe
-        return Recipe(name, all_contents)
-
     def load_recipes(self, path: str):
         """
         Load recipes from the given directory
         """
-        for fn in os.listdir(path):
-            if not fn.endswith(".yaml"):
-                continue
-            with open(os.path.join(path, fn), "rt") as fd:
-                recipe = yaml.load(fd, Loader=yaml.SafeLoader)
-            inputs = recipe.get("inputs")
-            if inputs is not None:
-                for name, input_contents in inputs.items():
-                    if isinstance(input_contents, list):
-                        for ic in input_contents:
-                            self.pantry.add_input(self._build_input(name, fn, recipe, ic))
-                    else:
-                        self.pantry.add_input(self._build_input(name, fn, recipe, input_contents))
-            if "recipe" in recipe:
-                self.recipes.add(self._build_recipe(fn[:-5], recipe, recipe["recipe"]))
+        from .inputs import Input
+        from .recipes import Recipe
+        for dirpath, dirnames, fnames in os.walk(path):
+            relpath = os.path.relpath(dirpath, start=path)
+            for fn in fnames:
+                if not fn.endswith(".yaml"):
+                    continue
+                with open(os.path.join(dirpath, fn), "rt") as fd:
+                    recipe = yaml.load(fd, Loader=yaml.SafeLoader)
+                if relpath == ".":
+                    relfn = fn
+                else:
+                    relfn = os.path.join(relpath, fn)
+                inputs = recipe.get("inputs")
+                if inputs is not None:
+                    for name, input_contents in inputs.items():
+                        if isinstance(input_contents, list):
+                            for ic in input_contents:
+                                self.pantry.add_input(Input.create(name=name, defined_in=relfn, **ic))
+                        else:
+                            self.pantry.add_input(Input.create(name=name, defined_in=relfn, **input_contents))
+
+                if "recipe" in recipe:
+                    self.recipes.add(Recipe(relfn[:-5], defined_in=relfn, data=recipe))
 
     def document_recipes(self, path: str):
         """
