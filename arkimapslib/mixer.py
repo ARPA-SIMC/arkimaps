@@ -142,6 +142,7 @@ class Mixer(metaclass=MixerMeta):
     @classmethod
     def make_orders(cls, recipe: Recipe, pantry: Pantry) -> List[Order]:
         inputs: Optional[Dict[str, Dict[str, InputFile]]] = None
+        inputs_for_all_steps: Dict[str, InputFile] = {}
         input_names = set()
 
         # Collect the inputs needed for all steps
@@ -154,6 +155,11 @@ class Mixer(metaclass=MixerMeta):
 
                 # Find available steps for this input
                 steps = pantry.get_steps(input_name)
+                any_step = steps.pop(None, None)
+                if any_step is not None:
+                    inputs_for_all_steps[input_name] = any_step
+                if not steps:
+                    continue
 
                 # add_grib needs this input for all steps
                 if inputs is None:
@@ -171,6 +177,10 @@ class Mixer(metaclass=MixerMeta):
                             input_files[input_name] = steps[step]
                     for step in steps_to_delete:
                         del inputs[step]
+
+        if inputs_for_all_steps:
+            for step, files in inputs.items():
+                files.update(inputs_for_all_steps)
 
         res = []
         for step, input_files in inputs.items():
