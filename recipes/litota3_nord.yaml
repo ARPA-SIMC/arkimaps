@@ -60,6 +60,5 @@ recipe:
    params:
     map_user_layer_colour: blue
  - step: add_geopoints
-   params:
-    geo_input_file_name: punti_citta
+   points: punti_citta
  - step: add_symbols

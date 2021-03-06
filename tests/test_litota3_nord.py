@@ -20,9 +20,17 @@ class LITOTA3_NORDMixin:
             sottozone_allerta_er = kitchen.pantry.inputs.get("sottozone_allerta_er")
             for i in sottozone_allerta_er:
                 self.assertEqual(i.__class__.__name__, "Shape")
+            punti_citta = kitchen.pantry.inputs.get("punti_citta")
+            for i in punti_citta:
+                self.assertEqual(i.__class__.__name__, "Static")
 
             orders = self.make_orders(kitchen)
             self.assertEqual(len(orders), 1)
+
+            sources = orders[0].sources
+            self.assertEqual(os.path.basename(sources["litota3"].pathname), "litota3+12.grib")
+            self.assertEqual(os.path.basename(sources["sottozone_allerta_er"].pathname), "Sottozone_allerta_ER")
+            self.assertEqual(os.path.basename(sources["punti_citta"].pathname), "puntiCitta.geo")
 
             renderer = Renderer(workdir=kitchen.workdir)
             with self.assertLogs() as log:

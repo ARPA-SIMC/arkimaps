@@ -140,6 +140,29 @@ class AddUserBoundaries(Step):
         return res
 
 
+class AddGeopoints(Step):
+    def __init__(self):
+        super().__init__("Add geopoints")
+
+    def run(self, mixer: "Mixer", points: str, params: Optional[Kwargs] = None):
+        input_file = mixer.order.sources[points]
+
+        args = {}
+        if params is not None:
+            args.update(params)
+        args["geo_input_file_name"] = input_file.pathname
+
+        mixer.parts.append(mixer.macro.mgeo(**args))
+        mixer.py_lines.append(f"parts.append(macro.mgeo(**{args!r}))")
+
+    def get_input_names(self, args: Optional[Kwargs] = None) -> Set[str]:
+        res = super().get_input_names(args)
+        name = args.get("points")
+        if name is not None:
+            res.add(name)
+        return res
+
+
 class MixerMeta(type):
     def __new__(cls, name: str, bases: Sequence[Type], dct: Dict[str, Any]):
         # Create a new 'steps' dict merging all steps of base classes
@@ -327,13 +350,7 @@ class Mixer(metaclass=MixerMeta):
         "symbol_height": 0.28,
     })
 
-    def add_geopoints(self, params: Optional[Kwargs] = None):
-        """
-        Add geopoint file
-        """
-        if params is not None:
-            self.parts.append(self.macro.mgeo(**params))
-            self.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
+    add_geopoints = AddGeopoints()
 
     def serve(self):
         """
