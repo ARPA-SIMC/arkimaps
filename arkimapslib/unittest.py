@@ -18,10 +18,32 @@ class RecipeTestMixin:
         return orders
 
     def fill_pantry(self, kitchen, step=12, expected=None):
-        if expected is None:
-            expected = [f"{self.model_name}_{self.recipe_name}+{step}.grib"]
+        from .mixer import Mixers
         kitchen.load_recipes("recipes")
-        kitchen.pantry.fill(path=self.get_sample_path(self.recipe_name, 12))
+        recipe = kitchen.recipes.get(self.recipe_name)
+        input_names = Mixers.list_inputs(recipe)
+
+        if expected is None:
+            expected = []
+            for name in input_names:
+                inputs = kitchen.pantry.inputs.get(name)
+                if inputs is None:
+                    self.fail(f"No input found for {name}")
+                for inp in inputs:
+                    if inp.NAME != "default":
+                        continue
+                    if inp.model is None:
+                        expected.append(f"{inp.name}+{step}.grib")
+                    else:
+                        expected.append(f"{self.model_name}_{inp.name}+{step}.grib")
+
+        sample_dir = os.path.join("testdata", self.recipe_name)
+        for fn in os.listdir(sample_dir):
+            if not fn.endswith(".arkimet"):
+                continue
+            if not fn.startswith(self.model_name):
+                continue
+            kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(kitchen.pantry.data_root)))
 
