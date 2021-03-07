@@ -10,10 +10,11 @@ except ModuleNotFoundError:
     arkimet = None
 
 # if TYPE_CHECKING:
-    # Used for kwargs-style dicts
-from .recipes import Recipe, Order
+from .recipes import Recipe
+from .orders import Order
+from .flavours import Flavour
 from . import pantry
-from . import inputs
+# Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
 
@@ -25,6 +26,7 @@ class Kitchen:
         from .recipes import Recipes
         self.pantry: "pantry.Pantry"
         self.recipes = Recipes()
+        self.flavours: Dict[str, Flavour] = {}
         self.context_stack = contextlib.ExitStack()
 
     def get_pantry(self) -> "pantry.Pantry":
@@ -53,6 +55,7 @@ class Kitchen:
                     relfn = fn
                 else:
                     relfn = os.path.join(relpath, fn)
+
                 inputs = recipe.get("inputs")
                 if inputs is not None:
                     for name, input_contents in inputs.items():
@@ -61,6 +64,17 @@ class Kitchen:
                                 self.pantry.add_input(Input.create(name=name, defined_in=relfn, **ic))
                         else:
                             self.pantry.add_input(Input.create(name=name, defined_in=relfn, **input_contents))
+
+                flavours = recipe.get("flavours")
+                if flavours is not None:
+                    for flavour in flavours:
+                        name = flavour.pop("name", None)
+                        if name is None:
+                            raise RuntimeError(f"{relfn}: found flavour without name")
+                        old = self.flavours.get(name)
+                        if old is not None:
+                            raise RuntimeError(f"{relfn}: flavour {name} was already defined in {old.defined_in}")
+                        self.flavours[name] = Flavour(name=name, defined_in=relfn, **flavour)
 
                 if "recipe" in recipe:
                     self.recipes.add(Recipe(relfn[:-5], defined_in=relfn, data=recipe))
@@ -75,26 +89,6 @@ class Kitchen:
             dest = os.path.join(path, recipe.name) + '.md'
             recipe.document(self.pantry, dest)
 
-    def make_orders(self) -> List[Order]:
-        """
-        Generate all possible orders for all available recipes
-        """
-        res = []
-        from .mixer import Mixers
-        for recipe in self.recipes.recipes:
-            res.extend(Mixers.make_orders(recipe, self.pantry))
-        return res
-
-    def make_order(self, recipe: Recipe, step: int) -> Order:
-        """
-        Generate all possible orders for all available recipes
-        """
-        from .mixer import Mixers
-        for o in Mixers.make_orders(recipe, self.pantry):
-            if o.step == step:
-                return o
-        raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
-
 
 class WorkingKitchen(Kitchen):
     def __init__(self, workdir: Optional[str] = None):
@@ -102,12 +96,34 @@ class WorkingKitchen(Kitchen):
         If no working directory is provided, it uses a temporary one
         """
         super().__init__()
+        self.pantry: "pantry.DiskPantry"
+        self.tempdir: Optional[tempfile.TemporaryDirectory]
+        self.workdir: str
+
         if workdir is None:
             self.tempdir = tempfile.TemporaryDirectory()
             self.workdir = self.context_stack.enter_context(self.tempdir)
         else:
             self.tempdir = None
             self.workdir = workdir
+
+    def make_orders(self, flavours: List[Flavour]) -> List[Order]:
+        """
+        Generate all possible orders for all available recipes
+        """
+        res: List[Order] = []
+        for recipe in self.recipes.recipes:
+            res.extend(recipe.make_orders(self.pantry, flavours=flavours))
+        return res
+
+    def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> Order:
+        """
+        Generate all possible orders for all available recipes
+        """
+        for o in recipe.make_orders(self.pantry, flavours=[flavour]):
+            if o.step == step:
+                return o
+        raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
 
 
 if arkimet is not None:
@@ -120,10 +136,6 @@ if arkimet is not None:
             super().__init__(*args, **kw)
             self.session = self.context_stack.enter_context(
                     arkimet.dataset.Session(force_dir_segments=True))
-
-        def add_input(self, inp: "inputs.Input"):
-            inp.compile_arkimet_matcher(self.session)
-            super().add_input(inp)
 
         def get_merged_arki_query(self):
             merged = None

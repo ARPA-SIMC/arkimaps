@@ -98,16 +98,18 @@ class RenderMixin:
         """
         Render all recipes for which inputs are available, into a tarball
         """
+        flavour = self.kitchen.flavours["default"]
+
         with self.open_output() as tarout:
             # List of products that should be rendered
-            orders = self.kitchen.make_orders()
+            orders = self.kitchen.make_orders(flavours=[flavour])
 
             renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
             for order in renderer.render(orders):
                 log.info("Rendered %s to %s", order.recipe, order.basename)
 
                 # Move the generated image to the output tar
-                tarout.add(order.output, os.path.join(order.recipe, order.basename + ".png"))
+                tarout.add(order.output, os.path.join(f"{order.recipe.name}_{flavour.name}", order.basename + ".png"))
                 os.unlink(order.output)
 
             if self.log_collector.entries:
@@ -256,8 +258,10 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         name, step = self.args.name.split("+")
         step = int(step, 10)
 
+        flavour = self.kitchen.flavours["default"]
+
         # Make an order
-        order = self.kitchen.make_order(self.kitchen.recipes.get(name), step)
+        order = self.kitchen.make_order(self.kitchen.recipes.get(name), step, flavour=flavour)
 
         # Prepare it
         renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())

@@ -1,6 +1,5 @@
-from arkimapslib.render import Renderer
+# from __future__ import annotations
 from arkimapslib.unittest import add_recipe_test_cases
-import os
 
 
 class MSLPMixin:
@@ -11,25 +10,13 @@ class MSLPMixin:
             orders = self.make_orders(kitchen)
             self.assertEqual(len(orders), 1)
 
-            renderer = Renderer(kitchen.workdir)
-            with self.assertLogs() as log:
-                renderer.render_one(orders[0])
+            self.assertRenders(kitchen, orders[0])
 
-            mgrib_args_prefix = "INFO:arkimaps.order.mslp+012:add_grib mgrib "
-            mgrib_args = None
-            for l in log.output:
-                if l.startswith(mgrib_args_prefix):
-                    mgrib_args = l[len(mgrib_args_prefix):]
-
-            self.assertIsNotNone(orders[0].output)
-            self.assertEqual(os.path.basename(orders[0].output), "mslp+012.png")
-
+            mgrib_args = self.get_debug_trace(orders[0], "add_grib")
             expected_mgrib_args = {
-                "cosmo": "{'grib_automatic_scaling': False, 'grib_scaling_factor': 0.01}",
-                "ifs": "{'grib_automatic_scaling': False, 'grib_scaling_factor': 0.01}",
+                "cosmo": {'grib_automatic_scaling': False, 'grib_scaling_factor': 0.01},
+                "ifs": {'grib_automatic_scaling': False, 'grib_scaling_factor': 0.01},
             }
-
-            self.assertIsNotNone(mgrib_args)
             self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
 
 
