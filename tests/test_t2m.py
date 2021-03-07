@@ -3,8 +3,6 @@ from arkimapslib.unittest import add_recipe_test_cases
 
 
 class T2MMixin:
-    kitchen_class = None
-
     def test_dispatch(self):
         with self.kitchen_class() as kitchen:
             self.fill_pantry(kitchen)

@@ -7,6 +7,14 @@ from .render import Renderer
 
 
 class RecipeTestMixin:
+    expected_basemap_args = {
+        "subpage_map_projection": "cylindrical",
+        "subpage_lower_left_longitude": -5.0,
+        "subpage_lower_left_latitude": 30.0,
+        "subpage_upper_right_longitude": 27.0,
+        "subpage_upper_right_latitude": 55.0,
+    }
+
     def make_orders(self, kitchen):
         """
         Create all satisfiable orders from the currently tested recipe
@@ -55,6 +63,8 @@ class RecipeTestMixin:
         renderer.render_one(order)
         self.assertIsNotNone(order.output)
         self.assertEqual(os.path.basename(order.output), f"{self.recipe_name}+012.png")
+        basemap_args = self.get_debug_trace(order, "add_basemap")
+        self.assertEqual(basemap_args, self.expected_basemap_args)
 
     def get_debug_trace(self, order, step_name: str):
         """
@@ -105,7 +115,7 @@ def add_recipe_test_cases(module_name, recipe_name):
 
             test_case = type(
                     cls_name,
-                    (dispatch_mixin, model_mixin, RecipeTestMixin, test_mixin, unittest.TestCase),
+                    (test_mixin, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
                     {"recipe_name": recipe_name})
             test_case.__module__ = module_name
             setattr(module, cls_name, test_case)

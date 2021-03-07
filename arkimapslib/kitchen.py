@@ -10,11 +10,11 @@ except ModuleNotFoundError:
     arkimet = None
 
 # if TYPE_CHECKING:
-    # Used for kwargs-style dicts
 from .recipes import Recipe
 from .orders import Order
 from .flavours import Flavour
 from . import pantry
+# Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
 

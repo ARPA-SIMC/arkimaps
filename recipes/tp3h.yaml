@@ -2,13 +2,6 @@
 description: Total precipitation 3h
 recipe:
  - step: add_basemap
-   params: 
-    subpage_map_projection: cylindrical
-    subpage_lower_left_longitude: -5.0
-    subpage_lower_left_latitude: 30.0
-    subpage_upper_right_longitude: 27.0
-    subpage_upper_right_latitude: 55.0
-    # For an example of more, see skinnywms/plot/magics.py
  - step: add_coastlines_bg
  - step: add_grib
    name: tpdec3h

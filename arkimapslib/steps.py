@@ -23,6 +23,10 @@ class Step:
         if self.params:
             return self.params
 
+        flavour_defaults = mixer.order.flavour.defaults.get(self.name)
+        if flavour_defaults is not None:
+            return flavour_defaults
+
         if self.default_params:
             return self.default_params
 
