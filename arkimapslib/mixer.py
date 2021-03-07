@@ -1,8 +1,8 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, Type, List, Sequence, Set
+from typing import Dict, Any, Optional, Type, List, Sequence
 import os
-import functools
 from .utils import ClassRegistry
+from . import steps
 
 # if TYPE_CHECKING:
 #     from .recipes import Order
@@ -42,125 +42,6 @@ class Mixers(ClassRegistry["Mixer"]):
         """
         mixer_cls = cls.by_name(recipe.mixer)
         return mixer_cls.list_inputs(recipe)
-
-
-class Step:
-    """
-    One recipe step provided by a Mixer
-    """
-    def __init__(self, doc: str):
-        self.name = None
-        self.doc = doc
-
-    def __set_name__(self, owner: Type["Mixer"], name: str):
-        owner.steps[name] = self
-        self.name = name
-
-    def __get__(self, instance, owner=None):
-        return functools.partial(self.run, instance)
-
-    def run(self, mixer: "Mixer"):
-        raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
-
-    def get_input_names(self, args: Optional[Kwargs] = None) -> Set[str]:
-        """
-        Return the list of input names used by this step
-        """
-        return set()
-
-
-class MagicsMacro(Step):
-    """
-    Run a Magics macro with optional default arguments
-    """
-    def __init__(self, name: str, doc: str, params: Optional[Kwargs] = None):
-        super().__init__(doc)
-        self.macro_name = name
-        self.params = params
-
-    def run(self, mixer: "Mixer", params: Optional[Kwargs] = None):
-        if params is None:
-            params = self.params
-        mixer.parts.append(getattr(mixer.macro, self.macro_name)(**params))
-        mixer.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
-
-
-class AddGrib(Step):
-    def __init__(self):
-        super().__init__("Add a grib file")
-
-    def run(self, mixer: "Mixer", name: str, params: Optional[Kwargs] = None):
-        input_file = mixer.order.sources[name]
-        source_input = input_file.info
-
-        kwargs = {}
-        if source_input.mgrib:
-            kwargs.update(source_input.mgrib)
-        if params is not None:
-            kwargs.update(params)
-
-        mixer.order.log.info("add_grib mgrib %r", kwargs)
-
-        grib = mixer.macro.mgrib(grib_input_file_name=input_file.pathname, **kwargs)
-        mixer.parts.append(grib)
-        mixer.py_lines.append(f"parts.append(macro.mgrib(grib_input_file_name={input_file.pathname!r}, **{kwargs!r}))")
-
-    def get_input_names(self, args: Optional[Kwargs] = None) -> Set[str]:
-        res = super().get_input_names(args)
-        name = args.get("name")
-        if name is not None:
-            res.add(name)
-        return res
-
-
-class AddUserBoundaries(Step):
-    def __init__(self):
-        super().__init__("Add user-defined boundaries from a shapefile")
-
-    def run(self, mixer: "Mixer", shape: str, params: Optional[Kwargs] = None):
-        input_file = mixer.order.sources[shape]
-
-        args = {
-            "map_user_layer": "on",
-            "map_user_layer_colour": "blue",
-        }
-        if params is not None:
-            args.update(params)
-
-        args["map_user_layer_name"] = input_file.pathname
-
-        mixer.parts.append(mixer.macro.mcoast(**args))
-        mixer.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
-
-    def get_input_names(self, args: Optional[Kwargs] = None) -> Set[str]:
-        res = super().get_input_names(args)
-        name = args.get("shape")
-        if name is not None:
-            res.add(name)
-        return res
-
-
-class AddGeopoints(Step):
-    def __init__(self):
-        super().__init__("Add geopoints")
-
-    def run(self, mixer: "Mixer", points: str, params: Optional[Kwargs] = None):
-        input_file = mixer.order.sources[points]
-
-        args = {}
-        if params is not None:
-            args.update(params)
-        args["geo_input_file_name"] = input_file.pathname
-
-        mixer.parts.append(mixer.macro.mgeo(**args))
-        mixer.py_lines.append(f"parts.append(macro.mgeo(**{args!r}))")
-
-    def get_input_names(self, args: Optional[Kwargs] = None) -> Set[str]:
-        res = super().get_input_names(args)
-        name = args.get("points")
-        if name is not None:
-            res.add(name)
-        return res
 
 
 class MixerMeta(type):
@@ -286,9 +167,9 @@ class Mixer(metaclass=MixerMeta):
 
         return res
 
-    add_basemap = MagicsMacro("mmap", "Add a base map")
+    add_basemap = steps.MagicsMacro("mmap", "Add a base map")
 
-    add_coastlines_bg = MagicsMacro("mcoast", "Add background coastlines", {
+    add_coastlines_bg = steps.MagicsMacro("mcoast", "Add background coastlines", {
         "map_coastline_general_style": "background",
     })
 
@@ -310,13 +191,13 @@ class Mixer(metaclass=MixerMeta):
         self.parts.append(self.macro.mcoast(**args))
         self.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
 
-    add_grib = AddGrib()
+    add_grib = steps.AddGrib()
 
-    add_contour = MagicsMacro("mcont", "Add contouring of the previous data", {
+    add_contour = steps.MagicsMacro("mcont", "Add contouring of the previous data", {
         "contour_automatic_setting": "ecmwf",
     })
 
-    add_grid = MagicsMacro("mcont", "Add a coordinates grid", {
+    add_grid = steps.MagicsMacro("mcont", "Add a coordinates grid", {
         "map_coastline_general_style": "grid",
     })
 
@@ -340,9 +221,9 @@ class Mixer(metaclass=MixerMeta):
         self.parts.append(self.macro.mcoast(**args))
         self.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
 
-    add_user_boundaries = AddUserBoundaries()
+    add_user_boundaries = steps.AddUserBoundaries()
 
-    add_symbols = MagicsMacro("msymb", "Add symbols settings", {
+    add_symbols = steps.MagicsMacro("msymb", "Add symbols settings", {
         "symbol_type": "marker",
         "symbol_marker_index": 15,
         "legend": "off",
@@ -350,7 +231,7 @@ class Mixer(metaclass=MixerMeta):
         "symbol_height": 0.28,
     })
 
-    add_geopoints = AddGeopoints()
+    add_geopoints = steps.AddGeopoints()
 
     def serve(self):
         """
