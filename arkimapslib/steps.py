@@ -1,5 +1,7 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, Set
+from typing import Dict, Any, Optional, Set, TextIO
+import inspect
+import json
 
 # if TYPE_CHECKING:
 from . import mixers
@@ -32,6 +34,16 @@ class Step:
         Return the list of input names used by this step
         """
         return set()
+
+    def document(self, file: TextIO):
+        print(inspect.getdoc(self), file=file)
+        print(file=file)
+        if self.params:
+            print("With arguments:", file=file)
+            print("```", file=file)
+            # FIXME: dump as yaml?
+            print(json.dumps(self.params, indent=2), file=file)
+            print("```", file=file)
 
 
 class MagicsMacro(Step):

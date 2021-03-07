@@ -1,7 +1,5 @@
 # from __future__ import annotations
 from typing import Dict, Any, List, Optional
-import inspect
-import json
 import logging
 from . import orders
 
@@ -164,12 +162,5 @@ class Recipe:
             for step in self.steps:
                 print(f"### {name}", file=fd)
                 print(file=fd)
-                print(inspect.getdoc(step), file=fd)
-                print(file=fd)
-                if step.params:
-                    print("With arguments:", file=fd)
-                    print("```", file=fd)
-                    # FIXME: dump as yaml?
-                    print(json.dumps(step.params, indent=2), file=fd)
-                    print("```", file=fd)
+                step.document(file=fd)
                 print(file=fd)
