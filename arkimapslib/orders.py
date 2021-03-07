@@ -4,6 +4,7 @@ import logging
 
 # if TYPE_CHECKING:
 from . import recipes
+from . import inputs
 
 
 class Order:
@@ -14,7 +15,7 @@ class Order:
     def __init__(
             self,
             mixer: str,
-            sources: Dict[str, str],
+            sources: Dict[str, inputs.InputFile],
             recipe: "recipes.Recipe",
             step: int):
         # Name of the Mixer to use

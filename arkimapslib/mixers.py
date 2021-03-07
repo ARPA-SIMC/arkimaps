@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, Any, Type
+from typing import Dict, Any, Type, List
 import os
 from . import steps
 
@@ -15,7 +15,7 @@ class Mixers:
     Registry of available Mixer implementations (collection of named steps)
     """
     def __init__(self):
-        self.registry: Dict[str, Dict[str, "steps.Step"]] = {}
+        self.registry: Dict[str, Dict[str, Type["steps.Step"]]] = {}
 
     def register(self, name: str, steps: Dict[str, Type["steps.Step"]]):
         """
@@ -25,19 +25,11 @@ class Mixers:
             raise RuntimeError(f"Mixer steps {name} alredy registered")
         self.registry[name] = steps
 
-    def get_steps(self, name: str) -> Dict[str, "steps.Step"]:
+    def get_steps(self, name: str) -> Dict[str, Type["steps.Step"]]:
         """
         Get a collection of steps, by name
         """
         return self.registry[name]
-
-    @classmethod
-    def for_order(cls, workdir: str, order: Order) -> "Mixer":
-        try:
-            mixer_cls = cls.by_name(order.mixer)
-        except KeyError as e:
-            raise KeyError(f"order requires unknown mixer {order.mixer}") from e
-        return mixer_cls(workdir, order)
 
 
 mixers = Mixers()
@@ -73,7 +65,7 @@ class Mixer:
         # Order with the steps to execute
         self.order = order
         # Elements passed after output to macro.plot
-        self.parts = []
+        self.parts: List[Any] = []
         # Python script to reproduce this product
         self.py_lines = ["import os"]
         for name in ("MAGICS_STYLE_PATH", "MAGPLUS_QUIET"):

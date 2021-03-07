@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Set
 import logging
 from . import orders
 
@@ -39,20 +39,21 @@ class Recipe:
     A parsed and validated recipe
     """
     def __init__(self, name: str, defined_in: str, data: 'Kwargs'):
+        from .mixers import mixers
+        from . import steps
         self.name = name
         self.defined_in = defined_in
 
         # Name of the mixer to use
         self.mixer: str = data.get("mixer", "default")
 
-        from .mixers import mixers
         step_collection = mixers.get_steps(self.mixer)
 
         # Get the recipe description
         self.description: str = data.get("description", "Unnamed recipe")
 
         # Get the recipe steps
-        self.steps: List['steps.Step'] = []
+        self.steps: List[steps.Step] = []
         for s in data.get("recipe", ()):
             if not isinstance(s, dict):
                 raise RuntimeError("recipe step is not a dict")
@@ -70,7 +71,7 @@ class Recipe:
 
         Inputs are listed in usage order, without duplicates
         """
-        input_names = []
+        input_names: List[str] = []
 
         # Collect the inputs needed for all steps
         for step in self.steps:
@@ -80,14 +81,14 @@ class Recipe:
                 input_names.append(input_name)
         return input_names
 
-    def make_orders(self, pantry: "pantry.Pantry") -> List["orders.Order"]:
+    def make_orders(self, pantry: "pantry.DiskPantry") -> List["orders.Order"]:
         """
         Scan a recipe and return a set with all the inputs it needs
         """
         from .inputs import InputFile
-        inputs: Optional[Dict[str, Dict[str, InputFile]]] = None
+        inputs: Optional[Dict[int, Dict[str, InputFile]]] = None
         inputs_for_all_steps: Dict[str, InputFile] = {}
-        input_names = set()
+        input_names: Set[str] = set()
 
         # Collect the inputs needed for all steps
         for step in self.steps:
@@ -107,32 +108,32 @@ class Recipe:
                 # add_grib needs this input for all steps
                 if inputs is None:
                     inputs = {}
-                    for step, ifile in steps.items():
-                        inputs[step] = {input_name: ifile}
+                    for s, ifile in steps.items():
+                        inputs[s] = {input_name: ifile}
                 else:
-                    steps_to_delete = []
-                    for step, input_files in inputs.items():
-                        if step not in steps:
+                    steps_to_delete: List[int] = []
+                    for s, input_files in inputs.items():
+                        if s not in steps:
                             # We miss an input for this step, so we cannot
                             # generate an order for it
-                            steps_to_delete.append(step)
+                            steps_to_delete.append(s)
                         else:
-                            input_files[input_name] = steps[step]
-                    for step in steps_to_delete:
-                        del inputs[step]
+                            input_files[input_name] = steps[s]
+                    for s in steps_to_delete:
+                        del inputs[s]
 
-        if inputs_for_all_steps:
-            for step, files in inputs.items():
-                files.update(inputs_for_all_steps)
+        res: List["orders.Order"] = []
+        if inputs is not None:
+            for s, input_files in inputs.items():
+                if inputs_for_all_steps:
+                    input_files.update(inputs_for_all_steps)
 
-        res = []
-        for step, input_files in inputs.items():
-            res.append(orders.Order(
-                mixer=self.mixer,
-                sources=input_files,
-                recipe=self,
-                step=step,
-            ))
+                res.append(orders.Order(
+                    mixer=self.mixer,
+                    sources=input_files,
+                    recipe=self,
+                    step=s,
+                ))
 
         return res
 

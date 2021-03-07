@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Iterable, ContextManager
+from typing import Iterable, Generator, Optional
 import contextlib
 import functools
 import os
@@ -10,7 +10,7 @@ import multiprocessing.pool
 from .orders import Order
 
 
-def prepare_order(workdir: str, order: 'Order') -> 'Order':
+def prepare_order(workdir: str, order: 'Order') -> Optional['Order']:
     try:
         order.prepare(workdir)
         return order
@@ -43,7 +43,7 @@ class Renderer:
         self.styles_dir = styles_dir
 
     @contextlib.contextmanager
-    def magics_worker_pool(self) -> ContextManager[multiprocessing.pool.Pool]:
+    def magics_worker_pool(self) -> Generator[multiprocessing.pool.Pool, None, None]:
         styles_dir = self.styles_dir
 
         def initializer():

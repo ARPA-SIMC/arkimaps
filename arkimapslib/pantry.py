@@ -1,6 +1,5 @@
 # from __future__ import annotations
-# from typing import Optional, BinaryIO, List, Iterator, Tuple
-from typing import Optional, BinaryIO, List, Tuple, Dict
+from typing import Optional, BinaryIO, List, Dict
 import contextlib
 import subprocess
 import sys
@@ -8,7 +7,7 @@ import os
 import logging
 
 # if TYPE_CHECKING:
-from .inputs import Input, InputFile
+from . import inputs
 from . import recipes
 try:
     import arkimet
@@ -24,9 +23,9 @@ class Pantry:
     """
     def __init__(self):
         # List of input definitions, indexed by name
-        self.inputs: Dict[str, List[Input]] = {}
+        self.inputs: Dict[str, List["inputs.Input"]] = {}
 
-    def add_input(self, inp: Input):
+    def add_input(self, inp: "inputs.Input"):
         """
         Add an Input definition to this pantry
         """
@@ -55,7 +54,7 @@ class Pantry:
         """
         List inputs used by a recipe, and all their inputs, recursively
         """
-        res = []
+        res: List[str] = []
         for input_name in recipe.list_inputs():
             for inp in self.inputs[input_name]:
                 inp.add_all_inputs(self, res)
@@ -98,17 +97,17 @@ class DiskPantry(Pantry):
         # Root directory where inputs are stored
         self.data_root = os.path.join(root, "pantry")
 
-    def get_steps(self, input_name: str) -> Dict[int, InputFile]:
+    def get_steps(self, input_name: str) -> Dict[Optional[int], "inputs.InputFile"]:
         """
         Return the steps available in the pantry for the input with the given
         name
         """
-        inputs = self.inputs.get(input_name)
-        if inputs is None:
+        inps = self.inputs.get(input_name)
+        if inps is None:
             return {}
 
-        res = {}
-        for inp in inputs:
+        res: Dict[Optional[int], inputs.InputFile] = {}
+        for inp in inps:
             steps = inp.get_steps(self)
             for step, input_file in steps.items():
                 # Keep the first available version for each step
@@ -121,10 +120,10 @@ class ArkimetEmptyPantry(Pantry):
     Storage-less arkimet pantry only used to load recipes
     """
     def __init__(self, session: arkimet.dataset.Session, **kw):
-        super().__init__(**kw)
+        super().__init__()
         self.session = session
 
-    def add_input(self, inp: Input):
+    def add_input(self, inp: "inputs.Input"):
         inp.compile_arkimet_matcher(self.session)
         super().add_input(inp)
 
@@ -137,7 +136,7 @@ class ArkimetPantry(DiskPantry):
         super().__init__(**kw)
         self.session = session
 
-    def add_input(self, inp: Input):
+    def add_input(self, inp: "inputs.Input"):
         inp.compile_arkimet_matcher(self.session)
         super().add_input(inp)
 
@@ -149,9 +148,9 @@ class ArkimetPantry(DiskPantry):
         os.makedirs(self.data_root, exist_ok=True)
 
         # Dispatch todo-list
-        match: List[Tuple[Input, str, str]] = []
-        for inputs in self.inputs.values():
-            for inp in inputs:
+        match: List["inputs.Input"] = []
+        for inps in self.inputs.values():
+            for inp in inps:
                 if not getattr(inp, "arkimet_matcher", None):
                     log.info("%s (model=%s): skipping input with no arkimet matcher filter", inp.name, inp.model)
                     continue
@@ -166,7 +165,7 @@ class ArkimetDispatcher:
     """
     Read a stream of arkimet metadata and store its data into a dataset
     """
-    def __init__(self, data_root: str, todo_list: List[Input]):
+    def __init__(self, data_root: str, todo_list: List["inputs.Input"]):
         self.data_root = data_root
         self.todo_list = todo_list
 
@@ -225,8 +224,8 @@ class EccodesPantry(DiskPantry):
 
         # Build grib_filter rules
         with open(self.grib_filter_rules, "w") as f:
-            for inputs in self.inputs.values():
-                for inp in inputs:
+            for inps in self.inputs.values():
+                for inp in inps:
                     if not getattr(inp, "eccodes", None):
                         log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue

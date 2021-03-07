@@ -14,7 +14,6 @@ except ModuleNotFoundError:
 from .recipes import Recipe
 from .orders import Order
 from . import pantry
-from . import inputs
 Kwargs = Dict[str, Any]
 
 
@@ -76,26 +75,6 @@ class Kitchen:
             dest = os.path.join(path, recipe.name) + '.md'
             recipe.document(self.pantry, dest)
 
-    def make_orders(self) -> List[Order]:
-        """
-        Generate all possible orders for all available recipes
-        """
-        res = []
-        from .mixer import Mixers
-        for recipe in self.recipes.recipes:
-            res.extend(Mixers.make_orders(recipe, self.pantry))
-        return res
-
-    def make_order(self, recipe: Recipe, step: int) -> Order:
-        """
-        Generate all possible orders for all available recipes
-        """
-        from .mixer import Mixers
-        for o in Mixers.make_orders(recipe, self.pantry):
-            if o.step == step:
-                return o
-        raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
-
 
 class WorkingKitchen(Kitchen):
     def __init__(self, workdir: Optional[str] = None):
@@ -103,12 +82,34 @@ class WorkingKitchen(Kitchen):
         If no working directory is provided, it uses a temporary one
         """
         super().__init__()
+        self.pantry: "pantry.DiskPantry"
+        self.tempdir: Optional[tempfile.TemporaryDirectory]
+        self.workdir: str
+
         if workdir is None:
             self.tempdir = tempfile.TemporaryDirectory()
             self.workdir = self.context_stack.enter_context(self.tempdir)
         else:
             self.tempdir = None
             self.workdir = workdir
+
+    def make_orders(self) -> List[Order]:
+        """
+        Generate all possible orders for all available recipes
+        """
+        res: List[Order] = []
+        for recipe in self.recipes.recipes:
+            res.extend(recipe.make_orders(self.pantry))
+        return res
+
+    def make_order(self, recipe: Recipe, step: int) -> Order:
+        """
+        Generate all possible orders for all available recipes
+        """
+        for o in recipe.make_orders(self.pantry):
+            if o.step == step:
+                return o
+        raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
 
 
 if arkimet is not None:
@@ -121,10 +122,6 @@ if arkimet is not None:
             super().__init__(*args, **kw)
             self.session = self.context_stack.enter_context(
                     arkimet.dataset.Session(force_dir_segments=True))
-
-        def add_input(self, inp: "inputs.Input"):
-            inp.compile_arkimet_matcher(self.session)
-            super().add_input(inp)
 
         def get_merged_arki_query(self):
             merged = None

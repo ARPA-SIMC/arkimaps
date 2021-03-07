@@ -6,7 +6,6 @@ import subprocess
 import shutil
 import shlex
 import logging
-from .utils import ClassRegistry
 
 # if TYPE_CHECKING:
 #     import arkimet
@@ -23,17 +22,33 @@ Kwargs = Dict[str, Any]
 log = logging.getLogger("arkimaps.inputs")
 
 
-class InputTypes(ClassRegistry["Input"]):
+class InputTypes:
     """
     Registry of available Input implementations
     """
     registry: Dict[str, Type["Input"]] = {}
+
+    @classmethod
+    def register(cls, impl_cls: Type["Input"]):
+        """
+        Add an input class to the registry
+        """
+        name = getattr(impl_cls, "NAME", None)
+        if name is None:
+            name = impl_cls.__name__.lower()
+        cls.registry[name] = impl_cls
+        return impl_cls
+
+    @classmethod
+    def by_name(cls, name: str) -> Type["Input"]:
+        return cls.registry[name.lower()]
 
 
 class Input:
     """
     An input element to a recipe
     """
+    NAME: str
 
     def __init__(self, name: str, defined_in: str, model: Optional[str] = None, mgrib: Optional['Kwargs'] = None):
         # Name of the input in the recipe
@@ -86,7 +101,7 @@ class Input:
             for inp in p.inputs[name]:
                 inp.add_all_inputs(p, res)
 
-    def get_steps(self, p: "pantry.Pantry") -> Dict[int, "InputFile"]:
+    def get_steps(self, p: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         """
         Scan the pantry to check what input files are available for this input.
 
@@ -94,7 +109,7 @@ class Input:
         objects
         """
         fn_match = re.compile(rf"{re.escape(self.pantry_basename)}\+(\d+)\.\w+")
-        res = {}
+        res: Dict[Optional[int], "InputFile"] = {}
         for fn in os.listdir(p.data_root):
             mo = fn_match.match(fn)
             if not mo:
@@ -157,7 +172,7 @@ class Static(Input):
         print(f"{ind}* **Path**: `{self.path}`", file=file)
         super().document(file, indent)
 
-    def get_steps(self, p: "pantry.Pantry") -> Dict[int, "InputFile"]:
+    def get_steps(self, p: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         return {None: InputFile(self.abspath, self, None)}
 
 
@@ -227,13 +242,13 @@ class Derived(Input):
         res.extend(self.inputs)
         return res
 
-    def generate(self, p: "pantry.Pantry"):
+    def generate(self, p: "pantry.DiskPantry"):
         """
         Generate derived products from inputs
         """
         raise NotImplementedError(f"{self.__class__.__name__}.generate() not implemented")
 
-    def get_steps(self, p: "pantry.Pantry") -> Dict[int, "InputFile"]:
+    def get_steps(self, p: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         # Check if flagfile exists, in which case skip generation
         flagfile = os.path.join(p.data_root, f"{self.pantry_basename}.processed")
         if not os.path.exists(flagfile):
@@ -267,7 +282,7 @@ class Decumulate(Derived):
             raise RuntimeError(
                     f"input {self.name}: {self.NAME} has inputs {', '.join(self.inputs)} and should have only one")
 
-    def generate(self, p: "pantry.Pantry"):
+    def generate(self, p: "pantry.DiskPantry"):
         # Get the steps of our source input
         source_steps = p.get_steps(self.inputs[0])
 
@@ -338,9 +353,9 @@ class VG6DTransform(Derived):
         super().__init__(**kw)
         self.args = [args] if isinstance(args, str) else [str(x) for x in args]
 
-    def generate(self, p: "pantry.Pantry"):
+    def generate(self, p: "pantry.DiskPantry"):
         # Get the steps for each of our inputs
-        available_steps: Optional[Dict[int, List[InputFile]]] = None
+        available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
         for input_name in self.inputs:
             input_steps = p.get_steps(input_name)
             # Intersect the steps to get only those for which we have all inputs
