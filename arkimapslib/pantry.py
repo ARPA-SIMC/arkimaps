@@ -55,9 +55,8 @@ class Pantry:
         """
         List inputs used by a recipe, and all their inputs, recursively
         """
-        from .mixer import Mixers
         res = []
-        for input_name in Mixers.list_inputs(recipe):
+        for input_name in recipe.list_inputs():
             for inp in self.inputs[input_name]:
                 inp.add_all_inputs(self, res)
         return res

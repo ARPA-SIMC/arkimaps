@@ -7,7 +7,7 @@ import multiprocessing
 import multiprocessing.pool
 
 # if TYPE_CHECKING:
-from arkimapslib.recipes import Order
+from .orders import Order
 
 
 def prepare_order(workdir: str, order: 'Order') -> 'Order':

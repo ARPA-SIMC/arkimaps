@@ -1,11 +1,13 @@
 # from __future__ import annotations
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Optional
 import inspect
 import json
 import logging
+from . import orders
 
-# Used for kwargs-style dicts
+# if TYPE_CHECKING:
 from . import pantry
+# Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
 log = logging.getLogger("arkimaps.recipes")
@@ -45,23 +47,98 @@ class Recipe:
         # Name of the mixer to use
         self.mixer: str = data.get("mixer", "default")
 
+        from .mixers import mixers
+        step_collection = mixers.get_steps(self.mixer)
+
         # Get the recipe description
         self.description: str = data.get("description", "Unnamed recipe")
 
         # Get the recipe steps
-        self.steps: List[Tuple[str, 'Kwargs']] = []
+        self.steps: List['steps.Step'] = []
         for s in data.get("recipe", ()):
             if not isinstance(s, dict):
                 raise RuntimeError("recipe step is not a dict")
             step = s.pop("step", None)
             if step is None:
                 raise RuntimeError("recipe step does not contain a 'step' name")
-            self.steps.append((step, s))
+            step_cls = step_collection.get(step)
+            if step_cls is None:
+                raise RuntimeError(f"step {step} not found in mixer {self.mixer}")
+            self.steps.append(step_cls(step=step, **s))
+
+    def list_inputs(self) -> List[str]:
+        """
+        List the names of inputs used by this recipe
+
+        Inputs are listed in usage order, without duplicates
+        """
+        input_names = []
+
+        # Collect the inputs needed for all steps
+        for step in self.steps:
+            for input_name in step.get_input_names():
+                if input_name in input_names:
+                    continue
+                input_names.append(input_name)
+        return input_names
+
+    def make_orders(self, pantry: "pantry.Pantry") -> List["orders.Order"]:
+        """
+        Scan a recipe and return a set with all the inputs it needs
+        """
+        from .inputs import InputFile
+        inputs: Optional[Dict[str, Dict[str, InputFile]]] = None
+        inputs_for_all_steps: Dict[str, InputFile] = {}
+        input_names = set()
+
+        # Collect the inputs needed for all steps
+        for step in self.steps:
+            for input_name in step.get_input_names():
+                if input_name in input_names:
+                    continue
+                input_names.add(input_name)
+
+                # Find available steps for this input
+                steps = pantry.get_steps(input_name)
+                any_step = steps.pop(None, None)
+                if any_step is not None:
+                    inputs_for_all_steps[input_name] = any_step
+                if not steps:
+                    continue
+
+                # add_grib needs this input for all steps
+                if inputs is None:
+                    inputs = {}
+                    for step, ifile in steps.items():
+                        inputs[step] = {input_name: ifile}
+                else:
+                    steps_to_delete = []
+                    for step, input_files in inputs.items():
+                        if step not in steps:
+                            # We miss an input for this step, so we cannot
+                            # generate an order for it
+                            steps_to_delete.append(step)
+                        else:
+                            input_files[input_name] = steps[step]
+                    for step in steps_to_delete:
+                        del inputs[step]
+
+        if inputs_for_all_steps:
+            for step, files in inputs.items():
+                files.update(inputs_for_all_steps)
+
+        res = []
+        for step, input_files in inputs.items():
+            res.append(orders.Order(
+                mixer=self.mixer,
+                sources=input_files,
+                recipe=self,
+                step=step,
+            ))
+
+        return res
 
     def document(self, p: "pantry.Pantry", dest: str):
-        from .mixer import Mixers
-        mixer = Mixers.registry[self.mixer]
-
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)
             print(file=fd)
@@ -84,77 +161,15 @@ class Recipe:
             print(file=fd)
             print("## Steps", file=fd)
             print(file=fd)
-            for name, args in self.steps:
+            for step in self.steps:
                 print(f"### {name}", file=fd)
                 print(file=fd)
-                print(inspect.getdoc(getattr(mixer, name)), file=fd)
+                print(inspect.getdoc(step), file=fd)
                 print(file=fd)
-                if args:
+                if step.params:
                     print("With arguments:", file=fd)
                     print("```", file=fd)
                     # FIXME: dump as yaml?
-                    print(json.dumps(args, indent=2), file=fd)
+                    print(json.dumps(step.params, indent=2), file=fd)
                     print("```", file=fd)
                 print(file=fd)
-
-
-class Order:
-    """
-    Serializable instructions to prepare a product, based on a recipe and its
-    input files
-    """
-    def __init__(
-            self,
-            mixer: str,
-            sources: Dict[str, str],
-            recipe: str,
-            step: int,
-            steps: List[Tuple[str, 'Kwargs']]):
-        # Name of the Mixer to use
-        self.mixer = mixer
-        # Dict mapping source names to pathnames of GRIB files
-        self.sources = sources
-        # Destination file name (without path or .png extension)
-        self.basename = f"{recipe}+{step:03d}"
-        # Recipe name
-        self.recipe = recipe
-        # Product step
-        self.step = step
-        # Recipe steps
-        self.steps = steps
-        # Output file name, set after the product has been rendered
-        self.output = None
-        # Logger for this output
-        self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # logger objects don't pickle correctly on python 3.6
-        del state['log']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
-
-    def __str__(self):
-        return self.basename
-
-    def __repr__(self):
-        return self.basename
-
-    def prepare(self, workdir: str):
-        """
-        Run all the steps of the recipe and render the resulting file
-        """
-        from arkimapslib.mixer import Mixers
-
-        mixer = Mixers.for_order(workdir, self)
-        for name, args in self.steps:
-            self.log.info("%s %r", name, args)
-            meth = getattr(mixer, name, None)
-            if meth is None:
-                raise RuntimeError("Recipe " + self.recipe + " uses unknown step " + name)
-            meth(**args)
-
-        mixer.serve()

@@ -10,18 +10,16 @@ class RecipeTestMixin:
         """
         Create all satisfiable orders from the currently tested recipe
         """
-        from .mixer import Mixers
         recipe = kitchen.recipes.get(self.recipe_name)
-        orders = Mixers.make_orders(recipe, kitchen.pantry)
+        orders = recipe.make_orders(kitchen.pantry)
         for o in orders:
             pickle.dumps(o)
         return orders
 
     def fill_pantry(self, kitchen, step=12, expected=None):
-        from .mixer import Mixers
         kitchen.load_recipes("recipes")
         recipe = kitchen.recipes.get(self.recipe_name)
-        input_names = Mixers.list_inputs(recipe)
+        input_names = recipe.list_inputs()
 
         if expected is None:
             expected = []

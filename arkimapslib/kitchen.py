@@ -11,7 +11,8 @@ except ModuleNotFoundError:
 
 # if TYPE_CHECKING:
     # Used for kwargs-style dicts
-from .recipes import Recipe, Order
+from .recipes import Recipe
+from .orders import Order
 from . import pantry
 from . import inputs
 Kwargs = Dict[str, Any]

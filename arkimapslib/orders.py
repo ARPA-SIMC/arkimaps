@@ -1,6 +1,9 @@
 # from __future__ import annotations
-from typing import Dict, List, Tuple
+from typing import Dict
 import logging
+
+# if TYPE_CHECKING:
+from . import recipes
 
 
 class Order:
@@ -12,21 +15,18 @@ class Order:
             self,
             mixer: str,
             sources: Dict[str, str],
-            recipe_name: str,
-            step: int,
-            steps: List[Tuple[str, 'Kwargs']]):
+            recipe: "recipes.Recipe",
+            step: int):
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
         self.sources = sources
         # Destination file name (without path or .png extension)
-        self.basename = f"{recipe_name}+{step:03d}"
+        self.basename = f"{recipe.name}+{step:03d}"
         # Recipe name
-        self.recipe_name = recipe_name
+        self.recipe = recipe
         # Product step
         self.step = step
-        # Recipe steps
-        self.steps = steps
         # Output file name, set after the product has been rendered
         self.output = None
         # Logger for this output
@@ -52,14 +52,11 @@ class Order:
         """
         Run all the steps of the recipe and render the resulting file
         """
-        from .mixers import Mixers
+        from .mixers import Mixer
 
-        mixer = Mixers.for_order(workdir, self)
-        for name, args in self.steps:
-            self.log.info("%s %r", name, args)
-            meth = getattr(mixer, name, None)
-            if meth is None:
-                raise RuntimeError("Recipe " + self.recipe_name + " uses unknown step " + name)
-            meth(**args)
+        mixer = Mixer(workdir, self)
+        for step in self.recipe.steps:
+            self.log.info("%s %r", step.name, step.params)
+            step.run(mixer)
 
         mixer.serve()
