@@ -36,6 +36,9 @@ class Order:
         self.output = None
         # Logger for this output
         self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
+        # Set to a list to get a debugging trace of all steps and arguments
+        # used
+        self.debug_trace = None
 
     def __getstate__(self):
         state = self.__dict__.copy()

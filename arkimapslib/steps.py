@@ -17,14 +17,16 @@ class Step:
 
     def __init__(self, step: str, params: Optional[Kwargs] = None):
         self.name = step
-        self.params: Kwargs
-        if not params:
-            if self.default_params:
-                self.params = dict(self.default_params)
-            else:
-                self.params = {}
-        else:
-            self.params = params
+        self.params = params
+
+    def get_params(self, mixer: "mixers.Mixer"):
+        if self.params:
+            return self.params
+
+        if self.default_params:
+            return self.default_params
+
+        return {}
 
     def run(self, mixer: "mixers.Mixer"):
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
@@ -53,8 +55,11 @@ class MagicsMacro(Step):
     macro_name: str
 
     def run(self, mixer: "mixers.Mixer"):
-        mixer.parts.append(getattr(mixer.macro, self.macro_name)(**self.params))
-        mixer.py_lines.append(f"parts.append(macro.{self.macro_name}(**{self.params!r}))")
+        params = self.get_params(mixer)
+        mixer.parts.append(getattr(mixer.macro, self.macro_name)(**params))
+        mixer.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
+        if mixer.order.debug_trace is not None:
+            mixer.order.debug_trace.append((self.name, params))
 
 
 class AddBasemap(MagicsMacro):
@@ -122,11 +127,16 @@ class AddCoastlinesFg(Step):
     }
 
     def run(self, mixer: "mixers.Mixer"):
+        params = self.get_params(mixer)
+
         mixer.parts.append(mixer.macro.mcoast(map_coastline_general_style="foreground"))
         mixer.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
 
-        mixer.parts.append(mixer.macro.mcoast(**self.params))
-        mixer.py_lines.append(f"parts.append(macro.mcoast(**{self.params!r}))")
+        mixer.parts.append(mixer.macro.mcoast(**params))
+        mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+
+        if mixer.order.debug_trace is not None:
+            mixer.order.debug_trace.append((self.name, params))
 
 
 class AddBoundaries(Step):
@@ -143,13 +153,18 @@ class AddBoundaries(Step):
     }
 
     def run(self, mixer: "mixers.Mixer"):
+        params = self.get_params(mixer)
+
         mixer.parts.append(
             mixer.macro.mcoast(map_coastline_general_style="boundaries"),
         )
         mixer.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='boundaries'))")
 
-        mixer.parts.append(mixer.macro.mcoast(**self.params))
-        mixer.py_lines.append(f"parts.append(macro.mcoast(**{self.params!r}))")
+        mixer.parts.append(mixer.macro.mcoast(**params))
+        mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+
+        if mixer.order.debug_trace is not None:
+            mixer.order.debug_trace.append((self.name, params))
 
 
 class AddGrib(Step):
@@ -167,13 +182,16 @@ class AddGrib(Step):
         params = {}
         if source_input.mgrib:
             params.update(source_input.mgrib)
-        params.update(self.params)
+        params.update(self.get_params(mixer))
 
         mixer.order.log.debug("add_grib mgrib %r", params)
 
         grib = mixer.macro.mgrib(grib_input_file_name=input_file.pathname, **params)
         mixer.parts.append(grib)
         mixer.py_lines.append(f"parts.append(macro.mgrib(grib_input_file_name={input_file.pathname!r}, **{params!r}))")
+
+        if mixer.order.debug_trace is not None:
+            mixer.order.debug_trace.append((self.name, params))
 
     def get_input_names(self) -> Set[str]:
         res = super().get_input_names()
@@ -192,16 +210,19 @@ class AddUserBoundaries(Step):
     def run(self, mixer: "mixers.Mixer"):
         input_file = mixer.order.sources[self.shape]
 
-        args = {
+        params = {
             "map_user_layer": "on",
             "map_user_layer_colour": "blue",
         }
-        args.update(self.params)
+        params.update(self.get_params(mixer))
 
-        args["map_user_layer_name"] = input_file.pathname
+        params["map_user_layer_name"] = input_file.pathname
 
-        mixer.parts.append(mixer.macro.mcoast(**args))
-        mixer.py_lines.append(f"parts.append(macro.mcoast(**{args!r}))")
+        mixer.parts.append(mixer.macro.mcoast(**params))
+        mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+
+        if mixer.order.debug_trace is not None:
+            mixer.order.debug_trace.append((self.name, params))
 
     def get_input_names(self) -> Set[str]:
         res = super().get_input_names()
@@ -220,11 +241,14 @@ class AddGeopoints(Step):
     def run(self, mixer: "mixers.Mixer"):
         input_file = mixer.order.sources[self.points]
 
-        args = dict(self.params)
-        args["geo_input_file_name"] = input_file.pathname
+        params = dict(self.get_params(mixer))
+        params["geo_input_file_name"] = input_file.pathname
 
-        mixer.parts.append(mixer.macro.mgeo(**args))
-        mixer.py_lines.append(f"parts.append(macro.mgeo(**{args!r}))")
+        mixer.parts.append(mixer.macro.mgeo(**params))
+        mixer.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
+
+        if mixer.order.debug_trace is not None:
+            mixer.order.debug_trace.append((self.name, params))
 
     def get_input_names(self) -> Set[str]:
         res = super().get_input_names()

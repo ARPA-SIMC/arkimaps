@@ -1,5 +1,4 @@
 # from __future__ import annotations
-from arkimapslib.render import Renderer
 from arkimapslib.unittest import add_recipe_test_cases
 import unittest
 import os
@@ -38,25 +37,13 @@ class TP1HMixin:
             orders = [o for o in orders if o.basename == "tp1h+012"]
             self.assertEqual(len(orders), 1)
 
-            renderer = Renderer(kitchen.workdir)
-            with self.assertLogs() as log:
-                renderer.render_one(orders[0])
+            self.assertRenders(kitchen, orders[0])
 
-            mgrib_args_prefix = "INFO:arkimaps.order.tp1h+012:add_grib mgrib "
-            mgrib_args = None
-            for l in log.output:
-                if l.startswith(mgrib_args_prefix):
-                    mgrib_args = l[len(mgrib_args_prefix):]
-
-            self.assertIsNotNone(orders[0].output)
-            self.assertEqual(os.path.basename(orders[0].output), "tp1h+012.png")
-
+            mgrib_args = self.get_debug_trace(orders[0], "add_grib")
             expected_mgrib_args = {
-                "cosmo": "{}",
-                "ifs": "{}",
+                "cosmo": {},
+                "ifs": {},
             }
-
-            self.assertIsNotNone(mgrib_args)
             self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
 
 

@@ -3,6 +3,7 @@ import unittest
 import sys
 import os
 import pickle
+from .render import Renderer
 
 
 class RecipeTestMixin:
@@ -44,6 +45,28 @@ class RecipeTestMixin:
             kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(kitchen.pantry.data_root)))
+
+    def assertRenders(self, kitchen, order):
+        """
+        Render an order, collecting a debug_trace of all steps invoked
+        """
+        renderer = Renderer(kitchen.workdir)
+        order.debug_trace = []
+        renderer.render_one(order)
+        self.assertIsNotNone(order.output)
+        self.assertEqual(os.path.basename(order.output), f"{self.recipe_name}+012.png")
+
+    def get_debug_trace(self, order, step_name: str):
+        """
+        Return the debug trace arguments of the first step in the order's
+        debug_trace log with the given name.
+
+        Fails the test if not found
+        """
+        for name, args in order.debug_trace:
+            if name == step_name:
+                return args
+        self.fail(f"Step {step_name} not found in debug trace of order {order}")
 
 
 class ArkimetMixin:
