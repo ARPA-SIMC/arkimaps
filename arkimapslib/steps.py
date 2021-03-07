@@ -169,7 +169,7 @@ class AddGrib(Step):
             params.update(source_input.mgrib)
         params.update(self.params)
 
-        mixer.order.log.info("add_grib mgrib %r", params)
+        mixer.order.log.debug("add_grib mgrib %r", params)
 
         grib = mixer.macro.mgrib(grib_input_file_name=input_file.pathname, **params)
         mixer.parts.append(grib)

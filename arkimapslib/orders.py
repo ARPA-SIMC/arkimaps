@@ -5,6 +5,7 @@ import logging
 # if TYPE_CHECKING:
 from . import recipes
 from . import inputs
+from . import flavours
 
 
 class Order:
@@ -17,7 +18,8 @@ class Order:
             mixer: str,
             sources: Dict[str, inputs.InputFile],
             recipe: "recipes.Recipe",
-            step: int):
+            step: int,
+            flavour: flavours.Flavour):
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
@@ -28,6 +30,8 @@ class Order:
         self.recipe = recipe
         # Product step
         self.step = step
+        # Product flavour (set of default settings)
+        self.flavour = flavour
         # Output file name, set after the product has been rendered
         self.output = None
         # Logger for this output
@@ -57,7 +61,7 @@ class Order:
 
         mixer = Mixer(workdir, self)
         for step in self.recipe.steps:
-            self.log.info("%s %r", step.name, step.params)
+            self.log.debug("%s %r", step.name, step.params)
             step.run(mixer)
 
         mixer.serve()

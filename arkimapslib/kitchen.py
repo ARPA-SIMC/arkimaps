@@ -13,6 +13,7 @@ except ModuleNotFoundError:
     # Used for kwargs-style dicts
 from .recipes import Recipe
 from .orders import Order
+from .flavours import Flavour
 from . import pantry
 Kwargs = Dict[str, Any]
 
@@ -25,6 +26,7 @@ class Kitchen:
         from .recipes import Recipes
         self.pantry: "pantry.Pantry"
         self.recipes = Recipes()
+        self.flavours: Dict[str, Flavour] = {}
         self.context_stack = contextlib.ExitStack()
 
     def get_pantry(self) -> "pantry.Pantry":
@@ -53,6 +55,7 @@ class Kitchen:
                     relfn = fn
                 else:
                     relfn = os.path.join(relpath, fn)
+
                 inputs = recipe.get("inputs")
                 if inputs is not None:
                     for name, input_contents in inputs.items():
@@ -61,6 +64,17 @@ class Kitchen:
                                 self.pantry.add_input(Input.create(name=name, defined_in=relfn, **ic))
                         else:
                             self.pantry.add_input(Input.create(name=name, defined_in=relfn, **input_contents))
+
+                flavours = recipe.get("flavours")
+                if flavours is not None:
+                    for flavour in flavours:
+                        name = flavour.pop("name", None)
+                        if name is None:
+                            raise RuntimeError(f"{relfn}: found flavour without name")
+                        old = self.flavours.get(name)
+                        if old is not None:
+                            raise RuntimeError(f"{relfn}: flavour {name} was already defined in {old.defined_in}")
+                        self.flavours[name] = Flavour(name=name, defined_in=relfn, **flavour)
 
                 if "recipe" in recipe:
                     self.recipes.add(Recipe(relfn[:-5], defined_in=relfn, data=recipe))
@@ -93,20 +107,20 @@ class WorkingKitchen(Kitchen):
             self.tempdir = None
             self.workdir = workdir
 
-    def make_orders(self) -> List[Order]:
+    def make_orders(self, flavours: List[Flavour]) -> List[Order]:
         """
         Generate all possible orders for all available recipes
         """
         res: List[Order] = []
         for recipe in self.recipes.recipes:
-            res.extend(recipe.make_orders(self.pantry))
+            res.extend(recipe.make_orders(self.pantry, flavours=flavours))
         return res
 
-    def make_order(self, recipe: Recipe, step: int) -> Order:
+    def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> Order:
         """
         Generate all possible orders for all available recipes
         """
-        for o in recipe.make_orders(self.pantry):
+        for o in recipe.make_orders(self.pantry, flavours=[flavour]):
             if o.step == step:
                 return o
         raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")

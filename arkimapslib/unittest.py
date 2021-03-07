@@ -11,7 +11,7 @@ class RecipeTestMixin:
         Create all satisfiable orders from the currently tested recipe
         """
         recipe = kitchen.recipes.get(self.recipe_name)
-        orders = recipe.make_orders(kitchen.pantry)
+        orders = recipe.make_orders(kitchen.pantry, flavours=[kitchen.flavours.get("default")])
         for o in orders:
             pickle.dumps(o)
         return orders

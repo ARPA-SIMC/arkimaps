@@ -5,6 +5,7 @@ from . import orders
 
 # if TYPE_CHECKING:
 from . import pantry
+from . import flavours
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -65,6 +66,12 @@ class Recipe:
                 raise RuntimeError(f"step {step} not found in mixer {self.mixer}")
             self.steps.append(step_cls(step=step, **s))
 
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
     def list_inputs(self) -> List[str]:
         """
         List the names of inputs used by this recipe
@@ -81,7 +88,9 @@ class Recipe:
                 input_names.append(input_name)
         return input_names
 
-    def make_orders(self, pantry: "pantry.DiskPantry") -> List["orders.Order"]:
+    def make_orders(self,
+                    pantry: "pantry.DiskPantry",
+                    flavours: List[flavours.Flavour]) -> List["orders.Order"]:
         """
         Scan a recipe and return a set with all the inputs it needs
         """
@@ -128,12 +137,14 @@ class Recipe:
                 if inputs_for_all_steps:
                     input_files.update(inputs_for_all_steps)
 
-                res.append(orders.Order(
-                    mixer=self.mixer,
-                    sources=input_files,
-                    recipe=self,
-                    step=s,
-                ))
+                for flavour in flavours:
+                    res.append(orders.Order(
+                        mixer=self.mixer,
+                        sources=input_files,
+                        recipe=self,
+                        step=s,
+                        flavour=flavour,
+                    ))
 
         return res
 
