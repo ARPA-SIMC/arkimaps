@@ -111,7 +111,7 @@ class AddGrid(MagicsMacro):
     """
     Add a coordinates grid
     """
-    macro_name = "mcont"
+    macro_name = "mcoast"
     default_params = {
         "map_coastline_general_style": "grid",
     }
