@@ -5,6 +5,7 @@ import json
 
 # if TYPE_CHECKING:
 from . import mixers
+from . import inputs
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -42,6 +43,15 @@ class Step:
 
         # Else return the user specified fallback value
         return default
+
+    def get_input(self, mixer: "mixers.Mixer", name: str) -> "inputs.InputFile":
+        """
+        Return the InputFile with the given name
+        """
+        res = mixer.order.sources.get(name)
+        if res is None:
+            raise KeyError(f"{self.name}: input {name} not found. Available: {', '.join(mixer.order.sources.keys())}")
+        return res
 
     def trace_step(self, mixer: "mixers.Mixer", **kw):
         """
@@ -210,7 +220,7 @@ class AddGrib(Step):
         self.grib_name = name
 
     def run(self, mixer: "mixers.Mixer"):
-        input_file = mixer.order.sources[self.grib_name]
+        input_file = self.get_input(mixer, self.grib_name)
         source_input = input_file.info
 
         params = {}
@@ -244,7 +254,7 @@ class AddUserBoundaries(Step):
         shape = self.get_param(mixer, "shape")
         if shape is None:
             raise RuntimeError(f"{self.name}: shape not specified")
-        input_file = mixer.order.sources[shape]
+        input_file = self.get_input(mixer, shape)
 
         params = {
             "map_user_layer": "on",
@@ -277,7 +287,7 @@ class AddGeopoints(Step):
         points = self.get_param(mixer, "points")
         if points is None:
             raise RuntimeError(f"{self.name}: points not specified")
-        input_file = mixer.order.sources[points]
+        input_file = self.get_input(mixer, points)
 
         params = dict(self.get_param(mixer, "params", {}))
         params["geo_input_file_name"] = input_file.pathname
