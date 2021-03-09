@@ -29,7 +29,6 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                                 "steps": {
                                     "add_coastlines_fg": {
                                         "params": test_params,
-                                        "skip": True,
                                     },
                                 }
                             }
@@ -47,6 +46,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                 self.assertEqual(add_coastlines_fg_args, test_params)
 
     def test_step_filter(self):
+        self.maxDiff = None
         with self.kitchen_class() as kitchen:
             with tempfile.TemporaryDirectory() as extra_recipes:
                 with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:

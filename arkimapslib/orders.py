@@ -64,7 +64,11 @@ class Order:
 
         mixer = Mixer(workdir, self)
         for step in self.recipe.steps:
-            self.log.debug("%s %r", step.name, step.params)
-            step.run(mixer)
+            step_config = self.flavour.step_config(step.name)
+            if step_config.is_skipped():
+                self.log.debug("%s (skipped)", step.name, step.params)
+            else:
+                self.log.debug("%s %r", step.name, step.get_params(mixer))
+                step.run(mixer)
 
         mixer.serve()
