@@ -15,12 +15,17 @@ class RecipeTestMixin:
         "subpage_upper_right_latitude": 55.0,
     }
 
-    def make_orders(self, kitchen):
+    def make_orders(self, kitchen, flavour_names=None):
         """
         Create all satisfiable orders from the currently tested recipe
         """
+        if flavour_names is None:
+            flavour_names = "default"
+
+        flavours = [kitchen.flavours.get(name) for name in flavour_names.split(",")]
+
         recipe = kitchen.recipes.get(self.recipe_name)
-        orders = recipe.make_orders(kitchen.pantry, flavours=[kitchen.flavours.get("default")])
+        orders = recipe.make_orders(kitchen.pantry, flavours=flavours)
         for o in orders:
             pickle.dumps(o)
         return orders
