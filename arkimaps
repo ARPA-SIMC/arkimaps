@@ -54,7 +54,7 @@ class RecipesMixin:
         """
         Load recipes into the already created kitchen
         """
-        self.kitchen.load_recipes(self.args.recipes)
+        self.kitchen.load_recipes([self.args.recipes])
 
 
 class RenderMixin:
@@ -335,7 +335,7 @@ class Postprocessor(RenderMixin, Command):
 
         # Recipes are loaded from a fixed directory
         # TODO: define where it is
-        self.kitchen.load_recipes("recipes")
+        self.kitchen.load_recipes(["recipes"])
 
     def get_styles_directory(self):
         return "/usr/share/magics/styles/ecmwf"

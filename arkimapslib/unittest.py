@@ -26,7 +26,7 @@ class RecipeTestMixin:
         return orders
 
     def fill_pantry(self, kitchen, step=12, expected=None):
-        kitchen.load_recipes("recipes")
+        kitchen.load_recipes(["recipes"])
         recipe = kitchen.recipes.get(self.recipe_name)
         input_names = recipe.list_inputs()
 
