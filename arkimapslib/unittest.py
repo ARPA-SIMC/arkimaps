@@ -30,8 +30,10 @@ class RecipeTestMixin:
             pickle.dumps(o)
         return orders
 
-    def fill_pantry(self, kitchen, step=12, expected=None):
-        kitchen.load_recipes(["recipes"])
+    def fill_pantry(self, kitchen, step=12, recipe_dirs=None, expected=None):
+        if recipe_dirs is None:
+            recipe_dirs = ["recipes"]
+        kitchen.load_recipes(recipe_dirs)
         recipe = kitchen.recipes.get(self.recipe_name)
         input_names = recipe.list_inputs()
 
