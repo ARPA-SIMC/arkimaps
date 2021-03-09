@@ -13,25 +13,45 @@ class Step:
     """
     One recipe step provided by a Mixer
     """
-    default_params: Optional[Kwargs] = None
+    defaults: Optional[Kwargs] = None
 
     def __init__(self, step: str, params: Optional[Kwargs] = None):
         self.name = step
         self.params = params
 
-    def get_params(self, mixer: "mixers.Mixer"):
-        if self.params:
-            return self.params
+    def get_param(self, mixer: "mixers.Mixer", name, default=None):
+        """
+        Return a parameter from the step's configuration
+        """
+        # First try the version specified in the recipe
+        res = getattr(self, name)
+        if res is not None:
+            return res
 
+        # If not found, try the version specified in the flavour
         flavour_config = mixer.order.flavour.step_config(self.name)
-        flavour_params = flavour_config.get_params()
-        if flavour_params is not None:
-            return flavour_params
+        res = flavour_config.get_param(name)
+        if res is not None:
+            return res
 
-        if self.default_params:
-            return self.default_params
+        # If not found, try the step default
+        if self.defaults is not None:
+            res = self.defaults.get(name)
+            if res is not None:
+                return res
 
-        return {}
+        # Else return the user specified fallback value
+        return default
+
+    def trace_step(self, mixer: "mixers.Mixer", **kw):
+        """
+        Log this step in the order trace log
+        """
+        if mixer.order.debug_trace is None:
+            return
+        trace = {"name": self.name}
+        trace.update(kw)
+        mixer.order.debug_trace.append(trace)
 
     def run(self, mixer: "mixers.Mixer"):
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
@@ -60,11 +80,10 @@ class MagicsMacro(Step):
     macro_name: str
 
     def run(self, mixer: "mixers.Mixer"):
-        params = self.get_params(mixer)
+        params = self.get_param(mixer, "params", {})
         mixer.parts.append(getattr(mixer.macro, self.macro_name)(**params))
         mixer.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
-        if mixer.order.debug_trace is not None:
-            mixer.order.debug_trace.append((self.name, params))
+        self.trace_step(mixer, params=params)
 
 
 class AddBasemap(MagicsMacro):
@@ -79,8 +98,10 @@ class AddCoastlinesBg(MagicsMacro):
     Add background coastlines
     """
     macro_name = "mcoast"
-    default_params = {
-        "map_coastline_general_style": "background",
+    defaults = {
+        "params": {
+            "map_coastline_general_style": "background",
+        },
     }
 
 
@@ -89,12 +110,14 @@ class AddSymbols(MagicsMacro):
     Add symbols settings
     """
     macro_name = "msymb"
-    default_params = {
-        "symbol_type": "marker",
-        "symbol_marker_index": 15,
-        "legend": "off",
-        "symbol_colour": "black",
-        "symbol_height": 0.28,
+    defaults = {
+        "params": {
+            "symbol_type": "marker",
+            "symbol_marker_index": 15,
+            "legend": "off",
+            "symbol_colour": "black",
+            "symbol_height": 0.28,
+        },
     }
 
 
@@ -103,8 +126,10 @@ class AddContour(MagicsMacro):
     Add contouring of the previous data
     """
     macro_name = "mcont"
-    default_params = {
-        "contour_automatic_setting": "ecmwf",
+    defaults: {
+        "params": {
+            "contour_automatic_setting": "ecmwf",
+        },
     }
 
 
@@ -113,8 +138,10 @@ class AddGrid(MagicsMacro):
     Add a coordinates grid
     """
     macro_name = "mcoast"
-    default_params = {
-        "map_coastline_general_style": "grid",
+    defaults: {
+        "params": {
+            "map_coastline_general_style": "grid",
+        },
     }
 
 
@@ -122,17 +149,19 @@ class AddCoastlinesFg(Step):
     """
     Add foreground coastlines
     """
-    default_params = {
-        "map_coastline_sea_shade_colour": "#f2f2f2",
-        "map_grid": "off",
-        "map_coastline_sea_shade": "off",
-        "map_label": "off",
-        "map_coastline_colour": "#000000",
-        "map_coastline_resolution": "medium",
+    defaults: {
+        "params": {
+            "map_coastline_sea_shade_colour": "#f2f2f2",
+            "map_grid": "off",
+            "map_coastline_sea_shade": "off",
+            "map_label": "off",
+            "map_coastline_colour": "#000000",
+            "map_coastline_resolution": "medium",
+        },
     }
 
     def run(self, mixer: "mixers.Mixer"):
-        params = self.get_params(mixer)
+        params = self.get_param(mixer, "params", {})
 
         mixer.parts.append(mixer.macro.mcoast(map_coastline_general_style="foreground"))
         mixer.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
@@ -140,25 +169,26 @@ class AddCoastlinesFg(Step):
         mixer.parts.append(mixer.macro.mcoast(**params))
         mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
-        if mixer.order.debug_trace is not None:
-            mixer.order.debug_trace.append((self.name, params))
+        self.trace_step(mixer, params=params)
 
 
 class AddBoundaries(Step):
     """
     Add political boundaries
     """
-    default_params = {
-        'map_boundaries': "on",
-        'map_boundaries_colour': "#504040",
-        'map_administrative_boundaries_countries_list': ["ITA"],
-        'map_administrative_boundaries_colour': "#504040",
-        'map_administrative_boundaries_style': "solid",
-        'map_administrative_boundaries': "on",
+    defaults: {
+        "params": {
+            'map_boundaries': "on",
+            'map_boundaries_colour': "#504040",
+            'map_administrative_boundaries_countries_list': ["ITA"],
+            'map_administrative_boundaries_colour': "#504040",
+            'map_administrative_boundaries_style': "solid",
+            'map_administrative_boundaries': "on",
+        },
     }
 
     def run(self, mixer: "mixers.Mixer"):
-        params = self.get_params(mixer)
+        params = self.get_param(mixer, "params", {})
 
         mixer.parts.append(
             mixer.macro.mcoast(map_coastline_general_style="boundaries"),
@@ -168,8 +198,7 @@ class AddBoundaries(Step):
         mixer.parts.append(mixer.macro.mcoast(**params))
         mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
-        if mixer.order.debug_trace is not None:
-            mixer.order.debug_trace.append((self.name, params))
+        self.trace_step(mixer, params=params)
 
 
 class AddGrib(Step):
@@ -187,7 +216,7 @@ class AddGrib(Step):
         params = {}
         if source_input.mgrib:
             params.update(source_input.mgrib)
-        params.update(self.get_params(mixer))
+        params.update(self.get_param(mixer, "params", {}))
 
         mixer.order.log.debug("add_grib mgrib %r", params)
 
@@ -195,8 +224,7 @@ class AddGrib(Step):
         mixer.parts.append(grib)
         mixer.py_lines.append(f"parts.append(macro.mgrib(grib_input_file_name={input_file.pathname!r}, **{params!r}))")
 
-        if mixer.order.debug_trace is not None:
-            mixer.order.debug_trace.append((self.name, params))
+        self.trace_step(mixer, params=params, grib_name=self.grib_name)
 
     def get_input_names(self) -> Set[str]:
         res = super().get_input_names()
@@ -208,26 +236,28 @@ class AddUserBoundaries(Step):
     """
     Add user-defined boundaries from a shapefile
     """
-    def __init__(self, shape: str, **kwargs):
+    def __init__(self, shape: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         self.shape = shape
 
     def run(self, mixer: "mixers.Mixer"):
-        input_file = mixer.order.sources[self.shape]
+        shape = self.get_param(mixer, "shape")
+        if shape is None:
+            raise RuntimeError(f"{self.name}: shape not specified")
+        input_file = mixer.order.sources[shape]
 
         params = {
             "map_user_layer": "on",
             "map_user_layer_colour": "blue",
         }
-        params.update(self.get_params(mixer))
+        params.update(self.get_param(mixer, "params", {}))
 
         params["map_user_layer_name"] = input_file.pathname
 
         mixer.parts.append(mixer.macro.mcoast(**params))
         mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
-        if mixer.order.debug_trace is not None:
-            mixer.order.debug_trace.append((self.name, params))
+        self.trace_step(mixer, params=params, shape=shape)
 
     def get_input_names(self) -> Set[str]:
         res = super().get_input_names()
@@ -239,21 +269,23 @@ class AddGeopoints(Step):
     """
     Add geopoints
     """
-    def __init__(self, points: str, **kwargs):
+    def __init__(self, points: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         self.points = points
 
     def run(self, mixer: "mixers.Mixer"):
-        input_file = mixer.order.sources[self.points]
+        points = self.get_param(mixer, "points")
+        if points is None:
+            raise RuntimeError(f"{self.name}: points not specified")
+        input_file = mixer.order.sources[points]
 
-        params = dict(self.get_params(mixer))
+        params = dict(self.get_param(mixer, "params", {}))
         params["geo_input_file_name"] = input_file.pathname
 
         mixer.parts.append(mixer.macro.mgeo(**params))
         mixer.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
 
-        if mixer.order.debug_trace is not None:
-            mixer.order.debug_trace.append((self.name, params))
+        self.trace_step(mixer, params=params, points=points)
 
     def get_input_names(self) -> Set[str]:
         res = super().get_input_names()

@@ -12,12 +12,7 @@ class T2MMixin:
 
             self.assertRenders(kitchen, orders[0])
 
-            mgrib_args = self.get_debug_trace(orders[0], "add_grib")
-            expected_mgrib_args = {
-                "cosmo": {},
-                "ifs": {},
-            }
-            self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
+            self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
 add_recipe_test_cases(__name__, "t2m")

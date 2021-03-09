@@ -16,8 +16,8 @@ class StepConfig:
         self.name = name
         self.options: Kwargs = options if options is not None else {}
 
-    def get_params(self) -> Kwargs:
-        return self.options.get("params")
+    def get_param(self, name: str) -> Kwargs:
+        return self.options.get(name)
 
     def is_skipped(self) -> bool:
         return bool(self.options.get("skip"))

@@ -42,8 +42,8 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
 
                 self.assertRenders(kitchen, orders[0])
 
-                add_coastlines_fg_args = self.get_debug_trace(orders[0], "add_coastlines_fg")
-                self.assertEqual(add_coastlines_fg_args, test_params)
+                add_coastlines_fg_trace = self.get_debug_trace(orders[0], "add_coastlines_fg")
+                self.assertEqual(add_coastlines_fg_trace["params"], test_params)
 
     def test_step_filter(self):
         self.maxDiff = None
@@ -69,7 +69,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
 
                 self.assertRenders(kitchen, orders[0])
 
-                steps = [x[0] for x in orders[0].debug_trace]
+                steps = [x["name"] for x in orders[0].debug_trace]
                 self.assertEqual(steps, [
                     'add_basemap',
                     'add_coastlines_bg',

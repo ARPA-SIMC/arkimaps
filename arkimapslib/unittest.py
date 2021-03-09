@@ -71,7 +71,19 @@ class RecipeTestMixin:
         self.assertIsNotNone(order.output)
         self.assertEqual(os.path.basename(order.output), f"{self.recipe_name}+012.png")
         basemap_args = self.get_debug_trace(order, "add_basemap")
-        self.assertEqual(basemap_args, self.expected_basemap_args)
+        self.assertEqual(basemap_args["params"], self.expected_basemap_args)
+
+    def assertMgribArgsEqual(self, order, cosmo=None, ifs=None):
+        """
+        Check that the mgrib arguments passed to add_grib match the given
+        values. It has different expected values depending on the model used
+        """
+        mgrib_args = self.get_debug_trace(order, "add_grib")
+        expected_mgrib_args = {
+            "cosmo": cosmo,
+            "ifs": ifs,
+        }
+        self.assertEqual(mgrib_args["params"], expected_mgrib_args[self.model_name])
 
     def get_debug_trace(self, order, step_name: str):
         """
@@ -80,9 +92,9 @@ class RecipeTestMixin:
 
         Fails the test if not found
         """
-        for name, args in order.debug_trace:
-            if name == step_name:
-                return args
+        for record in order.debug_trace:
+            if record["name"] == step_name:
+                return record
         self.fail(f"Step {step_name} not found in debug trace of order {order}")
 
 
