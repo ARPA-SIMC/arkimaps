@@ -68,7 +68,7 @@ Informazioni sulla composizione delle singole ricette sono disponibili nei file
 Informazioni sull'inventario dei prodotti in corso di implementazione sono
 disponibili nella directory [prodotti](../master/prodotti/)
 
-## Informazion sulle ricette
+## Informazioni sulle ricette
 
 Gli input definiti nelle ricette sono comuni a tutte le ricette: un input con
 lo stesso nome definito in piú ricette dà errore. Una ricetta può usare input
@@ -99,6 +99,25 @@ se quella di default non è l'ideale.
 2. Prendere un campione di dati dalle workdir in `pantry/nomericetta`
 3. Processarli con `arki-scan --inline file.grib > file.arkimet`
 4. Salvarli in `testdata/nomericetta`
+
+## Creazione di varianti (flavour) per il rendering
+
+Nei file `.yaml` dentro a `recipes/` è possibile aggiungere una sezione
+`flavors` che introduce varianti di rendering. I comandi di `arkimaps` che
+fanno rendering hanno un'opzione `--flavors` che permette di scegliere quali
+varianti usare.
+
+La struttura di una variante è:
+
+* `name`: nome della variante
+* `steps`: configurazione dei singoli step
+
+La configurazione di uno step può avere:
+
+* `skip: yes`: ignora quello step. Utile per esempio per disattivare il
+  rendering di linee di costa e boundary, e lasciare solo il layer con i dati
+* `params`: valore da usare come `params` se non esplicitamente specificato
+  nella ricetta
 
 ## Struttura del codice
 

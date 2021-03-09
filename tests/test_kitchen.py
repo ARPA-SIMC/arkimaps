@@ -28,7 +28,7 @@ class TestEmptyKitchen(TestCase):
             workdir.add_file("test/test.yaml", {"recipe": []})
             kitchen = Kitchen()
             kitchen.pantry = Pantry()
-            kitchen.load_recipes(workdir.workdir)
+            kitchen.load_recipes([workdir.workdir])
 
         r = kitchen.recipes.get("test")
         self.assertEqual(r.name, "test")
@@ -42,7 +42,7 @@ class TestEmptyKitchen(TestCase):
         # nothing raises exceptions
         kitchen = Kitchen()
         kitchen.pantry = Pantry()
-        kitchen.load_recipes("recipes")
+        kitchen.load_recipes(["recipes"])
         with tempfile.TemporaryDirectory() as workdir:
             kitchen.document_recipes(workdir)
 
@@ -50,6 +50,6 @@ class TestEmptyKitchen(TestCase):
 class TestArkimetEmptyKitchen(TestCase):
     def test_merged_arki_query(self):
         kitchen = ArkimetEmptyKitchen()
-        kitchen.load_recipes("recipes")
+        kitchen.load_recipes(["recipes"])
         merged = kitchen.get_merged_arki_query()
         self.assertIsNotNone(merged)

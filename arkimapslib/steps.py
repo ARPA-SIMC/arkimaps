@@ -23,9 +23,10 @@ class Step:
         if self.params:
             return self.params
 
-        flavour_defaults = mixer.order.flavour.defaults.get(self.name)
-        if flavour_defaults is not None:
-            return flavour_defaults
+        flavour_config = mixer.order.flavour.step_config(self.name)
+        flavour_params = flavour_config.get_params()
+        if flavour_params is not None:
+            return flavour_params
 
         if self.default_params:
             return self.default_params

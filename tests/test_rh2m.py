@@ -5,10 +5,7 @@ from arkimapslib.unittest import add_recipe_test_cases
 class RH2MMixin:
     def test_dispatch(self):
         with self.kitchen_class() as kitchen:
-            kitchen.load_recipes("recipes")
-            kitchen.pantry.fill(path=self.get_sample_path("t2m", 12))
-            kitchen.pantry.fill(path=self.get_sample_path("2d", 12))
-            kitchen.pantry.fill(path=self.get_sample_path("mslp", 12))
+            self.fill_pantry(kitchen)
 
             # Check that the right input was selected
             cpdec3h = kitchen.pantry.inputs.get("rh2m")

@@ -15,18 +15,25 @@ class RecipeTestMixin:
         "subpage_upper_right_latitude": 55.0,
     }
 
-    def make_orders(self, kitchen):
+    def make_orders(self, kitchen, flavour_names=None):
         """
         Create all satisfiable orders from the currently tested recipe
         """
+        if flavour_names is None:
+            flavour_names = "default"
+
+        flavours = [kitchen.flavours.get(name) for name in flavour_names.split(",")]
+
         recipe = kitchen.recipes.get(self.recipe_name)
-        orders = recipe.make_orders(kitchen.pantry, flavours=[kitchen.flavours.get("default")])
+        orders = recipe.make_orders(kitchen.pantry, flavours=flavours)
         for o in orders:
             pickle.dumps(o)
         return orders
 
-    def fill_pantry(self, kitchen, step=12, expected=None):
-        kitchen.load_recipes("recipes")
+    def fill_pantry(self, kitchen, step=12, recipe_dirs=None, expected=None):
+        if recipe_dirs is None:
+            recipe_dirs = ["recipes"]
+        kitchen.load_recipes(recipe_dirs)
         recipe = kitchen.recipes.get(self.recipe_name)
         input_names = recipe.list_inputs()
 

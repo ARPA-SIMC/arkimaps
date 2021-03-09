@@ -38,7 +38,14 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def load_recipes(self, path: str):
+    def load_recipes(self, paths: List[str]):
+        """
+        Load recipes from the given list of directories
+        """
+        for path in paths:
+            self.load_recipe_dir(path)
+
+    def load_recipe_dir(self, path: str):
         """
         Load recipes from the given directory
         """
