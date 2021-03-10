@@ -1,7 +1,6 @@
 # from __future__ import annotations
 from arkimapslib.unittest import add_recipe_test_cases
 import unittest
-import os
 
 
 class TP1HMixin:
@@ -39,12 +38,7 @@ class TP1HMixin:
 
             self.assertRenders(kitchen, orders[0])
 
-            mgrib_args = self.get_debug_trace(orders[0], "add_grib")
-            expected_mgrib_args = {
-                "cosmo": {},
-                "ifs": {},
-            }
-            self.assertEqual(mgrib_args, expected_mgrib_args[self.model_name])
+            self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
 add_recipe_test_cases(__name__, "tp1h")

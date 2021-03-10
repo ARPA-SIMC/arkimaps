@@ -10,7 +10,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
     recipe_name = "t2m"
     expected_basemap_args = {}
 
-    def test_defaults(self):
+    def test_default_params(self):
         test_params = {
             "map_coastline_sea_shade_colour": "#f2f2f2",
             "map_grid": "off",
@@ -42,8 +42,50 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
 
                 self.assertRenders(kitchen, orders[0])
 
-                add_coastlines_fg_args = self.get_debug_trace(orders[0], "add_coastlines_fg")
-                self.assertEqual(add_coastlines_fg_args, test_params)
+                add_coastlines_fg = self.get_step(orders[0], "add_coastlines_fg")
+                self.assertEqual(add_coastlines_fg.params["params"], test_params)
+
+    def test_default_shape(self):
+        with self.kitchen_class() as kitchen:
+            with tempfile.TemporaryDirectory() as extra_recipes:
+                with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
+                    yaml.dump({
+                        "flavours": [
+                            {
+                                "name": "test",
+                                "steps": {
+                                    "add_user_boundaries": {
+                                        "shape": "test",
+                                    },
+                                }
+                            }
+                        ],
+                        "inputs": {
+                            "test": {
+                                "type": "shape",
+                                "path": "shapes/Sottozone_allerta_ER",
+                            }
+                        },
+                        "recipe": [
+                            {"step": "add_basemap"},
+                            {"step": "add_grib", "name": "t2m"},
+                            {"step": "add_user_boundaries",
+                             # "shape": "sottozone_allerta_er",
+                             "params": {"map_user_layer_colour": "blue"}},
+                        ]
+                    }, fd)
+
+                self.fill_pantry(kitchen, recipe_dirs=[extra_recipes, "recipes"])
+                recipe = kitchen.recipes.get("test")
+                orders = recipe.make_orders(kitchen.pantry, flavours=[
+                    kitchen.flavours.get("test")
+                ])
+                self.assertEqual(len(orders), 1)
+
+                self.assertRenders(kitchen, orders[0], output_name="test+012.png")
+
+                add_user_boundaries = self.get_step(orders[0], "add_user_boundaries")
+                self.assertEqual(add_user_boundaries.params["shape"], "test")
 
     def test_step_filter(self):
         self.maxDiff = None
@@ -69,7 +111,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
 
                 self.assertRenders(kitchen, orders[0])
 
-                steps = [x[0] for x in orders[0].debug_trace]
+                steps = [x.name for x in orders[0].recipe_steps]
                 self.assertEqual(steps, [
                     'add_basemap',
                     'add_coastlines_bg',

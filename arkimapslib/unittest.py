@@ -61,28 +61,42 @@ class RecipeTestMixin:
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(kitchen.pantry.data_root)))
 
-    def assertRenders(self, kitchen, order):
+    def assertRenders(self, kitchen, order, output_name=None):
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
+        if output_name is None:
+            output_name = f"{self.recipe_name}+012.png"
         renderer = Renderer(kitchen.workdir)
         order.debug_trace = []
         renderer.render_one(order)
         self.assertIsNotNone(order.output)
-        self.assertEqual(os.path.basename(order.output), f"{self.recipe_name}+012.png")
-        basemap_args = self.get_debug_trace(order, "add_basemap")
-        self.assertEqual(basemap_args, self.expected_basemap_args)
+        self.assertEqual(os.path.basename(order.output), output_name)
+        add_basemap = self.get_step(order, "add_basemap")
+        self.assertEqual(add_basemap.params.get("params", {}), self.expected_basemap_args)
 
-    def get_debug_trace(self, order, step_name: str):
+    def assertMgribArgsEqual(self, order, cosmo=None, ifs=None):
+        """
+        Check that the mgrib arguments passed to add_grib match the given
+        values. It has different expected values depending on the model used
+        """
+        step = self.get_step(order, "add_grib")
+        expected_mgrib_args = {
+            "cosmo": cosmo,
+            "ifs": ifs,
+        }
+        self.assertEqual(step.params.get("params", {}), expected_mgrib_args[self.model_name])
+
+    def get_step(self, order, step_name: str):
         """
         Return the debug trace arguments of the first step in the order's
         debug_trace log with the given name.
 
         Fails the test if not found
         """
-        for name, args in order.debug_trace:
-            if name == step_name:
-                return args
+        for step in order.recipe_steps:
+            if step.name == step_name:
+                return step
         self.fail(f"Step {step_name} not found in debug trace of order {order}")
 
 

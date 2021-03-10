@@ -50,6 +50,14 @@ With arguments:
 
 Add background coastlines
 
+With arguments:
+```
+{
+  "params": {
+    "map_coastline_general_style": "background"
+  }
+}
+```
 
 ### add_grib
 
@@ -163,6 +171,6 @@ Add a coordinates grid
 
 ### add_boundaries
 
-Add a coordinates grid
+Add political boundaries
 
 

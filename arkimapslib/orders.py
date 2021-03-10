@@ -36,9 +36,15 @@ class Order:
         self.output = None
         # Logger for this output
         self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
-        # Set to a list to get a debugging trace of all steps and arguments
-        # used
-        self.debug_trace = None
+        # List of recipe steps instantiated for this order
+        self.recipe_steps = []
+        for recipe_step in self.recipe.steps:
+            s = recipe_step.instantiate(self.flavour, sources)
+            if s.is_skipped():
+                self.log.debug("%s (skipped)", s.name)
+                continue
+            # self.log.debug("%s %r", step.name, step.get_params(mixer))
+            self.recipe_steps.append(s)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -63,12 +69,7 @@ class Order:
         from .mixers import Mixer
 
         mixer = Mixer(workdir, self)
-        for step in self.recipe.steps:
-            step_config = self.flavour.step_config(step.name)
-            if step_config.is_skipped():
-                self.log.debug("%s (skipped)", step.name, step.params)
-            else:
-                self.log.debug("%s %r", step.name, step.get_params(mixer))
-                step.run(mixer)
+        for step in self.recipe_steps:
+            step.run(mixer)
 
         mixer.serve()
