@@ -42,8 +42,8 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
 
                 self.assertRenders(kitchen, orders[0])
 
-                add_coastlines_fg_trace = self.get_debug_trace(orders[0], "add_coastlines_fg")
-                self.assertEqual(add_coastlines_fg_trace["params"], test_params)
+                add_coastlines_fg = self.get_step(orders[0], "add_coastlines_fg")
+                self.assertEqual(add_coastlines_fg.params["params"], test_params)
 
     def test_default_shape(self):
         with self.kitchen_class() as kitchen:
@@ -82,10 +82,10 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                 ])
                 self.assertEqual(len(orders), 1)
 
-                self.assertRenders(kitchen, orders[0])
+                self.assertRenders(kitchen, orders[0], output_name="test+012.png")
 
-                add_coastlines_fg_trace = self.get_debug_trace(orders[0], "add_user_boundaries")
-                self.assertEqual(add_coastlines_fg_trace["shape"], "test")
+                add_user_boundaries = self.get_step(orders[0], "add_user_boundaries")
+                self.assertEqual(add_user_boundaries.params["shape"], "test")
 
     def test_step_filter(self):
         self.maxDiff = None
@@ -111,7 +111,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
 
                 self.assertRenders(kitchen, orders[0])
 
-                steps = [x["name"] for x in orders[0].debug_trace]
+                steps = [x.name for x in orders[0].recipe_steps]
                 self.assertEqual(steps, [
                     'add_basemap',
                     'add_coastlines_bg',

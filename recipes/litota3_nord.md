@@ -4,9 +4,13 @@ Mixer: **default**
 
 ## Inputs
 
-* **litota3_nord**:
-    * **Arkimet matcher**: `product:GRIB2,98,0,17,4,5`
+* **litota3**:
+    * **Arkimet matcher**: `product:GRIB2,,0,17,4,5; timerange:Timedef,,0,3h`
     * **grib_filter matcher**: `shortName is "litota3"`
+* **sottozone_allerta_er**:
+    * **Path**: `shapes/Sottozone_allerta_ER`
+* **punti_citta**:
+    * **Path**: `puntiCitta.geo`
 
 ## Steps
 
@@ -45,6 +49,14 @@ With arguments:
 
 Add background coastlines
 
+With arguments:
+```
+{
+  "params": {
+    "map_coastline_general_style": "background"
+  }
+}
+```
 
 ### add_grib
 
@@ -53,7 +65,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "litota3_nord"
+  "name": "litota3"
 }
 ```
 
@@ -116,14 +128,18 @@ Add a coordinates grid
 
 ### add_boundaries
 
-Add a coordinates grid
+Add political boundaries
+
+
+### add_user_boundaries
+
+Add user-defined boundaries from a shapefile
 
 With arguments:
 ```
 {
+  "shape": "sottozone_allerta_er",
   "params": {
-    "map_user_layer": true,
-    "map_user_layer_name": "/usr/local/share/libsim-1.1/Sottozone_allerta_ER",
     "map_user_layer_colour": "blue"
   }
 }
@@ -131,14 +147,12 @@ With arguments:
 
 ### add_geopoints
 
-Add geopoint file
+Add geopoints
 
 With arguments:
 ```
 {
-  "params": {
-    "geo_input_file_name": "/tmp/puntiCitta.geo"
-  }
+  "points": "punti_citta"
 }
 ```
 
@@ -146,4 +160,16 @@ With arguments:
 
 Add symbols settings
 
+With arguments:
+```
+{
+  "params": {
+    "symbol_type": "marker",
+    "symbol_marker_index": 15,
+    "legend": "off",
+    "symbol_colour": "black",
+    "symbol_height": 0.28
+  }
+}
+```
 

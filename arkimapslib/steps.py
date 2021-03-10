@@ -1,11 +1,10 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, Set, TextIO
-import inspect
-import json
+from typing import Dict, Any, Optional, Set
 
 # if TYPE_CHECKING:
 from . import mixers
 from . import inputs
+from . import flavours
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -16,72 +15,46 @@ class Step:
     """
     defaults: Optional[Kwargs] = None
 
-    def __init__(self, step: str, params: Optional[Kwargs] = None):
+    def __init__(self,
+                 step: str,
+                 step_config: "flavours.StepConfig",
+                 params: Optional[Kwargs],
+                 sources: Dict[str, inputs.InputFile]):
         self.name = step
-        self.params = params
+        self.params = self.compile_args(step_config, params)
 
-    def get_param(self, mixer: "mixers.Mixer", name, default=None):
-        """
-        Return a parameter from the step's configuration
-        """
-        # First try the version specified in the recipe
-        res = getattr(self, name)
-        if res is not None:
-            return res
-
-        # If not found, try the version specified in the flavour
-        flavour_config = mixer.order.flavour.step_config(self.name)
-        res = flavour_config.get_param(name)
-        if res is not None:
-            return res
-
-        # If not found, try the step default
-        if self.defaults is not None:
-            res = self.defaults.get(name)
-            if res is not None:
-                return res
-
-        # Else return the user specified fallback value
-        return default
-
-    def get_input(self, mixer: "mixers.Mixer", name: str) -> "inputs.InputFile":
-        """
-        Return the InputFile with the given name
-        """
-        res = mixer.order.sources.get(name)
-        if res is None:
-            raise KeyError(f"{self.name}: input {name} not found. Available: {', '.join(mixer.order.sources.keys())}")
-        return res
-
-    def trace_step(self, mixer: "mixers.Mixer", **kw):
-        """
-        Log this step in the order trace log
-        """
-        if mixer.order.debug_trace is None:
-            return
-        trace = {"name": self.name}
-        trace.update(kw)
-        mixer.order.debug_trace.append(trace)
+    def is_skipped(self) -> bool:
+        return bool(self.params.get("skip"))
 
     def run(self, mixer: "mixers.Mixer"):
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
 
-    def get_input_names(self) -> Set[str]:
+    @classmethod
+    def compile_args(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Dict[str, Any]:
+        """
+        Compute the set of arguments for this step, based on flavour
+        information and arguments defined in the recipe
+        """
+        # take args
+        res = dict(args)
+
+        # add missing bits from step_config
+        for k, v in step_config.options.items():
+            res.setdefault(k, v)
+
+        # add missing bits from class config
+        if cls.defaults is not None:
+            for k, v in cls.defaults.items():
+                res.setdefault(k, v)
+
+        return res
+
+    @classmethod
+    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
         """
         Return the list of input names used by this step
         """
         return set()
-
-    @classmethod
-    def document(cls, file: TextIO):
-        print(inspect.getdoc(cls), file=file)
-        print(file=file)
-        if cls.defaults:
-            print("With arguments:", file=file)
-            print("```", file=file)
-            # FIXME: dump as yaml?
-            print(json.dumps(cls.defaults, indent=2), file=file)
-            print("```", file=file)
 
 
 class MagicsMacro(Step):
@@ -91,10 +64,9 @@ class MagicsMacro(Step):
     macro_name: str
 
     def run(self, mixer: "mixers.Mixer"):
-        params = self.get_param(mixer, "params", {})
+        params = self.params.get("params", {})
         mixer.parts.append(getattr(mixer.macro, self.macro_name)(**params))
         mixer.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
-        self.trace_step(mixer, params=params)
 
 
 class AddBasemap(MagicsMacro):
@@ -172,15 +144,13 @@ class AddCoastlinesFg(Step):
     }
 
     def run(self, mixer: "mixers.Mixer"):
-        params = self.get_param(mixer, "params", {})
+        params = self.params.get("params", {})
 
         mixer.parts.append(mixer.macro.mcoast(map_coastline_general_style="foreground"))
         mixer.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
 
         mixer.parts.append(mixer.macro.mcoast(**params))
         mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
-
-        self.trace_step(mixer, params=params)
 
 
 class AddBoundaries(Step):
@@ -199,7 +169,7 @@ class AddBoundaries(Step):
     }
 
     def run(self, mixer: "mixers.Mixer"):
-        params = self.get_param(mixer, "params", {})
+        params = self.params.get("params", {})
 
         mixer.parts.append(
             mixer.macro.mcoast(map_coastline_general_style="boundaries"),
@@ -209,37 +179,48 @@ class AddBoundaries(Step):
         mixer.parts.append(mixer.macro.mcoast(**params))
         mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
-        self.trace_step(mixer, params=params)
-
 
 class AddGrib(Step):
     """
     Add a grib file
     """
-    def __init__(self, name: str, **kwargs):
-        super().__init__(**kwargs)
-        self.grib_name = name
+    def __init__(self,
+                 step: str,
+                 step_config: "flavours.StepConfig",
+                 params: Optional[Kwargs],
+                 sources: Dict[str, inputs.InputFile]):
+        super().__init__(step, step_config, params, sources)
+        input_name = self.params.get("name")
+        inp = sources.get(input_name)
+        if inp is None:
+            raise KeyError(f"{self.step}: input {input_name} not found. Available: {', '.join(sources.keys())}")
+        self.grib_input = inp
+
+        if self.grib_input.info.mgrib:
+            params = self.params.get("params")
+            if params is None:
+                self.params["params"] = params = {}
+            for k, v in self.grib_input.info.mgrib.items():
+                params.setdefault(k, v)
 
     def run(self, mixer: "mixers.Mixer"):
-        input_file = self.get_input(mixer, self.grib_name)
-        source_input = input_file.info
-
-        params = {}
-        if source_input.mgrib:
-            params.update(source_input.mgrib)
-        params.update(self.get_param(mixer, "params", {}))
+        params = dict(self.params.get("mgrib", {}))
+        params.update(self.params.get("params", {}))
 
         mixer.order.log.debug("add_grib mgrib %r", params)
 
-        grib = mixer.macro.mgrib(grib_input_file_name=input_file.pathname, **params)
+        grib = mixer.macro.mgrib(grib_input_file_name=self.grib_input.pathname, **params)
         mixer.parts.append(grib)
-        mixer.py_lines.append(f"parts.append(macro.mgrib(grib_input_file_name={input_file.pathname!r}, **{params!r}))")
+        mixer.py_lines.append(
+                f"parts.append(macro.mgrib(grib_input_file_name={self.grib_input.pathname!r}, **{params!r}))")
 
-        self.trace_step(mixer, params=params, grib_name=self.grib_name)
-
-    def get_input_names(self) -> Set[str]:
-        res = super().get_input_names()
-        res.add(self.grib_name)
+    @classmethod
+    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+        res = super().get_input_names(step_config, args)
+        args = cls.compile_args(step_config, args)
+        grib_name = args.get("name")
+        if grib_name is not None:
+            res.add(grib_name)
         return res
 
 
@@ -247,32 +228,37 @@ class AddUserBoundaries(Step):
     """
     Add user-defined boundaries from a shapefile
     """
-    def __init__(self, shape: Optional[str] = None, **kwargs):
-        super().__init__(**kwargs)
-        self.shape = shape
+    def __init__(self,
+                 step: str,
+                 step_config: "flavours.StepConfig",
+                 params: Optional[Kwargs],
+                 sources: Dict[str, inputs.InputFile]):
+        super().__init__(step, step_config, params, sources)
+        input_name = self.params.get("shape")
+        inp = sources.get(input_name)
+        if inp is None:
+            raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
+        self.shape = inp
 
     def run(self, mixer: "mixers.Mixer"):
-        shape = self.get_param(mixer, "shape")
-        if shape is None:
-            raise RuntimeError(f"{self.name}: shape not specified")
-        input_file = self.get_input(mixer, shape)
-
         params = {
             "map_user_layer": "on",
             "map_user_layer_colour": "blue",
         }
-        params.update(self.get_param(mixer, "params", {}))
+        params.update(self.params.get("params", {}))
 
-        params["map_user_layer_name"] = input_file.pathname
+        params["map_user_layer_name"] = self.shape.pathname
 
         mixer.parts.append(mixer.macro.mcoast(**params))
         mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
-        self.trace_step(mixer, params=params, shape=shape)
-
-    def get_input_names(self) -> Set[str]:
-        res = super().get_input_names()
-        res.add(self.shape)
+    @classmethod
+    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+        res = super().get_input_names(step_config, args)
+        args = cls.compile_args(step_config, args)
+        shape = args.get("shape")
+        if shape is not None:
+            res.add(shape)
         return res
 
 
@@ -280,25 +266,29 @@ class AddGeopoints(Step):
     """
     Add geopoints
     """
-    def __init__(self, points: Optional[str] = None, **kwargs):
-        super().__init__(**kwargs)
-        self.points = points
+    def __init__(self,
+                 step: str,
+                 step_config: "flavours.StepConfig",
+                 params: Optional[Kwargs],
+                 sources: Dict[str, inputs.InputFile]):
+        super().__init__(step, step_config, params, sources)
+        input_name = self.params.get("points")
+        inp = sources.get(input_name)
+        if inp is None:
+            raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
+        self.points = inp
 
     def run(self, mixer: "mixers.Mixer"):
-        points = self.get_param(mixer, "points")
-        if points is None:
-            raise RuntimeError(f"{self.name}: points not specified")
-        input_file = self.get_input(mixer, points)
-
-        params = dict(self.get_param(mixer, "params", {}))
-        params["geo_input_file_name"] = input_file.pathname
+        params = dict(self.params.get("params", {}))
+        params["geo_input_file_name"] = self.points.pathname
 
         mixer.parts.append(mixer.macro.mgeo(**params))
         mixer.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
 
-        self.trace_step(mixer, params=params, points=points)
-
-    def get_input_names(self) -> Set[str]:
-        res = super().get_input_names()
-        res.add(self.points)
+    @classmethod
+    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+        res = super().get_input_names(step_config, args)
+        points = args.get("points")
+        if points is not None:
+            res.add(points)
         return res

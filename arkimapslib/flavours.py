@@ -19,9 +19,6 @@ class StepConfig:
     def get_param(self, name: str) -> Kwargs:
         return self.options.get(name)
 
-    def is_skipped(self) -> bool:
-        return bool(self.options.get("skip"))
-
 
 class Flavour:
     """

@@ -5,7 +5,7 @@ Mixer: **default**
 ## Inputs
 
 * **litota3**:
-    * **Arkimet matcher**: `product:GRIB2,98,0,17,4,5`
+    * **Arkimet matcher**: `product:GRIB2,,0,17,4,5; timerange:Timedef,,0,3h`
     * **grib_filter matcher**: `shortName is "litota3"`
 
 ## Steps
@@ -43,6 +43,14 @@ With arguments:
 
 Add background coastlines
 
+With arguments:
+```
+{
+  "params": {
+    "map_coastline_general_style": "background"
+  }
+}
+```
 
 ### add_grib
 
@@ -114,6 +122,6 @@ Add a coordinates grid
 
 ### add_boundaries
 
-Add a coordinates grid
+Add political boundaries
 
 

@@ -18,23 +18,19 @@ Mixer: **default**
 
 Add a base map
 
-With arguments:
-```
-{
-  "params": {
-    "subpage_map_projection": "cylindrical",
-    "subpage_lower_left_longitude": -5.0,
-    "subpage_lower_left_latitude": 30.0,
-    "subpage_upper_right_longitude": 27.0,
-    "subpage_upper_right_latitude": 55.0
-  }
-}
-```
 
 ### add_coastlines_bg
 
 Add background coastlines
 
+With arguments:
+```
+{
+  "params": {
+    "map_coastline_general_style": "background"
+  }
+}
+```
 
 ### add_grib
 
@@ -88,6 +84,6 @@ Add a coordinates grid
 
 ### add_boundaries
 
-Add a coordinates grid
+Add political boundaries
 
 
