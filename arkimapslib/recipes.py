@@ -172,7 +172,7 @@ class Recipe:
             print("## Steps", file=fd)
             print(file=fd)
             for step in self.steps:
-                print(f"### {name}", file=fd)
+                print(f"### {step.name}", file=fd)
                 print(file=fd)
                 step.document(file=fd)
                 print(file=fd)

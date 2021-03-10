@@ -72,14 +72,15 @@ class Step:
         """
         return set()
 
-    def document(self, file: TextIO):
-        print(inspect.getdoc(self), file=file)
+    @classmethod
+    def document(cls, file: TextIO):
+        print(inspect.getdoc(cls), file=file)
         print(file=file)
-        if self.params:
+        if cls.defaults:
             print("With arguments:", file=file)
             print("```", file=file)
             # FIXME: dump as yaml?
-            print(json.dumps(self.params, indent=2), file=file)
+            print(json.dumps(cls.defaults, indent=2), file=file)
             print("```", file=file)
 
 
