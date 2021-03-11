@@ -193,7 +193,7 @@ class AddGrib(Step):
         input_name = self.params.get("name")
         inp = sources.get(input_name)
         if inp is None:
-            raise KeyError(f"{self.step}: input {input_name} not found. Available: {', '.join(sources.keys())}")
+            raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
         self.grib_input = inp
 
         if self.grib_input.info.mgrib:
