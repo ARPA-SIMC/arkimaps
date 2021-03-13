@@ -190,7 +190,7 @@ class AddGrib(Step):
                  params: Optional[Kwargs],
                  sources: Dict[str, inputs.InputFile]):
         super().__init__(step, step_config, params, sources)
-        input_name = self.params.get("name")
+        input_name = self.params.get("grib")
         inp = sources.get(input_name)
         if inp is None:
             raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
@@ -218,7 +218,7 @@ class AddGrib(Step):
     def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
         args = cls.compile_args(step_config, args)
-        grib_name = args.get("name")
+        grib_name = args.get("grib")
         if grib_name is not None:
             res.add(grib_name)
         return res

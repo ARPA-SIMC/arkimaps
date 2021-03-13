@@ -20,7 +20,7 @@ recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   name: z850
+   grib: z850
  - step: add_contour
    params:
     contour_shade: off

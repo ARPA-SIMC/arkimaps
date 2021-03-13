@@ -18,7 +18,7 @@ recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   name: t500
+   grib: t500
  - step: add_contour
    params:
     contour: off
@@ -50,7 +50,7 @@ recipe:
     legend_title_text: "Temperature at 500hPa [°C]"
     legend_automatic_position: right
  - step: add_grib
-   name: z
+   grib: z
  - step: add_contour
    params:
     contour_shade: off

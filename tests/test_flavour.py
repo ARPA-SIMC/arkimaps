@@ -66,7 +66,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                     },
                     "recipe": [
                         {"step": "add_basemap"},
-                        {"step": "add_grib", "name": "t2m"},
+                        {"step": "add_grib", "grib": "t2m"},
                         {"step": "add_user_boundaries",
                          # "shape": "sottozone_allerta_er",
                          "params": {"map_user_layer_colour": "blue"}},
@@ -101,7 +101,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                 }, fd)
             self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
 
-            orders = self.make_orders(flavour_names="test")
+            orders = self.make_orders(flavour_name="test")
             self.assertEqual(len(orders), 1)
 
             self.assertRenders(orders[0])

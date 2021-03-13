@@ -27,7 +27,7 @@ recipe:
     map_label_latitude_frequency : 1
  - step: add_coastlines_bg
  - step: add_grib
-   name: litota3
+   grib: litota3
  - step: add_contour
    params:
     contour: off

@@ -4,7 +4,7 @@ recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   name: tpdec3h
+   grib: tpdec3h
  - step: add_contour
    params:
     contour: "off"

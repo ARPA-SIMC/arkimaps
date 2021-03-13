@@ -12,7 +12,7 @@ recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   name: t925
+   grib: t925
  - step: add_contour
    params:
     contour: off

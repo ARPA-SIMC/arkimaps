@@ -19,7 +19,7 @@ recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   name: z500
+   grib: z500
  - step: add_contour
    params:
     contour_shade: off

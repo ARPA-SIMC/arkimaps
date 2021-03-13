@@ -28,7 +28,7 @@ recipe:
     map_label_latitude_frequency : 1
  - step: add_coastlines_bg
  - step: add_grib
-   name: viwve
+   grib: viwve
  - step: add_contour
    params:
     contour: off
@@ -51,7 +51,7 @@ recipe:
     legend_text_colour: black
     legend_title_font_size: 0.8
  - step: add_grib
-   name: mslp
+   grib: mslp
    params:
     grib_automatic_scaling: off
     grib_scaling_factor: 0.01

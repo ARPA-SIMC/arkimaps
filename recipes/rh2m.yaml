@@ -21,7 +21,7 @@ recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   name: rh2m
+   grib: rh2m
  - step: add_contour
    params:
     contour_shade: on

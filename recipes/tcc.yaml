@@ -18,7 +18,7 @@ recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   name: tcc
+   grib: tcc
  - step: add_contour
    params:
     contour: off
