@@ -116,6 +116,13 @@ class AddContour(MagicsMacro):
     }
 
 
+class AddWind(MagicsMacro):
+    """
+    Add wind flag rendering of the previous data
+    """
+    macro_name = "mwind"
+
+
 class AddGrid(MagicsMacro):
     """
     Add a coordinates grid

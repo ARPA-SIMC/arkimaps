@@ -349,7 +349,7 @@ class VG6DTransform(Derived):
 
     def __init__(self, args: Union[str, List[str]] = None, **kw):
         if args is None:
-            raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
+            raise RuntimeError(f"args must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
         self.args = [args] if isinstance(args, str) else [str(x) for x in args]
 
@@ -408,6 +408,51 @@ class VG6DTransform(Derived):
         ind = " " * indent
         print(f"{ind}* **vg6d_transform arguments**: {' '.join(shlex.quote(arg) for arg in self.args)}", file=file)
         super().document(file, indent)
+
+
+@InputTypes.register
+class Cat(Derived):
+    """
+    Concatenate inputs
+    """
+    NAME = "cat"
+
+    def generate(self, p: "pantry.DiskPantry"):
+        # Get the steps for each of our inputs
+        available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
+        for input_name in self.inputs:
+            input_steps = p.get_steps(input_name)
+            # Intersect the steps to get only those for which we have all inputs
+            if available_steps is None:
+                available_steps = {k: [v] for k, v in input_steps.items()}
+            else:
+                steps_to_delete = []
+                for step, inputs in available_steps.items():
+                    input_file = input_steps.get(step)
+                    if input_file is None:
+                        steps_to_delete.append(step)
+                    else:
+                        inputs.append(input_file)
+                for step in steps_to_delete:
+                    log.info("input %s: dropping step %d missing in source input %s", self.name, step, input_name)
+                    del available_steps[step]
+
+        # Don't run preprocessing if we don't have data to preprocess
+        if not available_steps:
+            log.info("input %s: missing source data", self.name)
+            return
+
+        # For each step, concatenate all inputs to generate the output
+        for step, input_files in available_steps.items():
+            output_name = f"{self.pantry_basename}+{step}.grib"
+
+            log.info("input %s: generating step %d as %s", self.name, step, output_name)
+
+            output_pathname = os.path.join(p.data_root, output_name)
+            with open(output_pathname, "wb") as out:
+                for input_file in input_files:
+                    with open(input_file.pathname, "rb") as fd:
+                        shutil.copyfileobj(fd, out)
 
 
 class InputFile(NamedTuple):

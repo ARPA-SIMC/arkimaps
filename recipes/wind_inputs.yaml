@@ -1,0 +1,20 @@
+---
+description: Wind inputs
+inputs:
+ u:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,33
+     eccodes: shortName is "u"
+   - model: ifs
+     arkimet: product:GRIB1,98,128,165
+     eccodes: shortName is "u"
+ v:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,34 
+     eccodes: shortName is "v"
+   - model: ifs
+     arkimet: product:GRIB1,98,128,166
+     eccodes: shortName is "v"
+ uv:
+   type: cat
+   inputs: [u, v]

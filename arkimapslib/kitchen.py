@@ -129,7 +129,7 @@ class WorkingKitchen(Kitchen):
         """
         Generate all possible orders for all available recipes
         """
-        for o in recipe.make_orders(self.pantry, flavours=[flavour]):
+        for o in recipe.make_orders(self.pantry, flavour=flavour):
             if o.step == step:
                 return o
         raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")

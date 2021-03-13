@@ -41,6 +41,7 @@ mixers.register("default", {
     "add_grib": steps.AddGrib,
     "add_contour": steps.AddContour,
     "add_grid": steps.AddGrid,
+    "add_wind": steps.AddWind,
     "add_boundaries": steps.AddBoundaries,
     "add_user_boundaries": steps.AddUserBoundaries,
     "add_symbols": steps.AddSymbols,
