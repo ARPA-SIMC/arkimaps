@@ -18,33 +18,59 @@ class RecipeTestMixin:
     def setUp(self):
         self.kitchen = self.kitchen_class()
         self.kitchen.__enter__()
+        self.kitchen_recipes_loaded = False
 
     def tearDown(self):
         self.kitchen.__exit__(None, None, None)
         self.kitchen = None
 
-    def make_orders(self, flavour_names=None):
+    def make_orders(self, flavour_name=None):
         """
         Create all satisfiable orders from the currently tested recipe
         """
-        if flavour_names is None:
-            flavour_names = "default"
-
-        flavours = [self.kitchen.flavours.get(name) for name in flavour_names.split(",")]
+        if flavour_name is None:
+            flavour_name = "default"
 
         recipe = self.kitchen.recipes.get(self.recipe_name)
-        orders = recipe.make_orders(self.kitchen.pantry, flavours=flavours)
+        orders = recipe.make_orders(self.kitchen.pantry, flavour=self.kitchen.flavours.get(flavour_name))
         for o in orders:
             pickle.dumps(o)
         return orders
 
-    def fill_pantry(self, step=12, recipe_dirs=None, expected=None):
+    def load_recipes(self, recipe_dirs=None):
+        """
+        Load recipes in the kitchen.
+
+        It can be called multiple times in a test case, and only the first time
+        will have any effect
+        """
+        if self.kitchen_recipes_loaded:
+            return
         if recipe_dirs is None:
             recipe_dirs = ["recipes"]
         self.kitchen.load_recipes(recipe_dirs)
-        recipe = self.kitchen.recipes.get(self.recipe_name)
-        input_names = recipe.list_inputs()
+        self.kitchen_recipes_loaded = True
 
+    def fill_pantry(self, step=12, recipe_dirs=None, expected=None, recipe_name=None):
+        """
+        Load recipes if needed, then fill the pantry with the inputs they require
+        """
+        if recipe_name is None:
+            recipe_name = self.recipe_name
+        self.load_recipes(recipe_dirs)
+        recipe = self.kitchen.recipes.get(recipe_name)
+
+        # Import all test files available for the given recipe
+        sample_dir = os.path.join("testdata", recipe_name)
+        for fn in os.listdir(sample_dir):
+            if not fn.endswith(".arkimet"):
+                continue
+            if not fn.startswith(self.model_name):
+                continue
+            self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
+
+        # Check that we imported the right files with the right names
+        input_names = recipe.list_inputs()
         if expected is None:
             expected = []
             for name in input_names:
@@ -58,14 +84,6 @@ class RecipeTestMixin:
                         expected.append(f"{inp.name}+{step}.grib")
                     else:
                         expected.append(f"{self.model_name}_{inp.name}+{step}.grib")
-
-        sample_dir = os.path.join("testdata", self.recipe_name)
-        for fn in os.listdir(sample_dir):
-            if not fn.endswith(".arkimet"):
-                continue
-            if not fn.startswith(self.model_name):
-                continue
-            self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
 

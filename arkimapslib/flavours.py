@@ -27,10 +27,10 @@ class Flavour:
     def __init__(self, name: str, defined_in: str, steps: Kwargs = None, **kw):
         self.name = name
         self.defined_in = defined_in
-        self.steps = {
-            name: StepConfig(name, options)
-            for name, options in steps.items()
-        }
+        self.steps = {}
+        if steps is not None:
+            for name, options in steps.items():
+                self.steps[name] = StepConfig(name, options)
 
     def step_config(self, name: str) -> StepConfig:
         """

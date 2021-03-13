@@ -114,13 +114,13 @@ class WorkingKitchen(Kitchen):
             self.tempdir = None
             self.workdir = workdir
 
-    def make_orders(self, flavours: List[Flavour]) -> List[Order]:
+    def make_orders(self, flavour: Flavour) -> List[Order]:
         """
         Generate all possible orders for all available recipes
         """
         res: List[Order] = []
         for recipe in self.recipes.recipes:
-            res.extend(recipe.make_orders(self.pantry, flavours=flavours))
+            res.extend(recipe.make_orders(self.pantry, flavour=flavour))
         return res
 
     def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> Order:
