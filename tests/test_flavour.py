@@ -116,3 +116,28 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                 'add_grid',
                 'add_boundaries',
             ])
+
+    def test_recipe_filter(self):
+        self.maxDiff = None
+        with tempfile.TemporaryDirectory() as extra_recipes:
+            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
+                yaml.dump({
+                    "flavours": [
+                        {
+                            "name": "test",
+                            "recipes_filter": ["t2m"],
+                        }
+                    ]
+                }, fd)
+            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
+            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"], recipe_name="tcc")
+
+            orders = self.kitchen.make_orders(flavour=self.kitchen.flavours.get("default"))
+            self.assertCountEqual(
+                    [o.basename for o in orders],
+                    ["t2m+012", "tcc+012"])
+
+            orders = self.kitchen.make_orders(flavour=self.kitchen.flavours.get("test"))
+            self.assertCountEqual(
+                    [o.basename for o in orders],
+                    ["t2m+012"])

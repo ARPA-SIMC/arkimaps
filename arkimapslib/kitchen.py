@@ -120,6 +120,8 @@ class WorkingKitchen(Kitchen):
         """
         res: List[Order] = []
         for recipe in self.recipes.recipes:
+            if not flavour.allows_recipe(recipe):
+                continue
             res.extend(recipe.make_orders(self.pantry, flavour=flavour))
         return res
 

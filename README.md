@@ -110,6 +110,9 @@ varianti usare.
 La struttura di una variante è:
 
 * `name`: nome della variante
+* `recipes_filter`: lista di nomi di ricette. Se presente, solo le ricette
+  elencate saranno renderizzate per questo flavour. Sono permessi glob (es.
+  `tp*`)
 * `steps`: configurazione dei singoli step
 
 La configurazione di uno step può avere:
