@@ -139,47 +139,52 @@ class Recipe:
         Scan a recipe and return a set with all the inputs it needs
         """
         from .inputs import InputFile
+        # For each output step, map inputs names to InputFile structures
         inputs: Optional[Dict[int, Dict[str, InputFile]]] = None
+        # Collection of input name to InputFile mappings used by all output steps
         inputs_for_all_steps: Dict[str, InputFile] = {}
         input_names: Set[str] = set()
 
         # Collect the inputs needed for all steps
         for flavour in flavours:
-            for step in self.steps:
-                step_config = flavour.step_config(step.name)
-                for input_name in step.get_input_names(step_config):
+            for recipe_step in self.steps:
+                step_config = flavour.step_config(recipe_step.name)
+                for input_name in recipe_step.get_input_names(step_config):
                     if input_name in input_names:
                         continue
                     input_names.add(input_name)
 
                     # Find available steps for this input
                     output_steps = pantry.get_steps(input_name)
+                    # Pick inputs that are valid for all steps
                     any_step = output_steps.pop(None, None)
                     if any_step is not None:
                         inputs_for_all_steps[input_name] = any_step
-                    if not output_steps:
-                        continue
+                        # This input is valid for all steps and does not
+                        # introduce step limitations
+                        if not output_steps:
+                            continue
 
-                    # add_grib needs this input for all steps
+                    # Intersect the output steps for the recipe input list
                     if inputs is None:
                         inputs = {}
-                        for s, ifile in output_steps.items():
-                            inputs[s] = {input_name: ifile}
+                        for output_step, ifile in output_steps.items():
+                            inputs[output_step] = {input_name: ifile}
                     else:
                         steps_to_delete: List[int] = []
-                        for s, input_files in inputs.items():
-                            if s not in output_steps:
+                        for output_step, input_files in inputs.items():
+                            if output_step not in output_steps:
                                 # We miss an input for this step, so we cannot
                                 # generate an order for it
-                                steps_to_delete.append(s)
+                                steps_to_delete.append(output_step)
                             else:
-                                input_files[input_name] = output_steps[s]
-                        for s in steps_to_delete:
-                            del inputs[s]
+                                input_files[input_name] = output_steps[output_step]
+                        for output_step in steps_to_delete:
+                            del inputs[output_step]
 
             res: List["orders.Order"] = []
             if inputs is not None:
-                for s, input_files in inputs.items():
+                for output_step, input_files in inputs.items():
                     if inputs_for_all_steps:
                         input_files.update(inputs_for_all_steps)
 
@@ -187,7 +192,7 @@ class Recipe:
                         mixer=self.mixer,
                         sources=input_files,
                         recipe=self,
-                        step=s,
+                        step=output_step,
                         flavour=flavour,
                     ))
 
