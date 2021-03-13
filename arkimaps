@@ -121,7 +121,7 @@ class RenderMixin:
         with self.open_output() as tarout:
             for flavour in flavours:
                 # List of products that should be rendered
-                orders = self.kitchen.make_orders(flavours=[flavour])
+                orders = self.kitchen.make_orders(flavour=flavour)
 
                 renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
                 for order in renderer.render(orders):

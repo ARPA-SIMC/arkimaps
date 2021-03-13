@@ -16,29 +16,28 @@ class TP1HMixin:
         if self.model_name == "ifs":
             raise unittest.SkipTest("tp1h tests for IFS skipped, see code for reason")
 
-        with self.kitchen_class() as kitchen:
-            self.fill_pantry(kitchen, expected=[f"{self.model_name}_tp+{step}.grib" for step in range(0, 13)])
+        self.fill_pantry(expected=[f"{self.model_name}_tp+{step}.grib" for step in range(0, 13)])
 
-            # Check that the right input was selected
-            tpdec1h = kitchen.pantry.inputs.get("tpdec1h")
-            for i in tpdec1h:
-                self.assertEqual(i.__class__.__name__, "Decumulate")
+        # Check that the right input was selected
+        tpdec1h = self.kitchen.pantry.inputs.get("tpdec1h")
+        for i in tpdec1h:
+            self.assertEqual(i.__class__.__name__, "Decumulate")
 
-            orders = self.make_orders(kitchen)
-            # Preprocessing means we cannot reduce test input to only get one
-            # order, so we get orders from every step from 0 to 12. We filter
-            # later to keep only +12h to test
-            if self.model_name == "ifs":
-                self.assertEqual(len(orders), 0)
-                return
-            else:
-                self.assertGreaterEqual(len(orders), 12)
-            orders = [o for o in orders if o.basename == "tp1h+012"]
-            self.assertEqual(len(orders), 1)
+        orders = self.make_orders()
+        # Preprocessing means we cannot reduce test input to only get one
+        # order, so we get orders from every step from 0 to 12. We filter
+        # later to keep only +12h to test
+        if self.model_name == "ifs":
+            self.assertEqual(len(orders), 0)
+            return
+        else:
+            self.assertGreaterEqual(len(orders), 12)
+        orders = [o for o in orders if o.basename == "tp1h+012"]
+        self.assertEqual(len(orders), 1)
 
-            self.assertRenders(kitchen, orders[0])
+        self.assertRenders(orders[0])
 
-            self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
+        self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
 add_recipe_test_cases(__name__, "tp1h")

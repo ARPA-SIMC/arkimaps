@@ -19,105 +19,125 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
             "map_coastline_colour": "#000000",
             "map_coastline_resolution": "medium",
         }
-        with self.kitchen_class() as kitchen:
-            with tempfile.TemporaryDirectory() as extra_recipes:
-                with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
-                    yaml.dump({
-                        "flavours": [
-                            {
-                                "name": "test",
-                                "steps": {
-                                    "add_coastlines_fg": {
-                                        "params": test_params,
-                                    },
-                                }
+        with tempfile.TemporaryDirectory() as extra_recipes:
+            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
+                yaml.dump({
+                    "flavours": [
+                        {
+                            "name": "test",
+                            "steps": {
+                                "add_coastlines_fg": {
+                                    "params": test_params,
+                                },
                             }
-                        ]
-                    }, fd)
+                        }
+                    ]
+                }, fd)
 
-                self.fill_pantry(kitchen, recipe_dirs=[extra_recipes, "recipes"])
+            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
 
-                orders = self.make_orders(kitchen, flavour_names="test")
-                self.assertEqual(len(orders), 1)
+            orders = self.make_orders(flavour_name="test")
+            self.assertEqual(len(orders), 1)
 
-                self.assertRenders(kitchen, orders[0])
+            self.assertRenders(orders[0])
 
-                add_coastlines_fg = self.get_step(orders[0], "add_coastlines_fg")
-                self.assertEqual(add_coastlines_fg.params["params"], test_params)
+            add_coastlines_fg = self.get_step(orders[0], "add_coastlines_fg")
+            self.assertEqual(add_coastlines_fg.params["params"], test_params)
 
     def test_default_shape(self):
-        with self.kitchen_class() as kitchen:
-            with tempfile.TemporaryDirectory() as extra_recipes:
-                with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
-                    yaml.dump({
-                        "flavours": [
-                            {
-                                "name": "test",
-                                "steps": {
-                                    "add_user_boundaries": {
-                                        "shape": "test",
-                                    },
-                                }
+        with tempfile.TemporaryDirectory() as extra_recipes:
+            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
+                yaml.dump({
+                    "flavours": [
+                        {
+                            "name": "test",
+                            "steps": {
+                                "add_user_boundaries": {
+                                    "shape": "test",
+                                },
                             }
-                        ],
-                        "inputs": {
-                            "test": {
-                                "type": "shape",
-                                "path": "shapes/Sottozone_allerta_ER",
-                            }
-                        },
-                        "recipe": [
-                            {"step": "add_basemap"},
-                            {"step": "add_grib", "name": "t2m"},
-                            {"step": "add_user_boundaries",
-                             # "shape": "sottozone_allerta_er",
-                             "params": {"map_user_layer_colour": "blue"}},
-                        ]
-                    }, fd)
+                        }
+                    ],
+                    "inputs": {
+                        "test": {
+                            "type": "shape",
+                            "path": "shapes/Sottozone_allerta_ER",
+                        }
+                    },
+                    "recipe": [
+                        {"step": "add_basemap"},
+                        {"step": "add_grib", "name": "t2m"},
+                        {"step": "add_user_boundaries",
+                         # "shape": "sottozone_allerta_er",
+                         "params": {"map_user_layer_colour": "blue"}},
+                    ]
+                }, fd)
 
-                self.fill_pantry(kitchen, recipe_dirs=[extra_recipes, "recipes"])
-                recipe = kitchen.recipes.get("test")
-                orders = recipe.make_orders(kitchen.pantry, flavours=[
-                    kitchen.flavours.get("test")
-                ])
-                self.assertEqual(len(orders), 1)
+            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
+            recipe = self.kitchen.recipes.get("test")
+            orders = recipe.make_orders(self.kitchen.pantry, flavour=self.kitchen.flavours.get("test"))
+            self.assertEqual(len(orders), 1)
 
-                self.assertRenders(kitchen, orders[0], output_name="test+012.png")
+            self.assertRenders(orders[0], output_name="test+012.png")
 
-                add_user_boundaries = self.get_step(orders[0], "add_user_boundaries")
-                self.assertEqual(add_user_boundaries.params["shape"], "test")
+            add_user_boundaries = self.get_step(orders[0], "add_user_boundaries")
+            self.assertEqual(add_user_boundaries.params["shape"], "test")
 
     def test_step_filter(self):
         self.maxDiff = None
-        with self.kitchen_class() as kitchen:
-            with tempfile.TemporaryDirectory() as extra_recipes:
-                with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
-                    yaml.dump({
-                        "flavours": [
-                            {
-                                "name": "test",
-                                "steps": {
-                                    "add_contour": {
-                                        "skip": True,
-                                    },
-                                }
+        with tempfile.TemporaryDirectory() as extra_recipes:
+            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
+                yaml.dump({
+                    "flavours": [
+                        {
+                            "name": "test",
+                            "steps": {
+                                "add_contour": {
+                                    "skip": True,
+                                },
                             }
-                        ]
-                    }, fd)
-                self.fill_pantry(kitchen, recipe_dirs=[extra_recipes, "recipes"])
+                        }
+                    ]
+                }, fd)
+            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
 
-                orders = self.make_orders(kitchen, flavour_names="test")
-                self.assertEqual(len(orders), 1)
+            orders = self.make_orders(flavour_names="test")
+            self.assertEqual(len(orders), 1)
 
-                self.assertRenders(kitchen, orders[0])
+            self.assertRenders(orders[0])
 
-                steps = [x.name for x in orders[0].recipe_steps]
-                self.assertEqual(steps, [
-                    'add_basemap',
-                    'add_coastlines_bg',
-                    'add_grib',
-                    # 'add_contour',
-                    'add_coastlines_fg',
-                    'add_grid',
-                    'add_boundaries',
-                ])
+            steps = [x.name for x in orders[0].recipe_steps]
+            self.assertEqual(steps, [
+                'add_basemap',
+                'add_coastlines_bg',
+                'add_grib',
+                # 'add_contour',
+                'add_coastlines_fg',
+                'add_grid',
+                'add_boundaries',
+            ])
+
+    def test_recipe_filter(self):
+        self.maxDiff = None
+        with tempfile.TemporaryDirectory() as extra_recipes:
+            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
+                yaml.dump({
+                    "flavours": [
+                        {
+                            "name": "test",
+                            "recipes_filter": ["t2m"],
+                        }
+                    ]
+                }, fd)
+            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
+            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"], recipe_name="tcc")
+
+            orders = self.kitchen.make_orders(flavour=self.kitchen.flavours.get("default"))
+            self.assertCountEqual(
+                    [o.basename for o in orders],
+                    ["t2m+012", "tcc+012"])
+
+            orders = self.kitchen.make_orders(flavour=self.kitchen.flavours.get("test"))
+            self.assertCountEqual(
+                    [o.basename for o in orders],
+                    ["t2m+012"])

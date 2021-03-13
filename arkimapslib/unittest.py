@@ -15,32 +15,66 @@ class RecipeTestMixin:
         "subpage_upper_right_latitude": 55.0,
     }
 
-    def make_orders(self, kitchen, flavour_names=None):
+    def setUp(self):
+        self.kitchen = self.kitchen_class()
+        self.kitchen.__enter__()
+        self.kitchen_recipes_loaded = False
+
+    def tearDown(self):
+        self.kitchen.__exit__(None, None, None)
+        self.kitchen = None
+
+    def make_orders(self, flavour_name=None):
         """
         Create all satisfiable orders from the currently tested recipe
         """
-        if flavour_names is None:
-            flavour_names = "default"
+        if flavour_name is None:
+            flavour_name = "default"
 
-        flavours = [kitchen.flavours.get(name) for name in flavour_names.split(",")]
-
-        recipe = kitchen.recipes.get(self.recipe_name)
-        orders = recipe.make_orders(kitchen.pantry, flavours=flavours)
+        recipe = self.kitchen.recipes.get(self.recipe_name)
+        orders = recipe.make_orders(self.kitchen.pantry, flavour=self.kitchen.flavours.get(flavour_name))
         for o in orders:
             pickle.dumps(o)
         return orders
 
-    def fill_pantry(self, kitchen, step=12, recipe_dirs=None, expected=None):
+    def load_recipes(self, recipe_dirs=None):
+        """
+        Load recipes in the kitchen.
+
+        It can be called multiple times in a test case, and only the first time
+        will have any effect
+        """
+        if self.kitchen_recipes_loaded:
+            return
         if recipe_dirs is None:
             recipe_dirs = ["recipes"]
-        kitchen.load_recipes(recipe_dirs)
-        recipe = kitchen.recipes.get(self.recipe_name)
-        input_names = recipe.list_inputs()
+        self.kitchen.load_recipes(recipe_dirs)
+        self.kitchen_recipes_loaded = True
 
+    def fill_pantry(self, step=12, recipe_dirs=None, expected=None, recipe_name=None):
+        """
+        Load recipes if needed, then fill the pantry with the inputs they require
+        """
+        if recipe_name is None:
+            recipe_name = self.recipe_name
+        self.load_recipes(recipe_dirs)
+        recipe = self.kitchen.recipes.get(recipe_name)
+
+        # Import all test files available for the given recipe
+        sample_dir = os.path.join("testdata", recipe_name)
+        for fn in os.listdir(sample_dir):
+            if not fn.endswith(".arkimet"):
+                continue
+            if not fn.startswith(self.model_name):
+                continue
+            self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
+
+        # Check that we imported the right files with the right names
+        input_names = recipe.list_inputs()
         if expected is None:
             expected = []
             for name in input_names:
-                inputs = kitchen.pantry.inputs.get(name)
+                inputs = self.kitchen.pantry.inputs.get(name)
                 if inputs is None:
                     self.fail(f"No input found for {name}")
                 for inp in inputs:
@@ -50,24 +84,16 @@ class RecipeTestMixin:
                         expected.append(f"{inp.name}+{step}.grib")
                     else:
                         expected.append(f"{self.model_name}_{inp.name}+{step}.grib")
-
-        sample_dir = os.path.join("testdata", self.recipe_name)
-        for fn in os.listdir(sample_dir):
-            if not fn.endswith(".arkimet"):
-                continue
-            if not fn.startswith(self.model_name):
-                continue
-            kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
         for fn in expected:
-            self.assertIn(fn, os.listdir(os.path.join(kitchen.pantry.data_root)))
+            self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
 
-    def assertRenders(self, kitchen, order, output_name=None):
+    def assertRenders(self, order, output_name=None):
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
         if output_name is None:
             output_name = f"{self.recipe_name}+012.png"
-        renderer = Renderer(kitchen.workdir)
+        renderer = Renderer(self.kitchen.workdir)
         order.debug_trace = []
         renderer.render_one(order)
         self.assertIsNotNone(order.output)
