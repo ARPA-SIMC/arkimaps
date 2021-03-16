@@ -8,11 +8,23 @@ from .render import Renderer
 
 class RecipeTestMixin:
     expected_basemap_args = {
-        "subpage_map_projection": "cylindrical",
-        "subpage_lower_left_longitude": -5.0,
-        "subpage_lower_left_latitude": 30.0,
-        "subpage_upper_right_longitude": 27.0,
-        "subpage_upper_right_latitude": 55.0,
+        'page_id_line': False,
+        'output_width': 1280,
+        'subpage_map_projection': 'cylindrical',
+        'subpage_lower_left_longitude': 2.5,
+        'subpage_lower_left_latitude': 35.0,
+        'subpage_upper_right_longitude': 20.0,
+        'subpage_upper_right_latitude': 50.0,
+        'map_grid': True,
+        'map_grid_latitude_reference': 45.0,
+        'map_grid_longitude_reference': 0.0,
+        'map_grid_longitude_increment': 2.5,
+        'map_grid_latitude_increment': 2.5,
+        'map_grid_colour': 'grey',
+        'map_grid_line_style': 'dash',
+        'map_label_colour': 'black',
+        'map_label_height': 0.4,
+        'map_label_latitude_frequency': 1,
     }
 
     def setUp(self):
