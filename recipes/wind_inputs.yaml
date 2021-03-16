@@ -18,3 +18,20 @@ inputs:
  uv10m:
    type: cat
    inputs: [u10m, v10m]
+ u250:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,33;level:GRIB1,100,250
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 250
+   - model: ifs
+     arkimet: product:GRIB1,98,128,131;level:GRIB1,100,250
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 250
+ v250:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,34;level:GRIB1,100,250
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 250
+   - model: ifs
+     arkimet: product:GRIB1,98,128,132;level:GRIB1,100,250
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 250
+ uv250:
+   type: cat
+   inputs: [u250, v250]
