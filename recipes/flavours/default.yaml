@@ -23,7 +23,28 @@ flavours:
          map_label_colour: black
          map_label_height: 0.4
          map_label_latitude_frequency : 1
+     add_boundaries:
+       params:
+         map_boundaries: on
+         map_boundaries_colour: "#504040"
+         map_administrative_boundaries_countries_list: ["ITA"]
+         map_administrative_boundaries_colour: "#504040"
+         map_administrative_boundaries_style: solid
+         map_administrative_boundaries: on
+     add_user_boundaries:
+       skip: yes
+     add_geopoints:
+       skip: yes
+     add_symbols:
+       skip: yes
  - name: emro
+   inputs:
+     sottozone_allerta_er:
+       type: shape
+       path: shapes/Sottozone_allerta_ER
+     punti_citta:
+       type: static
+       path: puntiCitta.geo
    steps:
      add_basemap:
        params:
@@ -46,7 +67,20 @@ flavours:
          map_label_colour: black
          map_label_height: 0.4
          map_label_latitude_frequency : 1
+#     add_user_boundaries:
+#       shape: sottozone_allerta_er
+#       params:
+#         map_user_layer_colour: blue
+#     add_geopoints:
+#       points: punti_citta
  - name: nord
+   inputs:
+     sottozone_allerta_er:
+       type: shape
+       path: shapes/Sottozone_allerta_ER
+     punti_citta:
+       type: static
+       path: puntiCitta.geo
    steps:
      add_basemap:
        params:
@@ -70,3 +104,11 @@ flavours:
          map_label_colour: black
          map_label_height: 0.4
          map_label_latitude_frequency : 1
+     add_boundaries:
+       params:
+         map_boundaries: on
+         map_boundaries_colour: "#504040"
+         map_administrative_boundaries_countries_list: ["ITA"]
+         map_administrative_boundaries_colour: "#504040"
+         map_administrative_boundaries_style: solid
+         map_administrative_boundaries: on
