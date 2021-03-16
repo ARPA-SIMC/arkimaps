@@ -70,6 +70,8 @@ class Order:
 
         mixer = Mixer(workdir, self)
         for step in self.recipe_steps:
+            step.python_trace(mixer)
+        for step in self.recipe_steps:
             step.run(mixer)
-
+        mixer.write_python_trace()
         mixer.serve()

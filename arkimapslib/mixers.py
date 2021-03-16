@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, Any, Type, List
+from typing import Dict, Any, Type, List, Optional
 import os
 from . import steps
 
@@ -79,10 +79,12 @@ class Mixer:
             f"parts = []",
         ]
 
-    def serve(self):
+    def write_python_trace(self, fname: Optional[str] = None):
         """
-        Render the file and store the output file name into the order
+        Write the python trace of this run to the given file
         """
+        if fname is None:
+            fname = self.output_pathname + ".py"
         self.py_lines.append(f"macro.plot(output, *parts)")
 
         code = "\n".join(self.py_lines)
@@ -91,9 +93,13 @@ class Mixer:
             code, changed = yapf_api.FormatCode(code)
         except ModuleNotFoundError:
             pass
-        with open(self.output_pathname + ".py", "wt") as fd:
+        with open(fname, "wt") as fd:
             print(code, file=fd)
 
+    def serve(self):
+        """
+        Render the file and store the output file name into the order
+        """
         self.macro.plot(
             self.output,
             *self.parts,
