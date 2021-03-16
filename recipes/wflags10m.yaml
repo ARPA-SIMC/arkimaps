@@ -1,10 +1,10 @@
 ---
-description: Wind flags
+description: Wind flags 10m
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   grib: uv
+   grib: uv10m
  - step: add_wind
    params:
      wind_field_type: flags
