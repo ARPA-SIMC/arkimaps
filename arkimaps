@@ -210,7 +210,7 @@ class DocumentRecipes(RecipesMixin, Command):
 
 class DumpRecipes(RecipesMixin, Command):
     """
-    generate recipes documentation
+    dump content parsed from recipes directory
     """
     NAME = "dump-recipes"
 
