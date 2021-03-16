@@ -208,6 +208,35 @@ class DocumentRecipes(RecipesMixin, Command):
         self.kitchen.document_recipes(self.args.recipes)
 
 
+class DumpRecipes(RecipesMixin, Command):
+    """
+    generate recipes documentation
+    """
+    NAME = "dump-recipes"
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
+        from arkimapslib.kitchen import EccodesEmptyKitchen
+        self.kitchen = EccodesEmptyKitchen()
+
+        self.load_recipes()
+
+    def run(self):
+        res_inputs = {}
+        for name, inputs in self.kitchen.pantry.inputs.items():
+            res_inputs[name] = []
+            for idx, inp in enumerate(inputs, start=1):
+                res_inputs[name].append(inp.to_dict())
+
+        res = {}
+        res["inputs"] = res_inputs
+        json.dump(res, sys.stdout, indent=1)
+        print()
+        # self.recipes = Recipes()
+        # self.flavours: Dict[str, Flavour] = {}
+
+
 class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):
     """
     do not render: dispatch into a working directory
@@ -361,6 +390,7 @@ def main():
     Dispatch.make_subparser(subparsers)
     Render.make_subparser(subparsers)
     Preview.make_subparser(subparsers)
+    DumpRecipes.make_subparser(subparsers)
 
     args = parser.parse_args()
 

@@ -83,6 +83,19 @@ class Input:
             "mgrib": self.mgrib,
         }
 
+    def to_dict(self):
+        """
+        Return data about this input in a jsonable dict
+        """
+        return {
+            "name": self.name,
+            "type": self.NAME,
+            "model": self.model,
+            "defined_in": self.defined_in,
+            "mgrib": self.mgrib,
+            "pantry_basename": self.pantry_basename,
+        }
+
     def get_all_inputs(self) -> List[str]:
         """
         Return all names of inputs used by this input
@@ -152,6 +165,12 @@ class Static(Input):
         self.abspath = abspath
         self.path = path
 
+    def to_dict(self):
+        res = super().to_dict()
+        res["abspath"] = self.abspath
+        res["path"] = self.path
+        return res
+
     def clean_path(self, path: str):
         """
         Resolve path into an absolute path, and turn it into a clean relative
@@ -217,6 +236,12 @@ class Source(Input):
         # grib_filter if expression
         self.eccodes = eccodes
 
+    def to_dict(self):
+        res = super().to_dict()
+        res["arkimet"] = self.arkimet
+        res["eccodes"] = self.eccodes
+        return res
+
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         self.arkimet_matcher = session.matcher(self.arkimet)
 
@@ -236,6 +261,11 @@ class Derived(Input):
             raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
         self.inputs = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
+
+    def to_dict(self):
+        res = super().to_dict()
+        res["inputs"] = self.inputs
+        return res
 
     def get_all_inputs(self) -> List[str]:
         res = super().get_all_inputs()
@@ -281,6 +311,11 @@ class Decumulate(Derived):
         if len(self.inputs) != 1:
             raise RuntimeError(
                     f"input {self.name}: {self.NAME} has inputs {', '.join(self.inputs)} and should have only one")
+
+    def to_dict(self):
+        res = super().to_dict()
+        res["step"] = self.step
+        return res
 
     def generate(self, p: "pantry.DiskPantry"):
         # Get the steps of our source input
@@ -352,6 +387,11 @@ class VG6DTransform(Derived):
             raise RuntimeError(f"args must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
         self.args = [args] if isinstance(args, str) else [str(x) for x in args]
+
+    def to_dict(self):
+        res = super().to_dict()
+        res["args"] = self.args
+        return res
 
     def generate(self, p: "pantry.DiskPantry"):
         # Get the steps for each of our inputs
