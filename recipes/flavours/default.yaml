@@ -4,9 +4,69 @@ flavours:
    steps:
      add_basemap:
        params:
-         subpage_map_projection: cylindrical
-         subpage_lower_left_longitude: -5.0
-         subpage_lower_left_latitude: 30.0
-         subpage_upper_right_longitude: 27.0
-         subpage_upper_right_latitude: 55.0
+         # Italia
          # For an example of more, see skinnywms/plot/magics.py
+         page_id_line: off
+         output_width: 1280
+         subpage_map_projection: cylindrical
+         subpage_lower_left_longitude: 2.5
+         subpage_lower_left_latitude: 35.0
+         subpage_upper_right_longitude: 20.0
+         subpage_upper_right_latitude: 50.0
+         map_grid: on
+         map_grid_latitude_reference: 45.0
+         map_grid_longitude_reference: 0.0
+         map_grid_longitude_increment: 2.5
+         map_grid_latitude_increment: 2.5
+         map_grid_colour: grey
+         map_grid_line_style: dash
+         map_label_colour: black
+         map_label_height: 0.4
+         map_label_latitude_frequency : 1
+ - name: emro
+   steps:
+     add_basemap:
+       params:
+         # Emilia-Romagna
+         page_id_line: off
+         output_width: 1000
+         subpage_map_projection: polar_stereographic
+         subpage_lower_left_longitude: 9.0
+         subpage_lower_left_latitude: 43.4
+         subpage_upper_right_longitude: 13.2
+         subpage_upper_right_latitude: 45.2
+         subpage_map_vertical_longitude: 11.0
+         map_grid: on
+         map_grid_latitude_reference: 45.0
+         map_grid_longitude_reference: 0.0
+         map_grid_longitude_increment: 1.0
+         map_grid_latitude_increment: 1.0
+         map_grid_colour: grey
+         map_grid_line_style: dash
+         map_label_colour: black
+         map_label_height: 0.4
+         map_label_latitude_frequency : 1
+ - name: nord
+   steps:
+     add_basemap:
+       params:
+         # Nord Italia
+         page_id_line: off
+         output_width: 900
+         page_y_length: 19.0
+         subpage_map_projection: polar_stereographic
+         subpage_lower_left_longitude: 6.0
+         subpage_lower_left_latitude: 42.5
+         subpage_upper_right_longitude: 18.0
+         subpage_upper_right_latitude: 48.0
+         subpage_map_vertical_longitude: 10.3
+         map_grid: on
+         map_grid_latitude_reference: 45.0
+         map_grid_longitude_reference: 0.0
+         map_grid_longitude_increment: 1.0
+         map_grid_latitude_increment: 1.0
+         map_grid_colour: grey
+         map_grid_line_style: dash
+         map_label_colour: black
+         map_label_height: 0.4
+         map_label_latitude_frequency : 1
