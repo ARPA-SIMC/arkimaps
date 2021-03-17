@@ -97,13 +97,16 @@ class RecipeTestMixin:
         self.kitchen.load_recipes(recipe_dirs)
         self.kitchen_recipes_loaded = True
 
-    def fill_pantry(self, step=12, recipe_dirs=None, expected=None, recipe_name=None):
+    def fill_pantry(self, step=12, recipe_dirs=None, expected=None, recipe_name=None, flavour_name=None):
         """
         Load recipes if needed, then fill the pantry with the inputs they require
         """
         if recipe_name is None:
             recipe_name = self.recipe_name
+        if flavour_name is None:
+            flavour_name = "default"
         self.load_recipes(recipe_dirs)
+        flavour = self.kitchen.flavours.get(flavour_name)
         recipe = self.kitchen.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
@@ -116,7 +119,7 @@ class RecipeTestMixin:
             self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
 
         # Check that we imported the right files with the right names
-        input_names = recipe.list_inputs()
+        input_names = flavour.list_inputs(recipe)
         if expected is None:
             expected = []
             for name in input_names:

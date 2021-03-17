@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, Any, List, Optional, Set, Type, TextIO
+from typing import Dict, Any, List, Set, Type, TextIO
 import inspect
 import json
 import logging
@@ -7,7 +7,6 @@ from . import steps
 from . import inputs
 
 # if TYPE_CHECKING:
-# from . import flavours
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -46,12 +45,10 @@ class RecipeStep:
         self.step = step
         self.args = args
 
-    def get_input_names(self, step_config: Optional[steps.StepConfig] = None) -> Set[str]:
+    def get_input_names(self, step_config: steps.StepConfig) -> Set[str]:
         """
         Get the names of inputs needed by this step
         """
-        if step_config is None:
-            step_config = steps.StepConfig(self.name)
         return self.step.get_input_names(step_config, self.args)
 
     def document(self, file: TextIO):
@@ -104,37 +101,9 @@ class Recipe:
     def __repr__(self):
         return self.name
 
-    def list_all_inputs(self, input_registry: inputs.InputRegistry) -> List[str]:
-        """
-        List inputs used by a recipe, and all their inputs, recursively
-        """
-        res: List[str] = []
-        for input_name in self.list_inputs():
-            for inp in input_registry.inputs[input_name]:
-                inp.add_all_inputs(input_registry, res)
-        return res
-
-    def list_inputs(self, flavour: Optional["flavours.Flavour"] = None) -> List[str]:
-        """
-        List the names of inputs used by this recipe
-
-        Inputs are listed in usage order, without duplicates
-        """
-        input_names: List[str] = []
-
-        # Collect the inputs needed for all steps
-        for step in self.steps:
-            if flavour is None:
-                step_config = steps.StepConfig(step.name)
-            else:
-                step_config = flavour.step_config(step.name)
-            for input_name in step.get_input_names(step_config):
-                if input_name in input_names:
-                    continue
-                input_names.append(input_name)
-        return input_names
-
     def document(self, input_registry: inputs.InputRegistry, dest: str):
+        from .flavours import Flavour
+        empty_flavour = Flavour("default", defined_in=__file__)
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)
             print(file=fd)
@@ -143,7 +112,7 @@ class Recipe:
             print("## Inputs", file=fd)
             print(file=fd)
             # TODO: list only inputs explicitly required by the recipe
-            for name in self.list_all_inputs(input_registry):
+            for name in empty_flavour.list_inputs_recursive(self, input_registry):
                 inputs = input_registry.inputs.get(name)
                 if inputs is None:
                     print(f"* **{name}** (input details are missing)", file=fd)

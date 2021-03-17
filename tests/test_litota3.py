@@ -49,10 +49,10 @@ class LITOTA3Mixin:
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
 
-        sources = orders[0].sources
-        self.assertEqual(os.path.basename(sources["litota3"].pathname), "litota3+12.grib")
-        self.assertEqual(os.path.basename(sources["sottozone_allerta_er"].pathname), "Sottozone_allerta_ER")
-        self.assertEqual(os.path.basename(sources["punti_citta"].pathname), "puntiCitta.geo")
+        input_files = orders[0].input_files
+        self.assertEqual(os.path.basename(input_files["litota3"].pathname), "litota3+12.grib")
+        self.assertEqual(os.path.basename(input_files["sottozone_allerta_er"].pathname), "Sottozone_allerta_ER")
+        self.assertEqual(os.path.basename(input_files["punti_citta"].pathname), "puntiCitta.geo")
 
         self.assertRenders(orders[0])
 

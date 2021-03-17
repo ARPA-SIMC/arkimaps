@@ -144,10 +144,11 @@ if arkimet is not None:
                     arkimet.dataset.Session(force_dir_segments=True))
 
         def get_merged_arki_query(self):
+            empty_flavour = Flavour("default", defined_in=__file__)
             merged = None
             input_names = set()
-            for r in self.recipes.recipes:
-                input_names.update(r.list_all_inputs(self.pantry))
+            for recipe in self.recipes.recipes:
+                input_names.update(empty_flavour.list_inputs_recursive(recipe, self.pantry))
             for input_name in input_names:
                 for inp in self.pantry.inputs[input_name]:
                     matcher = getattr(inp, "arkimet_matcher", None)

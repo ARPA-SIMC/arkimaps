@@ -16,7 +16,7 @@ class Order:
     def __init__(
             self,
             mixer: str,
-            sources: Dict[str, inputs.InputFile],
+            input_files: Dict[str, inputs.InputFile],
             recipe_name: str,
             step: int,
             order_steps: List[steps.Step],
@@ -24,7 +24,7 @@ class Order:
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
-        self.sources = sources
+        self.input_files = input_files
         # Destination file name (without path or .png extension)
         self.basename = f"{recipe_name}+{step:03d}"
         # Recipe name
@@ -61,7 +61,7 @@ class Order:
         from .worktops import Worktop
 
         output_pathname = os.path.join(workdir, self.basename)
-        worktop = Worktop(output_pathname=output_pathname)
+        worktop = Worktop(output_pathname=output_pathname, input_files=self.input_files)
         for step in self.order_steps:
             step.python_trace(worktop)
         for step in self.order_steps:

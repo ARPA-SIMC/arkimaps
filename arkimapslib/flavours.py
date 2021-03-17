@@ -57,6 +57,33 @@ class Flavour:
             res = StepConfig(name)
         return res
 
+    def list_inputs_recursive(self, recipe: "recipes.Recipe", input_registry: inputs.InputRegistry) -> List[str]:
+        """
+        List inputs used by a recipe, and all their inputs, recursively
+        """
+        res: List[str] = []
+        for input_name in self.list_inputs(recipe):
+            for inp in input_registry.inputs[input_name]:
+                inp.add_all_inputs(input_registry, res)
+        return res
+
+    def list_inputs(self, recipe: "recipes.Recipe") -> List[str]:
+        """
+        List the names of inputs used by this recipe
+
+        Inputs are listed in usage order, without duplicates
+        """
+        input_names: List[str] = []
+
+        # Collect the inputs needed for all steps
+        for recipe_step in recipe.steps:
+            step_config = self.step_config(recipe_step.name)
+            for input_name in recipe_step.get_input_names(step_config):
+                if input_name in input_names:
+                    continue
+                input_names.append(input_name)
+        return input_names
+
     def instantiate_step(self, recipe_step: "recipes.RecipeStep", input_files: Dict[str, inputs.InputFile]) -> Step:
         """
         Instantiate the step class with the given flavour config
@@ -134,7 +161,7 @@ class Flavour:
 
                 res.append(orders.Order(
                     mixer=recipe.mixer,
-                    sources=input_files,
+                    input_files=input_files,
                     recipe_name=recipe.name,
                     step=output_step,
                     order_steps=order_steps,
