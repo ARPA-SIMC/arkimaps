@@ -183,7 +183,7 @@ class EccodesEmptyKitchen(Kitchen):
     """
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.pantry = pantry.Pantry()
+        self.pantry = pantry.EmptyPantry()
 
 
 class EccodesKitchen(WorkingKitchen):

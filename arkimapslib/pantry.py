@@ -1,13 +1,13 @@
 # from __future__ import annotations
-from typing import Optional, BinaryIO, List, Dict
+from typing import Optional, BinaryIO, List
 import contextlib
 import subprocess
 import sys
 import os
 import logging
+from . import inputs
 
 # if TYPE_CHECKING:
-# from . import inputs
 # from . import recipes
 try:
     import arkimet
@@ -17,39 +17,10 @@ except ModuleNotFoundError:
 log = logging.getLogger("arkimaps.pantry")
 
 
-class Pantry:
+class PantryMixin:
     """
     Storage of GRIB files used as inputs to recipes
     """
-    def __init__(self):
-        # List of input definitions, indexed by name
-        self.inputs: Dict[str, List["inputs.Input"]] = {}
-
-    def add_input(self, inp: "inputs.Input"):
-        """
-        Add an Input definition to this pantry
-        """
-        old = self.inputs.get(inp.name)
-        if old is None:
-            # First time we see this input: add it
-            self.inputs[inp.name] = [inp]
-            return
-
-        if len(old) == 1 and old[0].model is None:
-            # We had an input for model=None (all models)
-            # so we refuse to add more
-            raise RuntimeError(
-                    f"{inp.defined_in}: input {inp.name} for (any model) already defined in {old[0].defined_in}")
-
-        for i in old:
-            if i.model == inp.model:
-                # We already had an input for this model name
-                raise RuntimeError(
-                        f"{inp.defined_in}: input {inp.name} (model {inp.model}) already defined in {i.defined_in}")
-
-        # Input for a new model: store it
-        old.append(inp)
-
     def list_all_inputs(self, recipe: "recipes.Recipe") -> List[str]:
         """
         List inputs used by a recipe, and all their inputs, recursively
@@ -88,39 +59,28 @@ class Pantry:
                 yield fd
 
 
-class DiskPantry(Pantry):
+class EmptyPantry(inputs.InputRegistry, PantryMixin):
+    """
+    Pantry with no disk-based storage, used as input registry only to generate documentation
+    """
+    pass
+
+
+class DiskPantry(inputs.InputStorage, PantryMixin):
     """
     Pantry with disk-based storage
     """
-    def __init__(self, root: str):
-        super().__init__()
-        # Root directory where inputs are stored
-        self.data_root = os.path.join(root, "pantry")
-
-    def get_steps(self, input_name: str) -> Dict[Optional[int], "inputs.InputFile"]:
-        """
-        Return the steps available in the pantry for the input with the given
-        name
-        """
-        inps = self.inputs.get(input_name)
-        if inps is None:
-            return {}
-
-        res: Dict[Optional[int], inputs.InputFile] = {}
-        for inp in inps:
-            steps = inp.get_steps(self)
-            for step, input_file in steps.items():
-                # Keep the first available version for each step
-                res.setdefault(step, input_file)
-        return res
+    def __init__(self, root: str, **kw):
+        kw.setdefault("data_root", os.path.join(root, "pantry"))
+        super().__init__(**kw)
 
 
-class ArkimetEmptyPantry(Pantry):
+class ArkimetEmptyPantry(EmptyPantry):
     """
     Storage-less arkimet pantry only used to load recipes
     """
     def __init__(self, session: arkimet.dataset.Session, **kw):
-        super().__init__()
+        super().__init__(**kw)
         self.session = session
 
     def add_input(self, inp: "inputs.Input"):
@@ -211,8 +171,8 @@ class EccodesPantry(DiskPantry):
     """
     eccodes-based storage of GRIB files to be processed
     """
-    def __init__(self, root: str):
-        super().__init__(root)
+    def __init__(self, **kw):
+        super().__init__(**kw)
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
     def fill(self, path: Optional[str] = None):

@@ -6,7 +6,7 @@ import tempfile
 import os
 import yaml
 from arkimapslib.kitchen import Kitchen, ArkimetEmptyKitchen
-from arkimapslib.pantry import Pantry
+from arkimapslib import pantry
 
 
 class Workdir(contextlib.ExitStack):
@@ -27,7 +27,7 @@ class TestEmptyKitchen(TestCase):
             workdir.add_file("test.yaml", {"recipe": []})
             workdir.add_file("test/test.yaml", {"recipe": []})
             kitchen = Kitchen()
-            kitchen.pantry = Pantry()
+            kitchen.pantry = pantry.EmptyPantry()
             kitchen.load_recipes([workdir.workdir])
 
         r = kitchen.recipes.get("test")
@@ -41,7 +41,7 @@ class TestEmptyKitchen(TestCase):
         # Just generate documentation for all shipped recipes, to make sure
         # nothing raises exceptions
         kitchen = Kitchen()
-        kitchen.pantry = Pantry()
+        kitchen.pantry = pantry.EmptyPantry()
         kitchen.load_recipes(["recipes"])
         with tempfile.TemporaryDirectory() as workdir:
             kitchen.document_recipes(workdir)
