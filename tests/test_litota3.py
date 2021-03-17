@@ -4,7 +4,7 @@ import os
 from arkimapslib.unittest import add_recipe_test_cases
 
 
-class LITOTA3_NORDMixin:
+class LITOTA3Mixin:
     expected_basemap_args = {
         "page_id_line": False,
         "output_width": 900,
@@ -59,4 +59,4 @@ class LITOTA3_NORDMixin:
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
-add_recipe_test_cases(__name__, "litota3_nord")
+add_recipe_test_cases(__name__, "litota3")
