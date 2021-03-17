@@ -39,7 +39,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "name": "mslp",
+  "grib": "mslp",
   "params": {
     "grib_automatic_scaling": false,
     "grib_scaling_factor": 0.01
@@ -76,14 +76,50 @@ With arguments:
 
 Add foreground coastlines
 
+With arguments:
+```
+{
+  "params": {
+    "map_coastline_sea_shade_colour": "#f2f2f2",
+    "map_grid": "off",
+    "map_coastline_sea_shade": "off",
+    "map_label": "off",
+    "map_coastline_colour": "#000000",
+    "map_coastline_resolution": "medium"
+  }
+}
+```
 
 ### add_grid
 
 Add a coordinates grid
 
+With arguments:
+```
+{
+  "params": {
+    "map_coastline_general_style": "grid"
+  }
+}
+```
 
 ### add_boundaries
 
 Add political boundaries
 
+With arguments:
+```
+{
+  "params": {
+    "map_boundaries": "on",
+    "map_boundaries_colour": "#504040",
+    "map_administrative_boundaries_countries_list": [
+      "ITA"
+    ],
+    "map_administrative_boundaries_colour": "#504040",
+    "map_administrative_boundaries_style": "solid",
+    "map_administrative_boundaries": "on"
+  }
+}
+```
 
