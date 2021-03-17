@@ -331,6 +331,7 @@ class AddGeopoints(Step):
     @classmethod
     def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
+        args = cls.compile_args(step_config, args)
         points = args.get("points")
         if points is not None:
             res.add(points)
