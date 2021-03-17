@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Type
 import unittest
 import sys
 import os
@@ -28,6 +28,8 @@ class RecipeTestMixin:
         'map_label_height': 0.4,
         'map_label_latitude_frequency': 1,
     }
+
+    flavour_name = "default"
 
     @classmethod
     def setUpClass(cls):
@@ -74,7 +76,7 @@ class RecipeTestMixin:
         Create all satisfiable orders from the currently tested recipe
         """
         if flavour_name is None:
-            flavour_name = "default"
+            flavour_name = self.flavour_name
 
         recipe = self.kitchen.recipes.get(self.recipe_name)
         flavour = self.kitchen.flavours.get(flavour_name)
@@ -104,7 +106,7 @@ class RecipeTestMixin:
         if recipe_name is None:
             recipe_name = self.recipe_name
         if flavour_name is None:
-            flavour_name = "default"
+            flavour_name = self.flavour_name
         self.load_recipes(recipe_dirs)
         flavour = self.kitchen.flavours.get(flavour_name)
         recipe = self.kitchen.recipes.get(recipe_name)
@@ -204,15 +206,22 @@ class IFSMixin:
         return os.path.join("testdata", self.recipe_name, f"ifs_{input_name}+{step}.arkimet")
 
 
-def add_recipe_test_cases(module_name, recipe_name):
+def add_recipe_test_cases(module_name, recipe_name, test_mixin: Optional[Type] = None):
     module = sys.modules[module_name]
+    if test_mixin is None:
+        test_name = recipe_name.upper()
+        test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
+    else:
+        test_name = test_mixin.__name__
+        if test_name.endswith("Mixin"):
+            test_name = test_name[:-5]
+
     for model in ("IFS", "Cosmo"):
         for dispatch in ("Arkimet", "Eccodes"):
-            cls_name = f"Test{recipe_name.upper()}{dispatch}{model}"
+            cls_name = f"Test{test_name}{dispatch}{model}"
 
             dispatch_mixin = globals()[f"{dispatch}Mixin"]
             model_mixin = globals()[f"{model}Mixin"]
-            test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
 
             test_case = type(
                     cls_name,

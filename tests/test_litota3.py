@@ -5,6 +5,40 @@ from arkimapslib.unittest import add_recipe_test_cases
 
 
 class LITOTA3Mixin:
+    def test_recipe(self):
+        self.maxDiff = None
+
+        # Input for litota3 is not computed by COSMO. See #64
+        if self.model_name == "cosmo":
+            raise unittest.SkipTest(f"{self.recipe_name} tests for COSMO skipped, we currently miss input data")
+
+        self.fill_pantry()
+
+        litota3 = self.kitchen.pantry.inputs.get("litota3")
+        for i in litota3:
+            self.assertEqual(i.__class__.__name__, "Source")
+        sottozone_allerta_er = self.kitchen.pantry.inputs.get("sottozone_allerta_er")
+        for i in sottozone_allerta_er:
+            self.assertEqual(i.__class__.__name__, "Shape")
+        punti_citta = self.kitchen.pantry.inputs.get("punti_citta")
+        for i in punti_citta:
+            self.assertEqual(i.__class__.__name__, "Static")
+
+        orders = self.make_orders()
+        self.assertEqual(len(orders), 1)
+
+        input_files = orders[0].input_files
+        self.assertEqual(os.path.basename(input_files["litota3"].pathname), "litota3+12.grib")
+        self.assertEqual(len(input_files), 1)
+
+        self.assertRenders(orders[0])
+
+        self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
+
+
+class LITOTA3NordMixin:
+    flavour_name = "nord"
+
     expected_basemap_args = {
         "page_id_line": False,
         "output_width": 900,
@@ -60,3 +94,4 @@ class LITOTA3Mixin:
 
 
 add_recipe_test_cases(__name__, "litota3")
+add_recipe_test_cases(__name__, "litota3", LITOTA3NordMixin)
