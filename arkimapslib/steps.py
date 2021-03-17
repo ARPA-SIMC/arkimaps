@@ -135,7 +135,7 @@ class AddContour(MagicsMacro):
     Add contouring of the previous data
     """
     macro_name = "mcont"
-    defaults: {
+    defaults = {
         "params": {
             "contour_automatic_setting": "ecmwf",
         },
@@ -154,7 +154,7 @@ class AddGrid(MagicsMacro):
     Add a coordinates grid
     """
     macro_name = "mcoast"
-    defaults: {
+    defaults = {
         "params": {
             "map_coastline_general_style": "grid",
         },
@@ -165,7 +165,7 @@ class AddCoastlinesFg(Step):
     """
     Add foreground coastlines
     """
-    defaults: {
+    defaults = {
         "params": {
             "map_coastline_sea_shade_colour": "#f2f2f2",
             "map_grid": "off",
@@ -191,7 +191,7 @@ class AddBoundaries(Step):
     """
     Add political boundaries
     """
-    defaults: {
+    defaults = {
         "params": {
             'map_boundaries': "on",
             'map_boundaries_colour': "#504040",
