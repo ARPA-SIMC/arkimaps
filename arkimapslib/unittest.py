@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional, Type
 import unittest
 import sys
 import os
@@ -28,6 +28,8 @@ class RecipeTestMixin:
         'map_label_height': 0.4,
         'map_label_latitude_frequency': 1,
     }
+
+    flavour_name = "default"
 
     @classmethod
     def setUpClass(cls):
@@ -74,10 +76,11 @@ class RecipeTestMixin:
         Create all satisfiable orders from the currently tested recipe
         """
         if flavour_name is None:
-            flavour_name = "default"
+            flavour_name = self.flavour_name
 
         recipe = self.kitchen.recipes.get(self.recipe_name)
-        orders = recipe.make_orders(self.kitchen.pantry, flavour=self.kitchen.flavours.get(flavour_name))
+        flavour = self.kitchen.flavours.get(flavour_name)
+        orders = flavour.make_orders(recipe, self.kitchen.pantry)
         for o in orders:
             pickle.dumps(o)
         return orders
@@ -96,13 +99,16 @@ class RecipeTestMixin:
         self.kitchen.load_recipes(recipe_dirs)
         self.kitchen_recipes_loaded = True
 
-    def fill_pantry(self, step=12, recipe_dirs=None, expected=None, recipe_name=None):
+    def fill_pantry(self, step=12, recipe_dirs=None, expected=None, recipe_name=None, flavour_name=None):
         """
         Load recipes if needed, then fill the pantry with the inputs they require
         """
         if recipe_name is None:
             recipe_name = self.recipe_name
+        if flavour_name is None:
+            flavour_name = self.flavour_name
         self.load_recipes(recipe_dirs)
+        flavour = self.kitchen.flavours.get(flavour_name)
         recipe = self.kitchen.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
@@ -115,7 +121,7 @@ class RecipeTestMixin:
             self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
 
         # Check that we imported the right files with the right names
-        input_names = recipe.list_inputs()
+        input_names = flavour.list_inputs(recipe)
         if expected is None:
             expected = []
             for name in input_names:
@@ -170,7 +176,7 @@ class RecipeTestMixin:
 
         Fails the test if not found
         """
-        for step in order.recipe_steps:
+        for step in order.order_steps:
             if step.name == step_name:
                 return step
         self.fail(f"Step {step_name} not found in debug trace of order {order}")
@@ -200,15 +206,22 @@ class IFSMixin:
         return os.path.join("testdata", self.recipe_name, f"ifs_{input_name}+{step}.arkimet")
 
 
-def add_recipe_test_cases(module_name, recipe_name):
+def add_recipe_test_cases(module_name, recipe_name, test_mixin: Optional[Type] = None):
     module = sys.modules[module_name]
+    if test_mixin is None:
+        test_name = recipe_name.upper()
+        test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
+    else:
+        test_name = test_mixin.__name__
+        if test_name.endswith("Mixin"):
+            test_name = test_name[:-5]
+
     for model in ("IFS", "Cosmo"):
         for dispatch in ("Arkimet", "Eccodes"):
-            cls_name = f"Test{recipe_name.upper()}{dispatch}{model}"
+            cls_name = f"Test{test_name}{dispatch}{model}"
 
             dispatch_mixin = globals()[f"{dispatch}Mixin"]
             model_mixin = globals()[f"{model}Mixin"]
-            test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
 
             test_case = type(
                     cls_name,

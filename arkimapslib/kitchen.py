@@ -8,12 +8,12 @@ try:
     import arkimet
 except ModuleNotFoundError:
     arkimet = None
+from .flavours import Flavour
+from .recipes import Recipe
+from . import pantry
+from . import orders
 
 # if TYPE_CHECKING:
-from .recipes import Recipe
-from .orders import Order
-from .flavours import Flavour
-from . import pantry
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -28,9 +28,6 @@ class Kitchen:
         self.recipes = Recipes()
         self.flavours: Dict[str, Flavour] = {}
         self.context_stack = contextlib.ExitStack()
-
-    def get_pantry(self) -> "pantry.Pantry":
-        raise NotImplementedError(f"{self.__class__.__name__}.get_pantry() not implemented")
 
     def __enter__(self):
         return self
@@ -114,22 +111,22 @@ class WorkingKitchen(Kitchen):
             self.tempdir = None
             self.workdir = workdir
 
-    def make_orders(self, flavour: Flavour) -> List[Order]:
+    def make_orders(self, flavour: Flavour) -> List[orders.Order]:
         """
         Generate all possible orders for all available recipes
         """
-        res: List[Order] = []
+        res: List[orders.Order] = []
         for recipe in self.recipes.recipes:
             if not flavour.allows_recipe(recipe):
                 continue
-            res.extend(recipe.make_orders(self.pantry, flavour=flavour))
+            res.extend(flavour.make_orders(recipe, self.pantry))
         return res
 
-    def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> Order:
+    def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> orders.Order:
         """
         Generate all possible orders for all available recipes
         """
-        for o in recipe.make_orders(self.pantry, flavour=flavour):
+        for o in flavour.make_orders(recipe, self.pantry):
             if o.step == step:
                 return o
         raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
@@ -147,10 +144,11 @@ if arkimet is not None:
                     arkimet.dataset.Session(force_dir_segments=True))
 
         def get_merged_arki_query(self):
+            empty_flavour = Flavour("default", defined_in=__file__)
             merged = None
             input_names = set()
-            for r in self.recipes.recipes:
-                input_names.update(self.pantry.list_all_inputs(r))
+            for recipe in self.recipes.recipes:
+                input_names.update(empty_flavour.list_inputs_recursive(recipe, self.pantry))
             for input_name in input_names:
                 for inp in self.pantry.inputs[input_name]:
                     matcher = getattr(inp, "arkimet_matcher", None)
@@ -183,7 +181,7 @@ class EccodesEmptyKitchen(Kitchen):
     """
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.pantry = pantry.Pantry()
+        self.pantry = pantry.EmptyPantry()
 
 
 class EccodesKitchen(WorkingKitchen):

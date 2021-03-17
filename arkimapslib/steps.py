@@ -1,12 +1,30 @@
 # from __future__ import annotations
 from typing import Dict, Any, Optional, Set
+from .worktops import Worktop
 
 # if TYPE_CHECKING:
-from . import mixers
 from . import inputs
-from . import flavours
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
+
+
+class StepSkipped(Exception):
+    """
+    Exception raised in Step constructor to signal that the step should be skipped
+    """
+    pass
+
+
+class StepConfig:
+    """
+    Flavour configuration for a step
+    """
+    def __init__(self, name: str, options: Optional[Kwargs] = None, **kw):
+        self.name = name
+        self.options: Kwargs = options if options is not None else {}
+
+    def get_param(self, name: str) -> Any:
+        return self.options.get(name)
 
 
 class Step:
@@ -17,26 +35,25 @@ class Step:
 
     def __init__(self,
                  step: str,
-                 step_config: "flavours.StepConfig",
+                 step_config: StepConfig,
                  params: Optional[Kwargs],
                  sources: Dict[str, inputs.InputFile]):
         self.name = step
-        self.params = self.compile_args(step_config, params)
+        self.params = self.compile_args(step_config, params if params is not None else {})
+        if bool(self.params.get("skip")):
+            raise StepSkipped()
 
-    def is_skipped(self) -> bool:
-        return bool(self.params.get("skip"))
-
-    def run(self, mixer: "mixers.Mixer"):
+    def run(self, worktop: Worktop):
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
 
-    def python_trace(self, mixer: "mixers.Mixer"):
+    def python_trace(self, worktop: Worktop):
         """
-        Store in the mixer the python code that reproduces this step
+        Store in the worktop the python code that reproduces this step
         """
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
 
     @classmethod
-    def compile_args(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Dict[str, Any]:
+    def compile_args(cls, step_config: StepConfig, args: Kwargs) -> Kwargs:
         """
         Compute the set of arguments for this step, based on flavour
         information and arguments defined in the recipe
@@ -56,7 +73,7 @@ class Step:
         return res
 
     @classmethod
-    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+    def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         """
         Return the list of input names used by this step
         """
@@ -69,13 +86,13 @@ class MagicsMacro(Step):
     """
     macro_name: str
 
-    def run(self, mixer: "mixers.Mixer"):
+    def run(self, worktop: Worktop):
         params = self.params.get("params", {})
-        mixer.parts.append(getattr(mixer.macro, self.macro_name)(**params))
+        worktop.parts.append(getattr(worktop.macro, self.macro_name)(**params))
 
-    def python_trace(self, mixer: "mixers.Mixer"):
+    def python_trace(self, worktop: Worktop):
         params = self.params.get("params", {})
-        mixer.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
+        worktop.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
 
 
 class AddBasemap(MagicsMacro):
@@ -118,7 +135,7 @@ class AddContour(MagicsMacro):
     Add contouring of the previous data
     """
     macro_name = "mcont"
-    defaults: {
+    defaults = {
         "params": {
             "contour_automatic_setting": "ecmwf",
         },
@@ -137,7 +154,7 @@ class AddGrid(MagicsMacro):
     Add a coordinates grid
     """
     macro_name = "mcoast"
-    defaults: {
+    defaults = {
         "params": {
             "map_coastline_general_style": "grid",
         },
@@ -148,7 +165,7 @@ class AddCoastlinesFg(Step):
     """
     Add foreground coastlines
     """
-    defaults: {
+    defaults = {
         "params": {
             "map_coastline_sea_shade_colour": "#f2f2f2",
             "map_grid": "off",
@@ -159,22 +176,22 @@ class AddCoastlinesFg(Step):
         },
     }
 
-    def run(self, mixer: "mixers.Mixer"):
+    def run(self, worktop: Worktop):
         params = self.params.get("params", {})
-        mixer.parts.append(mixer.macro.mcoast(map_coastline_general_style="foreground"))
-        mixer.parts.append(mixer.macro.mcoast(**params))
+        worktop.parts.append(worktop.macro.mcoast(map_coastline_general_style="foreground"))
+        worktop.parts.append(worktop.macro.mcoast(**params))
 
-    def python_trace(self, mixer: "mixers.Mixer"):
+    def python_trace(self, worktop: Worktop):
         params = self.params.get("params", {})
-        mixer.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
-        mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+        worktop.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
+        worktop.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
 
 class AddBoundaries(Step):
     """
     Add political boundaries
     """
-    defaults: {
+    defaults = {
         "params": {
             'map_boundaries': "on",
             'map_boundaries_colour': "#504040",
@@ -185,17 +202,17 @@ class AddBoundaries(Step):
         },
     }
 
-    def run(self, mixer: "mixers.Mixer"):
+    def run(self, worktop: Worktop):
         params = self.params.get("params", {})
-        mixer.parts.append(
-            mixer.macro.mcoast(map_coastline_general_style="boundaries"),
+        worktop.parts.append(
+            worktop.macro.mcoast(map_coastline_general_style="boundaries"),
         )
-        mixer.parts.append(mixer.macro.mcoast(**params))
+        worktop.parts.append(worktop.macro.mcoast(**params))
 
-    def python_trace(self, mixer: "mixers.Mixer"):
+    def python_trace(self, worktop: Worktop):
         params = self.params.get("params", {})
-        mixer.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='boundaries'))")
-        mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+        worktop.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='boundaries'))")
+        worktop.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
 
 class AddGrib(Step):
@@ -204,7 +221,7 @@ class AddGrib(Step):
     """
     def __init__(self,
                  step: str,
-                 step_config: "flavours.StepConfig",
+                 step_config: StepConfig,
                  params: Optional[Kwargs],
                  sources: Dict[str, inputs.InputFile]):
         super().__init__(step, step_config, params, sources)
@@ -221,19 +238,19 @@ class AddGrib(Step):
             for k, v in self.grib_input.info.mgrib.items():
                 params.setdefault(k, v)
 
-    def run(self, mixer: "mixers.Mixer"):
+    def run(self, worktop: Worktop):
         params = dict(self.params.get("mgrib", {}))
         params.update(self.params.get("params", {}))
-        mixer.parts.append(mixer.macro.mgrib(grib_input_file_name=self.grib_input.pathname, **params))
+        worktop.parts.append(worktop.macro.mgrib(grib_input_file_name=self.grib_input.pathname, **params))
 
-    def python_trace(self, mixer: "mixers.Mixer"):
+    def python_trace(self, worktop: Worktop):
         params = dict(self.params.get("mgrib", {}))
         params.update(self.params.get("params", {}))
-        mixer.py_lines.append(
+        worktop.py_lines.append(
                 f"parts.append(macro.mgrib(grib_input_file_name={self.grib_input.pathname!r}, **{params!r}))")
 
     @classmethod
-    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+    def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
         args = cls.compile_args(step_config, args)
         grib_name = args.get("grib")
@@ -248,7 +265,7 @@ class AddUserBoundaries(Step):
     """
     def __init__(self,
                  step: str,
-                 step_config: "flavours.StepConfig",
+                 step_config: StepConfig,
                  params: Optional[Kwargs],
                  sources: Dict[str, inputs.InputFile]):
         super().__init__(step, step_config, params, sources)
@@ -267,16 +284,16 @@ class AddUserBoundaries(Step):
         params["map_user_layer_name"] = self.shape.pathname
         return params
 
-    def run(self, mixer: "mixers.Mixer"):
+    def run(self, worktop: Worktop):
         params = self._run_params()
-        mixer.parts.append(mixer.macro.mcoast(**params))
+        worktop.parts.append(worktop.macro.mcoast(**params))
 
-    def python_trace(self, mixer: "mixers.Mixer"):
+    def python_trace(self, worktop: Worktop):
         params = self._run_params()
-        mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+        worktop.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
     @classmethod
-    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+    def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
         args = cls.compile_args(step_config, args)
         shape = args.get("shape")
@@ -291,7 +308,7 @@ class AddGeopoints(Step):
     """
     def __init__(self,
                  step: str,
-                 step_config: "flavours.StepConfig",
+                 step_config: StepConfig,
                  params: Optional[Kwargs],
                  sources: Dict[str, inputs.InputFile]):
         super().__init__(step, step_config, params, sources)
@@ -301,19 +318,20 @@ class AddGeopoints(Step):
             raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
         self.points = inp
 
-    def run(self, mixer: "mixers.Mixer"):
+    def run(self, worktop: Worktop):
         params = dict(self.params.get("params", {}))
         params["geo_input_file_name"] = self.points.pathname
-        mixer.parts.append(mixer.macro.mgeo(**params))
+        worktop.parts.append(worktop.macro.mgeo(**params))
 
-    def python_trace(self, mixer: "mixers.Mixer"):
+    def python_trace(self, worktop: Worktop):
         params = dict(self.params.get("params", {}))
         params["geo_input_file_name"] = self.points.pathname
-        mixer.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
+        worktop.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
 
     @classmethod
-    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+    def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
+        args = cls.compile_args(step_config, args)
         points = args.get("points")
         if points is not None:
             res.add(points)

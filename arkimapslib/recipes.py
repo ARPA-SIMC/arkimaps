@@ -1,14 +1,12 @@
 # from __future__ import annotations
-from typing import Dict, Any, List, Optional, Set, Type, TextIO
+from typing import Dict, Any, List, Set, Type, TextIO
 import inspect
 import json
 import logging
-from . import orders
+from . import steps
+from . import inputs
 
 # if TYPE_CHECKING:
-from . import pantry
-from . import flavours
-# from . import steps
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -42,31 +40,22 @@ class RecipeStep:
     """
     A step of a recipe
     """
-    def __init__(self, name: str, step: Type["steps.Step"], args: Kwargs):
+    def __init__(self, name: str, step: Type[steps.Step], args: Kwargs):
         self.name = name
         self.step = step
         self.args = args
 
-    def instantiate(self, flavour: "flavours.Flavour", sources: Dict[str, "inputs.InputFile"]) -> "steps.Step":
-        """
-        Instantiate the step class with the given flavour config
-        """
-        step_config = flavour.step_config(self.name)
-        return self.step(self.name, step_config, self.args, sources)
-
-    def get_input_names(self, step_config: Optional["flavours.StepConfig"] = None) -> Set[str]:
+    def get_input_names(self, step_config: steps.StepConfig) -> Set[str]:
         """
         Get the names of inputs needed by this step
         """
-        if step_config is None:
-            step_config = flavours.StepConfig(self.name)
         return self.step.get_input_names(step_config, self.args)
 
     def document(self, file: TextIO):
         """
         Document this recipe step
         """
-        args = self.step.compile_args(flavours.StepConfig(self.name), self.args)
+        args = self.step.compile_args(steps.StepConfig(self.name), self.args)
         print(inspect.getdoc(self.step), file=file)
         print(file=file)
         if args:
@@ -112,92 +101,9 @@ class Recipe:
     def __repr__(self):
         return self.name
 
-    def list_inputs(self, flavour: Optional["flavours.Flavour"] = None) -> List[str]:
-        """
-        List the names of inputs used by this recipe
-
-        Inputs are listed in usage order, without duplicates
-        """
-        input_names: List[str] = []
-
-        # Collect the inputs needed for all steps
-        for step in self.steps:
-            if flavour is None:
-                step_config = flavours.StepConfig(step.name)
-            else:
-                step_config = flavour.step_config(step.name)
-            for input_name in step.get_input_names(step_config):
-                if input_name in input_names:
-                    continue
-                input_names.append(input_name)
-        return input_names
-
-    def make_orders(self,
-                    pantry: "pantry.DiskPantry",
-                    flavour: flavours.Flavour) -> List["orders.Order"]:
-        """
-        Scan a recipe and return a set with all the inputs it needs
-        """
-        from .inputs import InputFile
-        # For each output step, map inputs names to InputFile structures
-        inputs: Optional[Dict[int, Dict[str, InputFile]]] = None
-        # Collection of input name to InputFile mappings used by all output steps
-        inputs_for_all_steps: Dict[str, InputFile] = {}
-        input_names: Set[str] = set()
-
-        # Collect the inputs needed for all steps
-        for recipe_step in self.steps:
-            step_config = flavour.step_config(recipe_step.name)
-            for input_name in recipe_step.get_input_names(step_config):
-                if input_name in input_names:
-                    continue
-                input_names.add(input_name)
-
-                # Find available steps for this input
-                output_steps = pantry.get_steps(input_name)
-                # Pick inputs that are valid for all steps
-                any_step = output_steps.pop(None, None)
-                if any_step is not None:
-                    inputs_for_all_steps[input_name] = any_step
-                    # This input is valid for all steps and does not
-                    # introduce step limitations
-                    if not output_steps:
-                        continue
-
-                # Intersect the output steps for the recipe input list
-                if inputs is None:
-                    inputs = {}
-                    for output_step, ifile in output_steps.items():
-                        inputs[output_step] = {input_name: ifile}
-                else:
-                    steps_to_delete: List[int] = []
-                    for output_step, input_files in inputs.items():
-                        if output_step not in output_steps:
-                            # We miss an input for this step, so we cannot
-                            # generate an order for it
-                            steps_to_delete.append(output_step)
-                        else:
-                            input_files[input_name] = output_steps[output_step]
-                    for output_step in steps_to_delete:
-                        del inputs[output_step]
-
-        res: List["orders.Order"] = []
-        if inputs is not None:
-            for output_step, input_files in inputs.items():
-                if inputs_for_all_steps:
-                    input_files.update(inputs_for_all_steps)
-
-                res.append(orders.Order(
-                    mixer=self.mixer,
-                    sources=input_files,
-                    recipe=self,
-                    step=output_step,
-                    flavour=flavour,
-                ))
-
-        return res
-
-    def document(self, p: "pantry.Pantry", dest: str):
+    def document(self, input_registry: inputs.InputRegistry, dest: str):
+        from .flavours import Flavour
+        empty_flavour = Flavour("default", defined_in=__file__)
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)
             print(file=fd)
@@ -206,8 +112,8 @@ class Recipe:
             print("## Inputs", file=fd)
             print(file=fd)
             # TODO: list only inputs explicitly required by the recipe
-            for name in p.list_all_inputs(self):
-                inputs = p.inputs.get(name)
+            for name in empty_flavour.list_inputs_recursive(self, input_registry):
+                inputs = input_registry.inputs.get(name)
                 if inputs is None:
                     print(f"* **{name}** (input details are missing)", file=fd)
                 else:

@@ -1,12 +1,26 @@
-# litota3: Averaged total lightning flash density in the last 3 hours
+# wflags10m: Wind flags 10m
 
 Mixer: **default**
 
 ## Inputs
 
-* **litota3**:
-    * **Arkimet matcher**: `product:GRIB2,,0,17,4,5; timerange:Timedef,,0,3h`
-    * **grib_filter matcher**: `shortName is "litota3"`
+* **uv10m**:
+    * **Preprocessing**: cat
+    * **Inputs**: u10m, v10m
+* **u10m**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
+        * **grib_filter matcher**: `shortName is "10u"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
+        * **grib_filter matcher**: `shortName is "10u"`
+* **v10m**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,105,10`
+        * **grib_filter matcher**: `shortName is "10v"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,105,10`
+        * **grib_filter matcher**: `shortName is "10v"`
 
 ## Steps
 
@@ -35,53 +49,24 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "litota3"
+  "grib": "uv10m"
 }
 ```
 
-### add_contour
+### add_wind
 
-Add contouring of the previous data
+Add wind flag rendering of the previous data
 
 With arguments:
 ```
 {
   "params": {
-    "contour": false,
-    "contour_shade": true,
-    "contour_shade_method": "area_fill",
-    "contour_level_selection_type": "level_list",
-    "contour_level_list": [
-      0.1,
-      0.5,
-      1.0,
-      2.0,
-      5.0,
-      10.0,
-      20.0,
-      50.0,
-      100.0
-    ],
-    "contour_shade_colour_method": "list",
-    "contour_shade_colour_list": [
-      "#CC97A1",
-      "#610B1D",
-      "#A90528",
-      "#FF032F",
-      "#FF7126",
-      "#FFA12D",
-      "#FFDA37",
-      "#FDFC3F"
-    ],
-    "contour_highlight": false,
-    "contour_hilo": false,
-    "legend": true,
-    "legend_title": true,
-    "legend_title_text": "Averaged total lightning in the last 3h",
-    "legend_display_type": "continuous",
-    "legend_automatic_position": "right",
-    "legend_text_colour": "black",
-    "legend_title_font_size": 0.8
+    "wind_field_type": "flags",
+    "wind_flag_colour": "black",
+    "wind_flag_length": 0.8,
+    "wind_flag_origin_marker": false,
+    "wind_flag_cross_boundary": true,
+    "wind_thinning_factor": 2
   }
 }
 ```

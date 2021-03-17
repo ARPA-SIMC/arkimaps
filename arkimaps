@@ -125,12 +125,12 @@ class RenderMixin:
 
                 renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
                 for order in renderer.render(orders):
-                    log.info("Rendered %s to %s", order.recipe, order.basename)
+                    log.info("Rendered %s to %s", order.recipe_name, order.basename)
 
                     # Move the generated image to the output tar
                     tarout.add(
                         order.output,
-                        os.path.join(f"{order.recipe.name}_{flavour.name}", order.basename + ".png"))
+                        os.path.join(f"{order.recipe_name}_{flavour.name}", order.basename + ".png"))
                     os.unlink(order.output)
 
                 if self.log_collector.entries:
@@ -233,8 +233,8 @@ class DumpRecipes(RecipesMixin, Command):
         res["inputs"] = res_inputs
         json.dump(res, sys.stdout, indent=1)
         print()
-        # self.recipes = Recipes()
-        # self.flavours: Dict[str, Flavour] = {}
+        # TODO: self.recipes = Recipes()
+        # TODO: self.flavours: Dict[str, Flavour] = {}
 
 
 class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):
