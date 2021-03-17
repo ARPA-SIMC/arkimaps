@@ -134,3 +134,7 @@ dmypy.json
 # Emacs
 *~
 \#*\#
+
+# File used to define tests that should be skipped on systems where Magics crashes.
+# See arkimapslib.unittest.RecipeTestMixin.setUpClass code for details
+/.magics-crashes.yaml

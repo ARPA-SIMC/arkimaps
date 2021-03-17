@@ -1,8 +1,10 @@
 # from __future__ import annotations
+from typing import Dict, List, Any
 import unittest
 import sys
 import os
 import pickle
+import yaml
 from .render import Renderer
 
 
@@ -26,6 +28,37 @@ class RecipeTestMixin:
         'map_label_height': 0.4,
         'map_label_latitude_frequency': 1,
     }
+
+    @classmethod
+    def setUpClass(cls):
+        # There are cases in which Magics crashes, and they are outside our
+        # control (see debian bugs #985137 and #985364, and arkimaps issues #69
+        # and #71)
+        #
+        # If a .magics-crashes.yaml file is found, it is parsed and expect to
+        # be a dict. The keys are test IDs, the values are records defining
+        # when to skip a test.
+        #
+        # The values supported in the record are:
+        #
+        #  * hostname: skip the test when socket.gethostname() matches this
+        #    value
+        #
+        import socket
+        super().setUpClass()
+        magic_crashes: List[Dict[str, Any]]
+        try:
+            with open(".magics-crashes.yaml", "rt") as fd:
+                magics_crashes = yaml.load(fd)
+        except FileNotFoundError:
+            magics_crashes = {}
+
+        cls.magics_crashes_skip_tests = set()
+        for name, match in magics_crashes.items():
+            hostname = match.get("hostname")
+            if hostname is not None:
+                if hostname == socket.gethostname():
+                    cls.magics_crashes_skip_tests.add(name)
 
     def setUp(self):
         self.kitchen = self.kitchen_class()
@@ -107,6 +140,11 @@ class RecipeTestMixin:
             output_name = f"{self.recipe_name}+012.png"
         renderer = Renderer(self.kitchen.workdir)
         order.debug_trace = []
+
+        # Stop testing at this point, if we know Magics would segfault or abort
+        if self.id() in self.magics_crashes_skip_tests:
+            raise unittest.SkipTest("disabled in .magics-crashes.yaml")
+
         renderer.render_one(order)
         self.assertIsNotNone(order.output)
         self.assertEqual(os.path.basename(order.output), output_name)
