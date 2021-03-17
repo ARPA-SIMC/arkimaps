@@ -7,8 +7,8 @@ import os
 import logging
 
 # if TYPE_CHECKING:
-from . import inputs
-from . import recipes
+# from . import inputs
+# from . import recipes
 try:
     import arkimet
 except ModuleNotFoundError:

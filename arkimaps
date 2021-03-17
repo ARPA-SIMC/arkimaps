@@ -233,8 +233,8 @@ class DumpRecipes(RecipesMixin, Command):
         res["inputs"] = res_inputs
         json.dump(res, sys.stdout, indent=1)
         print()
-        # self.recipes = Recipes()
-        # self.flavours: Dict[str, Flavour] = {}
+        # TODO: self.recipes = Recipes()
+        # TODO: self.flavours: Dict[str, Flavour] = {}
 
 
 class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):

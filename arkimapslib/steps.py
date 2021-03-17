@@ -2,11 +2,29 @@
 from typing import Dict, Any, Optional, Set
 
 # if TYPE_CHECKING:
-from . import mixers
-from . import inputs
-from . import flavours
+# from . import mixers
+# from . import inputs
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
+
+
+class StepSkipped(Exception):
+    """
+    Exception raised in Step constructor to signal that the step should be skipped
+    """
+    pass
+
+
+class StepConfig:
+    """
+    Flavour configuration for a step
+    """
+    def __init__(self, name: str, options: Optional[Kwargs] = None, **kw):
+        self.name = name
+        self.options: Kwargs = options if options is not None else {}
+
+    def get_param(self, name: str) -> Kwargs:
+        return self.options.get(name)
 
 
 class Step:
@@ -17,14 +35,13 @@ class Step:
 
     def __init__(self,
                  step: str,
-                 step_config: "flavours.StepConfig",
+                 step_config: StepConfig,
                  params: Optional[Kwargs],
-                 sources: Dict[str, inputs.InputFile]):
+                 sources: Dict[str, "inputs.InputFile"]):
         self.name = step
         self.params = self.compile_args(step_config, params)
-
-    def is_skipped(self) -> bool:
-        return bool(self.params.get("skip"))
+        if bool(self.params.get("skip")):
+            raise StepSkipped()
 
     def run(self, mixer: "mixers.Mixer"):
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
@@ -36,7 +53,7 @@ class Step:
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
 
     @classmethod
-    def compile_args(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Dict[str, Any]:
+    def compile_args(cls, step_config: StepConfig, args: Kwargs) -> Dict[str, Any]:
         """
         Compute the set of arguments for this step, based on flavour
         information and arguments defined in the recipe
@@ -56,7 +73,7 @@ class Step:
         return res
 
     @classmethod
-    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+    def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         """
         Return the list of input names used by this step
         """
@@ -204,9 +221,9 @@ class AddGrib(Step):
     """
     def __init__(self,
                  step: str,
-                 step_config: "flavours.StepConfig",
+                 step_config: StepConfig,
                  params: Optional[Kwargs],
-                 sources: Dict[str, inputs.InputFile]):
+                 sources: Dict[str, "inputs.InputFile"]):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("grib")
         inp = sources.get(input_name)
@@ -233,7 +250,7 @@ class AddGrib(Step):
                 f"parts.append(macro.mgrib(grib_input_file_name={self.grib_input.pathname!r}, **{params!r}))")
 
     @classmethod
-    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+    def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
         args = cls.compile_args(step_config, args)
         grib_name = args.get("grib")
@@ -248,9 +265,9 @@ class AddUserBoundaries(Step):
     """
     def __init__(self,
                  step: str,
-                 step_config: "flavours.StepConfig",
+                 step_config: StepConfig,
                  params: Optional[Kwargs],
-                 sources: Dict[str, inputs.InputFile]):
+                 sources: Dict[str, "inputs.InputFile"]):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("shape")
         inp = sources.get(input_name)
@@ -276,7 +293,7 @@ class AddUserBoundaries(Step):
         mixer.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
     @classmethod
-    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+    def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
         args = cls.compile_args(step_config, args)
         shape = args.get("shape")
@@ -291,9 +308,9 @@ class AddGeopoints(Step):
     """
     def __init__(self,
                  step: str,
-                 step_config: "flavours.StepConfig",
+                 step_config: StepConfig,
                  params: Optional[Kwargs],
-                 sources: Dict[str, inputs.InputFile]):
+                 sources: Dict[str, "inputs.InputFile"]):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("points")
         inp = sources.get(input_name)
@@ -312,7 +329,7 @@ class AddGeopoints(Step):
         mixer.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
 
     @classmethod
-    def get_input_names(cls, step_config: "flavours.StepConfig", args: Kwargs) -> Set[str]:
+    def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
         points = args.get("points")
         if points is not None:

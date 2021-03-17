@@ -5,7 +5,7 @@ from . import steps
 
 # if TYPE_CHECKING:
 #     from .recipes import Order
-from .orders import Order
+# from . import orders
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -50,7 +50,7 @@ mixers.register("default", {
 
 
 class Mixer:
-    def __init__(self, workdir: str, order: Order):
+    def __init__(self, workdir: str, order: "orders.Order"):
         # Do not import Magics at toplevel to prevent accidentally importing it
         # in the main process. We only import Magics in working processes to
         # mitigate memory leaks

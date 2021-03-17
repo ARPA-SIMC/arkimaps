@@ -3,9 +3,9 @@ from typing import Dict
 import logging
 
 # if TYPE_CHECKING:
-from . import recipes
-from . import inputs
-from . import flavours
+# from . import recipes
+# from . import inputs
+# from . import flavours
 
 
 class Order:
@@ -16,10 +16,11 @@ class Order:
     def __init__(
             self,
             mixer: str,
-            sources: Dict[str, inputs.InputFile],
+            sources: Dict[str, "inputs.InputFile"],
             recipe: "recipes.Recipe",
             step: int,
-            flavour: flavours.Flavour):
+            flavour: "flavours.Flavour"):
+        from . import steps
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
@@ -39,8 +40,9 @@ class Order:
         # List of recipe steps instantiated for this order
         self.recipe_steps = []
         for recipe_step in self.recipe.steps:
-            s = recipe_step.instantiate(self.flavour, sources)
-            if s.is_skipped():
+            try:
+                s = recipe_step.instantiate(self.flavour, sources)
+            except steps.StepSkipped:
                 self.log.debug("%s (skipped)", s.name)
                 continue
             # self.log.debug("%s %r", step.name, step.get_params(mixer))

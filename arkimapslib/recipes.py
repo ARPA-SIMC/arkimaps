@@ -4,11 +4,11 @@ import inspect
 import json
 import logging
 from . import orders
+from .steps import StepConfig
 
 # if TYPE_CHECKING:
-from . import pantry
-from . import flavours
-# from . import steps
+# from . import pantry
+# from . import flavours
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -54,19 +54,19 @@ class RecipeStep:
         step_config = flavour.step_config(self.name)
         return self.step(self.name, step_config, self.args, sources)
 
-    def get_input_names(self, step_config: Optional["flavours.StepConfig"] = None) -> Set[str]:
+    def get_input_names(self, step_config: Optional[StepConfig] = None) -> Set[str]:
         """
         Get the names of inputs needed by this step
         """
         if step_config is None:
-            step_config = flavours.StepConfig(self.name)
+            step_config = StepConfig(self.name)
         return self.step.get_input_names(step_config, self.args)
 
     def document(self, file: TextIO):
         """
         Document this recipe step
         """
-        args = self.step.compile_args(flavours.StepConfig(self.name), self.args)
+        args = self.step.compile_args(StepConfig(self.name), self.args)
         print(inspect.getdoc(self.step), file=file)
         print(file=file)
         if args:
@@ -123,7 +123,7 @@ class Recipe:
         # Collect the inputs needed for all steps
         for step in self.steps:
             if flavour is None:
-                step_config = flavours.StepConfig(step.name)
+                step_config = StepConfig(step.name)
             else:
                 step_config = flavour.step_config(step.name)
             for input_name in step.get_input_names(step_config):
@@ -134,7 +134,7 @@ class Recipe:
 
     def make_orders(self,
                     pantry: "pantry.DiskPantry",
-                    flavour: flavours.Flavour) -> List["orders.Order"]:
+                    flavour: "flavours.Flavour") -> List["orders.Order"]:
         """
         Scan a recipe and return a set with all the inputs it needs
         """

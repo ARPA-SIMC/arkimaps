@@ -14,7 +14,7 @@ try:
 except ModuleNotFoundError:
     pass
 # from .recipes import Recipe
-from . import pantry
+# from . import pantry
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]

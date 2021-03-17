@@ -2,24 +2,13 @@
 from typing import Dict, Any, Optional, List
 import re
 import fnmatch
+from .steps import StepConfig
 
 # if TYPE_CHECKING:
 # from . import recipes
 # from . import inputs
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
-
-
-class StepConfig:
-    """
-    Flavour configuration for a step
-    """
-    def __init__(self, name: str, options: Optional[Kwargs] = None, **kw):
-        self.name = name
-        self.options: Kwargs = options if options is not None else {}
-
-    def get_param(self, name: str) -> Kwargs:
-        return self.options.get(name)
 
 
 class Flavour:
