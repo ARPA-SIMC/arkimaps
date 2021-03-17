@@ -11,9 +11,9 @@ except ModuleNotFoundError:
 from .flavours import Flavour
 from .recipes import Recipe
 from . import pantry
+from . import orders
 
 # if TYPE_CHECKING:
-# from .orders import Order
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -114,18 +114,18 @@ class WorkingKitchen(Kitchen):
             self.tempdir = None
             self.workdir = workdir
 
-    def make_orders(self, flavour: Flavour) -> List["orders.Order"]:
+    def make_orders(self, flavour: Flavour) -> List[orders.Order]:
         """
         Generate all possible orders for all available recipes
         """
-        res: List["orders.Order"] = []
+        res: List[orders.Order] = []
         for recipe in self.recipes.recipes:
             if not flavour.allows_recipe(recipe):
                 continue
             res.extend(recipe.make_orders(self.pantry, flavour=flavour))
         return res
 
-    def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> "orders.Order":
+    def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> orders.Order:
         """
         Generate all possible orders for all available recipes
         """

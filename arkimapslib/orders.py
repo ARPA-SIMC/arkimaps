@@ -1,11 +1,9 @@
 # from __future__ import annotations
-from typing import Dict
+from typing import Dict, List
 import logging
+import os
 
 # if TYPE_CHECKING:
-# from . import recipes
-# from . import inputs
-# from . import flavours
 
 
 class Order:
@@ -17,36 +15,26 @@ class Order:
             self,
             mixer: str,
             sources: Dict[str, "inputs.InputFile"],
-            recipe: "recipes.Recipe",
+            recipe_name: str,
             step: int,
-            flavour: "flavours.Flavour"):
-        from . import steps
+            order_steps: List["steps.Step"],
+            log: logging.Logger):
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
         self.sources = sources
         # Destination file name (without path or .png extension)
-        self.basename = f"{recipe.name}+{step:03d}"
+        self.basename = f"{recipe_name}+{step:03d}"
         # Recipe name
-        self.recipe = recipe
+        self.recipe_name = recipe_name
         # Product step
         self.step = step
-        # Product flavour (set of default settings)
-        self.flavour = flavour
         # Output file name, set after the product has been rendered
         self.output = None
         # Logger for this output
-        self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
+        self.log = log
         # List of recipe steps instantiated for this order
-        self.recipe_steps = []
-        for recipe_step in self.recipe.steps:
-            try:
-                s = recipe_step.instantiate(self.flavour, sources)
-            except steps.StepSkipped:
-                self.log.debug("%s (skipped)", s.name)
-                continue
-            # self.log.debug("%s %r", step.name, step.get_params(mixer))
-            self.recipe_steps.append(s)
+        self.order_steps = order_steps
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -68,12 +56,14 @@ class Order:
         """
         Run all the steps of the recipe and render the resulting file
         """
-        from .mixers import Mixer
+        from .worktops import Worktop
 
-        mixer = Mixer(workdir, self)
-        for step in self.recipe_steps:
-            step.python_trace(mixer)
-        for step in self.recipe_steps:
-            step.run(mixer)
-        mixer.write_python_trace()
-        mixer.serve()
+        output_pathname = os.path.join(workdir, self.basename)
+        worktop = Worktop(output_pathname=output_pathname)
+        for step in self.order_steps:
+            step.python_trace(worktop)
+        for step in self.order_steps:
+            step.run(worktop)
+        worktop.write_python_trace()
+        worktop.write_product()
+        self.output = output_pathname + ".png"

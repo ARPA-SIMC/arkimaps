@@ -77,7 +77,8 @@ class RecipeTestMixin:
             flavour_name = "default"
 
         recipe = self.kitchen.recipes.get(self.recipe_name)
-        orders = recipe.make_orders(self.kitchen.pantry, flavour=self.kitchen.flavours.get(flavour_name))
+        flavour = self.kitchen.flavours.get(flavour_name)
+        orders = flavour.make_orders(recipe, self.kitchen.pantry)
         for o in orders:
             pickle.dumps(o)
         return orders
@@ -170,7 +171,7 @@ class RecipeTestMixin:
 
         Fails the test if not found
         """
-        for step in order.recipe_steps:
+        for step in order.order_steps:
             if step.name == step_name:
                 return step
         self.fail(f"Step {step_name} not found in debug trace of order {order}")

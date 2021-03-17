@@ -3,7 +3,6 @@ from typing import Dict, Any, List, Optional, Set, Type, TextIO
 import inspect
 import json
 import logging
-from . import orders
 from . import steps
 from . import inputs
 
@@ -46,13 +45,6 @@ class RecipeStep:
         self.name = name
         self.step = step
         self.args = args
-
-    def instantiate(self, flavour: "flavours.Flavour", sources: Dict[str, inputs.InputFile]) -> steps.Step:
-        """
-        Instantiate the step class with the given flavour config
-        """
-        step_config = flavour.step_config(self.name)
-        return self.step(self.name, step_config, self.args, sources)
 
     def get_input_names(self, step_config: Optional[steps.StepConfig] = None) -> Set[str]:
         """
@@ -141,71 +133,6 @@ class Recipe:
                     continue
                 input_names.append(input_name)
         return input_names
-
-    def make_orders(self,
-                    input_storage: inputs.InputStorage,
-                    flavour: "flavours.Flavour") -> List["orders.Order"]:
-        """
-        Scan a recipe and return a set with all the inputs it needs
-        """
-        from .inputs import InputFile
-        # For each output step, map inputs names to InputFile structures
-        inputs: Optional[Dict[int, Dict[str, InputFile]]] = None
-        # Collection of input name to InputFile mappings used by all output steps
-        inputs_for_all_steps: Dict[str, InputFile] = {}
-        input_names: Set[str] = set()
-
-        # Collect the inputs needed for all steps
-        for recipe_step in self.steps:
-            step_config = flavour.step_config(recipe_step.name)
-            for input_name in recipe_step.get_input_names(step_config):
-                if input_name in input_names:
-                    continue
-                input_names.add(input_name)
-
-                # Find available steps for this input
-                output_steps = input_storage.get_steps(input_name)
-                # Pick inputs that are valid for all steps
-                any_step = output_steps.pop(None, None)
-                if any_step is not None:
-                    inputs_for_all_steps[input_name] = any_step
-                    # This input is valid for all steps and does not
-                    # introduce step limitations
-                    if not output_steps:
-                        continue
-
-                # Intersect the output steps for the recipe input list
-                if inputs is None:
-                    inputs = {}
-                    for output_step, ifile in output_steps.items():
-                        inputs[output_step] = {input_name: ifile}
-                else:
-                    steps_to_delete: List[int] = []
-                    for output_step, input_files in inputs.items():
-                        if output_step not in output_steps:
-                            # We miss an input for this step, so we cannot
-                            # generate an order for it
-                            steps_to_delete.append(output_step)
-                        else:
-                            input_files[input_name] = output_steps[output_step]
-                    for output_step in steps_to_delete:
-                        del inputs[output_step]
-
-        res: List["orders.Order"] = []
-        if inputs is not None:
-            for output_step, input_files in inputs.items():
-                if inputs_for_all_steps:
-                    input_files.update(inputs_for_all_steps)
-
-                res.append(orders.Order(
-                    mixer=self.mixer,
-                    sources=input_files,
-                    recipe=self,
-                    step=output_step,
-                    flavour=flavour,
-                ))
-
-        return res
 
     def document(self, input_registry: inputs.InputRegistry, dest: str):
         with open(dest, "wt") as fd:
