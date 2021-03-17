@@ -32,7 +32,7 @@ class Flavour:
                 self.recipes_filter.append(
                         re.compile(fnmatch.translate(expr)))
 
-        self.steps = {}
+        self.steps: Dict[str, StepConfig] = {}
         if steps is not None:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)

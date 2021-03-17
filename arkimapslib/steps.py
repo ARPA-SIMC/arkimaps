@@ -23,7 +23,7 @@ class StepConfig:
         self.name = name
         self.options: Kwargs = options if options is not None else {}
 
-    def get_param(self, name: str) -> Kwargs:
+    def get_param(self, name: str) -> Any:
         return self.options.get(name)
 
 
@@ -39,7 +39,7 @@ class Step:
                  params: Optional[Kwargs],
                  sources: Dict[str, inputs.InputFile]):
         self.name = step
-        self.params = self.compile_args(step_config, params)
+        self.params = self.compile_args(step_config, params if params is not None else {})
         if bool(self.params.get("skip")):
             raise StepSkipped()
 
@@ -53,7 +53,7 @@ class Step:
         raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
 
     @classmethod
-    def compile_args(cls, step_config: StepConfig, args: Kwargs) -> Dict[str, Any]:
+    def compile_args(cls, step_config: StepConfig, args: Kwargs) -> Kwargs:
         """
         Compute the set of arguments for this step, based on flavour
         information and arguments defined in the recipe

@@ -1,9 +1,11 @@
 # from __future__ import annotations
-from typing import Dict, List
+from typing import Dict, List, Optional
 import logging
 import os
 
 # if TYPE_CHECKING:
+from . import inputs
+from . import steps
 
 
 class Order:
@@ -14,10 +16,10 @@ class Order:
     def __init__(
             self,
             mixer: str,
-            sources: Dict[str, "inputs.InputFile"],
+            sources: Dict[str, inputs.InputFile],
             recipe_name: str,
             step: int,
-            order_steps: List["steps.Step"],
+            order_steps: List[steps.Step],
             log: logging.Logger):
         # Name of the Mixer to use
         self.mixer = mixer
@@ -30,7 +32,7 @@ class Order:
         # Product step
         self.step = step
         # Output file name, set after the product has been rendered
-        self.output = None
+        self.output: Optional[str] = None
         # Logger for this output
         self.log = log
         # List of recipe steps instantiated for this order

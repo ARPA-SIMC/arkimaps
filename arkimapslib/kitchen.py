@@ -29,9 +29,6 @@ class Kitchen:
         self.flavours: Dict[str, Flavour] = {}
         self.context_stack = contextlib.ExitStack()
 
-    def get_pantry(self) -> "pantry.Pantry":
-        raise NotImplementedError(f"{self.__class__.__name__}.get_pantry() not implemented")
-
     def __enter__(self):
         return self
 
@@ -122,14 +119,14 @@ class WorkingKitchen(Kitchen):
         for recipe in self.recipes.recipes:
             if not flavour.allows_recipe(recipe):
                 continue
-            res.extend(recipe.make_orders(self.pantry, flavour=flavour))
+            res.extend(flavour.make_orders(recipe, self.pantry))
         return res
 
     def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> orders.Order:
         """
         Generate all possible orders for all available recipes
         """
-        for o in recipe.make_orders(self.pantry, flavour=flavour):
+        for o in flavour.make_orders(recipe, self.pantry):
             if o.step == step:
                 return o
         raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")

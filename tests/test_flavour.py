@@ -75,7 +75,8 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
 
             self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
             recipe = self.kitchen.recipes.get("test")
-            orders = recipe.make_orders(self.kitchen.pantry, flavour=self.kitchen.flavours.get("test"))
+            flavour = self.kitchen.flavours.get("test")
+            orders = flavour.make_orders(recipe, self.kitchen.pantry)
             self.assertEqual(len(orders), 1)
 
             self.assertRenders(orders[0], output_name="test+012.png")
@@ -106,7 +107,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
 
             self.assertRenders(orders[0])
 
-            steps = [x.name for x in orders[0].recipe_steps]
+            steps = [x.name for x in orders[0].order_steps]
             self.assertEqual(steps, [
                 'add_basemap',
                 'add_coastlines_bg',

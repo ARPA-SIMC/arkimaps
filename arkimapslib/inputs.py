@@ -97,7 +97,7 @@ class InputStorage(InputRegistry):
             step = int(mo.group(1))
             yield InputFile(os.path.join(self.data_root, fn), inp, step)
 
-    def get_steps(self, input_name: str) -> Dict[Optional[int], "inputs.InputFile"]:
+    def get_steps(self, input_name: str) -> Dict[Optional[int], "InputFile"]:
         """
         Return the steps available in the pantry for the input with the given
         name
@@ -419,8 +419,8 @@ class Decumulate(Derived):
         cmd += ["-", decumulated_data]
         v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
         for step, input_file in source_steps.items():
-            with open(input_file.pathname, "rb") as fd:
-                shutil.copyfileobj(fd, v6t.stdin)
+            with open(input_file.pathname, "rb") as src:
+                shutil.copyfileobj(src, v6t.stdin)
         v6t.stdin.close()
         v6t.wait()
         try:
@@ -459,11 +459,11 @@ class VG6DTransform(Derived):
         res["args"] = self.args
         return res
 
-    def generate(self, inputs: InputStorage):
+    def generate(self, input_storage: InputStorage):
         # Get the steps for each of our inputs
         available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
         for input_name in self.inputs:
-            input_steps = inputs.get_steps(input_name)
+            input_steps = input_storage.get_steps(input_name)
             # Intersect the steps to get only those for which we have all inputs
             if available_steps is None:
                 available_steps = {k: [v] for k, v in input_steps.items()}
@@ -490,7 +490,7 @@ class VG6DTransform(Derived):
 
             log.info("input %s: generating step %d as %s", self.name, step, output_name)
 
-            output_pathname = os.path.join(inputs.data_root, output_name)
+            output_pathname = os.path.join(input_storage.data_root, output_name)
             cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
             log.debug("running %s", ' '.join(shlex.quote(x) for x in cmd))
 
@@ -523,11 +523,11 @@ class Cat(Derived):
     """
     NAME = "cat"
 
-    def generate(self, inputs: InputStorage):
+    def generate(self, input_storage: InputStorage):
         # Get the steps for each of our inputs
         available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
         for input_name in self.inputs:
-            input_steps = inputs.get_steps(input_name)
+            input_steps = input_storage.get_steps(input_name)
             # Intersect the steps to get only those for which we have all inputs
             if available_steps is None:
                 available_steps = {k: [v] for k, v in input_steps.items()}
@@ -554,7 +554,7 @@ class Cat(Derived):
 
             log.info("input %s: generating step %d as %s", self.name, step, output_name)
 
-            output_pathname = os.path.join(inputs.data_root, output_name)
+            output_pathname = os.path.join(input_storage.data_root, output_name)
             with open(output_pathname, "wb") as out:
                 for input_file in input_files:
                     with open(input_file.pathname, "rb") as fd:
