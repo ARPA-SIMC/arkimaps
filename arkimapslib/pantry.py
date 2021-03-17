@@ -21,16 +21,6 @@ class PantryMixin:
     """
     Storage of GRIB files used as inputs to recipes
     """
-    def list_all_inputs(self, recipe: "recipes.Recipe") -> List[str]:
-        """
-        List inputs used by a recipe, and all their inputs, recursively
-        """
-        res: List[str] = []
-        for input_name in recipe.list_inputs():
-            for inp in self.inputs[input_name]:
-                inp.add_all_inputs(self, res)
-        return res
-
     def fill(self, path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry.

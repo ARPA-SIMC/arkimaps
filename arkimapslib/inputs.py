@@ -173,7 +173,7 @@ class Input:
         """
         return []
 
-    def add_all_inputs(self, inputs: InputRegistry, res: List[str]):
+    def add_all_inputs(self, input_registry: InputRegistry, res: List[str]):
         """
         Add to res the name of this input, and all inputs of this input, and
         their inputs, recursively
@@ -182,10 +182,10 @@ class Input:
             return
         res.append(self.name)
         for name in self.get_all_inputs():
-            for inp in inputs.inputs[name]:
-                inp.add_all_inputs(inputs, res)
+            for inp in input_registry.inputs[name]:
+                inp.add_all_inputs(input_registry, res)
 
-    def get_steps(self, inputs: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
         """
         Scan the pantry to check what input files are available for this input.
 
@@ -193,7 +193,7 @@ class Input:
         objects
         """
         res: Dict[Optional[int], "InputFile"] = {}
-        for input_file in inputs.list_existing_steps(self):
+        for input_file in input_storage.list_existing_steps(self):
             res[input_file.step] = input_file
         return res
 
@@ -257,7 +257,7 @@ class Static(Input):
         print(f"{ind}* **Path**: `{self.path}`", file=file)
         super().document(file, indent)
 
-    def get_steps(self, inputs: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
         return {None: InputFile(self.abspath, self, None)}
 
 
@@ -338,22 +338,22 @@ class Derived(Input):
         res.extend(self.inputs)
         return res
 
-    def generate(self, inputs: InputStorage):
+    def generate(self, input_storage: InputStorage):
         """
         Generate derived products from inputs
         """
         raise NotImplementedError(f"{self.__class__.__name__}.generate() not implemented")
 
-    def get_steps(self, inputs: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
         # Check if flagfile exists, in which case skip generation
-        flagfile = os.path.join(inputs.data_root, f"{self.pantry_basename}.processed")
+        flagfile = os.path.join(input_storage.data_root, f"{self.pantry_basename}.processed")
         if not os.path.exists(flagfile):
-            self.generate(inputs)
+            self.generate(input_storage)
             # Create the flagfile to mark that all steps have been generated
             with open(flagfile, "wb"):
                 pass
         # Rescan pantry
-        return super().get_steps(inputs)
+        return super().get_steps(input_storage)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -383,9 +383,9 @@ class Decumulate(Derived):
         res["step"] = self.step
         return res
 
-    def generate(self, inputs: InputStorage):
+    def generate(self, input_storage: InputStorage):
         # Get the steps of our source input
-        source_steps = inputs.get_steps(self.inputs[0])
+        source_steps = input_storage.get_steps(self.inputs[0])
 
         # TODO: check that they match the step
 
@@ -397,9 +397,9 @@ class Decumulate(Derived):
         log.info("input %s: generating from %r", self.name, self.inputs)
 
         # Generate derived input
-        grib_filter_rules = os.path.join(inputs.data_root, f"{self.pantry_basename}.grib_filter_rules")
+        grib_filter_rules = os.path.join(input_storage.data_root, f"{self.pantry_basename}.grib_filter_rules")
         with open(grib_filter_rules, "wt") as fd:
-            print(f'write "{inputs.data_root}/{self.pantry_basename}+[endStep].grib";', file=fd)
+            print(f'write "{input_storage.data_root}/{self.pantry_basename}+[endStep].grib";', file=fd)
 
         # We could pipe the output of vg6d_transform directly into grib_filter,
         # but grib_filter errors in case of empty input with the same exit code
@@ -408,7 +408,7 @@ class Decumulate(Derived):
         # bug causing a wrong invocation.
         # As a workaround, we need a temporary file, so we can check if it's
         # empty before passing it to grib_filter
-        decumulated_data = os.path.join(inputs.data_root, f"{self.pantry_basename}-decumulated.grib")
+        decumulated_data = os.path.join(input_storage.data_root, f"{self.pantry_basename}-decumulated.grib")
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 

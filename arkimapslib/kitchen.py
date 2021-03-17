@@ -150,7 +150,7 @@ if arkimet is not None:
             merged = None
             input_names = set()
             for r in self.recipes.recipes:
-                input_names.update(self.pantry.list_all_inputs(r))
+                input_names.update(r.list_all_inputs(self.pantry))
             for input_name in input_names:
                 for inp in self.pantry.inputs[input_name]:
                     matcher = getattr(inp, "arkimet_matcher", None)
