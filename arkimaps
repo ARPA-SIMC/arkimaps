@@ -319,7 +319,7 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         # Prepare it
         renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
         renderer.render_one(order)
-        log.info("Rendered %s to %s", order.recipe, order.basename)
+        log.info("Rendered %s to %s", order.recipe_name, order.basename)
 
         # Display it
         subprocess.run(["xdg-open", order.output], check=True)
