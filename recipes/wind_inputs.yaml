@@ -35,3 +35,71 @@ inputs:
  uv250:
    type: cat
    inputs: [u250, v250]
+ u500:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,33;level:GRIB1,100,500
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 500
+   - model: ifs
+     arkimet: product:GRIB1,98,128,131;level:GRIB1,100,500
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 500
+ v500:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,34;level:GRIB1,100,500
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 500
+   - model: ifs
+     arkimet: product:GRIB1,98,128,132;level:GRIB1,100,500
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 500
+ uv500:
+   type: cat
+   inputs: [u500, v500]
+ u700:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,33;level:GRIB1,100,700
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 700
+   - model: ifs
+     arkimet: product:GRIB1,98,128,131;level:GRIB1,100,700
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 700
+ v700:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,34;level:GRIB1,100,700
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 700
+   - model: ifs
+     arkimet: product:GRIB1,98,128,132;level:GRIB1,100,700
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 700
+ uv700:
+   type: cat
+   inputs: [u700, v700]
+ u850:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,33;level:GRIB1,100,850
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 850
+   - model: ifs
+     arkimet: product:GRIB1,98,128,131;level:GRIB1,100,850
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 850
+ v850:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,34;level:GRIB1,100,850
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 850
+   - model: ifs
+     arkimet: product:GRIB1,98,128,132;level:GRIB1,100,850
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 850
+ uv850:
+   type: cat
+   inputs: [u850, v850]
+ u925:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,33;level:GRIB1,100,925
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 925
+   - model: ifs
+     arkimet: product:GRIB1,98,128,131;level:GRIB1,100,925
+     eccodes: shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 925
+ v925:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,34;level:GRIB1,100,925
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 925
+   - model: ifs
+     arkimet: product:GRIB1,98,128,132;level:GRIB1,100,925
+     eccodes: shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 925
+ uv925:
+   type: cat
+   inputs: [u925, v925]
