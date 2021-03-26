@@ -56,3 +56,6 @@ recipe:
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

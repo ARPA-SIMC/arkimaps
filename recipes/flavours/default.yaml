@@ -20,6 +20,14 @@ flavours:
          subpage_lower_left_latitude: 35.0
          subpage_upper_right_longitude: 20.0
          subpage_upper_right_latitude: 50.0
+         page_x_length: 38
+         page_y_length: 31
+         super_page_x_length: 40
+         super_page_y_length: 32
+         subpage_x_length: 34
+         subpage_y_length: 30
+         subpage_x_position: 2
+         subpage_y_position: 1
          map_grid: on
          map_grid_latitude_reference: 45.0
          map_grid_longitude_reference: 0.0
@@ -79,13 +87,12 @@ flavours:
        params:
          # Nord Italia
          page_id_line: off
-         output_width: 900
-         page_y_length: 19.0
-         subpage_map_projection: polar_stereographic
-         subpage_lower_left_longitude: 6.0
-         subpage_lower_left_latitude: 42.5
-         subpage_upper_right_longitude: 18.0
-         subpage_upper_right_latitude: 48.0
+         output_width: 1000
+         subpage_map_projection: mercator
+         subpage_lower_left_longitude: 5.1
+         subpage_lower_left_latitude: 43.0
+         subpage_upper_right_longitude: 15.0
+         subpage_upper_right_latitude: 47.5
          subpage_map_vertical_longitude: 10.3
          map_grid: on
          map_grid_latitude_reference: 45.0
@@ -99,6 +106,7 @@ flavours:
          map_label_latitude_frequency : 1
      add_boundaries:
        params:
+         map_coastline_resolution: high
          map_boundaries: on
          map_boundaries_colour: "#504040"
          map_administrative_boundaries_countries_list: ["ITA"]
