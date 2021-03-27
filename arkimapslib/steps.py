@@ -172,18 +172,20 @@ class AddCoastlinesFg(Step):
             "map_coastline_sea_shade": "off",
             "map_label": "off",
             "map_coastline_colour": "#000000",
-            "map_coastline_resolution": "automatic",
+            "map_coastline_resolution": "high",
         },
     }
 
     def run(self, worktop: Worktop):
         params = self.params.get("params", {})
-        worktop.parts.append(worktop.macro.mcoast(map_coastline_general_style="foreground"))
+        #TODO: fix (See #73)
+        #worktop.parts.append(worktop.macro.mcoast(map_coastline_general_style="foreground"))
         worktop.parts.append(worktop.macro.mcoast(**params))
 
     def python_trace(self, worktop: Worktop):
         params = self.params.get("params", {})
-        worktop.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
+        #TODO: fix (See #73)
+        #worktop.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
         worktop.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
 
@@ -204,14 +206,16 @@ class AddBoundaries(Step):
 
     def run(self, worktop: Worktop):
         params = self.params.get("params", {})
-        worktop.parts.append(
-            worktop.macro.mcoast(map_coastline_general_style="boundaries"),
-        )
+        #TODO: fix (See #73)
+        #worktop.parts.append(
+        #    worktop.macro.mcoast(map_coastline_general_style="boundaries"),
+        #)
         worktop.parts.append(worktop.macro.mcoast(**params))
 
     def python_trace(self, worktop: Worktop):
         params = self.params.get("params", {})
-        worktop.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='boundaries'))")
+        #TODO: fix (See #73)
+        #worktop.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='boundaries'))")
         worktop.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
 
 
