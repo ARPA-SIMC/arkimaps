@@ -79,6 +79,7 @@ flavours:
        shape: sottozone_allerta_er
        params:
          map_user_layer_colour: blue
+         map_coastline_resolution: high
      add_geopoints:
        points: punti_citta
  - name: nord
@@ -94,6 +95,14 @@ flavours:
          subpage_upper_right_longitude: 15.0
          subpage_upper_right_latitude: 47.5
          subpage_map_vertical_longitude: 10.3
+         page_x_length: 38
+         page_y_length: 24
+         super_page_x_length: 40
+         super_page_y_length: 25
+         subpage_x_length: 34
+         subpage_y_length: 23
+         subpage_x_position: 2
+         subpage_y_position: 1
          map_grid: on
          map_grid_latitude_reference: 45.0
          map_grid_longitude_reference: 0.0
@@ -117,5 +126,6 @@ flavours:
        shape: sottozone_allerta_er
        params:
          map_user_layer_colour: blue
+         map_coastline_resolution: high
      add_geopoints:
        points: punti_citta
