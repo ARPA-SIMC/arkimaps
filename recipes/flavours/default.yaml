@@ -229,3 +229,91 @@ flavours:
        skip: yes
      add_symbols:
        skip: yes
+ - name: medit
+   steps:
+     add_basemap:
+       params:
+         # Mediterranean
+         page_id_line: off
+         output_width: 1280
+         subpage_map_projection: mercator
+         subpage_lower_left_longitude: -8.0
+         subpage_lower_left_latitude: 30.0
+         subpage_upper_right_longitude: 36.0
+         subpage_upper_right_latitude: 52.0
+         page_x_length: 38
+         page_y_length: 25
+         super_page_x_length: 40
+         super_page_y_length: 26
+         subpage_x_length: 34
+         subpage_y_length: 24
+         subpage_x_position: 2
+         subpage_y_position: 1
+         map_grid: on
+         map_grid_latitude_reference: 45.0
+         map_grid_longitude_reference: 0.0
+         map_grid_longitude_increment: 5
+         map_grid_latitude_increment: 5
+         map_grid_colour: grey
+         map_grid_line_style: dash
+         map_label_colour: black
+         map_label_height: 0.4
+         map_label_latitude_frequency : 1
+     add_boundaries:
+       params:
+         map_boundaries: on
+         map_boundaries_colour: "#504040"
+         map_administrative_boundaries_countries_list: ["ITA"]
+         map_administrative_boundaries_colour: "#504040"
+         map_administrative_boundaries_style: solid
+         map_administrative_boundaries: on
+     add_user_boundaries:
+       skip: yes
+     add_geopoints:
+       skip: yes
+     add_symbols:
+       skip: yes
+ - name: euratl
+   steps:
+     add_basemap:
+       params:
+         # Euro-Atlantic area
+         page_id_line: off
+         output_width: 1000
+         subpage_map_projection: polar_stereographic
+         subpage_lower_left_longitude: -25.0
+         subpage_lower_left_latitude: 25.0
+         subpage_upper_right_longitude: 65.0
+         subpage_upper_right_latitude: 60.0
+         page_x_length: 38
+         page_y_length: 32
+         super_page_x_length: 40
+         super_page_y_length: 33
+         subpage_x_length: 34
+         subpage_y_length: 31
+         subpage_x_position: 2
+         subpage_y_position: 1
+         map_grid: on
+         map_grid_latitude_reference: 50.0
+         map_grid_longitude_reference: 0.0
+         map_grid_longitude_increment: 5
+         map_grid_latitude_increment: 5
+         map_grid_colour: grey
+         map_grid_line_style: dash
+         map_label_colour: black
+         map_label_height: 0.4
+         map_label_latitude_frequency : 4
+     add_boundaries:
+       params:
+         map_boundaries: on
+         map_boundaries_colour: "#504040"
+         map_administrative_boundaries_countries_list: ["ITA"]
+         map_administrative_boundaries_colour: "#504040"
+         map_administrative_boundaries_style: solid
+         map_administrative_boundaries: on
+     add_user_boundaries:
+       skip: yes
+     add_geopoints:
+       skip: yes
+     add_symbols:
+       skip: yes

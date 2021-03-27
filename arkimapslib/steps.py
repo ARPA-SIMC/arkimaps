@@ -110,6 +110,7 @@ class AddCoastlinesBg(MagicsMacro):
     defaults = {
         "params": {
             "map_coastline_general_style": "background",
+            "map_coastline_resolution": "high",
         },
     }
 
