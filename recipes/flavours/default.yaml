@@ -65,6 +65,14 @@ flavours:
          subpage_upper_right_longitude: 13.2
          subpage_upper_right_latitude: 45.2
          subpage_map_vertical_longitude: 11.0
+         page_x_length: 38
+         page_y_length: 23
+         super_page_x_length: 40
+         super_page_y_length: 24
+         subpage_x_length: 34
+         subpage_y_length: 22
+         subpage_x_position: 2
+         subpage_y_position: 1         
          map_grid: on
          map_grid_latitude_reference: 45.0
          map_grid_longitude_reference: 0.0
