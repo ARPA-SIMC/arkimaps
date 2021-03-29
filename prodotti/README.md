@@ -25,6 +25,9 @@
 | `cp6h`  | Precipitazione convettiva cumulata su 6h  |           |  [cp6h.md](../recipes/cp6h.md) |
 | `cp12h` | Precipitazione convettiva cumulata su 12h |           |  [cp12h.md](../recipes/cp12h.md) |
 | `cp24h` | Precipitazione convettiva cumulata su 24h | [cp24h.png](cp24h.png "Precipitazione convettiva su 24h")  |  [cp24h.md](../recipes/cp24h.md) |
+| `litota3` | Densità media fulminazioni nelle ultime 3h | [litota3.png](litota3.png "Densità fulminazioni 3h") | [litota3.md](../recipes/litota3.md) |
+| `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
+| `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png") | [viwve.md](../recipes/viwve.md) |
 
 # Censimento prodotti attualmente pubblicati su infomet
 

@@ -77,12 +77,13 @@ With arguments:
     "contour_highlight": false,
     "contour_hilo": false,
     "legend": true,
+    "legend_display_type": "continuous",
     "legend_title": true,
     "legend_title_text": "Averaged total lightning in the last 3h",
-    "legend_display_type": "continuous",
-    "legend_automatic_position": "right",
     "legend_text_colour": "black",
-    "legend_title_font_size": 0.8
+    "legend_text_font_size": 0.4,
+    "legend_title_font_size": 0.5,
+    "legend_automatic_position": "right"
   }
 }
 ```

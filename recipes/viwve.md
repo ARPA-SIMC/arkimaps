@@ -21,30 +21,6 @@ Mixer: **default**
 
 Add a base map
 
-With arguments:
-```
-{
-  "params": {
-    "page_id_line": false,
-    "output_width": 1280,
-    "subpage_map_projection": "cylindrical",
-    "subpage_lower_left_longitude": 2.5,
-    "subpage_lower_left_latitude": 35.0,
-    "subpage_upper_right_longitude": 20.0,
-    "subpage_upper_right_latitude": 50.0,
-    "map_grid": true,
-    "map_grid_latitude_reference": 45.0,
-    "map_grid_longitude_reference": 0.0,
-    "map_grid_longitude_increment": 2.5,
-    "map_grid_latitude_increment": 2.5,
-    "map_grid_colour": "grey",
-    "map_grid_line_style": "dash",
-    "map_label_colour": "black",
-    "map_label_height": 0.4,
-    "map_label_latitude_frequency": 1
-  }
-}
-```
 
 ### add_coastlines_bg
 
@@ -115,7 +91,8 @@ With arguments:
     "legend_display_type": "continuous",
     "legend_automatic_position": "right",
     "legend_text_colour": "black",
-    "legend_title_font_size": 0.8
+    "legend_text_font_size": 0.4,
+    "legend_title_font_size": 0.5
   }
 }
 ```
@@ -207,6 +184,33 @@ With arguments:
     "map_administrative_boundaries_colour": "#504040",
     "map_administrative_boundaries_style": "solid",
     "map_administrative_boundaries": "on"
+  }
+}
+```
+
+### add_user_boundaries
+
+Add user-defined boundaries from a shapefile
+
+
+### add_geopoints
+
+Add geopoints
+
+
+### add_symbols
+
+Add symbols settings
+
+With arguments:
+```
+{
+  "params": {
+    "symbol_type": "marker",
+    "symbol_marker_index": 15,
+    "legend": "off",
+    "symbol_colour": "black",
+    "symbol_height": 0.28
   }
 }
 ```
