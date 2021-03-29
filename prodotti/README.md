@@ -1,4 +1,24 @@
-# Elenco prodotti attualmente pubblicati su infomet
+# Elenco aree implementate
+
+| Sigla  | Descrizione         | Proiezione          | Bounding box            |
+| ------ | ------------------- | ------------------- | ----------------------- |
+| ita    | Italia              | cylindrical         | 50.0N 35.0N 20.0E  2.5E |
+| emro   | Emilia-Romagna      | polar_stereographic | 45.2N 43.4N 13.2E  9.0E |
+| nord   | Nord Italia         | mercator            | 47.5N 43.0N 15.0E  5.1E |
+| centro | Centro Italia       | polar_stereographic | 44.0N 38.5N 19.8E  7.8E |
+| sud    | Sud Italia          | polar_stereographic | 41.5N 36.0N 19.0E  8.0E |
+| medit  | Area mediterranea   | mercator            | 52.0N 30.0N 35.0E  8.0W |
+| euratl | Area euroatlantica  | polar_stereographic | 60.0N 25.0N 65.0E 25.0W |
+
+
+# Elenco prodotti implementati
+
+| Sigla | Descrizione                         | Esempio   |
+| ----- | ----------------------------------- | --------- |
+| t2m   | Temperatura a 2 metri dal suolo     | [t2m.png](t2m.png "Temperatura a 2 metri") |
+
+
+# Censimento prodotti attualmente pubblicati su infomet
 
 *modelli censiti: cosmo 5M operativo, cosmo 5I backup, cosmo 5M AM, cleps det, cosmo 2I, cosmo 2I ruc, cosmo1ch, ifs_ita010*
 
