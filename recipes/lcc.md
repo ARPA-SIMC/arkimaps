@@ -80,6 +80,10 @@ With arguments:
     "contour_interpolation_ceiling": 7.99,
     "legend": true,
     "legend_title": true,
+    "legend_text_colour": "black",
+    "legend_text_font_size": 0.4,
+    "legend_title_font_size": 0.5,
+    "legend_automatic_position": "right",
     "legend_title_text": "Low cloud cover [okta]"
   }
 }
@@ -132,6 +136,33 @@ With arguments:
     "map_administrative_boundaries_colour": "#504040",
     "map_administrative_boundaries_style": "solid",
     "map_administrative_boundaries": "on"
+  }
+}
+```
+
+### add_user_boundaries
+
+Add user-defined boundaries from a shapefile
+
+
+### add_geopoints
+
+Add geopoints
+
+
+### add_symbols
+
+Add symbols settings
+
+With arguments:
+```
+{
+  "params": {
+    "symbol_type": "marker",
+    "symbol_marker_index": 15,
+    "legend": "off",
+    "symbol_colour": "black",
+    "symbol_height": 0.28
   }
 }
 ```

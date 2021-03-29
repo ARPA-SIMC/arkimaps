@@ -28,8 +28,14 @@
 | `litota3` | Densità media fulminazioni nelle ultime 3h | [litota3.png](litota3.png "Densità fulminazioni 3h") | [litota3.md](../recipes/litota3.md) |
 | `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
 | `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png") | [viwve.md](../recipes/viwve.md) |
+| `tcc`   | Copertura nuvolosa totale                 | [tcc.png](tcc.png "Copertura nuvolosa")   | [tcc.md](../recipes/tcc.md) |
+| `hcc`   | Copertura nubi alte                       | [hcc.png](hcc.png "Copertura nubi alte")  | [hcc.md](../recipes/hcc.md) |
+| `mcc`   | Copertura nubi medie                      | [mcc.png](mcc.png "Copertura nubi medie") | [mcc.md](../recipes/mcc.md) |
+| `lcc`   | Copertura nubi basse                      | [lcc.png](lcc.png "Copertura nubi basse") | [lcc.md](../recipes/lcc.md) |
 
 # Censimento prodotti attualmente pubblicati su infomet
+
+Nota: L'elenco che segue riguarda una lista di prodotti di riferimento, non ancora completamente implementati in arkimaps.
 
 *modelli censiti: cosmo 5M operativo, cosmo 5I backup, cosmo 5M AM, cleps det, cosmo 2I, cosmo 2I ruc, cosmo1ch, ifs_ita010*
 
