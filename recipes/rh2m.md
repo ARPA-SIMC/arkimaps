@@ -43,7 +43,8 @@ With arguments:
 ```
 {
   "params": {
-    "map_coastline_general_style": "background"
+    "map_coastline_general_style": "background",
+    "map_coastline_resolution": "high"
   }
 }
 ```
@@ -110,7 +111,7 @@ With arguments:
     "map_coastline_sea_shade": "off",
     "map_label": "off",
     "map_coastline_colour": "#000000",
-    "map_coastline_resolution": "medium"
+    "map_coastline_resolution": "high"
   }
 }
 ```

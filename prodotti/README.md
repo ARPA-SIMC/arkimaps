@@ -13,10 +13,18 @@
 
 # Elenco prodotti implementati
 
-| Sigla | Descrizione                         | Esempio   | Doc. Ricetta |
-| ----- | ----------------------------------- | --------- | ------------ |
-| `t2m` | Temperatura a 2 metri dal suolo     | [t2m.png](t2m.png "Temperatura a 2 metri") | [t2m.md](../recipes/t2m.md) |
-
+| Sigla   | Descrizione                               | Esempio   | Doc. Ricetta |
+| ------- | ----------------------------------------- | --------- | ------------ |
+| `t2m`   | Temperatura a 2 metri dal suolo           | [t2m.png](t2m.png "Temperatura a 2 metri") | [t2m.md](../recipes/t2m.md) |
+| `tp1h`  | Precipitazione totale cumulata su 1h      |           |  [tp1h.md](../recipes/tp1h.md) |
+| `tp3h`  | Precipitazione totale cumulata su 3h      |           |  [tp3h.md](../recipes/tp3h.md) |
+| `tp6h`  | Precipitazione totale cumulata su 6h      |           |  [tp6h.md](../recipes/tp6h.md) |
+| `tp12h` | Precipitazione totale cumulata su 12h     |           |  [tp12h.md](../recipes/tp12h.md) |
+| `tp24h` | Precipitazione totale cumulata su 24h     | [tp24h.png](tp24h.png "Precipitazione totale su 24h")  |  [tp24h.md](../recipes/tp24h.md) |
+| `cp3h`  | Precipitazione convettiva cumulata su 3h  |           |  [cp3h.md](../recipes/cp3h.md) |
+| `cp6h`  | Precipitazione convettiva cumulata su 6h  |           |  [cp6h.md](../recipes/cp6h.md) |
+| `cp12h` | Precipitazione convettiva cumulata su 12h |           |  [cp12h.md](../recipes/cp12h.md) |
+| `cp24h` | Precipitazione convettiva cumulata su 24h | [cp24h.png](cp24h.png "Precipitazione convettiva su 24h")  |  [cp24h.md](../recipes/cp24h.md) |
 
 # Censimento prodotti attualmente pubblicati su infomet
 
