@@ -30,6 +30,13 @@ recipe:
     contour_shade_colour_method: list
     contour_level_list: [0.0, 20.0, 40.0, 60.0, 80.0, 90.0, 100.0]
     legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_text: "Relative Humidity at 2m [%]"
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
     contour_highlight: off
     contour_label: off
     contour_hilo: off
@@ -38,3 +45,6 @@ recipe:
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

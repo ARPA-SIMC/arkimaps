@@ -16,6 +16,11 @@
 | Sigla   | Descrizione                               | Esempio   | Doc. Ricetta |
 | ------- | ----------------------------------------- | --------- | ------------ |
 | `t2m`   | Temperatura a 2 metri dal suolo           | [t2m.png](t2m.png "Temperatura a 2 metri") | [t2m.md](../recipes/t2m.md) |
+| `rh2m`  | Umidità relativa a 2 metri dal suolo      | [rh2m.png](rh2m.png "Umidità relativa a 2 metri") | [rh2m.md](../recipes/rh2m.md) |
+| `tcc`   | Copertura nuvolosa totale                 | [tcc.png](tcc.png "Copertura nuvolosa")   | [tcc.md](../recipes/tcc.md) |
+| `hcc`   | Copertura nubi alte                       | [hcc.png](hcc.png "Copertura nubi alte")  | [hcc.md](../recipes/hcc.md) |
+| `mcc`   | Copertura nubi medie                      | [mcc.png](mcc.png "Copertura nubi medie") | [mcc.md](../recipes/mcc.md) |
+| `lcc`   | Copertura nubi basse                      | [lcc.png](lcc.png "Copertura nubi basse") | [lcc.md](../recipes/lcc.md) |
 | `tp1h`  | Precipitazione totale cumulata su 1h      |           |  [tp1h.md](../recipes/tp1h.md) |
 | `tp3h`  | Precipitazione totale cumulata su 3h      |           |  [tp3h.md](../recipes/tp3h.md) |
 | `tp6h`  | Precipitazione totale cumulata su 6h      |           |  [tp6h.md](../recipes/tp6h.md) |
@@ -28,10 +33,6 @@
 | `litota3` | Densità media fulminazioni nelle ultime 3h | [litota3.png](litota3.png "Densità fulminazioni 3h") | [litota3.md](../recipes/litota3.md) |
 | `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
 | `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png") | [viwve.md](../recipes/viwve.md) |
-| `tcc`   | Copertura nuvolosa totale                 | [tcc.png](tcc.png "Copertura nuvolosa")   | [tcc.md](../recipes/tcc.md) |
-| `hcc`   | Copertura nubi alte                       | [hcc.png](hcc.png "Copertura nubi alte")  | [hcc.md](../recipes/hcc.md) |
-| `mcc`   | Copertura nubi medie                      | [mcc.png](mcc.png "Copertura nubi medie") | [mcc.md](../recipes/mcc.md) |
-| `lcc`   | Copertura nubi basse                      | [lcc.png](lcc.png "Copertura nubi basse") | [lcc.md](../recipes/lcc.md) |
 
 # Censimento prodotti attualmente pubblicati su infomet
 
