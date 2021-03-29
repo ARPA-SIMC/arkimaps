@@ -41,11 +41,12 @@ flavours:
      add_boundaries:
        params:
          map_boundaries: on
-         map_boundaries_colour: "#504040"
+         map_boundaries_colour: "#000000"
          map_administrative_boundaries_countries_list: ["ITA"]
-         map_administrative_boundaries_colour: "#504040"
+         map_administrative_boundaries_colour: "#000000"
          map_administrative_boundaries_style: solid
          map_administrative_boundaries: on
+         map_coastline_thickness: 2
      add_user_boundaries:
        skip: yes
      add_geopoints:
@@ -125,9 +126,9 @@ flavours:
        params:
          map_coastline_resolution: high
          map_boundaries: on
-         map_boundaries_colour: "#504040"
+         map_boundaries_colour: "#000000"
          map_administrative_boundaries_countries_list: ["ITA"]
-         map_administrative_boundaries_colour: "#504040"
+         map_administrative_boundaries_colour: "#000000"
          map_administrative_boundaries_style: solid
          map_administrative_boundaries: on
      add_user_boundaries:
@@ -267,6 +268,8 @@ flavours:
          map_administrative_boundaries_colour: "#504040"
          map_administrative_boundaries_style: solid
          map_administrative_boundaries: on
+         map_coastline_resolution: high
+         map_coastline_thickness: 2
      add_user_boundaries:
        skip: yes
      add_geopoints:
