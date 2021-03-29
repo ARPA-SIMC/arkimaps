@@ -51,6 +51,9 @@ Per spacchettare automaticamente il file tar:
 
 ### Documentazione
 
+Informazioni sull'inventario di aree e prodotti implementati sono
+disponibili nella directory [prodotti](../master/prodotti/README.md)
+
 Per una descrizione delle opzioni vedi:
 ```
 ./arkimaps -h
@@ -61,12 +64,6 @@ Per una descrizione delle opzioni vedi:
 ```
 ./arkimaps process -h
 ```
-
-Informazioni sulla composizione delle singole ricette sono disponibili nei file 
-`.md` dentro alla directory [recipes](../master/recipes/)
-
-Informazioni sull'inventario dei prodotti in corso di implementazione sono
-disponibili nella directory [prodotti](../master/prodotti/)
 
 ## Informazioni sulle ricette
 
