@@ -48,6 +48,9 @@ recipe:
     legend_display_type: continuous
     legend_title: on
     legend_title_text: "Temperature at 500hPa [°C]"
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
     legend_automatic_position: right
  - step: add_grib
    grib: z
@@ -72,10 +75,10 @@ recipe:
    params:
      wind_field_type: flags
      wind_flag_colour: black
-     wind_flag_length: 0.8
+     #wind_flag_length: 0.8
      wind_flag_origin_marker: off
      wind_flag_cross_boundary: on
-     wind_thinning_factor: 2
+     wind_thinning_factor: 4
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries

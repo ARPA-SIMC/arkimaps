@@ -15,7 +15,6 @@ inputs:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
        #grib_scaling_factor: 0.098066
-
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
@@ -39,3 +38,6 @@ recipe:
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
