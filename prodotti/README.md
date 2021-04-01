@@ -9,7 +9,15 @@
 | `sud`    | Sud Italia          | polar_stereographic | 41.5N 36.0N 19.0E  8.0E |
 | `medit`  | Area mediterranea   | mercator            | 52.0N 30.0N 35.0E  8.0W |
 | `euratl` | Area euroatlantica  | polar_stereographic | 60.0N 25.0N 65.0E 25.0W |
+| `ita_web`| Italia (layer)      | EPSG:3857 | 50.0N 35.0N 20.0E  2.5E |
 
+Nota: le aree `*_web` sono scontornate e prive di sfondi o riferimenti cartografici per un'eventuale
+georeferenziazione, al momento non implementata in arkimaps ma ottenibile postprocessando gli output
+ad es. via gdal:
+
+```
+gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.841017158 2226389.8158654715 4163881.144064294 plot.png out.tiff
+```
 
 # Elenco prodotti implementati
 

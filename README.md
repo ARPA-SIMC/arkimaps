@@ -1,4 +1,4 @@
-# ArkiMaps (α)
+# ArkiMaps (β)
 Generazione mappe meteorologiche da modelli previsionali.
 
 Attualmente implementati:
