@@ -320,3 +320,43 @@ flavours:
        skip: yes
      add_symbols:
        skip: yes
+ - name: ita_web
+   steps:
+     add_basemap:
+       params:
+         # Italia
+         # borderless and transparent for web georeferenced products
+         # example to georeference this output:
+         # gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.841017158 2226389.8158654715 4163881.144064294 plot.png out.tiff
+         page_id_line: off
+         output_width: 1280
+         output_cairo_transparent_background: True
+         subpage_map_projection: EPSG:3857
+         subpage_lower_left_longitude: 3.5
+         subpage_lower_left_latitude: 35.0
+         subpage_upper_right_longitude: 20.0
+         subpage_upper_right_latitude: 50.0
+         page_frame: off
+         subpage_frame: off
+         skinny_mode: on
+         page_x_length: 28.95
+         page_y_length: 36
+         super_page_x_length: 28.95
+         super_page_y_length: 36
+         subpage_x_length: 28.95
+         subpage_y_length: 36
+         subpage_x_position: 0
+         subpage_y_position: 0
+         map_grid: off
+     add_coastlines_bg:
+       skip: yes
+     add_coastlines_fg:
+       skip: yes
+     add_boundaries:
+       skip: yes
+     add_user_boundaries:
+       skip: yes
+     add_geopoints:
+       skip: yes
+     add_symbols:
+       skip: yes
