@@ -153,15 +153,17 @@ class WorkingKitchenMixin:
         parser = super().make_subparser(subparsers)
         parser.add_argument("--filter", metavar="{arkimet|eccodes}", default="arkimet",
                             help="backend to use to organise data into recipe inputs. Default: %(default)s")
+        parser.add_argument("--grib", action="store_true",
+                            help="read input as GRIB data instead of arkimet output. Implies --filter=eccodes")
         return parser
 
     def make_kitchen(self, workdir):
-        if self.args.filter == "arkimet":
+        if self.args.grib or self.args.filter == "eccodes":
+            from arkimapslib.kitchen import EccodesKitchen
+            return EccodesKitchen(workdir, grib_input=self.args.grib)
+        elif self.args.filter == "arkimet":
             from arkimapslib.kitchen import ArkimetKitchen
             return ArkimetKitchen(workdir)
-        elif self.args.filter == "eccodes":
-            from arkimapslib.kitchen import EccodesKitchen
-            return EccodesKitchen(workdir)
         else:
             raise Fail(f"Unsupported value `{self.args.filter}` for --filter")
 

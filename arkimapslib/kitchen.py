@@ -185,6 +185,6 @@ class EccodesEmptyKitchen(Kitchen):
 
 
 class EccodesKitchen(WorkingKitchen):
-    def __init__(self, *args, **kw):
+    def __init__(self, *args, grib_input=False, **kw):
         super().__init__(*args, **kw)
-        self.pantry = pantry.EccodesPantry(root=self.workdir)
+        self.pantry = pantry.EccodesPantry(root=self.workdir, grib_input=grib_input)

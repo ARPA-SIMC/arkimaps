@@ -161,8 +161,9 @@ class EccodesPantry(DiskPantry):
     """
     eccodes-based storage of GRIB files to be processed
     """
-    def __init__(self, **kw):
+    def __init__(self, grib_input=False, **kw):
         super().__init__(**kw)
+        self.grib_input = grib_input
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
     def fill(self, path: Optional[str] = None):
@@ -182,9 +183,26 @@ class EccodesPantry(DiskPantry):
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
                     print(f'  write "{self.data_root}/{inp.pantry_basename}+[endStep].grib";', file=f)
-                    print(f"}}", file=f)
+                    print("}", file=f)
 
-        # Run grib_filter on input
+        if self.grib_input:
+            self.read_grib(path)
+        else:
+            self.read_arkimet(path)
+
+    def read_grib(self, path: str):
+        """
+        Run grib_filter on GRIB input
+        """
+        if path is None:
+            subprocess.run(["grib_filter", self.grib_filter_rules, "-"], stdin=sys.stdin, check=True)
+        else:
+            subprocess.run(["grib_filter", self.grib_filter_rules, path], check=True)
+
+    def read_arkimet(self, path: str):
+        """
+        Run grib_filter on arkimet input
+        """
         try:
             proc = subprocess.Popen(["grib_filter", self.grib_filter_rules, "-"], stdin=subprocess.PIPE)
 
