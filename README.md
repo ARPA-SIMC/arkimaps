@@ -23,7 +23,7 @@ opzionali:
 ### Generazione mappe da file grib
 
 ```
-./arkimaps process -o out.tar --filter=eccodes < test_data.grib
+./arkimaps process -o out.tar --grib < test_data.grib
 ```
 
 ### Generazione mappe da estrazione arkimet
