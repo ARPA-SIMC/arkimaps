@@ -4,6 +4,7 @@ Generazione mappe meteorologiche da modelli previsionali.
 Attualmente implementati:
  * COSMO-LAMI
  * IFS-ECMWF (nella versione distribuita ai Centri Funzionali)
+ * ERG5 (https://dati.arpae.it/dataset/erg5-interpolazione-su-griglia-di-dati-meteo)
 
 Funziona sia come programma standalone che come postprocessatore per https://github.com/ARPA-SIMC/arkimet
 
