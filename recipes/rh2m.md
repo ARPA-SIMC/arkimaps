@@ -13,11 +13,18 @@ Mixer: **default**
         * **vg6d_transform arguments**: --output-variable-list=B13003
         * **Preprocessing**: vg6d_transform
         * **Inputs**: t2m, 2d
+    * Model **erg5**:
+        * **vg6d_transform arguments**: --output-variable-list=B13003
+        * **Preprocessing**: vg6d_transform
+        * **Inputs**: t2m, 2d
 * **t2m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
         * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
     * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
+        * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
+    * Model **erg5**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
         * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
 * **2d**:

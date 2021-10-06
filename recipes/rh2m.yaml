@@ -17,6 +17,9 @@ inputs:
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]
     inputs: [t2m, 2d]
+  - model: erg5
+    arkimet: product:GRIB2,00200,000,001,001,004,000;level:GRIB2S,103,003,0000001800
+    eccodes: shortName is "r" and level == 2
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
