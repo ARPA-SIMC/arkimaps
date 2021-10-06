@@ -15,9 +15,25 @@ inputs:
    - model: ifs
      arkimet: product:GRIB1,98,128,166
      eccodes: shortName is "10v"
+ ws10m:
+   - model: erg5
+     arkimet: product:GRIB2,00200, 000, 002, 001, 004, 000;level:GRIB2S,103,003,0000010000
+     eccodes: shortName is "ws" and level == 10
+ wdir10m:
+   - model: erg5
+     arkimet: product:GRIB2,00200, 000, 002, 000, 004, 000;level:GRIB2S,103,003,0000010000
+     eccodes: shortName is "wdir" and level == 10
  uv10m:
-   type: cat
-   inputs: [u10m, v10m]
+   - model: cosmo
+     type: cat
+     inputs: [u10m, v10m]
+   - model: ifs
+     type: cat
+     inputs: [u10m, v10m]
+   - model: erg5
+     type: cat
+     inputs: [wdir10m, ws10m]
+     #mgrib: grib_wind_mode = "sd"
  u250:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,250
