@@ -52,15 +52,15 @@ Per spacchettare automaticamente il file tar:
 
 #### Ritagli su aree diverse
 
-È possibile usare l'opzione `--flavours` per specificare diverse modalità di output ritagliate su aree diverse.
+È possibile usare l'opzione `--flavours` per specificare diverse modalità di output.
 
-Ad esempio, per plot ritaglaiti sull'Emilia-Romagna:
+Ad esempio, per plot ritagliati sull'Emilia-Romagna:
 ```
 ./arkimaps process --filter=eccodes --flavours=emro < test.arkimet
 ```
 
 L'elenco completo delle aree implementate è disponibile nella directory [prodotti](../master/prodotti/README.md).
-È possibile aggiungere nuove aree modificando il contenuto del file [recipes/flavours/default.yaml] (../master/recipes/flavours/default.yaml).
+È possibile aggiungere nuove aree modificando il contenuto del file [recipes/flavours/default.yaml](../master/recipes/flavours/default.yaml).
 
 ### Documentazione
 
