@@ -60,12 +60,24 @@ Ad esempio, per plot ritagliati sull'Emilia-Romagna:
 ```
 
 L'elenco completo delle aree implementate è disponibile nella directory [prodotti](../master/prodotti/README.md).
-È possibile aggiungere nuove aree modificando il contenuto del file [recipes/flavours/default.yaml](../master/recipes/flavours/default.yaml).
+
+È possibile aggiungere nuove aree modificando il contenuto del file [recipes/flavours/default.yaml](../master/recipes/flavours/default.yaml), vedi oltre alla sezione "Creazione di varianti (flavour) per il rendering".
+
+### Specificare tipologia di prodotti in output
+
+Di default arkimaps produce tutti gli output realizzabili con i dati in input.
+Se si vuole ridurre il numero di prodotti in uscita è possibile copiarsi le sole ricette desiderate dalla cartella `recipes` e puntare alla nuova cartella con l'opzione `--recipes dir`
+
+Esempio:
+Ad esempio, per plot ritagliati sull'Emilia-Romagna:
+```
+./arkimaps process --filter=eccodes --recipes /tmp/temprecipes < test.arkimet
+```
 
 ### Documentazione
 
 Informazioni sull'inventario di aree e prodotti implementati sono
-disponibili nella directory [prodotti](../master/prodotti/README.md)
+disponibili nella directory [prodotti](../master/prodotti/README.md).
 
 Per una descrizione delle opzioni vedi:
 ```
@@ -113,8 +125,8 @@ se quella di default non è l'ideale.
 ## Creazione di varianti (flavour) per il rendering
 
 Nei file `.yaml` dentro a `recipes/` è possibile aggiungere una sezione
-`flavors` che introduce varianti di rendering. I comandi di `arkimaps` che
-fanno rendering hanno un'opzione `--flavors` che permette di scegliere quali
+`flavours` che introduce varianti di rendering. I comandi di `arkimaps` che
+fanno rendering hanno un'opzione `--flavours` che permette di scegliere quali
 varianti usare.
 
 La struttura di una variante è:
