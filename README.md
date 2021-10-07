@@ -50,6 +50,18 @@ Per spacchettare automaticamente il file tar:
 ./arkimaps process --filter=eccodes < test.arkimet |tar -xf - -C out/
 ```
 
+#### Ritagli su aree diverse
+
+È possibile usare l'opzione `--flavours` per specificare diverse modalità di output ritagliate su aree diverse.
+
+Ad esempio, per plot ritaglaiti sull'Emilia-Romagna:
+```
+./arkimaps process --filter=eccodes --flavours=emro < test.arkimet
+```
+
+L'elenco completo delle aree implementate è disponibile nella directory [prodotti](../master/prodotti/README.md).
+È possibile aggiungere nuove aree modificando il contenuto del file [recipes/flavours/default.yaml] (../master/recipes/flavours/default.yaml).
+
 ### Documentazione
 
 Informazioni sull'inventario di aree e prodotti implementati sono
@@ -128,21 +140,6 @@ La configurazione di uno step può avere:
 * `Mixer` è l'implementazione dei vari passi possibili per le ricette
 * `Order` è un prodotto in output
 
-## Note su uso dei JSON in /usr/share/magics
-
-* `/usr/share/magics/styles/palettes.json`: corrisponde a `contour_shade_palette_name` in 
-<https://confluence.ecmwf.int/display/MAGP/Contouring>, documentazione completa disponibile qui: https://confluence.ecmwf.int/display/MAGP/Predefined+palettes+in+Magics 
-* `contour_automatic_setting` in  <https://confluence.ecmwf.int/display/MAGP/Contouring> è usato per attivare
-  il match delle regole di contouring. V. anche [questo commento in skinnywms](https://github.com/ecmwf/skinnywms/issues/37#issuecomment-562215449)
-
-Per scegliere stili diversi, `contour_automatic_setting` deve rimanere settato
-sempre a `"ecmwf"`, e serve invece cambiare il path in `MAGICS_STYLE_PATH`:
-
-```py
-# Questo è quello che fa skinnywms
-if args.style != "":
-    os.environ["MAGICS_STYLE_PATH"] = args.style + ":ecmwf"
-```
 ## Contact and copyright information
 
 arkimaps is Copyright (C) 2020-2021 ARPAE-SIMC <urpsim@arpae.it>
