@@ -45,7 +45,8 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `cp24h` | Precipitazione convettiva cumulata su 24h | [cp24h.png](cp24h.png "Precipitazione convettiva su 24h")  |  [cp24h.md](../recipes/cp24h.md) |
 | `litota3` | Densità media fulminazioni nelle ultime 3h | [litota3.png](litota3.png "Densità fulminazioni 3h") | [litota3.md](../recipes/litota3.md) |
 | `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
-| `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png") | [viwve.md](../recipes/viwve.md) |
+| `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/viwve.md) |
+| `wmax`   | Raffica massima vento                            | [wmax.png](wmax.png)   | [wmax.md](../recipes/wmax.md)   |
 
 # Censimento prodotti attualmente pubblicati su infomet
 
