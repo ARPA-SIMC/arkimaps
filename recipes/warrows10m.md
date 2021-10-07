@@ -5,8 +5,15 @@ Mixer: **default**
 ## Inputs
 
 * **uv10m**:
-    * **Preprocessing**: cat
-    * **Inputs**: u10m, v10m
+    * Model **cosmo**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **ifs**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **erg5**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
 * **u10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
@@ -63,7 +70,7 @@ With arguments:
 {
   "params": {
     "wind_arrow_colour": "black",
-    "wind_arrow_thickness": "thick",
+    "wind_arrow_thickness": 1,
     "wind_field_type": "arrows",
     "wind_flag_cross_boundary": false,
     "wind_arrow_unit_velocity": 12.5,

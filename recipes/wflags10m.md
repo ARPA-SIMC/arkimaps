@@ -5,8 +5,15 @@ Mixer: **default**
 ## Inputs
 
 * **uv10m**:
-    * **Preprocessing**: cat
-    * **Inputs**: u10m, v10m
+    * Model **cosmo**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **ifs**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **erg5**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
 * **u10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
