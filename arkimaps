@@ -205,6 +205,14 @@ class DocumentRecipes(RecipesMixin, Command):
     """
     NAME = "document-recipes"
 
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("--destdir", metavar="dir", action="store",
+                            help="directory where documentation is written. It"
+                                 " defaults to the recipes directory")
+        return parser
+
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
 
@@ -214,7 +222,12 @@ class DocumentRecipes(RecipesMixin, Command):
         self.load_recipes()
 
     def run(self):
-        self.kitchen.document_recipes(self.args.recipes)
+        dest = self.args.destdir
+        if dest is None:
+            dest = self.args.recipes
+        if not os.path.isdir(dest):
+            os.makedirs(dest)
+        self.kitchen.document_recipes(dest)
 
 
 class DumpRecipes(RecipesMixin, Command):
