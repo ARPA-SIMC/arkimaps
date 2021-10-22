@@ -1,2 +1,9 @@
 #!/bin/sh
+
+# This script calls arkimaps as an arkimet postprocessor
+# See https://github.com/ARPA-SIMC/arkimet
+#
+# It is intended to be installed alongside other arkimet postprocessors in
+# $libdir/arkimet
+
 exec arkimaps process --filter=arkimet --styles=/usr/share/magics/styles/ecmwf --recipes=recipes
