@@ -36,7 +36,6 @@ setup(
     url='https://github.com/ARPA-SIMC/arkimaps/',
     license="http://www.gnu.org/licenses/gpl-3.0.html",
     requires=["Magics", "yaml"],
-    install_requires=["setuptools-git"],
     extras_require={
         "arkimet": ["arkimet"],
         "nice_python_trace": ["yapf"],
