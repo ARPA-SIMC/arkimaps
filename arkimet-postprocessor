@@ -1,0 +1,2 @@
+#!/bin/sh
+exec arkimaps process --filter=arkimet --styles=/usr/share/magics/styles/ecmwf --recipes=recipes

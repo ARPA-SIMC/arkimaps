@@ -356,37 +356,12 @@ class Process(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         self.render_tarball()
 
 
-class Postprocessor(RenderMixin, Command):
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-
-        # Hardcode choices to be run as arkimet postprocessor
-
-        # Pantry uses arkimet as a backend
-        from arkimapslib.kitchen import ArkimetKitchen
-        self.kitchen = ArkimetKitchen()
-
-        # Recipes are loaded from a fixed directory
-        # TODO: define where it is
-        self.kitchen.load_recipes(["recipes"])
-
-    def get_styles_directory(self):
-        return "/usr/share/magics/styles/ecmwf"
-
-    def open_output(self):
-        return tarfile.open(mode="w|", fileobj=sys.stdout.buffer)
-
-    def run(self):
-        # Acquire input data
-        self.kitchen.pantry.fill()
-        self.render_tarball()
-
-
 def main():
     parser = argparse.ArgumentParser(description="Render maps from model output.")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("--debug", action="store_true", help="verbose output")
     parser.add_argument("--version", action="version", version="%(prog)s " + VERSION)
+    # From Python 3.7+, use required=True
     subparsers = parser.add_subparsers(help="sub-command help", dest="command")
 
     Process.make_subparser(subparsers)
@@ -400,7 +375,8 @@ def main():
     args = parser.parse_args()
 
     if args.command is None:
-        handler = Postprocessor(args)
+        parser.print_help()
+        return
     else:
         handler = args.handler(args)
 
