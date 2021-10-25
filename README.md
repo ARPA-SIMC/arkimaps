@@ -1,5 +1,10 @@
-# ArkiMaps (β)
-Generazione mappe meteorologiche da modelli previsionali.
+[![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/centos8.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
+[![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/fedora34.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
+[![Build Status](https://copr.fedorainfracloud.org/coprs/simc/stable/package/arkimaps/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/simc/stable/package/arkimaps/)
+
+# arkimaps
+
+Generazione mappe meteorologiche da file grib modelli previsionali.
 
 Attualmente implementati:
  * COSMO-LAMI
