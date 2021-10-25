@@ -16,6 +16,9 @@ from arkimapslib.render import Renderer
 # if TYPE_CHECKING:
 from arkimapslib.flavours import Flavour
 
+VERSION = "0.4"
+SYSTEM_RECIPE_DIR = "/usr/share/arkimaps/recipes"
+
 log = logging.getLogger("arkimaps")
 
 
@@ -46,8 +49,12 @@ class RecipesMixin:
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
-        parser.add_argument("--recipes", metavar="dir", action="store", default="recipes",
-                            help="directory with the YAML recipes")
+        default_recipes_dir = SYSTEM_RECIPE_DIR
+        if os.path.isdir("recipes"):
+            default_recipes_dir = os.path.abspath("recipes")
+        parser.add_argument("--recipes", metavar="dir", action="store", default=default_recipes_dir,
+                            help="directory with the YAML recipes (default: ./recipes (if existing)"
+                                 " or " + SYSTEM_RECIPE_DIR)
         return parser
 
     def load_recipes(self):
@@ -198,6 +205,14 @@ class DocumentRecipes(RecipesMixin, Command):
     """
     NAME = "document-recipes"
 
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("--destdir", metavar="dir", action="store",
+                            help="directory where documentation is written. It"
+                                 " defaults to the recipes directory")
+        return parser
+
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
 
@@ -207,7 +222,12 @@ class DocumentRecipes(RecipesMixin, Command):
         self.load_recipes()
 
     def run(self):
-        self.kitchen.document_recipes(self.args.recipes)
+        dest = self.args.destdir
+        if dest is None:
+            dest = self.args.recipes
+        if not os.path.isdir(dest):
+            os.makedirs(dest)
+        self.kitchen.document_recipes(dest)
 
 
 class DumpRecipes(RecipesMixin, Command):
@@ -354,36 +374,12 @@ class Process(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         self.render_tarball()
 
 
-class Postprocessor(RenderMixin, Command):
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-
-        # Hardcode choices to be run as arkimet postprocessor
-
-        # Pantry uses arkimet as a backend
-        from arkimapslib.kitchen import ArkimetKitchen
-        self.kitchen = ArkimetKitchen()
-
-        # Recipes are loaded from a fixed directory
-        # TODO: define where it is
-        self.kitchen.load_recipes(["recipes"])
-
-    def get_styles_directory(self):
-        return "/usr/share/magics/styles/ecmwf"
-
-    def open_output(self):
-        return tarfile.open(mode="w|", fileobj=sys.stdout.buffer)
-
-    def run(self):
-        # Acquire input data
-        self.kitchen.pantry.fill()
-        self.render_tarball()
-
-
 def main():
     parser = argparse.ArgumentParser(description="Render maps from model output.")
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
     parser.add_argument("--debug", action="store_true", help="verbose output")
+    parser.add_argument("--version", action="version", version="%(prog)s " + VERSION)
+    # From Python 3.7+, use required=True
     subparsers = parser.add_subparsers(help="sub-command help", dest="command")
 
     Process.make_subparser(subparsers)
@@ -397,7 +393,8 @@ def main():
     args = parser.parse_args()
 
     if args.command is None:
-        handler = Postprocessor(args)
+        parser.print_help()
+        return
     else:
         handler = args.handler(args)
 
