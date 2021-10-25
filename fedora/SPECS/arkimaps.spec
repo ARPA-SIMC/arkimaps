@@ -16,6 +16,11 @@ BuildRequires:  python3
 BuildRequires:  python3-setuptools
 BuildRequires:  python3-devel
 BuildRequires:  python3-pyyaml
+
+# only for tests
+BuildRequires:  arkimet
+
+
 Requires:       python3
 Requires:       python3-Magics
 
