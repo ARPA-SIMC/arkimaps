@@ -15,6 +15,7 @@ Source1:        https://github.com/ARPA-SIMC/arkimaps/files/5844942/testsuite.ta
 BuildRequires:  python3
 BuildRequires:  python3-setuptools
 BuildRequires:  python3-devel
+BuildRequires:  python3-pyyaml
 Requires:       python3
 Requires:       python3-Magics
 
