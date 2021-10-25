@@ -8,9 +8,9 @@ Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
 License:        GPLv3+
-URL:            https://github.com/arpa-simc/%{name}
-Source0:        https://github.com/arpa-simc/%{name}/archive/v%{version}-%{releaseno}.tar.gz#/%{srcarchivename}.tar.gz
-Source1:        https://github.com/ARPA-SIMC/arkimaps/files/5844942/testsuite.tar.gz
+URL:            https://github.com/ARPA-SIMC/%{name}
+Source0:        https://github.com/ARPA-SIMC/%{name}/archive/v%{version}-%{releaseno}.tar.gz#/%{srcarchivename}.tar.gz
+Source1:        https://github.com/ARPA-SIMC/%{name}/releases/download/v%{version}-%{releaseno}/arkimaps_test_data.tar.gz
 
 BuildRequires:  python3
 BuildRequires:  python3-setuptools
@@ -26,6 +26,11 @@ Meteo plot generator from grib data
 
 %prep
 %autosetup -n %{srcarchivename}
+
+mkdir testdata
+pushd testdata
+tar xf %SOURCE1
+popd
 
 %build
 %py3_build
@@ -43,9 +48,6 @@ mkdir -p %{buildroot}%{_docdir}/%{name}/
 %{__python3} arkimaps document-recipes --destdir %{buildroot}%{_docdir}/%{name}/
 
 %check
-#TODO: fix test data
-mkdir testdata
-tar xf %SOURCE1 -C testdata/
 %{__python3} setup.py test
 
 %files
