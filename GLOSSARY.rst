@@ -83,4 +83,4 @@ arguments.
 The set of available step names are defined by the mixer_ used for processing.
 
 Arguments for steps that are not explicitly provided by recipes can be provided
-by `flavours <flavour_>`_.
+by `flavors <flavor_>`_.
