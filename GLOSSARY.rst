@@ -16,7 +16,7 @@ Those are provided in this file.
 Flavor
 ======
 
-A named set of default arguments for `steps <step_>`_.
+A named set of default arguments for steps_.
 
 Specifying different sets of default arguments can be useful for rendering the
 same recipes, for example, on different areas, or with different branding or
@@ -37,7 +37,7 @@ can be used by a step_ of a recipe_.
 Mixer
 =====
 
-A repository of `steps <step_>`_ that can be executed by a recipe_.
+A repository of steps_ that can be executed by a recipe_.
 
 It is defined in arkimaps' code. Currently only one mixer is provided called
 ``default``, in ``arkimapslib/mixers.py``.
@@ -56,16 +56,16 @@ An image file produced by a recipe_.
 Recipe
 ======
 
-Defines what is needed to turn `inputs <input_>`_ into a product_.
+Defines what is needed to turn inputs_ into a product_.
 
 It can contain:
 
-* Zero or more `inputs <input_>`_
-* The name of the mixer_ to use for processing `inputs <input_>`_ (by default:
+* Zero or more inputs_
+* The name of the mixer_ to use for processing inputs_ (by default:
   ``default``)
-* A set of `steps <step_>`_ to perform with the mixer_ on the `inputs <input_>`_
-* Zero or more `flavors <flavor_>`_ that define set of default parameters for
-  recipe `steps <step_>`_.
+* A set of steps_ to perform with the mixer_ on the inputs_
+* Zero or more flavors_ that define set of default parameters for
+  recipe steps_.
 
 To allow to define only once some elements common to multiple recipes, there
 can be recipes that only define inputs or flavours for reuse by other recipes,
@@ -83,4 +83,8 @@ arguments.
 The set of available step names are defined by the mixer_ used for processing.
 
 Arguments for steps that are not explicitly provided by recipes can be provided
-by `flavors <flavor_>`_.
+by flavors_.
+
+.. _flavors: `flavor`_
+.. _inputs: `input`_
+.. _steps: `step`_
