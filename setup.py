@@ -18,10 +18,12 @@ with open("arkimaps") as fd:
                 continue
             if target.id != "VERSION":
                 continue
-            if not isinstance(stm.value, ast.Constant):
-                continue
-            version = stm.value.value
-            break
+            if isinstance(stm.value, ast.Constant):
+                version = stm.value.value
+                break
+            elif isinstance(stm.value, ast.Str):
+                version = stm.value.s
+                break
 
 if version is None:
     raise RuntimeError("VERSION not found in arkimaps")
