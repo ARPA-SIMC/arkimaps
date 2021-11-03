@@ -11,12 +11,20 @@ from .render import Renderer
 class RecipeTestMixin:
     expected_basemap_args = {
         'page_id_line': False,
+        'page_x_length': 38,
+        'page_y_length': 31,
         'output_width': 1280,
         'subpage_map_projection': 'cylindrical',
         'subpage_lower_left_longitude': 2.5,
         'subpage_lower_left_latitude': 35.0,
         'subpage_upper_right_longitude': 20.0,
         'subpage_upper_right_latitude': 50.0,
+        'subpage_x_length': 34,
+        'subpage_x_position': 2,
+        'subpage_y_length': 30,
+        'subpage_y_position': 1,
+        'super_page_x_length': 40,
+        'super_page_y_length': 32,
         'map_grid': True,
         'map_grid_latitude_reference': 45.0,
         'map_grid_longitude_reference': 0.0,
@@ -51,7 +59,7 @@ class RecipeTestMixin:
         magic_crashes: List[Dict[str, Any]]
         try:
             with open(".magics-crashes.yaml", "rt") as fd:
-                magics_crashes = yaml.load(fd)
+                magics_crashes = yaml.load(fd, Loader=yaml.SafeLoader)
         except FileNotFoundError:
             magics_crashes = {}
 
