@@ -84,7 +84,10 @@ class Flavour:
                 input_names.append(input_name)
         return input_names
 
-    def instantiate_order_step(self, recipe_step: "recipes.RecipeStep", input_files: Dict[str, inputs.InputFile]) -> Step:
+    def instantiate_order_step(
+            self,
+            recipe_step: "recipes.RecipeStep",
+            input_files: Dict[str, inputs.InputFile]) -> Step:
         """
         Instantiate the step class with the given flavour config
         """
