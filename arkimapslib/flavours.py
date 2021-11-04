@@ -13,6 +13,9 @@ from . import inputs
 Kwargs = Dict[str, Any]
 
 
+log = logging.getLogger("arkimaps.flavours")
+
+
 class Flavour:
     """
     Set of default settings used for generating a product
@@ -94,6 +97,18 @@ class Flavour:
         step_config = self.step_config(recipe_step.name)
         return recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
 
+    def get_inputs_for_recipe(self, recipe: "recipes.Recipe") -> Set[str]:
+        """
+        Return a list with the names of all inputs used by a recipe in this
+        flavour
+        """
+        input_names: Set[str] = set()
+        for recipe_step in recipe.steps:
+            step_config = self.step_config(recipe_step.name)
+            for input_name in recipe_step.get_input_names(step_config):
+                input_names.add(input_name)
+        return input_names
+
     def make_orders(self,
                     recipe: "recipes.Recipe",
                     input_storage: inputs.InputStorage) -> List["orders.Order"]:
@@ -105,52 +120,49 @@ class Flavour:
         inputs: Optional[Dict[int, Dict[str, InputFile]]] = None
         # Collection of input name to InputFile mappings used by all output steps
         inputs_for_all_steps: Dict[str, InputFile] = {}
-        # Set of input names already seen, used to avoid examining an input
-        # twice for a recipe
-        input_names: Set[str] = set()
 
-        # Collect the inputs needed for all steps
-        for recipe_step in recipe.steps:
-            step_config = self.step_config(recipe_step.name)
-            for input_name in recipe_step.get_input_names(step_config):
-                # Process each input only once for this recipe
-                if input_name in input_names:
+        input_names = self.get_inputs_for_recipe(recipe)
+        log.debug("flavour %s: recipe %s uses inputs: %r", self.name, recipe.name, input_names)
+
+        # Find the intersection of all steps available for all inputs needed
+        for input_name in input_names:
+            # Find available steps for this input
+            output_steps: Dict[Optional[int], "InputFile"]
+            output_steps = input_storage.get_steps(input_name)
+
+            # Special handling for inputs that are not step-specific and
+            # are valid for all steps, like maps or orography
+            any_step = output_steps.pop(None, None)
+            if any_step is not None:
+                log.debug("flavour %s: recipe %s inputs %s available for any step", self.name, recipe.name, input_name)
+                inputs_for_all_steps[input_name] = any_step
+                # This input is valid for all steps and does not
+                # introduce step limitations
+                if not output_steps:
                     continue
-                input_names.add(input_name)
+            else:
+                log.debug("flavour %s: recipe %s inputs %s available for steps %r",
+                          self.name, recipe.name, input_name, output_steps.keys())
 
-                # Find available steps for this input
-                output_steps: Dict[Optional[int], "InputFile"]
-                output_steps = input_storage.get_steps(input_name)
-
-                # Special handling for inputs that are not step-specific and
-                # are valid for all steps, like maps or orography
-                any_step = output_steps.pop(None, None)
-                if any_step is not None:
-                    inputs_for_all_steps[input_name] = any_step
-                    # This input is valid for all steps and does not
-                    # introduce step limitations
-                    if not output_steps:
-                        continue
-
-                # Intersect the output steps for the recipe input list
-                if inputs is None:
-                    # The first time this output_step has been seen, populate
-                    # the `inputs` mapping with all available inputs
-                    inputs = {}
-                    for output_step, ifile in output_steps.items():
-                        inputs[output_step] = {input_name: ifile}
-                else:
-                    # The subsequent times this output_step is seen, intersect
-                    steps_to_delete: List[int] = []
-                    for output_step, input_files in inputs.items():
-                        if output_step not in output_steps:
-                            # We miss an input for this step, so we cannot
-                            # generate an order for it
-                            steps_to_delete.append(output_step)
-                        else:
-                            input_files[input_name] = output_steps[output_step]
-                    for output_step in steps_to_delete:
-                        del inputs[output_step]
+            # Intersect the output steps for the recipe input list
+            if inputs is None:
+                # The first time this output_step has been seen, populate
+                # the `inputs` mapping with all available inputs
+                inputs = {}
+                for output_step, ifile in output_steps.items():
+                    inputs[output_step] = {input_name: ifile}
+            else:
+                # The subsequent times this output_step is seen, intersect
+                steps_to_delete: List[int] = []
+                for output_step, input_files in inputs.items():
+                    if output_step not in output_steps:
+                        # We miss an input for this step, so we cannot
+                        # generate an order for it
+                        steps_to_delete.append(output_step)
+                    else:
+                        input_files[input_name] = output_steps[output_step]
+                for output_step in steps_to_delete:
+                    del inputs[output_step]
 
         res: List["orders.Order"] = []
         if inputs is not None:
@@ -159,7 +171,7 @@ class Flavour:
                 if inputs_for_all_steps:
                     input_files.update(inputs_for_all_steps)
 
-                log = logging.getLogger(f"arkimaps.render.{self.name}.{recipe.name}+{output_step:03d}")
+                logger = logging.getLogger(f"arkimaps.render.{self.name}.{recipe.name}+{output_step:03d}")
 
                 # Instantiate order steps from recipe steps
                 order_steps: List[Step] = []
@@ -167,7 +179,7 @@ class Flavour:
                     try:
                         s = self.instantiate_order_step(recipe_step, input_files)
                     except StepSkipped:
-                        log.debug("%s (skipped)", s.name)
+                        logger.debug("%s (skipped)", s.name)
                         continue
                     # self.log.debug("%s %r", step.name, step.get_params(mixer))
                     order_steps.append(s)

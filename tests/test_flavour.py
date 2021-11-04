@@ -1,7 +1,9 @@
 # from __future__ import annotations
-import unittest
-import tempfile
+import contextlib
 import os
+import tempfile
+from typing import Dict, Any
+import unittest
 import yaml
 from arkimapslib.unittest import IFSMixin, ArkimetMixin, RecipeTestMixin
 
@@ -9,6 +11,51 @@ from arkimapslib.unittest import IFSMixin, ArkimetMixin, RecipeTestMixin
 class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
     recipe_name = "t2m"
     expected_basemap_args = {}
+
+    @contextlib.contextmanager
+    def recipes(self, flavours: Dict[str, Any], recipes: Dict[str, Any]):
+        with tempfile.TemporaryDirectory() as recipe_dir:
+            # Write flavours definition
+            with open(os.path.join(recipe_dir, "flavours.yaml"), "wt") as fd:
+                flavour_data = []
+                for name, steps in flavours.items():
+                    flavour_data.append({
+                        "name": name,
+                        "steps": steps,
+                    })
+                yaml.dump({"flavours": flavour_data}, fd)
+
+            # Write inputs definition
+            with open(os.path.join(recipe_dir, "inputs.yaml"), "wt") as fd:
+                yaml.dump({
+                    "inputs": {
+                        "t2m": [
+                            {
+                                "model": "cosmo",
+                                "arkimet": "product:GRIB1,,2,11;level:GRIB1,105,2",
+                                "eccodes": 'shortName is "2t" and indicatorOfTypeOfLevel == 105'
+                                           ' and timeRangeIndicator == 0 and level == 2',
+                            }
+                        ],
+                    },
+                }, fd)
+
+            # Write recipes definitions
+            for name, steps in recipes.items():
+                with open(os.path.join(recipe_dir, f"{name}.yaml"), "wt") as fd:
+                    yaml.dump({"recipe": steps}, fd)
+
+            self.load_recipes([recipe_dir])
+            self.kitchen.pantry.fill(path="testdata/t2m/cosmo_t2m+12.arkimet")
+
+            yield recipe_dir
+
+    def make_order(self, flavour: str, recipe: str):
+        recipe = self.kitchen.recipes.get(recipe)
+        flavour = self.kitchen.flavours.get(flavour)
+        orders = flavour.make_orders(recipe, self.kitchen.pantry)
+        self.assertEqual(len(orders), 1)
+        return orders[0]
 
     def test_default_params(self):
         test_params = {
@@ -19,29 +66,17 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
             "map_coastline_colour": "#000000",
             "map_coastline_resolution": "medium",
         }
-        with tempfile.TemporaryDirectory() as extra_recipes:
-            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
-                yaml.dump({
-                    "flavours": [
-                        {
-                            "name": "test",
-                            "steps": {
-                                "add_coastlines_fg": {
-                                    "params": test_params,
-                                },
-                            }
-                        }
-                    ]
-                }, fd)
-
-            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
-
-            orders = self.make_orders(flavour_name="test")
-            self.assertEqual(len(orders), 1)
-
-            self.assertRenders(orders[0])
-
-            add_coastlines_fg = self.get_step(orders[0], "add_coastlines_fg")
+        with self.recipes(flavours={
+                              "test": {
+                                "add_coastlines_fg": {"params": test_params}
+                              }
+                          },
+                          recipes={"test": [
+                              {"step": "add_coastlines_fg"},
+                              {"step": "add_grib", "grib": "t2m"},
+                          ]}):
+            order = self.make_order("test", "test")
+            add_coastlines_fg = self.get_step(order, "add_coastlines_fg")
             self.assertEqual(add_coastlines_fg.params["params"], test_params)
 
     def test_default_shape(self):

@@ -79,14 +79,16 @@ class RecipeTestMixin:
         self.kitchen.__exit__(None, None, None)
         self.kitchen = None
 
-    def make_orders(self, flavour_name=None):
+    def make_orders(self, flavour_name=None, recipe_name=None):
         """
         Create all satisfiable orders from the currently tested recipe
         """
         if flavour_name is None:
             flavour_name = self.flavour_name
+        if recipe_name is None:
+            recipe_name = self.recipe_name
 
-        recipe = self.kitchen.recipes.get(self.recipe_name)
+        recipe = self.kitchen.recipes.get(recipe_name)
         flavour = self.kitchen.flavours.get(flavour_name)
         orders = flavour.make_orders(recipe, self.kitchen.pantry)
         for o in orders:
