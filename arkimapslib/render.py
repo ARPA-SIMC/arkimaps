@@ -63,6 +63,17 @@ class Renderer:
                 MAGPLUS_QUIET="1"):
             order.prepare(self.workdir)
 
+    def render_one_to_python(self, order: 'Order') -> str:
+        """
+        Render one order to a Python trace file.
+
+        Return the name of the file written
+        """
+        with override_env(
+                MAGICS_STYLE_PATH=self.styles_dir,
+                MAGPLUS_QUIET="1"):
+            return order.write_python_trace(self.workdir)
+
     def render(self, orders: Iterable['Order']):
         prepare = functools.partial(prepare_order, self.workdir)
         with self.magics_worker_pool() as pool:

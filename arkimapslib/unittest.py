@@ -153,7 +153,6 @@ class RecipeTestMixin:
         if output_name is None:
             output_name = f"{self.recipe_name}+012.png"
         renderer = Renderer(self.kitchen.workdir)
-        order.debug_trace = []
 
         # Stop testing at this point, if we know Magics would segfault or abort
         if self.id() in self.magics_crashes_skip_tests:
@@ -164,6 +163,17 @@ class RecipeTestMixin:
         self.assertEqual(os.path.basename(order.output), output_name)
         add_basemap = self.get_step(order, "add_basemap")
         self.assertEqual(add_basemap.params.get("params", {}), self.expected_basemap_args)
+
+    def order_to_python(self, order) -> str:
+        """
+        Render an order to a Python trace file only.
+
+        This is useful to reproduce a test case if Magics aborts on it.
+
+        Returns the name of the file with the Python trace>
+        """
+        renderer = Renderer(self.kitchen.workdir)
+        return renderer.render_one_to_python(order)
 
     def assertMgribArgsEqual(self, order, cosmo=None, ifs=None):
         """
