@@ -5,7 +5,7 @@ import tempfile
 from typing import Dict, Any, Optional, List
 import unittest
 import yaml
-from arkimapslib.unittest import IFSMixin, ArkimetMixin, RecipeTestMixin
+from arkimapslib.kitchen import ArkimetKitchen
 
 
 def flavour(name: str, steps: Optional[Dict[str, Any]] = None, **kw) -> Dict[str, Any]:
@@ -16,12 +16,12 @@ def flavour(name: str, steps: Optional[Dict[str, Any]] = None, **kw) -> Dict[str
     }
 
 
-class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
+class TestFlavour(unittest.TestCase):
     recipe_name = "t2m"
     expected_basemap_args = {}
 
     @contextlib.contextmanager
-    def recipes(self, flavours: List[Dict[str, Any]], recipes: Dict[str, Any], inputs: Optional[Dict[str, Any]] = None):
+    def kitchen(self, flavours: List[Dict[str, Any]], recipes: Dict[str, Any], inputs: Optional[Dict[str, Any]] = None):
         if inputs is None:
             inputs = {}
 
@@ -51,15 +51,25 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                 with open(os.path.join(recipe_dir, f"{name}.yaml"), "wt") as fd:
                     yaml.dump({"recipe": steps}, fd)
 
-            self.load_recipes([recipe_dir])
-            self.kitchen.pantry.fill(path="testdata/t2m/cosmo_t2m+12.arkimet")
+            with ArkimetKitchen() as kitchen:
+                kitchen.load_recipes([recipe_dir])
+                kitchen.pantry.fill(path="testdata/t2m/cosmo_t2m+12.arkimet")
+                yield kitchen
 
-            yield recipe_dir
+    def get_step(self, order, step_name: str):
+        """
+        Return the debug trace arguments of the first step in the order's
+        debug_trace log with the given name.
 
-    def make_order(self, flavour: str, recipe: str):
-        recipe = self.kitchen.recipes.get(recipe)
-        flavour = self.kitchen.flavours.get(flavour)
-        orders = flavour.make_orders(recipe, self.kitchen.pantry)
+        Fails the test if not found
+        """
+        for step in order.order_steps:
+            if step.name == step_name:
+                return step
+        self.fail(f"Step {step_name} not found in debug trace of order {order}")
+
+    def make_order(self, kitchen, flavour: str = "default", recipe: str = "t2m"):
+        orders = kitchen.make_orders(flavour, recipe=recipe)
         self.assertEqual(len(orders), 1)
         return orders[0]
 
@@ -72,17 +82,17 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
             "map_coastline_colour": "#000000",
             "map_coastline_resolution": "medium",
         }
-        with self.recipes(flavours=[flavour("test", {"add_coastlines_fg": {"params": test_params}})],
+        with self.kitchen(flavours=[flavour("test", {"add_coastlines_fg": {"params": test_params}})],
                           recipes={"test": [
                               {"step": "add_coastlines_fg"},
                               {"step": "add_grib", "grib": "t2m"},
-                          ]}):
-            order = self.make_order("test", "test")
+                          ]}) as kitchen:
+            order = self.make_order(kitchen, "test", "test")
             add_coastlines_fg = self.get_step(order, "add_coastlines_fg")
             self.assertEqual(add_coastlines_fg.params["params"], test_params)
 
     def test_default_shape(self):
-        with self.recipes(flavours=[
+        with self.kitchen(flavours=[
                               flavour("test", steps={"add_user_boundaries": {"shape": "test"}}),
                           ],
                           recipes={
@@ -93,41 +103,41 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                                   "type": "shape",
                                   "path": "shapes/Sottozone_allerta_ER",
                               }
-                          }):
-            order = self.make_order("test", "t2m")
+                          }) as kitchen:
+            order = self.make_order(kitchen, "test", "t2m")
             add_user_boundaries = self.get_step(order, "add_user_boundaries")
             self.assertEqual(add_user_boundaries.params["shape"], "test")
 
     def test_step_filter(self):
-        with self.recipes(flavours=[
+        with self.kitchen(flavours=[
                               flavour("default"),
                               flavour("test", steps={"add_contour": {"skip": True}}),
                           ],
                           recipes={
                               "t2m": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_contour"}],
-                          }):
+                          }) as kitchen:
 
-            order = self.make_order("default", "t2m")
+            order = self.make_order(kitchen, "default", "t2m")
             self.assertEqual([x.name for x in order.order_steps], ["add_grib", "add_contour"])
 
-            order = self.make_order("test", "t2m")
+            order = self.make_order(kitchen, "test", "t2m")
             self.assertEqual([x.name for x in order.order_steps], ["add_grib"])
 
     def test_recipe_filter(self):
-        with self.recipes(flavours=[
+        with self.kitchen(flavours=[
                               flavour("default"),
                               flavour("test", recipes_filter=["t2m"]),
                           ],
                           recipes={
                               "t2m": [{"step": "add_grib", "grib": "t2m"}],
                               "tcc": [{"step": "add_grib", "grib": "t2m"}],
-                          }):
-            orders = self.kitchen.make_orders(flavour=self.kitchen.flavours.get("default"))
+                          }) as kitchen:
+            orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
             self.assertCountEqual(
                     [o.basename for o in orders],
                     ["t2m+012", "tcc+012"])
 
-            orders = self.kitchen.make_orders(flavour=self.kitchen.flavours.get("test"))
+            orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
             self.assertCountEqual(
                     [o.basename for o in orders],
                     ["t2m+012"])

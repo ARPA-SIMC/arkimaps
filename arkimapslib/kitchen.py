@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union
 import tempfile
 import os
 import yaml
@@ -111,12 +111,20 @@ class WorkingKitchen(Kitchen):
             self.tempdir = None
             self.workdir = workdir
 
-    def make_orders(self, flavour: Flavour) -> List[orders.Order]:
+    def make_orders(self, flavour: Union[Flavour, str], recipe: Optional[str] = None) -> List[orders.Order]:
         """
         Generate all possible orders for all available recipes
         """
+        if isinstance(flavour, str):
+            flavour = self.flavours.get(flavour)
+
+        if recipe is None:
+            recipes = self.recipes.recipes
+        else:
+            recipes = [self.recipes.get(recipe)]
+
         res: List[orders.Order] = []
-        for recipe in self.recipes.recipes:
+        for recipe in recipes:
             if not flavour.allows_recipe(recipe):
                 continue
             res.extend(flavour.make_orders(recipe, self.pantry))
