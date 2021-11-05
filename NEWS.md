@@ -3,6 +3,7 @@
 * Aggiunti file per pacchettizzazione e distribuzione (#76)
 * Test suite (#52)
 * Aggiunto glossario e workflow ricette
+* Corretta la documentazione degli input delle ricette (#79)
 
 # Novità nella versione 0.3
 
