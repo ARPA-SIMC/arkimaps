@@ -18,7 +18,7 @@ BuildRequires:  python3-pyyaml
 
 # only for tests
 BuildRequires:  arkimet
-
+BuildRequires:  python3-Magics
 
 Requires:       python3
 Requires:       python3-Magics
