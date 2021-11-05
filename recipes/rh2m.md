@@ -14,25 +14,24 @@ Mixer: **default**
         * **Preprocessing**: vg6d_transform
         * **Inputs**: t2m, 2d
     * Model **erg5**:
-        * **vg6d_transform arguments**: --output-variable-list=B13003
-        * **Preprocessing**: vg6d_transform
-        * **Inputs**: t2m, 2d
+        * **Arkimet matcher**: `product:GRIB2,00200,000,001,001,004,000;level:GRIB2S,103,003,0000001800`
+        * **grib_filter matcher**: `shortName is "r" and level == 2`
 * **t2m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
         * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
-        * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
+        * **Arkimet matcher**: `product:GRIB1,98,128,167;level:GRIB1,1`
+        * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 1 and level == 0 and timeRangeIndicator == 0`
     * Model **erg5**:
-        * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
-        * **grib_filter matcher**: `shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
+        * **Arkimet matcher**: `product:GRIB2,00200,000,000,000,004,000;level:GRIB2S,103,003,0000001800`
+        * **grib_filter matcher**: `shortName is "t" and level == 2`
 * **2d**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,17`
         * **grib_filter matcher**: `shortName is "2d"`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,2,17`
+        * **Arkimet matcher**: `product:GRIB1,98,128,168`
         * **grib_filter matcher**: `shortName is "2d"`
 
 ## Steps

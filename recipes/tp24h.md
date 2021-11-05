@@ -13,7 +13,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,,2,61`
         * **grib_filter matcher**: `shortName is "tp"`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,2,61`
+        * **Arkimet matcher**: `product:GRIB1,98,128,228`
         * **grib_filter matcher**: `shortName is "tp"`
 
 ## Steps

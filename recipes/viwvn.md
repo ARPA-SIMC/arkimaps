@@ -12,8 +12,8 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,,2,2`
         * **grib_filter matcher**: `shortName is "pmsl"`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,2,2`
-        * **grib_filter matcher**: `shortName is "pmsl"`
+        * **Arkimet matcher**: `product:GRIB1,98,128,151`
+        * **grib_filter matcher**: `shortName is "msl"`
 
 ## Steps
 

@@ -12,14 +12,14 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,100,250`
         * **grib_filter matcher**: `shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 250`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,100,250`
+        * **Arkimet matcher**: `product:GRIB1,98,128,131;level:GRIB1,100,250`
         * **grib_filter matcher**: `shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 250`
 * **v250**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,100,250`
         * **grib_filter matcher**: `shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 250`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,100,250`
+        * **Arkimet matcher**: `product:GRIB1,98,128,132;level:GRIB1,100,250`
         * **grib_filter matcher**: `shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 250`
 
 ## Steps

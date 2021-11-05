@@ -13,8 +13,8 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,,201,113`
         * **grib_filter matcher**: `shortName is "rain_con"`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,201,113`
-        * **grib_filter matcher**: `shortName is "rain_con"`
+        * **Arkimet matcher**: `product:GRIB1,98,128,143`
+        * **grib_filter matcher**: `shortName is "cp"`
 
 ## Steps
 

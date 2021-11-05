@@ -123,7 +123,7 @@ class Recipe:
                     else:
                         for i in inputs:
                             print(f"    * Model **{i.model}**:", file=fd)
-                            inputs[0].document(indent=8, file=fd)
+                            i.document(indent=8, file=fd)
             print(file=fd)
             print("## Steps", file=fd)
             print(file=fd)

@@ -11,10 +11,10 @@ Mixer: **default**
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `0.08`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,,2,74`
-        * **grib_filter matcher**: `shortName is "clcm"`
+        * **Arkimet matcher**: `product:GRIB1,98,128,187`
+        * **grib_filter matcher**: `shortName is "mcc"`
         * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.08`
+        * **mgrib {k}**: `8`
 
 ## Steps
 
