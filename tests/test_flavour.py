@@ -21,7 +21,10 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
     expected_basemap_args = {}
 
     @contextlib.contextmanager
-    def recipes(self, flavours: List[Dict[str, Any]], recipes: Dict[str, Any]):
+    def recipes(self, flavours: List[Dict[str, Any]], recipes: Dict[str, Any], inputs: Optional[Dict[str, Any]] = None):
+        if inputs is None:
+            inputs = {}
+
         with tempfile.TemporaryDirectory() as recipe_dir:
             # Write flavours definition
             with open(os.path.join(recipe_dir, "flavours.yaml"), "wt") as fd:
@@ -39,6 +42,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
                                            ' and timeRangeIndicator == 0 and level == 2',
                             }
                         ],
+                        **inputs,
                     },
                 }, fd)
 
@@ -78,45 +82,20 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
             self.assertEqual(add_coastlines_fg.params["params"], test_params)
 
     def test_default_shape(self):
-        # FIXME: reactivate test once #82 is fixed
-        self.skipTest("This currently makes Magics error out, see #82")
-        with tempfile.TemporaryDirectory() as extra_recipes:
-            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
-                yaml.dump({
-                    "flavours": [
-                        {
-                            "name": "test",
-                            "steps": {
-                                "add_user_boundaries": {
-                                    "shape": "test",
-                                },
-                            }
-                        }
-                    ],
-                    "inputs": {
-                        "test": {
-                            "type": "shape",
-                            "path": "shapes/Sottozone_allerta_ER",
-                        }
-                    },
-                    "recipe": [
-                        {"step": "add_basemap"},
-                        {"step": "add_grib", "grib": "t2m"},
-                        {"step": "add_user_boundaries",
-                         # "shape": "sottozone_allerta_er",
-                         "params": {"map_user_layer_colour": "blue"}},
-                    ]
-                }, fd)
-
-            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
-            recipe = self.kitchen.recipes.get("test")
-            flavour = self.kitchen.flavours.get("test")
-            orders = flavour.make_orders(recipe, self.kitchen.pantry)
-            self.assertEqual(len(orders), 1)
-
-            self.assertRenders(orders[0], output_name="test+012.png")
-
-            add_user_boundaries = self.get_step(orders[0], "add_user_boundaries")
+        with self.recipes(flavours=[
+                              flavour("test", steps={"add_user_boundaries": {"shape": "test"}}),
+                          ],
+                          recipes={
+                              "t2m": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}],
+                          },
+                          inputs={
+                              "test": {
+                                  "type": "shape",
+                                  "path": "shapes/Sottozone_allerta_ER",
+                              }
+                          }):
+            order = self.make_order("test", "t2m")
+            add_user_boundaries = self.get_step(order, "add_user_boundaries")
             self.assertEqual(add_user_boundaries.params["shape"], "test")
 
     def test_step_filter(self):
