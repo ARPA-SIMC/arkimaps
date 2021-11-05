@@ -2,10 +2,18 @@
 import contextlib
 import os
 import tempfile
-from typing import Dict, Any
+from typing import Dict, Any, Optional, List
 import unittest
 import yaml
 from arkimapslib.unittest import IFSMixin, ArkimetMixin, RecipeTestMixin
+
+
+def flavour(name: str, steps: Optional[List[Dict[str, Any]]] = None, **kw) -> Dict[str, Any]:
+    return {
+        "name": name,
+        "steps": steps if steps is not None else {},
+        **kw
+    }
 
 
 class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
@@ -13,17 +21,11 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
     expected_basemap_args = {}
 
     @contextlib.contextmanager
-    def recipes(self, flavours: Dict[str, Any], recipes: Dict[str, Any]):
+    def recipes(self, flavours: List[Dict[str, Any]], recipes: Dict[str, Any]):
         with tempfile.TemporaryDirectory() as recipe_dir:
             # Write flavours definition
             with open(os.path.join(recipe_dir, "flavours.yaml"), "wt") as fd:
-                flavour_data = []
-                for name, steps in flavours.items():
-                    flavour_data.append({
-                        "name": name,
-                        "steps": steps,
-                    })
-                yaml.dump({"flavours": flavour_data}, fd)
+                yaml.dump({"flavours": flavours}, fd)
 
             # Write inputs definition
             with open(os.path.join(recipe_dir, "inputs.yaml"), "wt") as fd:
@@ -66,11 +68,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
             "map_coastline_colour": "#000000",
             "map_coastline_resolution": "medium",
         }
-        with self.recipes(flavours={
-                              "test": {
-                                "add_coastlines_fg": {"params": test_params}
-                              }
-                          },
+        with self.recipes(flavours=[flavour("test", [{"add_coastlines_fg": {"params": test_params}}])],
                           recipes={"test": [
                               {"step": "add_coastlines_fg"},
                               {"step": "add_grib", "grib": "t2m"},
@@ -156,20 +154,14 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
             ])
 
     def test_recipe_filter(self):
-        self.maxDiff = None
-        with tempfile.TemporaryDirectory() as extra_recipes:
-            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
-                yaml.dump({
-                    "flavours": [
-                        {
-                            "name": "test",
-                            "recipes_filter": ["t2m"],
-                        }
-                    ]
-                }, fd)
-            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
-            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"], recipe_name="tcc")
-
+        with self.recipes(flavours=[
+                              flavour("default"),
+                              flavour("test", recipes_filter=["t2m"]),
+                          ],
+                          recipes={
+                              "t2m": [{"step": "add_grib", "grib": "t2m"}],
+                              "tcc": [{"step": "add_grib", "grib": "t2m"}],
+                          }):
             orders = self.kitchen.make_orders(flavour=self.kitchen.flavours.get("default"))
             self.assertCountEqual(
                     [o.basename for o in orders],
