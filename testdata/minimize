@@ -1,4 +1,20 @@
 #!/usr/bin/python3
+
+# In case we are going to need to minimize GRIBs preserving some aspects of the
+# data, tip from @dcesari:
+#
+# Non so se può servire, il comando di libsim:
+#
+# vg6d_transform [--trans-mode=s] --trans-type=boxregrid --sub-type=average \
+#  --npx=4 --npy=4 gribin gribout
+#
+# trasforma un grib facendo la media su blocchi di 4x4 punti (ovviamente si
+# possono usare altri valori), per cui può essere utile per ridurre la
+# risoluzione e quindi le dimensioni di un messaggio senza ridurne
+# significativamente l'area geografica e mantenendo un contenuto informativo
+# ragionevole, nel caso serva avere dei numeri veri che occupano poco spazio.
+
+
 from __future__ import annotations
 import argparse
 import contextlib
