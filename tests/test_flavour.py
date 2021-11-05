@@ -8,7 +8,7 @@ import yaml
 from arkimapslib.unittest import IFSMixin, ArkimetMixin, RecipeTestMixin
 
 
-def flavour(name: str, steps: Optional[List[Dict[str, Any]]] = None, **kw) -> Dict[str, Any]:
+def flavour(name: str, steps: Optional[Dict[str, Any]] = None, **kw) -> Dict[str, Any]:
     return {
         "name": name,
         "steps": steps if steps is not None else {},
@@ -68,7 +68,7 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
             "map_coastline_colour": "#000000",
             "map_coastline_resolution": "medium",
         }
-        with self.recipes(flavours=[flavour("test", [{"add_coastlines_fg": {"params": test_params}}])],
+        with self.recipes(flavours=[flavour("test", {"add_coastlines_fg": {"params": test_params}})],
                           recipes={"test": [
                               {"step": "add_coastlines_fg"},
                               {"step": "add_grib", "grib": "t2m"},
@@ -120,38 +120,19 @@ class TestFlavour(IFSMixin, ArkimetMixin, RecipeTestMixin, unittest.TestCase):
             self.assertEqual(add_user_boundaries.params["shape"], "test")
 
     def test_step_filter(self):
-        self.maxDiff = None
-        with tempfile.TemporaryDirectory() as extra_recipes:
-            with open(os.path.join(extra_recipes, "test.yaml"), "wt") as fd:
-                yaml.dump({
-                    "flavours": [
-                        {
-                            "name": "test",
-                            "steps": {
-                                "add_contour": {
-                                    "skip": True,
-                                },
-                            }
-                        }
-                    ]
-                }, fd)
-            self.fill_pantry(recipe_dirs=[extra_recipes, "recipes"])
+        with self.recipes(flavours=[
+                              flavour("default"),
+                              flavour("test", steps={"add_contour": {"skip": True}}),
+                          ],
+                          recipes={
+                              "t2m": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_contour"}],
+                          }):
 
-            orders = self.make_orders(flavour_name="test")
-            self.assertEqual(len(orders), 1)
+            order = self.make_order("default", "t2m")
+            self.assertEqual([x.name for x in order.order_steps], ["add_grib", "add_contour"])
 
-            self.assertRenders(orders[0])
-
-            steps = [x.name for x in orders[0].order_steps]
-            self.assertEqual(steps, [
-                'add_basemap',
-                'add_coastlines_bg',
-                'add_grib',
-                # 'add_contour',
-                'add_coastlines_fg',
-                'add_grid',
-                'add_boundaries',
-            ])
+            order = self.make_order("test", "t2m")
+            self.assertEqual([x.name for x in order.order_steps], ["add_grib"])
 
     def test_recipe_filter(self):
         with self.recipes(flavours=[
