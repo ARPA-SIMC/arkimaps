@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -69,5 +69,8 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Mon Nov  8 2021 Daniele Branchini <dbranchini@arpae.it> - 0.4-2
+- added workaround for proj issue (#83)
+
 * Mon Oct 25 2021 Daniele Branchini <dbranchini@arpae.it> - 0.4-1
 - First build
