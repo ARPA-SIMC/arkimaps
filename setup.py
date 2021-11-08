@@ -41,6 +41,8 @@ setup(
     extras_require={
         "arkimet": ["arkimet"],
         "nice_python_trace": ["yapf"],
+        # distro is only required for the workaround of issue #83 on Fedora 34
+        "issue83": ["distro"],
     },
     packages=['arkimapslib'],
     scripts=['arkimaps'],
