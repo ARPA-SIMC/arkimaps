@@ -2,13 +2,9 @@
 from typing import Iterable, Generator, Optional
 import contextlib
 import functools
+import os
 import multiprocessing
 import multiprocessing.pool
-import os
-try:
-    import distro
-except ModuleNotFoundError:
-    distro = None
 
 # if TYPE_CHECKING:
 from .orders import Order
@@ -45,20 +41,16 @@ class Renderer:
         if styles_dir is None:
             styles_dir = "/usr/share/magics/styles/ecmwf"
         self.styles_dir = styles_dir
-        self.env_overrides = {
-            # Tell magics where it should take its default styles from
-            "MAGICS_STYLE_PATH": self.styles_dir,
-            # Tell magics not to print noisy banners
-            "MAGPLUS_QUIET": "1",
-        }
-        if distro is not None and distro.linux_distribution()[:2] == ("Fedora", "34") and "PROJ_LIB" not in os.environ:
-            self.env_overrides["PROJ_LIB"] = "/usr/share/proj/"
 
     @contextlib.contextmanager
     def magics_worker_pool(self) -> Generator[multiprocessing.pool.Pool, None, None]:
+        styles_dir = self.styles_dir
+
         def initializer():
-            for k, v in self.env_overrides.items():
-                os.environ[k] = v
+            # Tell magics where it should take its default styles from
+            os.environ["MAGICS_STYLE_PATH"] = styles_dir
+            # Tell magics not to print noisy banners
+            os.environ["MAGPLUS_QUIET"] = "1"
 
         # Using maxtasksperchild to regularly restart the workers, to mitigate
         # possible Magics memory leaks
@@ -66,7 +58,9 @@ class Renderer:
             yield pool
 
     def render_one(self, order: 'Order'):
-        with override_env(**self.env_overrides):
+        with override_env(
+                MAGICS_STYLE_PATH=self.styles_dir,
+                MAGPLUS_QUIET="1"):
             order.prepare(self.workdir)
 
     def render_one_to_python(self, order: 'Order') -> str:
