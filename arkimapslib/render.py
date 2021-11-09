@@ -41,16 +41,23 @@ class Renderer:
         if styles_dir is None:
             styles_dir = "/usr/share/magics/styles/ecmwf"
         self.styles_dir = styles_dir
+        self.env_overrides = {
+            # Tell magics where it should take its default styles from
+            "MAGICS_STYLE_PATH": styles_dir,
+            # Tell magics not to print noisy banners
+            "MAGPLUS_QUIET": "1",
+        }
+
+    @contextlib.contextmanager
+    def override_env(self):
+        with override_env(**self.env_overrides):
+            yield
 
     @contextlib.contextmanager
     def magics_worker_pool(self) -> Generator[multiprocessing.pool.Pool, None, None]:
-        styles_dir = self.styles_dir
-
         def initializer():
-            # Tell magics where it should take its default styles from
-            os.environ["MAGICS_STYLE_PATH"] = styles_dir
-            # Tell magics not to print noisy banners
-            os.environ["MAGPLUS_QUIET"] = "1"
+            for k, v in self.env_overrides.items():
+                os.environ[k] = v
 
         # Using maxtasksperchild to regularly restart the workers, to mitigate
         # possible Magics memory leaks
@@ -58,9 +65,7 @@ class Renderer:
             yield pool
 
     def render_one(self, order: 'Order'):
-        with override_env(
-                MAGICS_STYLE_PATH=self.styles_dir,
-                MAGPLUS_QUIET="1"):
+        with self.override_env():
             order.prepare(self.workdir)
 
     def render_one_to_python(self, order: 'Order') -> str:
@@ -69,9 +74,7 @@ class Renderer:
 
         Return the name of the file written
         """
-        with override_env(
-                MAGICS_STYLE_PATH=self.styles_dir,
-                MAGPLUS_QUIET="1"):
+        with self.override_env():
             return order.write_python_trace(self.workdir)
 
     def render(self, orders: Iterable['Order']):
