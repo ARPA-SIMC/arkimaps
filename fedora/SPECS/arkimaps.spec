@@ -1,4 +1,4 @@
-%global releaseno 2
+%global releaseno 3
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -43,6 +43,12 @@ Meteo plot generator from grib data
 #install arkimet-postprocessor in /usr/lib64/arkimet
 install -D -m0755 arkimet-postprocessor %{buildroot}%{_libdir}/arkimet/%{name}
 
+#install recipes in /usr/share/arkimaps/
+mkdir -p %{buildroot}%{_datadir}/%{name}/recipes
+install -D -m664 recipes/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/
+mkdir -p %{buildroot}%{_datadir}/%{name}/recipes/flavours
+install -D -m664 recipes/flavours/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/flavours/
+
 #generate recipes doc
 mkdir -p %{buildroot}%{_docdir}/%{name}/
 %{__python3} arkimaps document-recipes --destdir %{buildroot}%{_docdir}/%{name}/
@@ -53,6 +59,8 @@ mkdir -p %{buildroot}%{_docdir}/%{name}/
 %files
 %{_bindir}/%{name}
 %{python3_sitelib}/%{name}*
+%dir %{_datadir}/%{name}
+%{_datadir}/%{name}/*
 %doc %{_docdir}/%{name}/*
 
 %package -n arkimet-postprocess-%{name}
@@ -69,6 +77,9 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Nov  9 2021 Daniele Branchini <dbranchini@arpae.it> - 0.4-3
+- fixed recipes installation
+
 * Mon Nov  8 2021 Daniele Branchini <dbranchini@arpae.it> - 0.4-2
 - added workaround for proj issue (#83)
 
