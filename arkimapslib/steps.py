@@ -179,8 +179,6 @@ class AddCoastlinesFg(Step):
     }
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        # TODO: fix (See #73)
-        # worktop.parts.append(worktop.macro.mcoast(map_coastline_general_style="foreground"))
         # TODO: if implementation stays like this, make this a subclass of MagicsMacro
         return "mcoast", self.params.get("params", {})
 
@@ -201,10 +199,6 @@ class AddBoundaries(Step):
     }
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        # TODO: fix (See #73)
-        # worktop.parts.append(
-        #     worktop.macro.mcoast(map_coastline_general_style="boundaries"),
-        # )
         # TODO: if implementation stays like this, make this a subclass of MagicsMacro
         return "mcoast", self.params.get("params", {})
 
