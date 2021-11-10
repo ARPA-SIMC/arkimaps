@@ -1,4 +1,4 @@
-%global releaseno 3
+%global releaseno 4
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -77,6 +77,9 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed Nov 10 2021 Daniele Branchini <dbranchini@arpae.it> - 0.4-4
+- refactored test suite to isolate Magics (#84)
+
 * Tue Nov  9 2021 Daniele Branchini <dbranchini@arpae.it> - 0.4-3
 - fixed recipes installation
 
