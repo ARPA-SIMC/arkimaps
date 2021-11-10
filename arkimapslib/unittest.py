@@ -1,11 +1,33 @@
 # from __future__ import annotations
-from typing import Dict, List, Any, Optional, Type
+from typing import Dict, List, Any, Optional, Type, Tuple
 import unittest
 import sys
 import os
 import pickle
 import yaml
 from .render import Renderer
+
+
+class OrderResult:
+    """
+    Encapsulate the results of rendering an order, to be used for inspecting
+    details of rendering
+    """
+    def __init__(self, renderer, order):
+        self.renderer = renderer
+        self.order = order
+        self.magics = None
+        self.python_code = None
+
+    def get_step(self, step_name: str):
+        """
+        Return the arguments passed to Magics for the given step
+        debug_trace log with the given name.
+        """
+        for name, macro_name, params in self.magics:
+            if name == step_name:
+                return macro_name, params
+        raise KeyError(f"Step {step_name} not found in debug trace of order {self.order}")
 
 
 class RecipeTestMixin:
@@ -160,11 +182,25 @@ class RecipeTestMixin:
         if self.id() in self.magics_crashes_skip_tests:
             raise unittest.SkipTest("disabled in .magics-crashes.yaml")
 
-        renderer.render_one(order)
-        self.assertIsNotNone(order.output)
-        self.assertEqual(os.path.basename(order.output), output_name)
+        res = OrderResult(renderer, order)
+
+        # Generate magics parts for testing
+        res.magics = []
+        for step in order.order_steps:
+            name, parms = step.as_magics_macro()
+            res.magics.append((step.name, name, parms))
+
         add_basemap = self.get_step(order, "add_basemap")
         self.assertEqual(add_basemap.params.get("params", {}), self.expected_basemap_args)
+
+        # Test rendering to Python
+        res.python_code = renderer.render_one_to_python(order)
+
+        # Test rendering with Magics
+        rendered = renderer.render_one(order)
+        self.assertIsNotNone(rendered)
+        self.assertIsNotNone(rendered.output)
+        self.assertEqual(os.path.basename(rendered.output), output_name)
 
     def order_to_python(self, order) -> str:
         """

@@ -45,27 +45,6 @@ class Worktop:
             "parts = []",
         ]
 
-    def write_python_trace(self, fname: Optional[str] = None) -> str:
-        """
-        Write the Python trace of this run to the given file.
-
-        Return the filename where the Python trace was written
-        """
-        if fname is None:
-            fname = self.output_pathname + ".py"
-        self.py_lines.append("macro.plot(output, *parts)")
-
-        code = "\n".join(self.py_lines)
-        try:
-            from yapf.yapflib import yapf_api
-            code, changed = yapf_api.FormatCode(code)
-        except ModuleNotFoundError:
-            pass
-        with open(fname, "wt") as fd:
-            print(code, file=fd)
-
-        return fname
-
     def write_product(self):
         """
         Render the file and store the output file name into the order

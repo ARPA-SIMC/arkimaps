@@ -53,33 +53,3 @@ class Order:
 
     def __repr__(self):
         return self.basename
-
-    def prepare(self, workdir: str):
-        """
-        Run all the steps of the recipe and render the resulting file
-        """
-        from .worktops import Worktop
-
-        output_pathname = os.path.join(workdir, self.basename)
-        worktop = Worktop(output_pathname=output_pathname, input_files=self.input_files)
-        for step in self.order_steps:
-            step.python_trace(worktop)
-        for step in self.order_steps:
-            step.run(worktop)
-        worktop.write_python_trace()
-        worktop.write_product()
-        self.output = output_pathname + ".png"
-
-    def write_python_trace(self, workdir: str) -> str:
-        """
-        Render as a python trace only.
-
-        This is useful to reproduce a situation where Magics crashes.
-        """
-        from .worktops import Worktop
-
-        output_pathname = os.path.join(workdir, self.basename)
-        worktop = Worktop(output_pathname=output_pathname, input_files=self.input_files)
-        for step in self.order_steps:
-            step.python_trace(worktop)
-        return worktop.write_python_trace()
