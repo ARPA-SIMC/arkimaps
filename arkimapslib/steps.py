@@ -50,13 +50,13 @@ class Step:
         raise NotImplementedError(f"{self.__class__.__name__}.as_magics_macro not implemented")
 
     def run(self, worktop: Worktop):
-        raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
-
-    def python_trace(self, worktop: Worktop):
         """
-        Store in the worktop the python code that reproduces this step
+        Execute this step
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.run not implemented")
+        # By default, it uses as_magics_macro to instantiate the right magics
+        # macro and add it to worktop parts
+        macro_name, macro_args = self.as_magics_macro()
+        worktop.parts.append(getattr(worktop.macro, macro_name)(**macro_args))
 
     @classmethod
     def compile_args(cls, step_config: StepConfig, args: Kwargs) -> Kwargs:
@@ -94,14 +94,6 @@ class MagicsMacro(Step):
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         return self.macro_name, self.params.get("params", {})
-
-    def run(self, worktop: Worktop):
-        params = self.params.get("params", {})
-        worktop.parts.append(getattr(worktop.macro, self.macro_name)(**params))
-
-    def python_trace(self, worktop: Worktop):
-        params = self.params.get("params", {})
-        worktop.py_lines.append(f"parts.append(macro.{self.macro_name}(**{params!r}))")
 
 
 class AddBasemap(MagicsMacro):
@@ -187,21 +179,10 @@ class AddCoastlinesFg(Step):
     }
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        return "mcoast", self.params.get("params", {})
-
-    # TODO: if implementation stays like this, make this a subclass of MagicsMacro
-
-    def run(self, worktop: Worktop):
-        params = self.params.get("params", {})
         # TODO: fix (See #73)
         # worktop.parts.append(worktop.macro.mcoast(map_coastline_general_style="foreground"))
-        worktop.parts.append(worktop.macro.mcoast(**params))
-
-    def python_trace(self, worktop: Worktop):
-        params = self.params.get("params", {})
-        # TODO: fix (See #73)
-        # worktop.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='foreground'))")
-        worktop.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+        # TODO: if implementation stays like this, make this a subclass of MagicsMacro
+        return "mcoast", self.params.get("params", {})
 
 
 class AddBoundaries(Step):
@@ -220,23 +201,12 @@ class AddBoundaries(Step):
     }
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        return "mcoast", self.params.get("params", {})
-
-    # TODO: if implementation stays like this, make this a subclass of MagicsMacro
-
-    def run(self, worktop: Worktop):
-        params = self.params.get("params", {})
         # TODO: fix (See #73)
         # worktop.parts.append(
         #     worktop.macro.mcoast(map_coastline_general_style="boundaries"),
         # )
-        worktop.parts.append(worktop.macro.mcoast(**params))
-
-    def python_trace(self, worktop: Worktop):
-        params = self.params.get("params", {})
-        # TODO: fix (See #73)
-        # worktop.py_lines.append(f"parts.append(macro.mcoast(map_coastline_general_style='boundaries'))")
-        worktop.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
+        # TODO: if implementation stays like this, make this a subclass of MagicsMacro
+        return "mcoast", self.params.get("params", {})
 
 
 class AddGrib(Step):
@@ -267,17 +237,6 @@ class AddGrib(Step):
         params.update(self.params.get("params", {}))
         params["grib_input_file_name"] = self.grib_input.pathname
         return "mgrib", params
-
-    def run(self, worktop: Worktop):
-        params = dict(self.params.get("mgrib", {}))
-        params.update(self.params.get("params", {}))
-        worktop.parts.append(worktop.macro.mgrib(grib_input_file_name=self.grib_input.pathname, **params))
-
-    def python_trace(self, worktop: Worktop):
-        params = dict(self.params.get("mgrib", {}))
-        params.update(self.params.get("params", {}))
-        worktop.py_lines.append(
-                f"parts.append(macro.mgrib(grib_input_file_name={self.grib_input.pathname!r}, **{params!r}))")
 
     @classmethod
     def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
@@ -318,14 +277,6 @@ class AddUserBoundaries(Step):
         params = self._run_params()
         return "mcoast", params
 
-    def run(self, worktop: Worktop):
-        params = self._run_params()
-        worktop.parts.append(worktop.macro.mcoast(**params))
-
-    def python_trace(self, worktop: Worktop):
-        params = self._run_params()
-        worktop.py_lines.append(f"parts.append(macro.mcoast(**{params!r}))")
-
     @classmethod
     def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
         res = super().get_input_names(step_config, args)
@@ -356,16 +307,6 @@ class AddGeopoints(Step):
         params = dict(self.params.get("params", {}))
         params["geo_input_file_name"] = self.points.pathname
         return "mgeo", params
-
-    def run(self, worktop: Worktop):
-        params = dict(self.params.get("params", {}))
-        params["geo_input_file_name"] = self.points.pathname
-        worktop.parts.append(worktop.macro.mgeo(**params))
-
-    def python_trace(self, worktop: Worktop):
-        params = dict(self.params.get("params", {}))
-        params["geo_input_file_name"] = self.points.pathname
-        worktop.py_lines.append(f"parts.append(macro.mgeo(**{params!r}))")
 
     @classmethod
     def get_input_names(cls, step_config: StepConfig, args: Kwargs) -> Set[str]:
