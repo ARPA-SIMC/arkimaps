@@ -24,6 +24,8 @@ inputs:
      arkimet: product:GRIB2,00200, 000, 002, 000, 004, 000;level:GRIB2S,103,003,0000010000
      eccodes: shortName is "wdir" and level == 10
  uv10m:
+ # the correct order of components is needed for subsequent mgrib calls
+ # see: https://confluence.ecmwf.int/display/MAGP/Grib+Input
    - model: cosmo
      type: cat
      inputs: [u10m, v10m]
