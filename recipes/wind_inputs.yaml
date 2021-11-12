@@ -32,7 +32,7 @@ inputs:
      inputs: [u10m, v10m]
    - model: erg5
      type: cat
-     inputs: [wdir10m, ws10m]
+     inputs: [ws10m, wdir10m]
      mgrib:
         grib_wind_mode: sd
  u250:
