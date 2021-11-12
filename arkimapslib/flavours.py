@@ -1,14 +1,17 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, List, Set
+from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set
 import re
 import fnmatch
 import logging
 from .steps import StepConfig, Step, StepSkipped
 
-# if TYPE_CHECKING:
 from . import recipes
 from . import orders
 from . import inputs
+
+if TYPE_CHECKING:
+    from . import pantry
+
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -60,14 +63,14 @@ class Flavour:
             res = StepConfig(name)
         return res
 
-    def list_inputs_recursive(self, recipe: "recipes.Recipe", input_registry: inputs.InputRegistry) -> List[str]:
+    def list_inputs_recursive(self, recipe: "recipes.Recipe", pantry: "pantry.Pantry") -> List[str]:
         """
         List inputs used by a recipe, and all their inputs, recursively
         """
         res: List[str] = []
         for input_name in self.list_inputs(recipe):
-            for inp in input_registry.inputs[input_name]:
-                inp.add_all_inputs(input_registry, res)
+            for inp in pantry.inputs[input_name]:
+                inp.add_all_inputs(pantry, res)
         return res
 
     def list_inputs(self, recipe: "recipes.Recipe") -> List[str]:
@@ -111,7 +114,7 @@ class Flavour:
 
     def make_orders(self,
                     recipe: "recipes.Recipe",
-                    input_storage: inputs.InputStorage) -> List["orders.Order"]:
+                    input_storage: "pantry.DiskPantry") -> List["orders.Order"]:
         """
         Scan a recipe and return a set with all the inputs it needs
         """

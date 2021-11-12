@@ -1,19 +1,18 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, NamedTuple, Type, List, Union
+from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Union
 import os
 import subprocess
 import shutil
 import shlex
 import logging
 
-# if TYPE_CHECKING:
-#     import arkimet
 try:
     import arkimet
 except ModuleNotFoundError:
     pass
 
-from .input_registry import InputRegistry, InputStorage
+if TYPE_CHECKING:
+    from . import pantry
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -101,7 +100,7 @@ class Input:
         """
         return []
 
-    def add_all_inputs(self, input_registry: InputRegistry, res: List[str]):
+    def add_all_inputs(self, input_registry: "pantry.Pantry", res: List[str]):
         """
         Add to res the name of this input, and all inputs of this input, and
         their inputs, recursively
@@ -113,7 +112,7 @@ class Input:
             for inp in input_registry.inputs[name]:
                 inp.add_all_inputs(input_registry, res)
 
-    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def get_steps(self, input_storage: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         """
         Scan the pantry to check what input files are available for this input.
 
@@ -185,7 +184,7 @@ class Static(Input):
         print(f"{ind}* **Path**: `{self.path}`", file=file)
         super().document(file, indent)
 
-    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def get_steps(self, input_storage: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         return {None: InputFile(self.abspath, self, None)}
 
 
@@ -266,13 +265,13 @@ class Derived(Input):
         res.extend(self.inputs)
         return res
 
-    def generate(self, input_storage: InputStorage):
+    def generate(self, input_storage: "pantry.DiskPantry"):
         """
         Generate derived products from inputs
         """
         raise NotImplementedError(f"{self.__class__.__name__}.generate() not implemented")
 
-    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def get_steps(self, input_storage: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         # Check if flagfile exists, in which case skip generation
         flagfile = os.path.join(input_storage.data_root, f"{self.pantry_basename}.processed")
         if not os.path.exists(flagfile):
@@ -311,7 +310,7 @@ class Decumulate(Derived):
         res["step"] = self.step
         return res
 
-    def generate(self, input_storage: InputStorage):
+    def generate(self, input_storage: "pantry.DiskPantry"):
         # Get the steps of our source input
         source_steps = input_storage.get_steps(self.inputs[0])
 
@@ -387,7 +386,7 @@ class VG6DTransform(Derived):
         res["args"] = self.args
         return res
 
-    def generate(self, input_storage: InputStorage):
+    def generate(self, input_storage: "pantry.DiskPantry"):
         # Get the steps for each of our inputs
         available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
         for input_name in self.inputs:
@@ -451,7 +450,7 @@ class Cat(Derived):
     """
     NAME = "cat"
 
-    def generate(self, input_storage: InputStorage):
+    def generate(self, input_storage: "pantry.DiskPantry"):
         # Get the steps for each of our inputs
         available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
         for input_name in self.inputs:

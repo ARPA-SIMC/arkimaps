@@ -1,28 +1,57 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, BinaryIO, List, Tuple, Any, Counter
+from typing import Optional, BinaryIO, List, Tuple, Any, Counter, Dict, Iterable
 import collections
 import contextlib
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
-from . import input_registry
 
-if TYPE_CHECKING:
-    from . import inputs
 try:
     import arkimet
 except ModuleNotFoundError:
     arkimet = None
 
+from . import inputs
+
 log = logging.getLogger("arkimaps.pantry")
 
 
-class PantryMixin:
+class Pantry:
     """
     Storage of GRIB files used as inputs to recipes
     """
+    def __init__(self, *args, **kw):
+        # List of input definitions, indexed by name
+        self.inputs: Dict[str, List[inputs.Input]] = {}
+
+    def add_input(self, inp: "inputs.Input"):
+        """
+        Add an Input definition
+        """
+        old = self.inputs.get(inp.name)
+        if old is None:
+            # First time we see this input: add it
+            self.inputs[inp.name] = [inp]
+            return
+
+        if len(old) == 1 and old[0].model is None:
+            # We had an input for model=None (all models)
+            # so we refuse to add more
+            raise RuntimeError(
+                    f"{inp.defined_in}: input {inp.name} for (any model) already defined in {old[0].defined_in}")
+
+        for i in old:
+            if i.model == inp.model:
+                # We already had an input for this model name
+                raise RuntimeError(
+                        f"{inp.defined_in}: input {inp.name} (model {inp.model}) already defined in {i.defined_in}")
+
+        # Input for a new model: store it
+        old.append(inp)
+
     def fill(self, path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry.
@@ -51,21 +80,51 @@ class PantryMixin:
                 yield fd
 
 
-class EmptyPantry(input_registry.InputRegistry, PantryMixin):
+class EmptyPantry(Pantry):
     """
     Pantry with no disk-based storage, used as input registry only to generate documentation
     """
     pass
 
 
-class DiskPantry(input_registry.InputStorage, PantryMixin):
+class DiskPantry(Pantry):
     """
     Pantry with disk-based storage
     """
     def __init__(self, root: str, **kw):
-        kw.setdefault("data_root", os.path.join(root, "pantry"))
         super().__init__(**kw)
+        self.data_root = os.path.join(root, "pantry")
         self.data_counts = collections.Counter()
+
+    def list_existing_steps(self, inp: "inputs.Input") -> Iterable["inputs.InputFile"]:
+        """
+        Generate a sequence of InputFile objects for all input files available
+        in storage for the given input
+        """
+        fn_match = re.compile(rf"{re.escape(inp.pantry_basename)}\+(\d+)\.\w+")
+        for fn in os.listdir(self.data_root):
+            mo = fn_match.match(fn)
+            if not mo:
+                continue
+            step = int(mo.group(1))
+            yield inputs.InputFile(os.path.join(self.data_root, fn), inp, step)
+
+    def get_steps(self, input_name: str) -> Dict[Optional[int], "inputs.InputFile"]:
+        """
+        Return the steps available in the pantry for the input with the given
+        name
+        """
+        inps = self.inputs.get(input_name)
+        if inps is None:
+            return {}
+
+        res: Dict[Optional[int], "inputs.InputFile"] = {}
+        for inp in inps:
+            steps = inp.get_steps(self)
+            for step, input_file in steps.items():
+                # Keep the first available version for each step
+                res.setdefault(step, input_file)
+        return res
 
 
 if arkimet is not None:

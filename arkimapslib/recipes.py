@@ -1,10 +1,12 @@
 # from __future__ import annotations
-from typing import Dict, Any, List, Set, Type, TextIO
+from typing import TYPE_CHECKING, Dict, Any, List, Set, Type, TextIO
 import inspect
 import json
 import logging
 from . import steps
-from . import inputs
+
+if TYPE_CHECKING:
+    from . import pantry
 
 # if TYPE_CHECKING:
 # Used for kwargs-style dicts
@@ -101,7 +103,7 @@ class Recipe:
     def __repr__(self):
         return self.name
 
-    def document(self, input_registry: inputs.InputRegistry, dest: str):
+    def document(self, input_registry: "pantry.Pantry", dest: str):
         from .flavours import Flavour
         empty_flavour = Flavour("default", defined_in=__file__)
         with open(dest, "wt") as fd:
