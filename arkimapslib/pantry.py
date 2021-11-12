@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Optional, BinaryIO, List, Tuple, Any, Counter
+from typing import TYPE_CHECKING, Optional, BinaryIO, List, Tuple, Any, Counter
 import collections
 import contextlib
 import logging
@@ -7,10 +7,10 @@ import os
 import subprocess
 import sys
 import tempfile
-from . import inputs
+from . import input_registry
 
-# if TYPE_CHECKING:
-# from . import recipes
+if TYPE_CHECKING:
+    from . import inputs
 try:
     import arkimet
 except ModuleNotFoundError:
@@ -51,14 +51,14 @@ class PantryMixin:
                 yield fd
 
 
-class EmptyPantry(inputs.InputRegistry, PantryMixin):
+class EmptyPantry(input_registry.InputRegistry, PantryMixin):
     """
     Pantry with no disk-based storage, used as input registry only to generate documentation
     """
     pass
 
 
-class DiskPantry(inputs.InputStorage, PantryMixin):
+class DiskPantry(input_registry.InputStorage, PantryMixin):
     """
     Pantry with disk-based storage
     """
