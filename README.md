@@ -64,7 +64,7 @@ Ad esempio, per plot ritagliati sull'Emilia-Romagna:
 ./arkimaps process --filter=eccodes --flavours=emro < test.arkimet
 ```
 
-L'elenco completo delle aree implementate è disponibile nella directory [prodotti](../master/prodotti/README.md).
+L'elenco completo delle aree implementate è disponibile nella directory [doc/prodotti](../master/doc/prodotti/README.md).
 
 È possibile aggiungere nuove aree modificando il contenuto del file [recipes/flavours/default.yaml](../master/recipes/flavours/default.yaml), vedi oltre alla sezione "Creazione di varianti (flavour) per il rendering".
 
@@ -79,10 +79,13 @@ Ad esempio, per plot ritagliati sull'Emilia-Romagna:
 ./arkimaps process --filter=eccodes --recipes /tmp/temprecipes < test.arkimet
 ```
 
-### Documentazione
+## Documentazione
 
 Informazioni sull'inventario di aree e prodotti implementati sono
-disponibili nella directory [prodotti](../master/prodotti/README.md).
+disponibili nella directory [doc/prodotti](../master/doc/prodotti/README.md).
+
+E' disponibile un glossario sui termini in uso: [Glossary](../master/doc/GLOSSARY.rst).
+
 
 Per una descrizione delle opzioni vedi:
 ```
@@ -94,6 +97,10 @@ Per una descrizione delle opzioni vedi:
 ```
 ./arkimaps process -h
 ```
+
+Una descrizione sul workflow completo dall'interpretazione delle ricette agli output generati
+è disponibile qui: [Recipe workflow](../master/doc/RECIPE_WORKFLOW.rst).
+
 
 ## Informazioni sulle ricette
 
@@ -162,4 +169,4 @@ La configurazione di uno step può avere:
 arkimaps is Copyright (C) 2020-2021 ARPAE-SIMC <urpsim@arpae.it>
 
 arkimaps is Free Software, licensed under the terms of the GNU General Public
-License version 3.
+License version 2.
