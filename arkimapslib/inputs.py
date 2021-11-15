@@ -121,8 +121,17 @@ class Input:
         """
         res: Dict[Optional[int], "InputFile"] = {}
         for input_file in pantry.list_existing_steps(self):
+            self.validate(pantry, input_file.pathname)
             res[input_file.step] = input_file
         return res
+
+    def validate(self, pantry: "pantry.DiskPantry", relname: str):
+        """
+        Validate the data associated to this input in the pantry, logging
+        warnings if issues are found
+        """
+        # Do nothing by default, to be overridden by subclasses
+        pass
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         """
@@ -234,6 +243,13 @@ class Source(Input):
         res["arkimet"] = self.arkimet
         res["eccodes"] = self.eccodes
         return res
+
+    def validate(self, pantry: "pantry.DiskPantry", relname: str):
+        found = pantry.data_counts.get(os.path.basename(relname))
+        if not found:
+            log.error("%s: no data was found for %s", self.name, relname)
+        elif found != 1:
+            log.error("%s: %d data found for %s instead of just 1", self.name, found, relname)
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         self.arkimet_matcher = session.matcher(self.arkimet)

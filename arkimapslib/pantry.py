@@ -93,8 +93,8 @@ class DiskPantry(Pantry):
     """
     def __init__(self, root: str, **kw):
         super().__init__(**kw)
-        self.data_root = os.path.join(root, "pantry")
-        self.data_counts = collections.Counter()
+        self.data_root: str = os.path.join(root, "pantry")
+        self.data_counts: Dict[str, int] = collections.Counter()
 
     def list_existing_steps(self, inp: "inputs.Input") -> Iterable["inputs.InputFile"]:
         """
