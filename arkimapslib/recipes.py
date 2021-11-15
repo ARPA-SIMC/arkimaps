@@ -103,7 +103,7 @@ class Recipe:
     def __repr__(self):
         return self.name
 
-    def document(self, input_registry: "pantry.Pantry", dest: str):
+    def document(self, pantry: "pantry.Pantry", dest: str):
         from .flavours import Flavour
         empty_flavour = Flavour("default", defined_in=__file__)
         with open(dest, "wt") as fd:
@@ -114,8 +114,8 @@ class Recipe:
             print("## Inputs", file=fd)
             print(file=fd)
             # TODO: list only inputs explicitly required by the recipe
-            for name in empty_flavour.list_inputs_recursive(self, input_registry):
-                inputs = input_registry.inputs.get(name)
+            for name in empty_flavour.list_inputs_recursive(self, pantry):
+                inputs = pantry.inputs.get(name)
                 if inputs is None:
                     print(f"* **{name}** (input details are missing)", file=fd)
                 else:

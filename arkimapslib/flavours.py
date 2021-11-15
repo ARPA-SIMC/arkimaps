@@ -114,7 +114,7 @@ class Flavour:
 
     def make_orders(self,
                     recipe: "recipes.Recipe",
-                    input_storage: "pantry.DiskPantry") -> List["orders.Order"]:
+                    pantry: "pantry.DiskPantry") -> List["orders.Order"]:
         """
         Scan a recipe and return a set with all the inputs it needs
         """
@@ -131,7 +131,7 @@ class Flavour:
         for input_name in input_names:
             # Find available steps for this input
             output_steps: Dict[Optional[int], "InputFile"]
-            output_steps = input_storage.get_steps(input_name)
+            output_steps = pantry.get_steps(input_name)
 
             # Special handling for inputs that are not step-specific and
             # are valid for all steps, like maps or orography
