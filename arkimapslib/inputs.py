@@ -1,10 +1,11 @@
 # from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Union
-import os
-import subprocess
-import shutil
-import shlex
+import collections
 import logging
+import os
+import shlex
+import shutil
+import subprocess
 
 try:
     import arkimet
@@ -111,6 +112,12 @@ class Input:
         for name in self.get_all_inputs():
             for inp in pantry.inputs[name]:
                 inp.add_all_inputs(pantry, res)
+
+    def add_step(self, step: int):
+        """
+        Notify that the pantry contains data for this input for the given step
+        """
+        pass
 
     def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         """
@@ -237,6 +244,8 @@ class Source(Input):
         self.arkimet_matcher: Optional[arkimet.Matcher] = None
         # grib_filter if expression
         self.eccodes = eccodes
+        # TODO: temporary
+        self.data_counts: Dict[int, int] = collections.Counter()
 
     def to_dict(self):
         res = super().to_dict()
@@ -244,12 +253,13 @@ class Source(Input):
         res["eccodes"] = self.eccodes
         return res
 
+    def add_step(self, step: int):
+        self.data_counts[step] += 1
+
     def validate(self, pantry: "pantry.DiskPantry", relname: str):
-        found = pantry.data_counts.get(os.path.basename(relname))
-        if not found:
-            log.error("%s: no data was found for %s", self.name, relname)
-        elif found != 1:
-            log.error("%s: %d data found for %s instead of just 1", self.name, found, relname)
+        for step, count in self.data_counts.items():
+            if count > 1:
+                log.error("%s: %d data found for step +%d instead of just 1", self.name, count, step)
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         self.arkimet_matcher = session.matcher(self.arkimet)

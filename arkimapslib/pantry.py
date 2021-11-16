@@ -1,6 +1,5 @@
 # from __future__ import annotations
-from typing import Optional, BinaryIO, List, Tuple, Any, Counter, Dict, Iterable
-import collections
+from typing import Optional, BinaryIO, List, Tuple, Any, Dict, Iterable
 import contextlib
 import logging
 import os
@@ -94,7 +93,6 @@ class DiskPantry(Pantry):
     def __init__(self, root: str, **kw):
         super().__init__(**kw)
         self.data_root: str = os.path.join(root, "pantry")
-        self.data_counts: Dict[str, int] = collections.Counter()
 
     def list_existing_steps(self, inp: "inputs.Input") -> Iterable["inputs.InputFile"]:
         """
@@ -160,16 +158,16 @@ if arkimet is not None:
             os.makedirs(self.data_root, exist_ok=True)
 
             # Dispatch todo-list
-            match: List[Tuple[Any, str]] = []
+            todo_list: List[Tuple[Any, "inputs.Input"]] = []
             for inps in self.inputs.values():
                 for inp in inps:
                     matcher = getattr(inp, "arkimet_matcher", None)
                     if matcher is None:
                         log.info("%s (model=%s): skipping input with no arkimet matcher filter", inp.name, inp.model)
                         continue
-                    match.append((matcher, inp.pantry_basename))
+                    todo_list.append((matcher, inp))
 
-            dispatcher = ArkimetDispatcher(self.data_root, self.data_counts, match)
+            dispatcher = ArkimetDispatcher(self, todo_list)
             with self.open_dispatch_input(path=path) as infd:
                 dispatcher.read(infd)
 
@@ -177,13 +175,13 @@ if arkimet is not None:
         """
         Read a stream of arkimet metadata and store its data into a dataset
         """
-        def __init__(self, data_root: str, data_counts: Counter[str], todo_list: List[Tuple[Any, str]]):
-            self.data_root = data_root
-            self.data_counts = data_counts
+        def __init__(self, pantry: "Pantry", todo_list: List[Tuple[Any, "inputs.Input"]]):
+            self.pantry = pantry
+            self.data_root = pantry.data_root
             self.todo_list = todo_list
 
         def dispatch(self, md: arkimet.Metadata) -> bool:
-            for matcher, pantry_basename in self.todo_list:
+            for matcher, inp in self.todo_list:
                 if matcher.match(md):
                     trange = md.to_python("timerange")
                     style = trange["style"]
@@ -202,7 +200,7 @@ if arkimet is not None:
                         continue
 
                     source = md.to_python("source")
-                    relname = pantry_basename + f"+{output_step}.{source['format']}"
+                    relname = inp.pantry_basename + f"+{output_step}.{source['format']}"
 
                     dest = os.path.join(self.data_root, relname)
                     # TODO: implement Metadata.write_data to write directly without
@@ -211,7 +209,7 @@ if arkimet is not None:
                         out.write(md.data)
 
                     # Take note of having added one element to this file
-                    self.data_counts[relname] += 1
+                    inp.add_step(output_step)
             return True
 
         def read(self, infd: BinaryIO):
@@ -249,7 +247,7 @@ class EccodesPantry(DiskPantry):
                         log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
-                    print(f'  print "o:{inp.pantry_basename}+[endStep].grib";', file=f)
+                    print(f'  print "s:{inp.model or ""},{inp.name},[endStep]";', file=f)
                     print(f'  write "{self.data_root}/{inp.pantry_basename}+[endStep].grib";', file=f)
                     print("}", file=f)
 
@@ -258,16 +256,26 @@ class EccodesPantry(DiskPantry):
         else:
             self.read_arkimet(path)
 
+    def _parse_filter_output(self, line: bytes):
+        if not line.startswith(b"s:"):
+            return
+        model, name, step = line[2:].split(b",")
+        if not model:
+            model = None
+        else:
+            model = model.decode()
+        for inp in self.inputs[name.decode()]:
+            if inp.model == model:
+                inp.add_step(int(step))
+
     def read_grib(self, path: str):
         """
         Run grib_filter on GRIB input
         """
         cmd = ["grib_filter", self.grib_filter_rules, ("-" if path is None else path)]
         res = subprocess.run(cmd, stdin=sys.stdin, stdout=subprocess.PIPE, check=True)
-        for line in res.stdout.decode().splitlines():
-            if not line.startswith("o:"):
-                continue
-            self.data_counts[line[2:]] += 1
+        for line in res.stdout.splitlines():
+            self._parse_filter_output(line)
 
     def read_arkimet(self, path: str):
         """
@@ -293,9 +301,7 @@ class EccodesPantry(DiskPantry):
 
             outfd.seek(0)
             for line in outfd:
-                if not line.startswith(b"o:"):
-                    continue
-                self.data_counts[line[2:].rstrip().decode()] += 1
+                self._parse_filter_output(line)
 
     def store_processing_artifacts(self, tarout):
         """
