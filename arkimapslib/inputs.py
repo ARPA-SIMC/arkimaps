@@ -389,6 +389,8 @@ class Decumulate(Derived):
             for line in res.stdout.splitlines():
                 if not line.startswith(b"s:"):
                     return
+                if step in self.steps:
+                    log.error("%s: vg6d_transform generated multiple GRIB data for step +%d", self.name, step)
                 self.steps.add(int(line[2:]))
         finally:
             if os.path.exists(decumulated_data):
