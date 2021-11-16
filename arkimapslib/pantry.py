@@ -1,26 +1,55 @@
 # from __future__ import annotations
-from typing import Optional, BinaryIO, List, Tuple, Any
+from typing import Optional, BinaryIO, List, Tuple, Any, Dict
 import contextlib
+import logging
+import os
 import subprocess
 import sys
-import os
-import logging
-from . import inputs
+import tempfile
 
-# if TYPE_CHECKING:
-# from . import recipes
 try:
     import arkimet
 except ModuleNotFoundError:
     arkimet = None
 
+from . import inputs
+
 log = logging.getLogger("arkimaps.pantry")
 
 
-class PantryMixin:
+class Pantry:
     """
     Storage of GRIB files used as inputs to recipes
     """
+    def __init__(self, *args, **kw):
+        # List of input definitions, indexed by name
+        self.inputs: Dict[str, List[inputs.Input]] = {}
+
+    def add_input(self, inp: "inputs.Input"):
+        """
+        Add an Input definition
+        """
+        old = self.inputs.get(inp.name)
+        if old is None:
+            # First time we see this input: add it
+            self.inputs[inp.name] = [inp]
+            return
+
+        if len(old) == 1 and old[0].model is None:
+            # We had an input for model=None (all models)
+            # so we refuse to add more
+            raise RuntimeError(
+                    f"{inp.defined_in}: input {inp.name} for (any model) already defined in {old[0].defined_in}")
+
+        for i in old:
+            if i.model == inp.model:
+                # We already had an input for this model name
+                raise RuntimeError(
+                        f"{inp.defined_in}: input {inp.name} (model {inp.model}) already defined in {i.defined_in}")
+
+        # Input for a new model: store it
+        old.append(inp)
+
     def fill(self, path: Optional[str] = None):
         """
         Read data from standard input and acquire it into the pantry.
@@ -49,20 +78,37 @@ class PantryMixin:
                 yield fd
 
 
-class EmptyPantry(inputs.InputRegistry, PantryMixin):
+class EmptyPantry(Pantry):
     """
     Pantry with no disk-based storage, used as input registry only to generate documentation
     """
     pass
 
 
-class DiskPantry(inputs.InputStorage, PantryMixin):
+class DiskPantry(Pantry):
     """
     Pantry with disk-based storage
     """
     def __init__(self, root: str, **kw):
-        kw.setdefault("data_root", os.path.join(root, "pantry"))
         super().__init__(**kw)
+        self.data_root: str = os.path.join(root, "pantry")
+
+    def get_steps(self, input_name: str) -> Dict[Optional[int], "inputs.InputFile"]:
+        """
+        Return the steps available in the pantry for the input with the given
+        name
+        """
+        inps = self.inputs.get(input_name)
+        if inps is None:
+            return {}
+
+        res: Dict[Optional[int], "inputs.InputFile"] = {}
+        for inp in inps:
+            steps = inp.get_steps(self)
+            for step, input_file in steps.items():
+                # Keep the first available version for each step
+                res.setdefault(step, input_file)
+        return res
 
 
 if arkimet is not None:
@@ -98,16 +144,16 @@ if arkimet is not None:
             os.makedirs(self.data_root, exist_ok=True)
 
             # Dispatch todo-list
-            match: List[Tuple[Any, str]] = []
+            todo_list: List[Tuple[Any, "inputs.Input"]] = []
             for inps in self.inputs.values():
                 for inp in inps:
                     matcher = getattr(inp, "arkimet_matcher", None)
                     if matcher is None:
                         log.info("%s (model=%s): skipping input with no arkimet matcher filter", inp.name, inp.model)
                         continue
-                    match.append((matcher, inp.pantry_basename))
+                    todo_list.append((matcher, inp))
 
-            dispatcher = ArkimetDispatcher(self.data_root, match)
+            dispatcher = ArkimetDispatcher(self, todo_list)
             with self.open_dispatch_input(path=path) as infd:
                 dispatcher.read(infd)
 
@@ -115,12 +161,13 @@ if arkimet is not None:
         """
         Read a stream of arkimet metadata and store its data into a dataset
         """
-        def __init__(self, data_root: str, todo_list: List[Tuple[Any, str]]):
-            self.data_root = data_root
+        def __init__(self, pantry: "Pantry", todo_list: List[Tuple[Any, "inputs.Input"]]):
+            self.pantry = pantry
+            self.data_root = pantry.data_root
             self.todo_list = todo_list
 
         def dispatch(self, md: arkimet.Metadata) -> bool:
-            for matcher, pantry_basename in self.todo_list:
+            for matcher, inp in self.todo_list:
                 if matcher.match(md):
                     trange = md.to_python("timerange")
                     style = trange["style"]
@@ -139,12 +186,16 @@ if arkimet is not None:
                         continue
 
                     source = md.to_python("source")
+                    relname = inp.pantry_basename + f"+{output_step}.{source['format']}"
 
-                    dest = os.path.join(self.data_root, pantry_basename + f"+{output_step}.{source['format']}")
+                    dest = os.path.join(self.data_root, relname)
                     # TODO: implement Metadata.write_data to write directly without
                     # needing to create an intermediate python bytes object
                     with open(dest, "ab") as out:
                         out.write(md.data)
+
+                    # Take note of having added one element to this file
+                    inp.add_step(output_step)
             return True
 
         def read(self, infd: BinaryIO):
@@ -182,6 +233,7 @@ class EccodesPantry(DiskPantry):
                         log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
+                    print(f'  print "s:{inp.model or ""},{inp.name},[endStep]";', file=f)
                     print(f'  write "{self.data_root}/{inp.pantry_basename}+[endStep].grib";', file=f)
                     print("}", file=f)
 
@@ -190,33 +242,52 @@ class EccodesPantry(DiskPantry):
         else:
             self.read_arkimet(path)
 
+    def _parse_filter_output(self, line: bytes):
+        if not line.startswith(b"s:"):
+            return
+        model, name, step = line[2:].split(b",")
+        if not model:
+            model = None
+        else:
+            model = model.decode()
+        for inp in self.inputs[name.decode()]:
+            if inp.model == model:
+                inp.add_step(int(step))
+
     def read_grib(self, path: str):
         """
         Run grib_filter on GRIB input
         """
-        if path is None:
-            subprocess.run(["grib_filter", self.grib_filter_rules, "-"], stdin=sys.stdin, check=True)
-        else:
-            subprocess.run(["grib_filter", self.grib_filter_rules, path], check=True)
+        cmd = ["grib_filter", self.grib_filter_rules, ("-" if path is None else path)]
+        res = subprocess.run(cmd, stdin=sys.stdin, stdout=subprocess.PIPE, check=True)
+        for line in res.stdout.splitlines():
+            self._parse_filter_output(line)
 
     def read_arkimet(self, path: str):
         """
         Run grib_filter on arkimet input
         """
-        try:
-            proc = subprocess.Popen(["grib_filter", self.grib_filter_rules, "-"], stdin=subprocess.PIPE)
+        with tempfile.TemporaryFile("w+b") as outfd:
+            try:
+                proc = subprocess.Popen(
+                        ["grib_filter", self.grib_filter_rules, "-"],
+                        stdin=subprocess.PIPE, stdout=outfd)
 
-            def dispatch(md: arkimet.Metadata) -> bool:
-                proc.stdin.write(md.data)
-                return True
+                def dispatch(md: arkimet.Metadata) -> bool:
+                    proc.stdin.write(md.data)
+                    return True
 
-            with self.open_dispatch_input(path=path) as infd:
-                arkimet.Metadata.read_bundle(infd, dest=dispatch)
-        finally:
-            proc.stdin.close()
-            proc.wait()
-            if proc.returncode != 0:
-                raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
+                with self.open_dispatch_input(path=path) as infd:
+                    arkimet.Metadata.read_bundle(infd, dest=dispatch)
+            finally:
+                proc.stdin.close()
+                proc.wait()
+                if proc.returncode != 0:
+                    raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
+
+            outfd.seek(0)
+            for line in outfd:
+                self._parse_filter_output(line)
 
     def store_processing_artifacts(self, tarout):
         """

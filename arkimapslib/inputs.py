@@ -1,18 +1,18 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, NamedTuple, Type, List, Union, Iterable
-import os
-import re
-import subprocess
-import shutil
-import shlex
+from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Union, Set
 import logging
+import os
+import shlex
+import shutil
+import subprocess
 
-# if TYPE_CHECKING:
-#     import arkimet
 try:
     import arkimet
 except ModuleNotFoundError:
     pass
+
+if TYPE_CHECKING:
+    from . import pantry
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -40,79 +40,6 @@ class InputTypes:
     @classmethod
     def by_name(cls, name: str) -> Type["Input"]:
         return cls.registry[name.lower()]
-
-
-class InputRegistry:
-    """
-    Collection of all known inputs
-    """
-    def __init__(self, *args, **kw):
-        # List of input definitions, indexed by name
-        self.inputs: Dict[str, List["Input"]] = {}
-
-    def add_input(self, inp: "Input"):
-        """
-        Add an Input definition
-        """
-        old = self.inputs.get(inp.name)
-        if old is None:
-            # First time we see this input: add it
-            self.inputs[inp.name] = [inp]
-            return
-
-        if len(old) == 1 and old[0].model is None:
-            # We had an input for model=None (all models)
-            # so we refuse to add more
-            raise RuntimeError(
-                    f"{inp.defined_in}: input {inp.name} for (any model) already defined in {old[0].defined_in}")
-
-        for i in old:
-            if i.model == inp.model:
-                # We already had an input for this model name
-                raise RuntimeError(
-                        f"{inp.defined_in}: input {inp.name} (model {inp.model}) already defined in {i.defined_in}")
-
-        # Input for a new model: store it
-        old.append(inp)
-
-
-class InputStorage(InputRegistry):
-    """
-    Container for storing input files
-    """
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.data_root = kw["data_root"]
-
-    def list_existing_steps(self, inp: "Input") -> Iterable["InputFile"]:
-        """
-        Generate a sequence of InputFile objects for all input files available
-        in storage for the given input
-        """
-        fn_match = re.compile(rf"{re.escape(inp.pantry_basename)}\+(\d+)\.\w+")
-        for fn in os.listdir(self.data_root):
-            mo = fn_match.match(fn)
-            if not mo:
-                continue
-            step = int(mo.group(1))
-            yield InputFile(os.path.join(self.data_root, fn), inp, step)
-
-    def get_steps(self, input_name: str) -> Dict[Optional[int], "InputFile"]:
-        """
-        Return the steps available in the pantry for the input with the given
-        name
-        """
-        inps = self.inputs.get(input_name)
-        if inps is None:
-            return {}
-
-        res: Dict[Optional[int], "InputFile"] = {}
-        for inp in inps:
-            steps = inp.get_steps(self)
-            for step, input_file in steps.items():
-                # Keep the first available version for each step
-                res.setdefault(step, input_file)
-        return res
 
 
 class Input:
@@ -173,7 +100,7 @@ class Input:
         """
         return []
 
-    def add_all_inputs(self, input_registry: InputRegistry, res: List[str]):
+    def add_all_inputs(self, pantry: "pantry.Pantry", res: List[str]):
         """
         Add to res the name of this input, and all inputs of this input, and
         their inputs, recursively
@@ -182,20 +109,23 @@ class Input:
             return
         res.append(self.name)
         for name in self.get_all_inputs():
-            for inp in input_registry.inputs[name]:
-                inp.add_all_inputs(input_registry, res)
+            for inp in pantry.inputs[name]:
+                inp.add_all_inputs(pantry, res)
 
-    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def add_step(self, step: int):
+        """
+        Notify that the pantry contains data for this input for the given step
+        """
+        pass
+
+    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         """
         Scan the pantry to check what input files are available for this input.
 
         Return a dict mapping available steps to corresponding InputFile
         objects
         """
-        res: Dict[Optional[int], "InputFile"] = {}
-        for input_file in input_storage.list_existing_steps(self):
-            res[input_file.step] = input_file
-        return res
+        return {}
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         """
@@ -257,7 +187,7 @@ class Static(Input):
         print(f"{ind}* **Path**: `{self.path}`", file=file)
         super().document(file, indent)
 
-    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         return {None: InputFile(self.abspath, self, None)}
 
 
@@ -301,11 +231,27 @@ class Source(Input):
         self.arkimet_matcher: Optional[arkimet.Matcher] = None
         # grib_filter if expression
         self.eccodes = eccodes
+        # set of available steps
+        self.steps: Set[int] = set()
 
     def to_dict(self):
         res = super().to_dict()
         res["arkimet"] = self.arkimet
         res["eccodes"] = self.eccodes
+        return res
+
+    def add_step(self, step: int):
+        if step in self.steps:
+            log.error("%s: multiple data found for step +%d", self.name, step)
+        self.steps.add(step)
+
+    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
+        # FIXME: this hardcodes .grib as extension. We can either rename
+        # 'Source' to 'GRIB' and default that, or allow to specify a different
+        # extension, leaving '.grib' as a default
+        res: Dict[Optional[int], "InputFile"] = {}
+        for step in self.steps:
+            res[step] = InputFile(os.path.join(pantry.data_root, self.pantry_basename + f"+{step}.grib"), self, step)
         return res
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
@@ -327,6 +273,8 @@ class Derived(Input):
             raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
         self.inputs = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
+        # set of available steps
+        self.steps: Set[int] = set()
 
     def to_dict(self):
         res = super().to_dict()
@@ -338,22 +286,25 @@ class Derived(Input):
         res.extend(self.inputs)
         return res
 
-    def generate(self, input_storage: InputStorage):
+    def generate(self, pantry: "pantry.DiskPantry"):
         """
         Generate derived products from inputs
         """
         raise NotImplementedError(f"{self.__class__.__name__}.generate() not implemented")
 
-    def get_steps(self, input_storage: InputStorage) -> Dict[Optional[int], "InputFile"]:
+    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         # Check if flagfile exists, in which case skip generation
-        flagfile = os.path.join(input_storage.data_root, f"{self.pantry_basename}.processed")
+        flagfile = os.path.join(pantry.data_root, f"{self.pantry_basename}.processed")
         if not os.path.exists(flagfile):
-            self.generate(input_storage)
+            self.generate(pantry)
             # Create the flagfile to mark that all steps have been generated
             with open(flagfile, "wb"):
                 pass
-        # Rescan pantry
-        return super().get_steps(input_storage)
+
+        res: Dict[Optional[int], "InputFile"] = {}
+        for step in self.steps:
+            res[step] = InputFile(os.path.join(pantry.data_root, self.pantry_basename + f"+{step}.grib"), self, step)
+        return res
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -383,9 +334,9 @@ class Decumulate(Derived):
         res["step"] = self.step
         return res
 
-    def generate(self, input_storage: InputStorage):
+    def generate(self, pantry: "pantry.DiskPantry"):
         # Get the steps of our source input
-        source_steps = input_storage.get_steps(self.inputs[0])
+        source_steps = pantry.get_steps(self.inputs[0])
 
         # TODO: check that they match the step
 
@@ -397,9 +348,10 @@ class Decumulate(Derived):
         log.info("input %s: generating from %r", self.name, self.inputs)
 
         # Generate derived input
-        grib_filter_rules = os.path.join(input_storage.data_root, f"{self.pantry_basename}.grib_filter_rules")
+        grib_filter_rules = os.path.join(pantry.data_root, f"{self.pantry_basename}.grib_filter_rules")
         with open(grib_filter_rules, "wt") as fd:
-            print(f'write "{input_storage.data_root}/{self.pantry_basename}+[endStep].grib";', file=fd)
+            print('print "s:[endStep]";', file=fd)
+            print(f'write "{pantry.data_root}/{self.pantry_basename}+[endStep].grib";', file=fd)
 
         # We could pipe the output of vg6d_transform directly into grib_filter,
         # but grib_filter errors in case of empty input with the same exit code
@@ -408,7 +360,7 @@ class Decumulate(Derived):
         # bug causing a wrong invocation.
         # As a workaround, we need a temporary file, so we can check if it's
         # empty before passing it to grib_filter
-        decumulated_data = os.path.join(input_storage.data_root, f"{self.pantry_basename}-decumulated.grib")
+        decumulated_data = os.path.join(pantry.data_root, f"{self.pantry_basename}-decumulated.grib")
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 
@@ -430,7 +382,16 @@ class Decumulate(Derived):
             if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
                 return
 
-            subprocess.run(["grib_filter", grib_filter_rules, decumulated_data], check=True)
+            res = subprocess.run(
+                    ["grib_filter", grib_filter_rules, decumulated_data],
+                    stdout=subprocess.PIPE,
+                    check=True)
+            for line in res.stdout.splitlines():
+                if not line.startswith(b"s:"):
+                    return
+                if step in self.steps:
+                    log.error("%s: vg6d_transform generated multiple GRIB data for step +%d", self.name, step)
+                self.steps.add(int(line[2:]))
         finally:
             if os.path.exists(decumulated_data):
                 os.unlink(decumulated_data)
@@ -459,11 +420,11 @@ class VG6DTransform(Derived):
         res["args"] = self.args
         return res
 
-    def generate(self, input_storage: InputStorage):
+    def generate(self, pantry: "pantry.DiskPantry"):
         # Get the steps for each of our inputs
         available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
         for input_name in self.inputs:
-            input_steps = input_storage.get_steps(input_name)
+            input_steps = pantry.get_steps(input_name)
             # Intersect the steps to get only those for which we have all inputs
             if available_steps is None:
                 available_steps = {k: [v] for k, v in input_steps.items()}
@@ -490,7 +451,7 @@ class VG6DTransform(Derived):
 
             log.info("input %s: generating step %d as %s", self.name, step, output_name)
 
-            output_pathname = os.path.join(input_storage.data_root, output_name)
+            output_pathname = os.path.join(pantry.data_root, output_name)
             cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
             log.debug("running %s", ' '.join(shlex.quote(x) for x in cmd))
 
@@ -510,6 +471,8 @@ class VG6DTransform(Derived):
                 log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_name)
                 os.unlink(output_pathname)
 
+            self.steps.add(step)
+
     def document(self, file, indent=4):
         ind = " " * indent
         print(f"{ind}* **vg6d_transform arguments**: {' '.join(shlex.quote(arg) for arg in self.args)}", file=file)
@@ -523,11 +486,11 @@ class Cat(Derived):
     """
     NAME = "cat"
 
-    def generate(self, input_storage: InputStorage):
+    def generate(self, pantry: "pantry.DiskPantry"):
         # Get the steps for each of our inputs
         available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
         for input_name in self.inputs:
-            input_steps = input_storage.get_steps(input_name)
+            input_steps = pantry.get_steps(input_name)
             # Intersect the steps to get only those for which we have all inputs
             if available_steps is None:
                 available_steps = {k: [v] for k, v in input_steps.items()}
@@ -554,11 +517,13 @@ class Cat(Derived):
 
             log.info("input %s: generating step %d as %s", self.name, step, output_name)
 
-            output_pathname = os.path.join(input_storage.data_root, output_name)
+            output_pathname = os.path.join(pantry.data_root, output_name)
             with open(output_pathname, "wb") as out:
                 for input_file in input_files:
                     with open(input_file.pathname, "rb") as fd:
                         shutil.copyfileobj(fd, out)
+
+            self.steps.add(step)
 
 
 class InputFile(NamedTuple):
@@ -569,5 +534,5 @@ class InputFile(NamedTuple):
     pathname: str
     # Input with information about the file
     info: Input
-    # Forecast step
-    step: int
+    # Forecast step (if None, this input file is valid for all steps)
+    step: Optional[int]
