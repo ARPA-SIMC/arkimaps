@@ -1,6 +1,5 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Union
-import collections
+from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Union, Set
 import logging
 import os
 import shlex
@@ -128,17 +127,8 @@ class Input:
         """
         res: Dict[Optional[int], "InputFile"] = {}
         for input_file in pantry.list_existing_steps(self):
-            self.validate(pantry, input_file.pathname)
             res[input_file.step] = input_file
         return res
-
-    def validate(self, pantry: "pantry.DiskPantry", relname: str):
-        """
-        Validate the data associated to this input in the pantry, logging
-        warnings if issues are found
-        """
-        # Do nothing by default, to be overridden by subclasses
-        pass
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         """
@@ -244,8 +234,8 @@ class Source(Input):
         self.arkimet_matcher: Optional[arkimet.Matcher] = None
         # grib_filter if expression
         self.eccodes = eccodes
-        # TODO: temporary
-        self.data_counts: Dict[int, int] = collections.Counter()
+        # set of available steps
+        self.steps: Set[int] = set()
 
     def to_dict(self):
         res = super().to_dict()
@@ -254,12 +244,9 @@ class Source(Input):
         return res
 
     def add_step(self, step: int):
-        self.data_counts[step] += 1
-
-    def validate(self, pantry: "pantry.DiskPantry", relname: str):
-        for step, count in self.data_counts.items():
-            if count > 1:
-                log.error("%s: %d data found for step +%d instead of just 1", self.name, count, step)
+        if step in self.steps:
+            log.error("%s: multiple data found for step +%d", self.name, step)
+        self.steps.add(step)
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         self.arkimet_matcher = session.matcher(self.arkimet)
