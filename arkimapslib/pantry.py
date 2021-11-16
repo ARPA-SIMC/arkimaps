@@ -1,9 +1,8 @@
 # from __future__ import annotations
-from typing import Optional, BinaryIO, List, Tuple, Any, Dict, Iterable
+from typing import Optional, BinaryIO, List, Tuple, Any, Dict
 import contextlib
 import logging
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -93,19 +92,6 @@ class DiskPantry(Pantry):
     def __init__(self, root: str, **kw):
         super().__init__(**kw)
         self.data_root: str = os.path.join(root, "pantry")
-
-    def list_existing_steps(self, inp: "inputs.Input") -> Iterable["inputs.InputFile"]:
-        """
-        Generate a sequence of InputFile objects for all input files available
-        in storage for the given input
-        """
-        fn_match = re.compile(rf"{re.escape(inp.pantry_basename)}\+(\d+)\.\w+")
-        for fn in os.listdir(self.data_root):
-            mo = fn_match.match(fn)
-            if not mo:
-                continue
-            step = int(mo.group(1))
-            yield inputs.InputFile(os.path.join(self.data_root, fn), inp, step)
 
     def get_steps(self, input_name: str) -> Dict[Optional[int], "inputs.InputFile"]:
         """

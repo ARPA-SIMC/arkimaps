@@ -125,10 +125,7 @@ class Input:
         Return a dict mapping available steps to corresponding InputFile
         objects
         """
-        res: Dict[Optional[int], "InputFile"] = {}
-        for input_file in pantry.list_existing_steps(self):
-            res[input_file.step] = input_file
-        return res
+        return {}
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         """
@@ -248,6 +245,15 @@ class Source(Input):
             log.error("%s: multiple data found for step +%d", self.name, step)
         self.steps.add(step)
 
+    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
+        # FIXME: this hardcodes .grib as extension. We can either rename
+        # 'Source' to 'GRIB' and default that, or allow to specify a different
+        # extension, leaving '.grib' as a default
+        res: Dict[Optional[int], "InputFile"] = {}
+        for step in self.steps:
+            res[step] = InputFile(os.path.join(pantry.data_root, self.pantry_basename + f"+{step}.grib"), self, step)
+        return res
+
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
         self.arkimet_matcher = session.matcher(self.arkimet)
 
@@ -267,6 +273,8 @@ class Derived(Input):
             raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
         self.inputs = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
+        # set of available steps
+        self.steps: Set[int] = set()
 
     def to_dict(self):
         res = super().to_dict()
@@ -292,8 +300,11 @@ class Derived(Input):
             # Create the flagfile to mark that all steps have been generated
             with open(flagfile, "wb"):
                 pass
-        # Rescan pantry
-        return super().get_steps(pantry)
+
+        res: Dict[Optional[int], "InputFile"] = {}
+        for step in self.steps:
+            res[step] = InputFile(os.path.join(pantry.data_root, self.pantry_basename + f"+{step}.grib"), self, step)
+        return res
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -339,6 +350,7 @@ class Decumulate(Derived):
         # Generate derived input
         grib_filter_rules = os.path.join(pantry.data_root, f"{self.pantry_basename}.grib_filter_rules")
         with open(grib_filter_rules, "wt") as fd:
+            print('print "s:[endStep]";', file=fd)
             print(f'write "{pantry.data_root}/{self.pantry_basename}+[endStep].grib";', file=fd)
 
         # We could pipe the output of vg6d_transform directly into grib_filter,
@@ -370,7 +382,14 @@ class Decumulate(Derived):
             if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
                 return
 
-            subprocess.run(["grib_filter", grib_filter_rules, decumulated_data], check=True)
+            res = subprocess.run(
+                    ["grib_filter", grib_filter_rules, decumulated_data],
+                    stdout=subprocess.PIPE,
+                    check=True)
+            for line in res.stdout.splitlines():
+                if not line.startswith(b"s:"):
+                    return
+                self.steps.add(int(line[2:]))
         finally:
             if os.path.exists(decumulated_data):
                 os.unlink(decumulated_data)
@@ -450,6 +469,8 @@ class VG6DTransform(Derived):
                 log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_name)
                 os.unlink(output_pathname)
 
+            self.steps.add(step)
+
     def document(self, file, indent=4):
         ind = " " * indent
         print(f"{ind}* **vg6d_transform arguments**: {' '.join(shlex.quote(arg) for arg in self.args)}", file=file)
@@ -499,6 +520,8 @@ class Cat(Derived):
                 for input_file in input_files:
                     with open(input_file.pathname, "rb") as fd:
                         shutil.copyfileobj(fd, out)
+
+            self.steps.add(step)
 
 
 class InputFile(NamedTuple):
