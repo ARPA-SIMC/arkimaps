@@ -242,7 +242,7 @@ class Source(Input):
 
     def add_step(self, step: int):
         if step in self.steps:
-            log.error("%s: multiple data found for step +%d", self.name, step)
+            log.warning("%s: multiple data found for step +%d", self.name, step)
         self.steps.add(step)
 
     def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
@@ -390,7 +390,7 @@ class Decumulate(Derived):
                 if not line.startswith(b"s:"):
                     return
                 if step in self.steps:
-                    log.error("%s: vg6d_transform generated multiple GRIB data for step +%d", self.name, step)
+                    log.warning("%s: vg6d_transform generated multiple GRIB data for step +%d", self.name, step)
                 self.steps.add(int(line[2:]))
         finally:
             if os.path.exists(decumulated_data):
