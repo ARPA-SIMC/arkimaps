@@ -423,7 +423,9 @@ class Decumulate(Derived):
                     return
                 step = int(line[2:])
                 if step in self.steps:
-                    log.warning("%s: vg6d_transform generated multiple GRIB data for step +%d", self.name, step)
+                    log.warning(
+                        "%s: vg6d_transform generated multiple GRIB data for step +%d. Note that truncation to only the"
+                        " first data produced is not supported yet!", self.name, step)
                 self.steps.add(step)
         finally:
             if os.path.exists(decumulated_data):
