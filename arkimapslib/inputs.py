@@ -6,6 +6,7 @@ import shlex
 import shutil
 import subprocess
 
+import eccodes
 try:
     import arkimet
 except ModuleNotFoundError:
@@ -18,6 +19,17 @@ if TYPE_CHECKING:
 Kwargs = Dict[str, Any]
 
 log = logging.getLogger("arkimaps.inputs")
+
+
+def keep_only_first_grib(fname: str):
+    with open(fname, "r+b") as infd:
+        gid = eccodes.codes_grib_new_from_file(infd)
+        try:
+            if eccodes.codes_get_message_offset(gid) != 0:
+                raise RuntimeError(f"{fname}: first grib does not start at offset 0")
+            infd.truncate(eccodes.codes_get_message_size(gid))
+        finally:
+            eccodes.codes_release(gid)
 
 
 class InputTypes:
@@ -115,6 +127,15 @@ class Input:
     def add_step(self, step: int):
         """
         Notify that the pantry contains data for this input for the given step
+        """
+        pass
+
+    def on_pantry_filled(self, pantry: "pantry.DiskPantry"):
+        """
+        Hook called on all inputs after the pantry is filled with the initial
+        data.
+
+        This is called once for every Pantry.fill() invocation.
         """
         pass
 
@@ -233,6 +254,9 @@ class Source(Input):
         self.eccodes = eccodes
         # set of available steps
         self.steps: Set[int] = set()
+        # set of steps for which the data in the pantry contains multiple
+        # elements and needs to be truncated
+        self.steps_to_truncate: Set[int] = set()
 
     def to_dict(self):
         res = super().to_dict()
@@ -243,7 +267,15 @@ class Source(Input):
     def add_step(self, step: int):
         if step in self.steps:
             log.warning("%s: multiple data found for step +%d", self.name, step)
+            self.steps_to_truncate.add(step)
         self.steps.add(step)
+
+    def on_pantry_filled(self, pantry: "pantry.DiskPantry"):
+        # If some steps had duplicate data, truncate them
+        for step in self.steps_to_truncate:
+            fname = os.path.join(pantry.data_root, self.pantry_basename + f"+{step}.grib")
+            keep_only_first_grib(fname)
+        self.steps_to_truncate = set()
 
     def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
         # FIXME: this hardcodes .grib as extension. We can either rename

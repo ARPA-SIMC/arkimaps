@@ -110,6 +110,14 @@ class DiskPantry(Pantry):
                 res.setdefault(step, input_file)
         return res
 
+    def notify_pantry_filled(self):
+        """
+        Let inputs know that we are done filtering initial data
+        """
+        for inps in self.inputs.values():
+            for inp in inps:
+                inp.on_pantry_filled(self)
+
 
 if arkimet is not None:
     class ArkimetEmptyPantry(EmptyPantry):
@@ -159,6 +167,8 @@ if arkimet is not None:
             dispatcher = ArkimetDispatcher(self, todo_list)
             with self.open_dispatch_input(path=path) as infd:
                 dispatcher.read(infd)
+
+            self.notify_pantry_filled()
 
     class ArkimetDispatcher:
         """
@@ -245,6 +255,8 @@ class EccodesPantry(DiskPantry):
             self.read_grib(path)
         else:
             self.read_arkimet(path)
+
+        self.notify_pantry_filled()
 
     def _parse_filter_output(self, line: bytes):
         if not line.startswith(b"s:"):
