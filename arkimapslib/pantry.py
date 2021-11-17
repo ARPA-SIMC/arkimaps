@@ -149,7 +149,10 @@ if arkimet is not None:
                 for inp in inps:
                     matcher = getattr(inp, "arkimet_matcher", None)
                     if matcher is None:
-                        log.info("%s (model=%s): skipping input with no arkimet matcher filter", inp.name, inp.model)
+                        if hasattr(inp, "eccodes"):
+                            log.info(
+                                "%s (model=%s): skipping input with no arkimet matcher filter",
+                                inp.name, inp.model)
                         continue
                     todo_list.append((matcher, inp))
 
@@ -230,7 +233,8 @@ class EccodesPantry(DiskPantry):
                 for inp in inps:
                     eccodes = getattr(inp, "eccodes", None)
                     if eccodes is None:
-                        log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
+                        if hasattr(inp, "arkimet_matcher"):
+                            log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
                     print(f'  print "s:{inp.model or ""},{inp.name},[endStep]";', file=f)
