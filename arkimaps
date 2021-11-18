@@ -297,6 +297,7 @@ class Render(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         super().__init__(*args, **kw)
         self.kitchen = self.make_kitchen(self.args.workdir)
         self.load_recipes()
+        self.kitchen.pantry.rescan()
 
     def run(self):
         """
@@ -322,6 +323,7 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         super().__init__(*args, **kw)
         self.kitchen = self.make_kitchen(self.args.workdir)
         self.load_recipes()
+        self.kitchen.pantry.rescan()
 
     def run(self):
         """
@@ -340,7 +342,7 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
 
         # Prepare it
         renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
-        renderer.render_one(order)
+        order = renderer.render_one(order)
         log.info("Rendered %s to %s", order.recipe_name, order.basename)
 
         # Display it

@@ -3,6 +3,7 @@ from typing import Optional, BinaryIO, List, Tuple, Any, Dict
 import contextlib
 import logging
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -58,6 +59,15 @@ class Pantry:
         read from stdin
         """
         raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
+
+    def rescan(self):
+        """
+        Rescan the contents of an existing working directory.
+
+        Use this method when processing a working directory dispatched by a
+        different Pantry instance
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.rescan() not implemented")
 
     def store_processing_artifacts(self, tarout):
         """
@@ -117,6 +127,26 @@ class DiskPantry(Pantry):
         for inps in self.inputs.values():
             for inp in inps:
                 inp.on_pantry_filled(self)
+
+    def rescan(self):
+        fn_match = re.compile(r"^(?:(?P<model>\w+)_)?(?P<name>\w+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
+        for fn in os.listdir(self.data_root):
+            if fn == "grib_filter_rules" or fn.endswith(".processed"):
+                continue
+
+            mo = fn_match.match(fn)
+            if not mo:
+                log.warning("%s: unrecognised file found in pantry", fn)
+                continue
+
+            inps = self.inputs.get(mo.group("name"))
+            model = mo.group("model")
+            if model:
+                inps = [inp for inp in inps if inp.model == model]
+            inp = inps[0]
+
+            step = int(mo.group("step"))
+            inp.add_step(step)
 
 
 if arkimet is not None:

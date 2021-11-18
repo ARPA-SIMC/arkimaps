@@ -1,7 +1,6 @@
 # from __future__ import annotations
 from typing import Iterable, Generator, Optional
 import contextlib
-import functools
 import os
 import multiprocessing
 import multiprocessing.pool

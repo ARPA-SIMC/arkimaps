@@ -318,6 +318,11 @@ class Derived(Input):
         res.extend(self.inputs)
         return res
 
+    def add_step(self, step: int):
+        if step in self.steps:
+            log.warning("%s: multiple data generated for step +%d", self.name, step)
+        self.steps.add(step)
+
     def generate(self, pantry: "pantry.DiskPantry"):
         """
         Generate derived products from inputs
@@ -426,7 +431,7 @@ class Decumulate(Derived):
                     log.warning(
                         "%s: vg6d_transform generated multiple GRIB data for step +%d. Note that truncation to only the"
                         " first data produced is not supported yet!", self.name, step)
-                self.steps.add(step)
+                self.add_step(step)
         finally:
             if os.path.exists(decumulated_data):
                 os.unlink(decumulated_data)
@@ -506,7 +511,7 @@ class VG6DTransform(Derived):
                 log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_name)
                 os.unlink(output_pathname)
 
-            self.steps.add(step)
+            self.add_step(step)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -558,7 +563,7 @@ class Cat(Derived):
                     with open(input_file.pathname, "rb") as fd:
                         shutil.copyfileobj(fd, out)
 
-            self.steps.add(step)
+            self.add_step(step)
 
 
 class InputFile(NamedTuple):
