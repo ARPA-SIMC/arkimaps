@@ -1,3 +1,7 @@
+# Novità nella versione 0.5
+
+* Introdotta validazione input (#85)
+
 # Novità nella versione 0.4
 
 * Aggiunti file per pacchettizzazione e distribuzione (#76)

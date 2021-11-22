@@ -1,9 +1,9 @@
-%global releaseno 4
+%global releaseno 1
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        0.4
+Version:        0.5
 Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
@@ -16,13 +16,17 @@ BuildRequires:  python3-setuptools
 BuildRequires:  python3-devel
 BuildRequires:  python3-pyyaml
 
-# only for tests
+# for tests
 BuildRequires:  arkimet
 BuildRequires:  python3-Magics
 BuildRequires:  libsim
+# for documenting recipes
+BuildRequires:  python3-eccodes
 
 Requires:       python3
 Requires:       python3-Magics
+Requires:       python3-eccodes
+
 
 %description
 Meteo plot generator from grib data
@@ -77,6 +81,9 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Mon Nov 22 2021 Daniele Branchini <dbranchini@arpae.it> - 0.5-1
+- added input validation (#85)
+
 * Wed Nov 10 2021 Daniele Branchini <dbranchini@arpae.it> - 0.4-4
 - refactored test suite to isolate Magics (#84)
 
