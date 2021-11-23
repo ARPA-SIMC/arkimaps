@@ -22,6 +22,7 @@ BuildRequires:  python3-Magics
 BuildRequires:  libsim
 # for documenting recipes
 BuildRequires:  python3-eccodes
+BuildRequires:  eccodes-devel
 
 Requires:       python3
 Requires:       python3-Magics
