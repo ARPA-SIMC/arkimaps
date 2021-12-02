@@ -277,7 +277,7 @@ class EccodesPantry(DiskPantry):
                             log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
-                    print(f'  print "s:{inp.model or ""},{inp.name},[endStep]";', file=f)
+                    print(f'  print "s:{inp.model or ""},{inp.name},[dataDate],[dateTime],[endStep]";', file=f)
                     print(f'  write "{self.data_root}/{inp.pantry_basename}+[endStep].grib";', file=f)
                     print("}", file=f)
 
@@ -291,7 +291,7 @@ class EccodesPantry(DiskPantry):
     def _parse_filter_output(self, line: bytes):
         if not line.startswith(b"s:"):
             return
-        model, name, step = line[2:].split(b",")
+        model, name, date, time, step = line[2:].split(b",")
         if not model:
             model = None
         else:

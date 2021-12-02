@@ -387,7 +387,7 @@ class Decumulate(Derived):
         # Generate derived input
         grib_filter_rules = os.path.join(pantry.data_root, f"{self.pantry_basename}.grib_filter_rules")
         with open(grib_filter_rules, "wt") as fd:
-            print('print "s:[endStep]";', file=fd)
+            print('print "s:[dataDate],[dataTime],[endStep]";', file=fd)
             print(f'write "{pantry.data_root}/{self.pantry_basename}+[endStep].grib";', file=fd)
 
         # We could pipe the output of vg6d_transform directly into grib_filter,
@@ -426,7 +426,8 @@ class Decumulate(Derived):
             for line in res.stdout.splitlines():
                 if not line.startswith(b"s:"):
                     return
-                step = int(line[2:])
+                date, time, step = line[2:].split(b",")
+                step = int(step)
                 if step in self.steps:
                     log.warning(
                         "%s: vg6d_transform generated multiple GRIB data for step +%d. Note that truncation to only the"
