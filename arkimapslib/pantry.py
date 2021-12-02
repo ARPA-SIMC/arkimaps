@@ -1,6 +1,7 @@
 # from __future__ import annotations
 from typing import Optional, BinaryIO, List, Tuple, Any, Dict
 import contextlib
+import datetime
 import logging
 import os
 import re
@@ -146,6 +147,7 @@ class DiskPantry(Pantry):
             inp = inps[0]
 
             step = int(mo.group("step"))
+            raise NotImplementedError("missing extracting reftime from file path in pantry")
             inp.add_step(step)
 
 
@@ -228,6 +230,7 @@ if arkimet is not None:
                         log.warning("unsupported timerange style in %s: skipping input", trange)
                         continue
 
+                    reftime = md.to_python("reftime")
                     source = md.to_python("source")
                     relname = inp.pantry_basename + f"+{output_step}.{source['format']}"
 
@@ -238,7 +241,7 @@ if arkimet is not None:
                         out.write(md.data)
 
                     # Take note of having added one element to this file
-                    inp.add_step(output_step)
+                    inp.add_step(reftime, output_step)
             return True
 
         def read(self, infd: BinaryIO):
@@ -277,7 +280,7 @@ class EccodesPantry(DiskPantry):
                             log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
-                    print(f'  print "s:{inp.model or ""},{inp.name},[dataDate],[dateTime],[endStep]";', file=f)
+                    print(f'  print "s:{inp.model or ""},{inp.name},[year],[month],[day],[hour],[minute],[second],[endStep]";', file=f)
                     print(f'  write "{self.data_root}/{inp.pantry_basename}+[endStep].grib";', file=f)
                     print("}", file=f)
 
@@ -291,14 +294,15 @@ class EccodesPantry(DiskPantry):
     def _parse_filter_output(self, line: bytes):
         if not line.startswith(b"s:"):
             return
-        model, name, date, time, step = line[2:].split(b",")
+        model, name, ye, mo, da, ho, mi, se, step = line[2:].split(b",")
+        dt = datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se))
         if not model:
             model = None
         else:
             model = model.decode()
         for inp in self.inputs[name.decode()]:
             if inp.model == model:
-                inp.add_step(int(step))
+                inp.add_step(dt, int(step))
 
     def read_grib(self, path: str):
         """

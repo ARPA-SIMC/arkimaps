@@ -1,5 +1,6 @@
 # from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Union, Set
+import datetime
 import logging
 import os
 import shlex
@@ -124,7 +125,7 @@ class Input:
             for inp in pantry.inputs[name]:
                 inp.add_all_inputs(pantry, res)
 
-    def add_step(self, step: int):
+    def add_step(self, reftime: datetime.datetime, step: int):
         """
         Notify that the pantry contains data for this input for the given step
         """
@@ -264,7 +265,7 @@ class Source(Input):
         res["eccodes"] = self.eccodes
         return res
 
-    def add_step(self, step: int):
+    def add_step(self, reftime: datetime.datetime, step: int):
         if step in self.steps:
             log.warning("%s: multiple data found for step +%d", self.name, step)
             self.steps_to_truncate.add(step)
@@ -318,7 +319,7 @@ class Derived(Input):
         res.extend(self.inputs)
         return res
 
-    def add_step(self, step: int):
+    def add_step(self, reftime: datetime.datetime, step: int):
         if step in self.steps:
             log.warning("%s: multiple data generated for step +%d", self.name, step)
         self.steps.add(step)
@@ -387,7 +388,7 @@ class Decumulate(Derived):
         # Generate derived input
         grib_filter_rules = os.path.join(pantry.data_root, f"{self.pantry_basename}.grib_filter_rules")
         with open(grib_filter_rules, "wt") as fd:
-            print('print "s:[dataDate],[dataTime],[endStep]";', file=fd)
+            print('print "s:[year],[month],[day],[hour],[minute],[second],[endStep]";', file=fd)
             print(f'write "{pantry.data_root}/{self.pantry_basename}+[endStep].grib";', file=fd)
 
         # We could pipe the output of vg6d_transform directly into grib_filter,
@@ -426,13 +427,14 @@ class Decumulate(Derived):
             for line in res.stdout.splitlines():
                 if not line.startswith(b"s:"):
                     return
-                date, time, step = line[2:].split(b",")
+                ye, mo, da, ho, mi, se, step = line[2:].split(b",")
+                reftime = datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se))
                 step = int(step)
                 if step in self.steps:
                     log.warning(
                         "%s: vg6d_transform generated multiple GRIB data for step +%d. Note that truncation to only the"
                         " first data produced is not supported yet!", self.name, step)
-                self.add_step(step)
+                self.add_step(reftime, step)
         finally:
             if os.path.exists(decumulated_data):
                 os.unlink(decumulated_data)
@@ -512,6 +514,7 @@ class VG6DTransform(Derived):
                 log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_name)
                 os.unlink(output_pathname)
 
+            raise NotImplementedError("missing getting reftime from source inputs")
             self.add_step(step)
 
     def document(self, file, indent=4):
@@ -564,6 +567,7 @@ class Cat(Derived):
                     with open(input_file.pathname, "rb") as fd:
                         shutil.copyfileobj(fd, out)
 
+            raise NotImplementedError("missing getting reftime from source inputs")
             self.add_step(step)
 
 
