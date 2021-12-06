@@ -118,6 +118,13 @@ class DiskPantry(Pantry):
         """
         return os.path.join(self.data_root, self.get_basename(inp, instant, fmt=fmt))
 
+    def get_accessory_fullname(self, inp: "inputs.Input", suffix: str) -> str:
+        """
+        Return the relative name within the pantry of the file corresponding to
+        the given input and instant
+        """
+        return os.path.join(self.data_root, f"{inp.pantry_basename}-{suffix}")
+
     def get_input_file(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> "inputs.InputFile":
         """
         Return an InputFile from the pantry corresponding to the given input and instant

@@ -353,7 +353,7 @@ class Derived(Input):
 
     def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         # Check if flagfile exists, in which case skip generation
-        flagfile = os.path.join(pantry.data_root, f"{self.pantry_basename}.processed")
+        flagfile = pantry.get_accessory_fullname(self, "processed")
         if not os.path.exists(flagfile):
             self.generate(pantry)
             # Create the flagfile to mark that all steps have been generated
@@ -407,7 +407,7 @@ class Decumulate(Derived):
         log.info("input %s: generating from %r", self.name, self.inputs)
 
         # Generate derived input
-        grib_filter_rules = os.path.join(pantry.data_root, f"{self.pantry_basename}.grib_filter_rules")
+        grib_filter_rules = pantry.get_accessory_fullname(self, "grib_filter_rules.txt")
         with open(grib_filter_rules, "wt") as fd:
             print('print "s:[year],[month],[day],[hour],[minute],[second],[endStep]";', file=fd)
             print(f'write "{pantry.get_eccodes_fullname(self)}";', file=fd)
@@ -419,7 +419,7 @@ class Decumulate(Derived):
         # bug causing a wrong invocation.
         # As a workaround, we need a temporary file, so we can check if it's
         # empty before passing it to grib_filter
-        decumulated_data = os.path.join(pantry.data_root, f"{self.pantry_basename}-decumulated.grib")
+        decumulated_data = pantry.get_accessory_fullname(self, "decumulated.grib")
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 
