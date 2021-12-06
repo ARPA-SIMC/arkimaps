@@ -295,7 +295,7 @@ class Source(Input):
     def on_pantry_filled(self, pantry: "pantry.DiskPantry"):
         # If some steps had duplicate data, truncate them
         for instant in self.instants_to_truncate:
-            fname = os.path.join(pantry.data_root, self.pantry_basename + instant.pantry_suffix() + ".grib")
+            fname = pantry.get_fullname(self, instant)
             keep_only_first_grib(fname)
         self.instants_to_truncate = set()
 
@@ -305,9 +305,7 @@ class Source(Input):
         # extension, leaving '.grib' as a default
         res: Dict[Optional[Instant], "InputFile"] = {}
         for instant in self.instants:
-            res[instant] = InputFile(
-                    os.path.join(pantry.data_root, self.pantry_basename + f"{instant.pantry_suffix()}.grib"),
-                    self, instant)
+            res[instant] = pantry.get_input_file(self, instant)
         return res
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
@@ -364,10 +362,7 @@ class Derived(Input):
 
         res: Dict[Optional[Instant], "InputFile"] = {}
         for instant in self.instants:
-            res[instant] = InputFile(
-                    os.path.join(
-                        pantry.data_root,
-                        self.pantry_basename + f"{instant.pantry_suffix()}.grib"), self, instant)
+            res[instant] = pantry.get_input_file(self, instant)
         return res
 
     def document(self, file, indent=4):
@@ -518,8 +513,7 @@ class VG6DTransform(Derived):
 
         # For each step, run vg6d_transform to generate its output
         for instant, input_files in available_instants.items():
-            output_name = f"{self.pantry_basename}{instant.pantry_suffix()}.grib"
-
+            output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             for f in input_files:
                 log.info("input %s: generating from %s", self.name, f.pathname)
@@ -586,10 +580,8 @@ class Cat(Derived):
 
         # For each instant, concatenate all inputs to generate the output
         for instant, input_files in available_instants.items():
-            output_name = f"{self.pantry_basename}{instant.pantry_suffix()}.grib"
-
+            output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
-
             output_pathname = os.path.join(pantry.data_root, output_name)
             with open(output_pathname, "wb") as out:
                 for input_file in input_files:

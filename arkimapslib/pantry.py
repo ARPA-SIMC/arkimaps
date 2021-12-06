@@ -104,6 +104,26 @@ class DiskPantry(Pantry):
         super().__init__(**kw)
         self.data_root: str = os.path.join(root, "pantry")
 
+    def get_basename(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
+        """
+        Return the relative name within the pantry of the file corresponding to
+        the given input and instant
+        """
+        return inp.pantry_basename + f"{instant.pantry_suffix()}.{fmt}"
+
+    def get_fullname(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
+        """
+        Return the relative name within the pantry of the file corresponding to
+        the given input and instant
+        """
+        return os.path.join(self.data_root, self.get_basename(inp, instant, fmt=fmt))
+
+    def get_input_file(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> "inputs.InputFile":
+        """
+        Return an InputFile from the pantry corresponding to the given input and instant
+        """
+        return inputs.InputFile(self.get_fullname(inp, instant, fmt=fmt), inp, instant)
+
     def get_instants(self, input_name: str) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
         """
         Return the instants available in the pantry for the input with the given
@@ -130,7 +150,9 @@ class DiskPantry(Pantry):
                 inp.on_pantry_filled(self)
 
     def rescan(self):
-        fn_match = re.compile(r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
+        fn_match = re.compile(
+                r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_"
+                r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
         for fn in os.listdir(self.data_root):
             if fn == "grib_filter_rules" or fn.endswith(".processed"):
                 continue
