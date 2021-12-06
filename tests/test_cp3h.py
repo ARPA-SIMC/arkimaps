@@ -14,7 +14,7 @@ class CP3HMixin:
 
         orders = self.make_orders()
         self.assertGreaterEqual(len(orders), 4)
-        orders = [o for o in orders if o.basename == "cp3h_2021-01-10T00:00:00+012"]
+        orders = [o for o in orders if o.basename == "cp3h+012"]
         self.assertEqual(len(orders), 1)
 
         self.assertRenders(orders[0])

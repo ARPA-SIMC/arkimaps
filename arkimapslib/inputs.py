@@ -91,12 +91,6 @@ class Input:
         self.defined_in = defined_in
         # Extra arguments passed to mgrib on loading
         self.mgrib = mgrib
-        # Basename of files for this input in the pantry
-        # This has no path, and no +step.ext suffix
-        if self.model is None:
-            self.pantry_basename = self.name
-        else:
-            self.pantry_basename = f"{self.model}_{self.name}"
 
     @classmethod
     def create(cls, type: str = "default", **kw):
@@ -125,7 +119,6 @@ class Input:
             "model": self.model,
             "defined_in": self.defined_in,
             "mgrib": self.mgrib,
-            "pantry_basename": self.pantry_basename,
         }
 
     def get_all_inputs(self) -> List[str]:
@@ -295,7 +288,7 @@ class Source(Input):
     def on_pantry_filled(self, pantry: "pantry.DiskPantry"):
         # If some steps had duplicate data, truncate them
         for instant in self.instants_to_truncate:
-            fname = os.path.join(pantry.data_root, self.pantry_basename + instant.pantry_suffix() + ".grib")
+            fname = pantry.get_fullname(self, instant)
             keep_only_first_grib(fname)
         self.instants_to_truncate = set()
 
@@ -305,9 +298,7 @@ class Source(Input):
         # extension, leaving '.grib' as a default
         res: Dict[Optional[Instant], "InputFile"] = {}
         for instant in self.instants:
-            res[instant] = InputFile(
-                    os.path.join(pantry.data_root, self.pantry_basename + f"{instant.pantry_suffix()}.grib"),
-                    self, instant)
+            res[instant] = pantry.get_input_file(self, instant)
         return res
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
@@ -355,7 +346,7 @@ class Derived(Input):
 
     def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         # Check if flagfile exists, in which case skip generation
-        flagfile = os.path.join(pantry.data_root, f"{self.pantry_basename}.processed")
+        flagfile = pantry.get_accessory_fullname(self, "processed")
         if not os.path.exists(flagfile):
             self.generate(pantry)
             # Create the flagfile to mark that all steps have been generated
@@ -364,10 +355,7 @@ class Derived(Input):
 
         res: Dict[Optional[Instant], "InputFile"] = {}
         for instant in self.instants:
-            res[instant] = InputFile(
-                    os.path.join(
-                        pantry.data_root,
-                        self.pantry_basename + f"{instant.pantry_suffix()}.grib"), self, instant)
+            res[instant] = pantry.get_input_file(self, instant)
         return res
 
     def document(self, file, indent=4):
@@ -412,11 +400,10 @@ class Decumulate(Derived):
         log.info("input %s: generating from %r", self.name, self.inputs)
 
         # Generate derived input
-        grib_filter_rules = os.path.join(pantry.data_root, f"{self.pantry_basename}.grib_filter_rules")
+        grib_filter_rules = pantry.get_accessory_fullname(self, "grib_filter_rules.txt")
         with open(grib_filter_rules, "wt") as fd:
             print('print "s:[year],[month],[day],[hour],[minute],[second],[endStep]";', file=fd)
-            print(f'write "{pantry.data_root}/{self.pantry_basename}'
-                  '_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].grib";', file=fd)
+            print(f'write "{pantry.get_eccodes_fullname(self)}";', file=fd)
 
         # We could pipe the output of vg6d_transform directly into grib_filter,
         # but grib_filter errors in case of empty input with the same exit code
@@ -425,7 +412,7 @@ class Decumulate(Derived):
         # bug causing a wrong invocation.
         # As a workaround, we need a temporary file, so we can check if it's
         # empty before passing it to grib_filter
-        decumulated_data = os.path.join(pantry.data_root, f"{self.pantry_basename}-decumulated.grib")
+        decumulated_data = pantry.get_accessory_fullname(self, "decumulated.grib")
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 
@@ -518,8 +505,7 @@ class VG6DTransform(Derived):
 
         # For each step, run vg6d_transform to generate its output
         for instant, input_files in available_instants.items():
-            output_name = f"{self.pantry_basename}{instant.pantry_suffix()}.grib"
-
+            output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             for f in input_files:
                 log.info("input %s: generating from %s", self.name, f.pathname)
@@ -586,10 +572,8 @@ class Cat(Derived):
 
         # For each instant, concatenate all inputs to generate the output
         for instant, input_files in available_instants.items():
-            output_name = f"{self.pantry_basename}{instant.pantry_suffix()}.grib"
-
+            output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
-
             output_pathname = os.path.join(pantry.data_root, output_name)
             with open(output_pathname, "wb") as out:
                 for input_file in input_files:

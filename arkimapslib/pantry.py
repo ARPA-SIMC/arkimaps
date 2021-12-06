@@ -104,6 +104,48 @@ class DiskPantry(Pantry):
         super().__init__(**kw)
         self.data_root: str = os.path.join(root, "pantry")
 
+    def get_basename(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
+        """
+        Return the relative name within the pantry of the file corresponding to
+        the given input and instant
+        """
+        if inp.model is None:
+            pantry_basename = inp.name
+        else:
+            pantry_basename = f"{inp.model}_{inp.name}"
+        return pantry_basename + f"{instant.pantry_suffix()}.{fmt}"
+
+    def get_fullname(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
+        """
+        Return the relative name within the pantry of the file corresponding to
+        the given input and instant
+        """
+        return os.path.join(self.data_root, self.get_basename(inp, instant, fmt=fmt))
+
+    def get_accessory_fullname(self, inp: "inputs.Input", suffix: str) -> str:
+        """
+        Return the relative name within the pantry of the file corresponding to
+        the given input and instant
+        """
+        if inp.model is None:
+            pantry_basename = inp.name
+        else:
+            pantry_basename = f"{inp.model}_{inp.name}"
+        return os.path.join(self.data_root, f"{pantry_basename}-{suffix}")
+
+    def get_input_file(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> "inputs.InputFile":
+        """
+        Return an InputFile from the pantry corresponding to the given input and instant
+        """
+        return inputs.InputFile(self.get_fullname(inp, instant, fmt=fmt), inp, instant)
+
+    def get_eccodes_fullname(self, inp: "inputs.Input", fmt="grib") -> str:
+        if inp.model is None:
+            pantry_basename = inp.name
+        else:
+            pantry_basename = f"{inp.model}_{inp.name}"
+        return f"{self.data_root}/{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
+
     def get_instants(self, input_name: str) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
         """
         Return the instants available in the pantry for the input with the given
@@ -130,7 +172,9 @@ class DiskPantry(Pantry):
                 inp.on_pantry_filled(self)
 
     def rescan(self):
-        fn_match = re.compile(r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
+        fn_match = re.compile(
+                r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_"
+                r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
         for fn in os.listdir(self.data_root):
             if fn == "grib_filter_rules" or fn.endswith(".processed"):
                 continue
@@ -232,7 +276,11 @@ if arkimet is not None:
 
                     reftime = md.to_python("reftime")["time"]
                     source = md.to_python("source")
-                    relname = inp.pantry_basename + (
+                    if inp.model is None:
+                        pantry_basename = inp.name
+                    else:
+                        pantry_basename = f"{inp.model}_{inp.name}"
+                    relname = pantry_basename + (
                             f"_{reftime.year}_{reftime.month}_{reftime.day}"
                             f"_{reftime.hour}_{reftime.minute}_{reftime.second}"
                             f"+{output_step}.{source['format']}")
@@ -286,8 +334,7 @@ class EccodesPantry(DiskPantry):
                     print(f"if ( {eccodes} ) {{", file=f)
                     print(f'  print "s:{inp.model or ""},{inp.name},'
                           '[year],[month],[day],[hour],[minute],[second],[endStep]";', file=f)
-                    print(f'  write "{self.data_root}/{inp.pantry_basename}'
-                          '_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].grib";', file=f)
+                    print(f'  write "{self.get_eccodes_fullname(inp)}";', file=f)
                     print("}", file=f)
 
         if self.grib_input:

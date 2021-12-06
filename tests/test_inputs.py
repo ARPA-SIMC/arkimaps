@@ -35,7 +35,7 @@ class TestInputs(unittest.TestCase):
             # Instant corresponding to the test sample
             instant1 = Instant(datetime.datetime(2021, 1, 10), 0)
 
-            data_file = os.path.join(pantry.data_root, test.pantry_basename + instant1.pantry_suffix() + ".grib")
+            data_file = pantry.get_fullname(test, instant1)
 
             # Write one GRIB to data_file
             with open(data_file, "wb") as out:

@@ -180,12 +180,12 @@ class RecipeTestMixin:
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
 
-    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), output_name=None):
+    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10)):
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
-        if output_name is None:
-            output_name = f"{self.recipe_name}_{reftime:%Y-%m-%dT%H:%M:%S}+012.png"
+        self.assertEqual(order.relpath, f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}")
+        self.assertEqual(order.basename, f"{self.recipe_name}+012")
         renderer = Renderer(self.kitchen.workdir)
 
         # Stop testing at this point, if we know Magics would segfault or abort
@@ -210,7 +210,7 @@ class RecipeTestMixin:
         rendered = renderer.render_one(order)
         self.assertIsNotNone(rendered)
         self.assertIsNotNone(rendered.output)
-        self.assertEqual(os.path.basename(rendered.output), output_name)
+        self.assertEqual(os.path.basename(rendered.output), f"{self.recipe_name}+012.png")
 
     def order_to_python(self, order) -> str:
         """

@@ -33,7 +33,7 @@ class TP1HMixin:
             return
         else:
             self.assertGreaterEqual(len(orders), 12)
-        orders = [o for o in orders if o.basename == "tp1h_2021-01-10T00:00:00+012"]
+        orders = [o for o in orders if o.basename == "tp1h+012"]
         self.assertEqual(len(orders), 1)
 
         self.assertRenders(orders[0])

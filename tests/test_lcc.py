@@ -8,7 +8,6 @@ class LCCMixin:
 
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
-        self.assertEqual(orders[0].basename, "lcc_2021-01-10T00:00:00+012")
 
         self.assertRenders(orders[0])
 
