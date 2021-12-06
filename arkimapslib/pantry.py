@@ -104,21 +104,21 @@ class DiskPantry(Pantry):
         super().__init__(**kw)
         self.data_root: str = os.path.join(root, "pantry")
 
-    def get_steps(self, input_name: str) -> Dict[Optional[int], "inputs.InputFile"]:
+    def get_instants(self, input_name: str) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
         """
-        Return the steps available in the pantry for the input with the given
+        Return the instants available in the pantry for the input with the given
         name
         """
         inps = self.inputs.get(input_name)
         if inps is None:
             return {}
 
-        res: Dict[Optional[int], "inputs.InputFile"] = {}
+        res: Dict[Optional[inputs.Instant], "inputs.InputFile"] = {}
         for inp in inps:
-            steps = inp.get_steps(self)
-            for step, input_file in steps.items():
-                # Keep the first available version for each step
-                res.setdefault(step, input_file)
+            instants = inp.get_instants(self)
+            for instant, input_file in instants.items():
+                # Keep the first available version for each instant
+                res.setdefault(instant, input_file)
         return res
 
     def notify_pantry_filled(self):
@@ -130,7 +130,7 @@ class DiskPantry(Pantry):
                 inp.on_pantry_filled(self)
 
     def rescan(self):
-        fn_match = re.compile(r"^(?:(?P<model>\w+)_)?(?P<name>\w+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
+        fn_match = re.compile(r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
         for fn in os.listdir(self.data_root):
             if fn == "grib_filter_rules" or fn.endswith(".processed"):
                 continue
@@ -146,9 +146,9 @@ class DiskPantry(Pantry):
                 inps = [inp for inp in inps if inp.model == model]
             inp = inps[0]
 
+            reftime = mo.group("reftime")
             step = int(mo.group("step"))
-            raise NotImplementedError("missing extracting reftime from file path in pantry")
-            inp.add_step(step)
+            inp.add_instant(inputs.Instant(datetime.datetime.strptime(reftime, "%Y_%m_%d_%H_%M_%S"), step))
 
 
 if arkimet is not None:
@@ -230,9 +230,12 @@ if arkimet is not None:
                         log.warning("unsupported timerange style in %s: skipping input", trange)
                         continue
 
-                    reftime = md.to_python("reftime")
+                    reftime = md.to_python("reftime")["time"]
                     source = md.to_python("source")
-                    relname = inp.pantry_basename + f"+{output_step}.{source['format']}"
+                    relname = inp.pantry_basename + (
+                            f"_{reftime.year}_{reftime.month}_{reftime.day}"
+                            f"_{reftime.hour}_{reftime.minute}_{reftime.second}"
+                            f"+{output_step}.{source['format']}")
 
                     dest = os.path.join(self.data_root, relname)
                     # TODO: implement Metadata.write_data to write directly without
@@ -241,7 +244,8 @@ if arkimet is not None:
                         out.write(md.data)
 
                     # Take note of having added one element to this file
-                    inp.add_step(reftime, output_step)
+                    instant = inputs.Instant(reftime, output_step)
+                    inp.add_instant(instant)
             return True
 
         def read(self, infd: BinaryIO):
@@ -280,8 +284,10 @@ class EccodesPantry(DiskPantry):
                             log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
-                    print(f'  print "s:{inp.model or ""},{inp.name},[year],[month],[day],[hour],[minute],[second],[endStep]";', file=f)
-                    print(f'  write "{self.data_root}/{inp.pantry_basename}+[endStep].grib";', file=f)
+                    print(f'  print "s:{inp.model or ""},{inp.name},'
+                          '[year],[month],[day],[hour],[minute],[second],[endStep]";', file=f)
+                    print(f'  write "{self.data_root}/{inp.pantry_basename}'
+                          '_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].grib";', file=f)
                     print("}", file=f)
 
         if self.grib_input:
@@ -295,14 +301,14 @@ class EccodesPantry(DiskPantry):
         if not line.startswith(b"s:"):
             return
         model, name, ye, mo, da, ho, mi, se, step = line[2:].split(b",")
-        dt = datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se))
+        reftime = datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se))
         if not model:
             model = None
         else:
             model = model.decode()
         for inp in self.inputs[name.decode()]:
             if inp.model == model:
-                inp.add_step(dt, int(step))
+                inp.add_instant(inputs.Instant(reftime, int(step)))
 
     def read_grib(self, path: str):
         """

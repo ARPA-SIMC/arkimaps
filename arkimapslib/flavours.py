@@ -119,10 +119,10 @@ class Flavour:
         Scan a recipe and return a set with all the inputs it needs
         """
         from .inputs import InputFile
-        # For each output step, map inputs names to InputFile structures
-        inputs: Optional[Dict[int, Dict[str, InputFile]]] = None
+        # For each output instant, map inputs names to InputFile structures
+        inputs: Optional[Dict["inputs.Instant", Dict[str, InputFile]]] = None
         # Collection of input name to InputFile mappings used by all output steps
-        inputs_for_all_steps: Dict[str, InputFile] = {}
+        inputs_for_all_instants: Dict[str, InputFile] = {}
 
         input_names = self.get_inputs_for_recipe(recipe)
         log.debug("flavour %s: recipe %s uses inputs: %r", self.name, recipe.name, input_names)
@@ -130,51 +130,51 @@ class Flavour:
         # Find the intersection of all steps available for all inputs needed
         for input_name in input_names:
             # Find available steps for this input
-            output_steps: Dict[Optional[int], "InputFile"]
-            output_steps = pantry.get_steps(input_name)
+            output_instants: Dict[Optional["inputs.Instant"], "InputFile"]
+            output_instants = pantry.get_instants(input_name)
 
             # Special handling for inputs that are not step-specific and
             # are valid for all steps, like maps or orography
-            any_step = output_steps.pop(None, None)
-            if any_step is not None:
+            any_instant = output_instants.pop(None, None)
+            if any_instant is not None:
                 log.debug("flavour %s: recipe %s inputs %s available for any step", self.name, recipe.name, input_name)
-                inputs_for_all_steps[input_name] = any_step
+                inputs_for_all_instants[input_name] = any_instant
                 # This input is valid for all steps and does not
                 # introduce step limitations
-                if not output_steps:
+                if not output_instants:
                     continue
             else:
-                log.debug("flavour %s: recipe %s inputs %s available for steps %r",
-                          self.name, recipe.name, input_name, output_steps.keys())
+                log.debug("flavour %s: recipe %s inputs %s available for instants %r",
+                          self.name, recipe.name, input_name, output_instants.keys())
 
-            # Intersect the output steps for the recipe input list
+            # Intersect the output instants for the recipe input list
             if inputs is None:
-                # The first time this output_step has been seen, populate
+                # The first time this output_instant has been seen, populate
                 # the `inputs` mapping with all available inputs
                 inputs = {}
-                for output_step, ifile in output_steps.items():
-                    inputs[output_step] = {input_name: ifile}
+                for output_instant, ifile in output_instants.items():
+                    inputs[output_instant] = {input_name: ifile}
             else:
-                # The subsequent times this output_step is seen, intersect
-                steps_to_delete: List[int] = []
-                for output_step, input_files in inputs.items():
-                    if output_step not in output_steps:
-                        # We miss an input for this step, so we cannot
+                # The subsequent times this output_instant is seen, intersect
+                instants_to_delete: List[int] = []
+                for output_instant, input_files in inputs.items():
+                    if output_instant not in output_instants:
+                        # We miss an input for this instant, so we cannot
                         # generate an order for it
-                        steps_to_delete.append(output_step)
+                        instants_to_delete.append(output_instant)
                     else:
-                        input_files[input_name] = output_steps[output_step]
-                for output_step in steps_to_delete:
-                    del inputs[output_step]
+                        input_files[input_name] = output_instants[output_instant]
+                for output_instant in instants_to_delete:
+                    del inputs[output_instant]
 
         res: List["orders.Order"] = []
         if inputs is not None:
-            # For each step we found, build an order
-            for output_step, input_files in inputs.items():
-                if inputs_for_all_steps:
-                    input_files.update(inputs_for_all_steps)
+            # For each instant we found, build an order
+            for output_instant, input_files in inputs.items():
+                if inputs_for_all_instants:
+                    input_files.update(inputs_for_all_instants)
 
-                logger = logging.getLogger(f"arkimaps.render.{self.name}.{recipe.name}+{output_step:03d}")
+                logger = logging.getLogger(f"arkimaps.render.{self.name}.{recipe.name}{output_instant.pantry_suffix()}")
 
                 # Instantiate order steps from recipe steps
                 order_steps: List[Step] = []
@@ -191,7 +191,7 @@ class Flavour:
                     mixer=recipe.mixer,
                     input_files=input_files,
                     recipe_name=recipe.name,
-                    step=output_step,
+                    instant=output_instant,
                     order_steps=order_steps,
                     log=log,
                 ))

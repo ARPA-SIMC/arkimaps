@@ -33,6 +33,27 @@ def keep_only_first_grib(fname: str):
             eccodes.codes_release(gid)
 
 
+class Instant(NamedTuple):
+    """
+    Identifies an instant of time for which we have data for an input.
+
+    Note that different combinations of reftime+step that would map to the same
+    physical instant of time are considered distinct for arkimaps purposes
+    """
+    reftime: datetime.datetime
+    step: int
+
+    def __str__(self):
+        return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step}"
+
+    def pantry_suffix(self) -> str:
+        return (f"_{self.reftime.year}_{self.reftime.month}_{self.reftime.day}"
+                f"_{self.reftime.hour}_{self.reftime.minute}_{self.reftime.second}+{self.step}")
+
+    def product_suffix(self) -> str:
+        return (f"_{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step:03d}")
+
+
 class InputTypes:
     """
     Registry of available Input implementations
@@ -125,7 +146,7 @@ class Input:
             for inp in pantry.inputs[name]:
                 inp.add_all_inputs(pantry, res)
 
-    def add_step(self, reftime: datetime.datetime, step: int):
+    def add_instant(self, instant: Instant):
         """
         Notify that the pantry contains data for this input for the given step
         """
@@ -140,7 +161,7 @@ class Input:
         """
         pass
 
-    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
+    def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         """
         Scan the pantry to check what input files are available for this input.
 
@@ -172,7 +193,7 @@ class Static(Input):
     An input that refers to static files distributed with arkimaps
     """
     # TODO: in newer pythons, use importlib.resources.Resource and copy to
-    # workdir in get_steps
+    # workdir in get_instants
     NAME = "static"
 
     static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
@@ -209,7 +230,7 @@ class Static(Input):
         print(f"{ind}* **Path**: `{self.path}`", file=file)
         super().document(file, indent)
 
-    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
+    def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         return {None: InputFile(self.abspath, self, None)}
 
 
@@ -219,7 +240,7 @@ class Shape(Static):
     A special instance of static that deals with shapefiles
     """
     # TODO: in newer pythons, use importlib.resources.Resource and copy to
-    # workdir in get_steps
+    # workdir in get_instants
     NAME = "shape"
 
     def clean_path(self, path: str):
@@ -254,10 +275,10 @@ class Source(Input):
         # grib_filter if expression
         self.eccodes = eccodes
         # set of available steps
-        self.steps: Set[int] = set()
+        self.instants: Set[Instant] = set()
         # set of steps for which the data in the pantry contains multiple
         # elements and needs to be truncated
-        self.steps_to_truncate: Set[int] = set()
+        self.instants_to_truncate: Set[Instant] = set()
 
     def to_dict(self):
         res = super().to_dict()
@@ -265,26 +286,28 @@ class Source(Input):
         res["eccodes"] = self.eccodes
         return res
 
-    def add_step(self, reftime: datetime.datetime, step: int):
-        if step in self.steps:
-            log.warning("%s: multiple data found for step +%d", self.name, step)
-            self.steps_to_truncate.add(step)
-        self.steps.add(step)
+    def add_instant(self, instant: Instant):
+        if instant in self.instants:
+            log.warning("%s: multiple data found for %s", self.name, instant)
+            self.instants_to_truncate.add(instant)
+        self.instants.add(instant)
 
     def on_pantry_filled(self, pantry: "pantry.DiskPantry"):
         # If some steps had duplicate data, truncate them
-        for step in self.steps_to_truncate:
-            fname = os.path.join(pantry.data_root, self.pantry_basename + f"+{step}.grib")
+        for instant in self.instants_to_truncate:
+            fname = os.path.join(pantry.data_root, self.pantry_basename + instant.pantry_suffix() + ".grib")
             keep_only_first_grib(fname)
-        self.steps_to_truncate = set()
+        self.instants_to_truncate = set()
 
-    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
+    def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         # FIXME: this hardcodes .grib as extension. We can either rename
         # 'Source' to 'GRIB' and default that, or allow to specify a different
         # extension, leaving '.grib' as a default
-        res: Dict[Optional[int], "InputFile"] = {}
-        for step in self.steps:
-            res[step] = InputFile(os.path.join(pantry.data_root, self.pantry_basename + f"+{step}.grib"), self, step)
+        res: Dict[Optional[Instant], "InputFile"] = {}
+        for instant in self.instants:
+            res[instant] = InputFile(
+                    os.path.join(pantry.data_root, self.pantry_basename + f"{instant.pantry_suffix()}.grib"),
+                    self, instant)
         return res
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
@@ -307,7 +330,7 @@ class Derived(Input):
         super().__init__(**kw)
         self.inputs = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
         # set of available steps
-        self.steps: Set[int] = set()
+        self.instants: Set[Instant] = set()
 
     def to_dict(self):
         res = super().to_dict()
@@ -319,10 +342,10 @@ class Derived(Input):
         res.extend(self.inputs)
         return res
 
-    def add_step(self, reftime: datetime.datetime, step: int):
-        if step in self.steps:
-            log.warning("%s: multiple data generated for step +%d", self.name, step)
-        self.steps.add(step)
+    def add_instant(self, instant: Instant):
+        if instant in self.instants:
+            log.warning("%s: multiple data generated for instant %s", self.name, instant)
+        self.instants.add(instant)
 
     def generate(self, pantry: "pantry.DiskPantry"):
         """
@@ -330,7 +353,7 @@ class Derived(Input):
         """
         raise NotImplementedError(f"{self.__class__.__name__}.generate() not implemented")
 
-    def get_steps(self, pantry: "pantry.DiskPantry") -> Dict[Optional[int], "InputFile"]:
+    def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         # Check if flagfile exists, in which case skip generation
         flagfile = os.path.join(pantry.data_root, f"{self.pantry_basename}.processed")
         if not os.path.exists(flagfile):
@@ -339,9 +362,12 @@ class Derived(Input):
             with open(flagfile, "wb"):
                 pass
 
-        res: Dict[Optional[int], "InputFile"] = {}
-        for step in self.steps:
-            res[step] = InputFile(os.path.join(pantry.data_root, self.pantry_basename + f"+{step}.grib"), self, step)
+        res: Dict[Optional[Instant], "InputFile"] = {}
+        for instant in self.instants:
+            res[instant] = InputFile(
+                    os.path.join(
+                        pantry.data_root,
+                        self.pantry_basename + f"{instant.pantry_suffix()}.grib"), self, instant)
         return res
 
     def document(self, file, indent=4):
@@ -373,13 +399,13 @@ class Decumulate(Derived):
         return res
 
     def generate(self, pantry: "pantry.DiskPantry"):
-        # Get the steps of our source input
-        source_steps = pantry.get_steps(self.inputs[0])
+        # Get the instants of our source input
+        source_instants = pantry.get_instants(self.inputs[0])
 
-        # TODO: check that they match the step
+        # TODO: check that they match the instant
 
         # Don't run preprocessing if we don't have data to preprocess
-        if not source_steps:
+        if not source_instants:
             log.info("input %s: missing source data", self.name)
             return
 
@@ -389,7 +415,8 @@ class Decumulate(Derived):
         grib_filter_rules = os.path.join(pantry.data_root, f"{self.pantry_basename}.grib_filter_rules")
         with open(grib_filter_rules, "wt") as fd:
             print('print "s:[year],[month],[day],[hour],[minute],[second],[endStep]";', file=fd)
-            print(f'write "{pantry.data_root}/{self.pantry_basename}+[endStep].grib";', file=fd)
+            print(f'write "{pantry.data_root}/{self.pantry_basename}'
+                  '_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].grib";', file=fd)
 
         # We could pipe the output of vg6d_transform directly into grib_filter,
         # but grib_filter errors in case of empty input with the same exit code
@@ -408,7 +435,7 @@ class Decumulate(Derived):
             cmd.append("--comp-full-steps")
         cmd += ["-", decumulated_data]
         v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
-        for step, input_file in source_steps.items():
+        for input_file in source_instants.values():
             with open(input_file.pathname, "rb") as src:
                 shutil.copyfileobj(src, v6t.stdin)
         v6t.stdin.close()
@@ -428,13 +455,14 @@ class Decumulate(Derived):
                 if not line.startswith(b"s:"):
                     return
                 ye, mo, da, ho, mi, se, step = line[2:].split(b",")
-                reftime = datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se))
-                step = int(step)
-                if step in self.steps:
+                instant = Instant(
+                    datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se)),
+                    int(step))
+                if instant in self.instants:
                     log.warning(
-                        "%s: vg6d_transform generated multiple GRIB data for step +%d. Note that truncation to only the"
-                        " first data produced is not supported yet!", self.name, step)
-                self.add_step(reftime, step)
+                        "%s: vg6d_transform generated multiple GRIB data for instant %s. Note that truncation"
+                        " to only the first data produced is not supported yet!", self.name, instant)
+                self.add_instant(instant)
         finally:
             if os.path.exists(decumulated_data):
                 os.unlink(decumulated_data)
@@ -465,34 +493,36 @@ class VG6DTransform(Derived):
 
     def generate(self, pantry: "pantry.DiskPantry"):
         # Get the steps for each of our inputs
-        available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
+        available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
         for input_name in self.inputs:
-            input_steps = pantry.get_steps(input_name)
+            input_instants = pantry.get_instants(input_name)
             # Intersect the steps to get only those for which we have all inputs
-            if available_steps is None:
-                available_steps = {k: [v] for k, v in input_steps.items()}
+            if available_instants is None:
+                available_instants = {k: [v] for k, v in input_instants.items()}
             else:
-                steps_to_delete = []
-                for step, inputs in available_steps.items():
-                    input_file = input_steps.get(step)
+                instants_to_delete = []
+                for instant, inputs in available_instants.items():
+                    input_file = input_instants.get(instant)
                     if input_file is None:
-                        steps_to_delete.append(step)
+                        instants_to_delete.append(instant)
                     else:
                         inputs.append(input_file)
-                for step in steps_to_delete:
-                    log.info("input %s: dropping step %d missing in source input %s", self.name, step, input_name)
-                    del available_steps[step]
+                for instant in instants_to_delete:
+                    log.info("input %s: dropping instant %s missing in source input %s", self.name, instant, input_name)
+                    del available_instants[instant]
 
         # Don't run preprocessing if we don't have data to preprocess
-        if not available_steps:
+        if not available_instants:
             log.info("input %s: missing source data", self.name)
             return
 
         # For each step, run vg6d_transform to generate its output
-        for step, input_files in available_steps.items():
-            output_name = f"{self.pantry_basename}+{step}.grib"
+        for instant, input_files in available_instants.items():
+            output_name = f"{self.pantry_basename}{instant.pantry_suffix()}.grib"
 
-            log.info("input %s: generating step %d as %s", self.name, step, output_name)
+            log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
+            for f in input_files:
+                log.info("input %s: generating from %s", self.name, f.pathname)
 
             output_pathname = os.path.join(pantry.data_root, output_name)
             cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
@@ -514,8 +544,7 @@ class VG6DTransform(Derived):
                 log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_name)
                 os.unlink(output_pathname)
 
-            raise NotImplementedError("missing getting reftime from source inputs")
-            self.add_step(step)
+            self.add_instant(instant)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -531,35 +560,35 @@ class Cat(Derived):
     NAME = "cat"
 
     def generate(self, pantry: "pantry.DiskPantry"):
-        # Get the steps for each of our inputs
-        available_steps: Optional[Dict[Optional[int], List[InputFile]]] = None
+        # Get the instants for each of our inputs
+        available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
         for input_name in self.inputs:
-            input_steps = pantry.get_steps(input_name)
-            # Intersect the steps to get only those for which we have all inputs
-            if available_steps is None:
-                available_steps = {k: [v] for k, v in input_steps.items()}
+            input_instants = pantry.get_instants(input_name)
+            # Intersect the instants to get only those for which we have all inputs
+            if available_instants is None:
+                available_instants = {k: [v] for k, v in input_instants.items()}
             else:
-                steps_to_delete = []
-                for step, inputs in available_steps.items():
-                    input_file = input_steps.get(step)
+                instants_to_delete = []
+                for instant, inputs in available_instants.items():
+                    input_file = input_instants.get(instant)
                     if input_file is None:
-                        steps_to_delete.append(step)
+                        instants_to_delete.append(instant)
                     else:
                         inputs.append(input_file)
-                for step in steps_to_delete:
-                    log.info("input %s: dropping step %d missing in source input %s", self.name, step, input_name)
-                    del available_steps[step]
+                for instant in instants_to_delete:
+                    log.info("input %s: dropping instant %s missing in source input %s", self.name, instant, input_name)
+                    del available_instants[instant]
 
         # Don't run preprocessing if we don't have data to preprocess
-        if not available_steps:
+        if not available_instants:
             log.info("input %s: missing source data", self.name)
             return
 
-        # For each step, concatenate all inputs to generate the output
-        for step, input_files in available_steps.items():
-            output_name = f"{self.pantry_basename}+{step}.grib"
+        # For each instant, concatenate all inputs to generate the output
+        for instant, input_files in available_instants.items():
+            output_name = f"{self.pantry_basename}{instant.pantry_suffix()}.grib"
 
-            log.info("input %s: generating step %d as %s", self.name, step, output_name)
+            log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
 
             output_pathname = os.path.join(pantry.data_root, output_name)
             with open(output_pathname, "wb") as out:
@@ -567,8 +596,7 @@ class Cat(Derived):
                     with open(input_file.pathname, "rb") as fd:
                         shutil.copyfileobj(fd, out)
 
-            raise NotImplementedError("missing getting reftime from source inputs")
-            self.add_step(step)
+            self.add_instant(instant)
 
 
 class InputFile(NamedTuple):
@@ -580,4 +608,7 @@ class InputFile(NamedTuple):
     # Input with information about the file
     info: Input
     # Forecast step (if None, this input file is valid for all steps)
-    step: Optional[int]
+    instant: Optional[Instant]
+
+    def __str__(self):
+        return self.pathname

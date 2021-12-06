@@ -1,12 +1,13 @@
 # from __future__ import annotations
 from unittest import TestCase
 import contextlib
+import datetime
 import os
 import tempfile
 from typing import Optional
 
 from arkimapslib import pantry
-from arkimapslib.inputs import Input
+from arkimapslib.inputs import Input, Instant
 
 
 class PantryTestMixin:
@@ -22,7 +23,7 @@ class PantryTestMixin:
             yield workdir
 
     def get_test_data(self, model, recipe, input_name, step: int):
-        return os.path.join("testdata", recipe, f"{model}_{input_name}+{step:02d}.arkimet")
+        return os.path.join("testdata", recipe, f"{model}_{input_name}_2021_1_10_0_0_0+{step:02d}.arkimet")
 
     def test_dispatch(self):
         with self.pantry() as pantry:
@@ -32,9 +33,9 @@ class PantryTestMixin:
                 arkimet="product:GRIB1,,2,11;level:GRIB1,105,2",
                 eccodes='shortName is "2t" and indicatorOfTypeOfLevel == 105'))
             pantry.fill(self.get_test_data("cosmo", "t2m", "t2m", 12))
-            self.assertIn("test+12.grib", os.listdir(pantry.data_root))
-            steps = pantry.get_steps("test")
-            self.assertCountEqual(steps.keys(), [12])
+            self.assertIn("test_2021_1_10_0_0_0+12.grib", os.listdir(pantry.data_root))
+            instants = pantry.get_instants("test")
+            self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
     def test_separate_steps(self):
         def add_inputs(pantry):
@@ -55,12 +56,12 @@ class PantryTestMixin:
             add_inputs(pantry)
             pantry.fill(self.get_test_data("cosmo", "t2m", "t2m", 12))
             inp = pantry.inputs.get("test")[0]
-            steps = inp.get_steps(pantry)
-            self.assertCountEqual(steps.keys(), [12])
+            instants = inp.get_instants(pantry)
+            self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
             inp = pantry.inputs.get("derived")[0]
-            steps = inp.get_steps(pantry)
-            self.assertCountEqual(steps.keys(), [12])
+            instants = inp.get_instants(pantry)
+            self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
         # Processing in separate steps
         with tempfile.TemporaryDirectory() as workdir:
@@ -74,24 +75,24 @@ class PantryTestMixin:
                 add_inputs(pantry)
                 pantry.rescan()
                 inp = pantry.inputs.get("test")[0]
-                steps = inp.get_steps(pantry)
-                self.assertCountEqual(steps.keys(), [12])
+                instants = inp.get_instants(pantry)
+                self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
                 inp = pantry.inputs.get("derived")[0]
-                steps = inp.get_steps(pantry)
-                self.assertCountEqual(steps.keys(), [12])
+                instants = inp.get_instants(pantry)
+                self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
             # Another render attempt, derived inputs should be found
             with self.pantry(workdir) as pantry:
                 add_inputs(pantry)
                 pantry.rescan()
                 inp = pantry.inputs.get("test")[0]
-                steps = inp.get_steps(pantry)
-                self.assertCountEqual(steps.keys(), [12])
+                instants = inp.get_instants(pantry)
+                self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
                 inp = pantry.inputs.get("derived")[0]
-                steps = inp.get_steps(pantry)
-                self.assertCountEqual(steps.keys(), [12])
+                instants = inp.get_instants(pantry)
+                self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
 
 class TestArkimetPantry(PantryTestMixin, TestCase):

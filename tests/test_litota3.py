@@ -1,6 +1,7 @@
 # from __future__ import annotations
-import unittest
+import datetime
 import os
+import unittest
 from arkimapslib.unittest import add_recipe_test_cases
 
 
@@ -12,7 +13,7 @@ class LITOTA3Mixin:
         if self.model_name == "cosmo":
             raise unittest.SkipTest(f"{self.recipe_name} tests for COSMO skipped, we currently miss input data")
 
-        self.fill_pantry()
+        self.fill_pantry(reftime=datetime.datetime(2021, 3, 4))
 
         litota3 = self.kitchen.pantry.inputs.get("litota3")
         for i in litota3:
@@ -28,10 +29,10 @@ class LITOTA3Mixin:
         self.assertEqual(len(orders), 1)
 
         input_files = orders[0].input_files
-        self.assertEqual(os.path.basename(input_files["litota3"].pathname), "litota3+12.grib")
+        self.assertEqual(os.path.basename(input_files["litota3"].pathname), "litota3_2021_3_4_0_0_0+12.grib")
         self.assertEqual(len(input_files), 1)
 
-        self.assertRenders(orders[0])
+        self.assertRenders(orders[0], reftime=datetime.datetime(2021, 3, 4))
 
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
@@ -75,7 +76,7 @@ class LITOTA3NordMixin:
         if self.model_name == "cosmo":
             raise unittest.SkipTest(f"{self.recipe_name} tests for COSMO skipped, we currently miss input data")
 
-        self.fill_pantry()
+        self.fill_pantry(reftime=datetime.datetime(2021, 3, 4))
 
         litota3 = self.kitchen.pantry.inputs.get("litota3")
         for i in litota3:
@@ -91,11 +92,11 @@ class LITOTA3NordMixin:
         self.assertEqual(len(orders), 1)
 
         input_files = orders[0].input_files
-        self.assertEqual(os.path.basename(input_files["litota3"].pathname), "litota3+12.grib")
+        self.assertEqual(os.path.basename(input_files["litota3"].pathname), "litota3_2021_3_4_0_0_0+12.grib")
         self.assertEqual(os.path.basename(input_files["sottozone_allerta_er"].pathname), "Sottozone_allerta_ER")
         self.assertEqual(os.path.basename(input_files["punti_citta"].pathname), "puntiCitta.geo")
 
-        self.assertRenders(orders[0])
+        self.assertRenders(orders[0], reftime=datetime.datetime(2021, 3, 4))
 
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 

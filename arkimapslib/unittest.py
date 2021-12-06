@@ -1,9 +1,10 @@
 # from __future__ import annotations
-from typing import Dict, List, Any, Optional, Type, Tuple
-import unittest
-import sys
+from typing import Dict, List, Any, Optional, Type
+import datetime
 import os
 import pickle
+import sys
+import unittest
 import yaml
 from .render import Renderer
 
@@ -131,7 +132,14 @@ class RecipeTestMixin:
         self.kitchen.load_recipes(recipe_dirs)
         self.kitchen_recipes_loaded = True
 
-    def fill_pantry(self, step=12, recipe_dirs=None, expected=None, recipe_name=None, flavour_name=None):
+    def fill_pantry(
+            self,
+            reftime=datetime.datetime(2021, 1, 10),
+            step=12,
+            recipe_dirs=None,
+            expected=None,
+            recipe_name=None,
+            flavour_name=None):
         """
         Load recipes if needed, then fill the pantry with the inputs they require
         """
@@ -163,19 +171,21 @@ class RecipeTestMixin:
                 for inp in inputs:
                     if inp.NAME != "default":
                         continue
+                    reftime_str = (f"{reftime.year}_{reftime.month}_{reftime.day}"
+                                   f"_{reftime.hour}_{reftime.minute}_{reftime.second}")
                     if inp.model is None:
-                        expected.append(f"{inp.name}+{step}.grib")
+                        expected.append(f"{inp.name}_{reftime_str}+{step}.grib")
                     else:
-                        expected.append(f"{self.model_name}_{inp.name}+{step}.grib")
+                        expected.append(f"{self.model_name}_{inp.name}_{reftime_str}+{step}.grib")
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
 
-    def assertRenders(self, order, output_name=None):
+    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), output_name=None):
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
         if output_name is None:
-            output_name = f"{self.recipe_name}+012.png"
+            output_name = f"{self.recipe_name}_{reftime:%Y-%m-%dT%H:%M:%S}+012.png"
         renderer = Renderer(self.kitchen.workdir)
 
         # Stop testing at this point, if we know Magics would segfault or abort

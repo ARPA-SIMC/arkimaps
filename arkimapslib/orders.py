@@ -1,7 +1,6 @@
 # from __future__ import annotations
 from typing import Dict, List, Optional
 import logging
-import os
 
 # if TYPE_CHECKING:
 from . import inputs
@@ -18,7 +17,7 @@ class Order:
             mixer: str,
             input_files: Dict[str, inputs.InputFile],
             recipe_name: str,
-            step: int,
+            instant: "inputs.Instant",
             order_steps: List[steps.Step],
             log: logging.Logger):
         # Name of the Mixer to use
@@ -26,11 +25,11 @@ class Order:
         # Dict mapping source names to pathnames of GRIB files
         self.input_files = input_files
         # Destination file name (without path or .png extension)
-        self.basename = f"{recipe_name}+{step:03d}"
+        self.basename = f"{recipe_name}{instant.product_suffix()}"
         # Recipe name
         self.recipe_name = recipe_name
-        # Product step
-        self.step = step
+        # Product instant
+        self.instant = instant
         # Output file name, set after the product has been rendered
         self.output: Optional[str] = None
         # Logger for this output

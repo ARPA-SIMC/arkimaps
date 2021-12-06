@@ -16,7 +16,8 @@ class TP1HMixin:
         if self.model_name == "ifs":
             raise unittest.SkipTest("tp1h tests for IFS skipped, see code for reason")
 
-        self.fill_pantry(expected=[f"{self.model_name}_tp+{step}.grib" for step in range(0, 13)])
+        pantry_reftime = "2021_1_10_0_0_0"
+        self.fill_pantry(expected=[f"{self.model_name}_tp_{pantry_reftime}+{step}.grib" for step in range(0, 13)])
 
         # Check that the right input was selected
         tpdec1h = self.kitchen.pantry.inputs.get("tpdec1h")
@@ -32,7 +33,7 @@ class TP1HMixin:
             return
         else:
             self.assertGreaterEqual(len(orders), 12)
-        orders = [o for o in orders if o.basename == "tp1h+012"]
+        orders = [o for o in orders if o.basename == "tp1h_2021-01-10T00:00:00+012"]
         self.assertEqual(len(orders), 1)
 
         self.assertRenders(orders[0])

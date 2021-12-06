@@ -4,7 +4,10 @@ from arkimapslib.unittest import add_recipe_test_cases
 
 class RH2MMixin:
     def test_dispatch(self):
-        self.fill_pantry(expected=[f'{self.model_name}_2d+12.grib', f'{self.model_name}_t2m+12.grib'])
+        pantry_reftime = "2021_1_10_0_0_0"
+        self.fill_pantry(expected=[
+            f'{self.model_name}_2d_{pantry_reftime}+12.grib',
+            f'{self.model_name}_t2m_{pantry_reftime}+12.grib'])
 
         # Check that the right input was selected
         cpdec3h = self.kitchen.pantry.inputs.get("rh2m")

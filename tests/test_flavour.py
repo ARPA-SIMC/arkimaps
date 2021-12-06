@@ -53,7 +53,7 @@ class TestFlavour(unittest.TestCase):
 
             with ArkimetKitchen() as kitchen:
                 kitchen.load_recipes([recipe_dir])
-                kitchen.pantry.fill(path="testdata/t2m/cosmo_t2m+12.arkimet")
+                kitchen.pantry.fill(path="testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
                 yield kitchen
 
     def get_step(self, order, step_name: str):
@@ -135,9 +135,9 @@ class TestFlavour(unittest.TestCase):
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
             self.assertCountEqual(
                     [o.basename for o in orders],
-                    ["t2m+012", "tcc+012"])
+                    ["t2m_2021-01-10T00:00:00+012", "tcc_2021-01-10T00:00:00+012"])
 
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
             self.assertCountEqual(
                     [o.basename for o in orders],
-                    ["t2m+012"])
+                    ["t2m_2021-01-10T00:00:00+012"])
