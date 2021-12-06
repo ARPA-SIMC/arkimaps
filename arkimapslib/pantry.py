@@ -124,6 +124,9 @@ class DiskPantry(Pantry):
         """
         return inputs.InputFile(self.get_fullname(inp, instant, fmt=fmt), inp, instant)
 
+    def get_eccodes_fullname(self, inp: "inputs.Input", fmt="grib") -> str:
+        return f"{self.data_root}/{inp.pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
+
     def get_instants(self, input_name: str) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
         """
         Return the instants available in the pantry for the input with the given
@@ -308,8 +311,7 @@ class EccodesPantry(DiskPantry):
                     print(f"if ( {eccodes} ) {{", file=f)
                     print(f'  print "s:{inp.model or ""},{inp.name},'
                           '[year],[month],[day],[hour],[minute],[second],[endStep]";', file=f)
-                    print(f'  write "{self.data_root}/{inp.pantry_basename}'
-                          '_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].grib";', file=f)
+                    print(f'  write "{self.get_eccodes_fullname(inp)}";', file=f)
                     print("}", file=f)
 
         if self.grib_input:

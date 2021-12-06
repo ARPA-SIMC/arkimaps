@@ -410,8 +410,7 @@ class Decumulate(Derived):
         grib_filter_rules = os.path.join(pantry.data_root, f"{self.pantry_basename}.grib_filter_rules")
         with open(grib_filter_rules, "wt") as fd:
             print('print "s:[year],[month],[day],[hour],[minute],[second],[endStep]";', file=fd)
-            print(f'write "{pantry.data_root}/{self.pantry_basename}'
-                  '_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].grib";', file=fd)
+            print(f'write "{pantry.get_eccodes_fullname(self)}";', file=fd)
 
         # We could pipe the output of vg6d_transform directly into grib_filter,
         # but grib_filter errors in case of empty input with the same exit code
