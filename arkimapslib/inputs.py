@@ -91,12 +91,6 @@ class Input:
         self.defined_in = defined_in
         # Extra arguments passed to mgrib on loading
         self.mgrib = mgrib
-        # Basename of files for this input in the pantry
-        # This has no path, and no +step.ext suffix
-        if self.model is None:
-            self.pantry_basename = self.name
-        else:
-            self.pantry_basename = f"{self.model}_{self.name}"
 
     @classmethod
     def create(cls, type: str = "default", **kw):
@@ -125,7 +119,6 @@ class Input:
             "model": self.model,
             "defined_in": self.defined_in,
             "mgrib": self.mgrib,
-            "pantry_basename": self.pantry_basename,
         }
 
     def get_all_inputs(self) -> List[str]:

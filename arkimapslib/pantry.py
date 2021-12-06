@@ -109,7 +109,11 @@ class DiskPantry(Pantry):
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
         """
-        return inp.pantry_basename + f"{instant.pantry_suffix()}.{fmt}"
+        if inp.model is None:
+            pantry_basename = inp.name
+        else:
+            pantry_basename = f"{inp.model}_{inp.name}"
+        return pantry_basename + f"{instant.pantry_suffix()}.{fmt}"
 
     def get_fullname(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
         """
@@ -123,7 +127,11 @@ class DiskPantry(Pantry):
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
         """
-        return os.path.join(self.data_root, f"{inp.pantry_basename}-{suffix}")
+        if inp.model is None:
+            pantry_basename = inp.name
+        else:
+            pantry_basename = f"{inp.model}_{inp.name}"
+        return os.path.join(self.data_root, f"{pantry_basename}-{suffix}")
 
     def get_input_file(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> "inputs.InputFile":
         """
@@ -132,7 +140,11 @@ class DiskPantry(Pantry):
         return inputs.InputFile(self.get_fullname(inp, instant, fmt=fmt), inp, instant)
 
     def get_eccodes_fullname(self, inp: "inputs.Input", fmt="grib") -> str:
-        return f"{self.data_root}/{inp.pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
+        if inp.model is None:
+            pantry_basename = inp.name
+        else:
+            pantry_basename = f"{inp.model}_{inp.name}"
+        return f"{self.data_root}/{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
 
     def get_instants(self, input_name: str) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
         """
@@ -264,7 +276,11 @@ if arkimet is not None:
 
                     reftime = md.to_python("reftime")["time"]
                     source = md.to_python("source")
-                    relname = inp.pantry_basename + (
+                    if inp.model is None:
+                        pantry_basename = inp.name
+                    else:
+                        pantry_basename = f"{inp.model}_{inp.name}"
+                    relname = pantry_basename + (
                             f"_{reftime.year}_{reftime.month}_{reftime.day}"
                             f"_{reftime.hour}_{reftime.minute}_{reftime.second}"
                             f"+{output_step}.{source['format']}")
