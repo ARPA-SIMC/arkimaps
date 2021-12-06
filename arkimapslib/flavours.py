@@ -174,7 +174,8 @@ class Flavour:
                 if inputs_for_all_instants:
                     input_files.update(inputs_for_all_instants)
 
-                logger = logging.getLogger(f"arkimaps.render.{self.name}.{recipe.name}{output_instant.pantry_suffix()}")
+                logger = logging.getLogger(
+                        f"arkimaps.render.{self.name}.{recipe.name}{output_instant.product_suffix()}")
 
                 # Instantiate order steps from recipe steps
                 order_steps: List[Step] = []
@@ -190,6 +191,7 @@ class Flavour:
                 res.append(orders.Order(
                     mixer=recipe.mixer,
                     input_files=input_files,
+                    flavour_name=self.name,
                     recipe_name=recipe.name,
                     instant=output_instant,
                     order_steps=order_steps,

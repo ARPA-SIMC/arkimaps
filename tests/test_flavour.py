@@ -135,9 +135,9 @@ class TestFlavour(unittest.TestCase):
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
             self.assertCountEqual(
                     [o.basename for o in orders],
-                    ["t2m_2021-01-10T00:00:00+012", "tcc_2021-01-10T00:00:00+012"])
+                    ["t2m+012", "tcc+012"])
 
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
             self.assertCountEqual(
                     [o.basename for o in orders],
-                    ["t2m_2021-01-10T00:00:00+012"])
+                    ["t2m+012"])

@@ -119,7 +119,10 @@ class Renderer:
         try:
             from .worktops import Worktop
 
-            output_pathname = os.path.join(self.workdir, order.basename)
+            path = os.path.join(self.workdir, order.relpath)
+            os.makedirs(path, exist_ok=True)
+
+            output_pathname = os.path.join(path, order.basename)
 
             # Write the python code, so that if we trigger a bug in Magics, we
             # have a Python reproducer available
