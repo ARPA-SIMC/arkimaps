@@ -135,7 +135,7 @@ class WorkingKitchen(Kitchen):
         Generate all possible orders for all available recipes
         """
         for o in flavour.make_orders(recipe, self.pantry):
-            if o.step == step:
+            if o.instant.step == step:
                 return o
         raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
 
