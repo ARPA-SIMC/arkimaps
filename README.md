@@ -119,12 +119,18 @@ Per velocizzare le prove, ci sono alcune opzioni di `arkimaps`:
 
  * `./arkimaps --debug dispatch workdir` per smistare l'input in
    una directory di lavoro
- * `./arkimaps --debug preview workdir --preview t2m+000` per fare la preview
+ * `./arkimaps --debug preview workdir t2m+000` per fare la preview
    di un output solo data una directory di lavoro già smistata
 
 La preview viene fatta con `xdg-open`, che usa l'applicazione preferita
 configurata nel sistema. Solitamente si può usare il file manager per cambiarla
 se quella di default non è l'ideale.
+
+È possibile specificare solo il nome della ricetta, e verrà renderizzata allo
+step piú piccolo, e al reference time piú piccolo disponibile (v. #89).
+
+È possibile specificare il reference time usando `--date`: la sintassi per le
+date è la stessa del comando `date --date=`.
 
 ### Creazione di test per nuove ricette
 

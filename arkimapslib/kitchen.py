@@ -1,9 +1,10 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, List, Union
-import tempfile
-import os
-import yaml
 import contextlib
+import datetime
+import os
+import tempfile
+from typing import Dict, Any, Optional, List, Union
+import yaml
 try:
     import arkimet
 except ModuleNotFoundError:
@@ -130,14 +131,26 @@ class WorkingKitchen(Kitchen):
             res.extend(flavour.make_orders(recipe, self.pantry))
         return res
 
-    def make_order(self, recipe: Recipe, step: int, flavour: Flavour) -> orders.Order:
+    def make_order(
+            self,
+            recipe: Recipe,
+            flavour: Flavour,
+            step: Optional[int],
+            reftime: Optional[datetime.datetime]) -> orders.Order:
         """
         Generate all possible orders for all available recipes
         """
+        selected = []
         for o in flavour.make_orders(recipe, self.pantry):
-            if o.instant.step == step:
-                return o
-        raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
+            if step is not None and o.instant.step != step:
+                continue
+            if reftime is not None and o.instant.reftime != reftime:
+                continue
+            selected.append(o)
+        if not selected:
+            raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
+        selected.sort(key=lambda x: x.instant)
+        return selected[0]
 
 
 if arkimet is not None:

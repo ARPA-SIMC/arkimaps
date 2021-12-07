@@ -1,6 +1,7 @@
 # Novità nella versione 0.5
 
 * Introdotta validazione input (#85)
+* `askimaps preview` permette di omettere lo step, e di specificare il reference time (#89)
 
 # Novità nella versione 0.4
 

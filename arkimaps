@@ -2,6 +2,7 @@
 # from __future__ import annotations
 from typing import List
 import argparse
+import datetime
 import logging
 import tarfile
 import subprocess
@@ -313,9 +314,11 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
+        parser.add_argument("-d", "--date", metavar="datetime", action="store",
+                            help="render product at this reference time")
         parser.add_argument("workdir", metavar="dir", action="store",
                             help="working directory")
-        parser.add_argument("name", metavar="prod+step", action="store",
+        parser.add_argument("name", metavar="prod[+step]", action="store",
                             help="name of the product to preview")
         return parser
 
@@ -329,8 +332,18 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         """
         Generate the given product only, and preview it with xdg-open
         """
-        name, step = self.args.name.split("+")
-        step = int(step, 10)
+        if "+" in self.args.name:
+            name, step = self.args.name.split("+")
+            step = int(step, 10)
+        else:
+            name = self.args.name
+            step = None
+
+        if self.args.date is not None:
+            res = subprocess.run(['date', '--date=' + self.args.date, '+%s'], text=True, capture_output=True)
+            reftime = datetime.datetime.fromtimestamp(int(res.stdout))
+        else:
+            reftime = None
 
         flavours = self.parse_flavours()
         if len(flavours) != 1:
@@ -338,7 +351,7 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         flavour = flavours[0]
 
         # Make an order
-        order = self.kitchen.make_order(self.kitchen.recipes.get(name), step, flavour=flavour)
+        order = self.kitchen.make_order(self.kitchen.recipes.get(name), flavour=flavour, step=step, reftime=reftime)
 
         # Prepare it
         renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
