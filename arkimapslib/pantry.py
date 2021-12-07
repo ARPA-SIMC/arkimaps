@@ -113,7 +113,8 @@ class DiskPantry(Pantry):
             pantry_basename = inp.name
         else:
             pantry_basename = f"{inp.model}_{inp.name}"
-        return pantry_basename + f"{instant.pantry_suffix()}.{fmt}"
+
+        return f"{pantry_basename}_{instant.reftime:%Y%m%d%H%M%S}+{instant.step}.{fmt}"
 
     def get_fullname(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
         """
@@ -144,7 +145,9 @@ class DiskPantry(Pantry):
             pantry_basename = inp.name
         else:
             pantry_basename = f"{inp.model}_{inp.name}"
-        return f"{self.data_root}/{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
+        return (
+            f"{self.data_root}/{pantry_basename}"
+            f"_[year%04d][month%02d][day%02d][hour%02d][minute%02d][second%02d]+[endStep].{fmt}")
 
     def get_instants(self, input_name: str) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
         """
@@ -174,7 +177,7 @@ class DiskPantry(Pantry):
     def rescan(self):
         fn_match = re.compile(
                 r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_"
-                r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
+                r"(?P<reftime>\d{14})\+(?P<step>\d+)\.(?P<ext>\w+)$")
         for fn in os.listdir(self.data_root):
             if fn == "grib_filter_rules" or fn.endswith(".processed"):
                 continue
@@ -192,7 +195,7 @@ class DiskPantry(Pantry):
 
             reftime = mo.group("reftime")
             step = int(mo.group("step"))
-            inp.add_instant(inputs.Instant(datetime.datetime.strptime(reftime, "%Y_%m_%d_%H_%M_%S"), step))
+            inp.add_instant(inputs.Instant(datetime.datetime.strptime(reftime, "%Y%m%d%H%M%S"), step))
 
 
 if arkimet is not None:
@@ -280,10 +283,7 @@ if arkimet is not None:
                         pantry_basename = inp.name
                     else:
                         pantry_basename = f"{inp.model}_{inp.name}"
-                    relname = pantry_basename + (
-                            f"_{reftime.year}_{reftime.month}_{reftime.day}"
-                            f"_{reftime.hour}_{reftime.minute}_{reftime.second}"
-                            f"+{output_step}.{source['format']}")
+                    relname = f"{pantry_basename}_{reftime:%Y%m%d%H%M%S}+{output_step}.{source['format']}"
 
                     dest = os.path.join(self.data_root, relname)
                     # TODO: implement Metadata.write_data to write directly without

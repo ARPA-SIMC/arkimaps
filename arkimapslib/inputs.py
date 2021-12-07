@@ -46,10 +46,6 @@ class Instant(NamedTuple):
     def __str__(self):
         return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step}"
 
-    def pantry_suffix(self) -> str:
-        return (f"_{self.reftime.year}_{self.reftime.month}_{self.reftime.day}"
-                f"_{self.reftime.hour}_{self.reftime.minute}_{self.reftime.second}+{self.step}")
-
     def product_suffix(self) -> str:
         return (f"_{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step:03d}")
 

@@ -171,12 +171,10 @@ class RecipeTestMixin:
                 for inp in inputs:
                     if inp.NAME != "default":
                         continue
-                    reftime_str = (f"{reftime.year}_{reftime.month}_{reftime.day}"
-                                   f"_{reftime.hour}_{reftime.minute}_{reftime.second}")
                     if inp.model is None:
-                        expected.append(f"{inp.name}_{reftime_str}+{step}.grib")
+                        expected.append(f"{inp.name}_{reftime:%Y%m%d%H%M%S}+{step}.grib")
                     else:
-                        expected.append(f"{self.model_name}_{inp.name}_{reftime_str}+{step}.grib")
+                        expected.append(f"{self.model_name}_{inp.name}_{reftime:%Y%m%d%H%M%S}+{step}.grib")
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
 
