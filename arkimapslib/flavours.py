@@ -11,6 +11,7 @@ from . import inputs
 
 if TYPE_CHECKING:
     from . import pantry
+    from .inputs import InputFile
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -118,11 +119,10 @@ class Flavour:
         """
         Scan a recipe and return a set with all the inputs it needs
         """
-        from .inputs import InputFile
         # For each output instant, map inputs names to InputFile structures
-        inputs: Optional[Dict["inputs.Instant", Dict[str, InputFile]]] = None
+        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]] = None
         # Collection of input name to InputFile mappings used by all output steps
-        inputs_for_all_instants: Dict[str, InputFile] = {}
+        inputs_for_all_instants: Dict[str, "inputs.InputFile"] = {}
 
         input_names = self.get_inputs_for_recipe(recipe)
         log.debug("flavour %s: recipe %s uses inputs: %r", self.name, recipe.name, input_names)
@@ -167,6 +167,13 @@ class Flavour:
                 for output_instant in instants_to_delete:
                     del inputs[output_instant]
 
+        return self.inputs_to_orders(recipe, inputs, inputs_for_all_instants)
+
+    def inputs_to_orders(
+            self,
+            recipe: "recipes.Recipe",
+            inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+            inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
         res: List["orders.Order"] = []
         if inputs is not None:
             # For each instant we found, build an order
