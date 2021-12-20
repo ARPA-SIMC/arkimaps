@@ -16,18 +16,21 @@ class Order:
             self,
             mixer: str,
             input_files: Dict[str, inputs.InputFile],
-            flavour_name: str,
+            relpath: str,
+            basename: str,
             recipe_name: str,
             instant: "inputs.Instant",
             order_steps: List[steps.Step],
-            log: logging.Logger):
+            log: logging.Logger,
+            ):
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
         self.input_files = input_files
-        self.relpath = f"{instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe_name}_{flavour_name}"
+        # Destination directory inside the output
+        self.relpath = relpath
         # Destination file name (without path or .png extension)
-        self.basename = f"{recipe_name}+{instant.step:03d}"
+        self.basename = basename
         # Recipe name
         self.recipe_name = recipe_name
         # Product instant

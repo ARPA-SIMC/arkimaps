@@ -207,7 +207,8 @@ class Flavour:
                 res.append(orders.Order(
                     mixer=recipe.mixer,
                     input_files=input_files,
-                    flavour_name=self.name,
+                    relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
+                    basename=f"{recipe.name}+{output_instant.step:03d}",
                     recipe_name=recipe.name,
                     instant=output_instant,
                     order_steps=order_steps,
