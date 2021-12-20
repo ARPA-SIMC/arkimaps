@@ -51,7 +51,7 @@ class Flavour:
                steps: Kwargs = None,
                recipes_filter: Optional[List[str]] = None,
                **kw):
-        return cls(name, defined_in, steps, recipes_filter, **kw)
+        return SimpleFlavour(name, defined_in, steps, recipes_filter, **kw)
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """
@@ -178,6 +178,15 @@ class Flavour:
 
         return self.inputs_to_orders(recipe, inputs, inputs_for_all_instants)
 
+    def inputs_to_orders(
+            self,
+            recipe: "recipes.Recipe",
+            inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+            inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
+        raise NotImplementedError(f"{self.__class__}.inputs_to_orders not implemented")
+
+
+class SimpleFlavour(Flavour):
     def inputs_to_orders(
             self,
             recipe: "recipes.Recipe",
