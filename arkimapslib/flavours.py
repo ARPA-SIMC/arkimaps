@@ -44,6 +44,15 @@ class Flavour:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)
 
+    @classmethod
+    def create(cls,
+               name: str,
+               defined_in: str,
+               steps: Kwargs = None,
+               recipes_filter: Optional[List[str]] = None,
+               **kw):
+        return cls(name, defined_in, steps, recipes_filter, **kw)
+
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """
         Check if a recipe should be generated for this flavour
