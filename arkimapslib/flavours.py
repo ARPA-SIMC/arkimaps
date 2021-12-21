@@ -242,6 +242,7 @@ class SimpleFlavour(Flavour):
                     recipe_name=recipe.name,
                     instant=output_instant,
                     order_steps=order_steps,
+                    output_options={},
                     log=log,
                 ))
 

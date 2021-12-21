@@ -142,6 +142,7 @@ class Renderer:
                 output_formats=['png'],
                 output_name=output_pathname,
                 output_name_first_page_number="off",
+                **order.output_options,
             )
 
             # Render the file and store the output file name into the order
