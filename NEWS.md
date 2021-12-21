@@ -1,3 +1,7 @@
+# Novità nella versione TODO
+
+* Aggiunto il rendering di tile (#45)
+
 # Novità nella versione 0.5
 
 * Introdotta validazione input (#85)

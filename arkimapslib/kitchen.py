@@ -79,7 +79,7 @@ class Kitchen:
                         old = self.flavours.get(name)
                         if old is not None:
                             raise RuntimeError(f"{relfn}: flavour {name} was already defined in {old.defined_in}")
-                        self.flavours[name] = Flavour(name=name, defined_in=relfn, **flavour)
+                        self.flavours[name] = Flavour.create(name=name, defined_in=relfn, **flavour)
 
                 if "recipe" in recipe:
                     self.recipes.add(Recipe(relfn[:-5], defined_in=relfn, data=recipe))

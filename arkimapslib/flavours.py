@@ -1,8 +1,10 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set
+from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set, Tuple
 import re
 import fnmatch
+import itertools
 import logging
+import math
 from .steps import StepConfig, Step, StepSkipped
 
 from . import recipes
@@ -11,12 +13,29 @@ from . import inputs
 
 if TYPE_CHECKING:
     from . import pantry
+    from .inputs import InputFile
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
 
 log = logging.getLogger("arkimaps.flavours")
+
+
+def deg2num(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, int]:
+    lat_rad = math.radians(lat_deg)
+    n = 2.0 ** zoom
+    xtile = int((lon_deg + 180.0) / 360.0 * n)
+    ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
+    return (xtile, ytile)
+
+
+def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
+    n = 2.0 ** zoom
+    lon_deg = xtile / n * 360.0 - 180.0
+    lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
+    lat_deg = math.degrees(lat_rad)
+    return (lon_deg, lat_deg)
 
 
 class Flavour:
@@ -42,6 +61,18 @@ class Flavour:
         if steps is not None:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)
+
+    @classmethod
+    def create(cls,
+               name: str,
+               defined_in: str,
+               steps: Kwargs = None,
+               recipes_filter: Optional[List[str]] = None,
+               **kw):
+        if 'tile' in kw:
+            return TiledFlavour(name, defined_in, steps, recipes_filter, **kw)
+        else:
+            return SimpleFlavour(name, defined_in, steps, recipes_filter, **kw)
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """
@@ -90,16 +121,6 @@ class Flavour:
                 input_names.append(input_name)
         return input_names
 
-    def instantiate_order_step(
-            self,
-            recipe_step: "recipes.RecipeStep",
-            input_files: Dict[str, inputs.InputFile]) -> Step:
-        """
-        Instantiate the step class with the given flavour config
-        """
-        step_config = self.step_config(recipe_step.name)
-        return recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
-
     def get_inputs_for_recipe(self, recipe: "recipes.Recipe") -> Set[str]:
         """
         Return a list with the names of all inputs used by a recipe in this
@@ -118,11 +139,10 @@ class Flavour:
         """
         Scan a recipe and return a set with all the inputs it needs
         """
-        from .inputs import InputFile
         # For each output instant, map inputs names to InputFile structures
-        inputs: Optional[Dict["inputs.Instant", Dict[str, InputFile]]] = None
+        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]] = None
         # Collection of input name to InputFile mappings used by all output steps
-        inputs_for_all_instants: Dict[str, InputFile] = {}
+        inputs_for_all_instants: Dict[str, "inputs.InputFile"] = {}
 
         input_names = self.get_inputs_for_recipe(recipe)
         log.debug("flavour %s: recipe %s uses inputs: %r", self.name, recipe.name, input_names)
@@ -167,6 +187,32 @@ class Flavour:
                 for output_instant in instants_to_delete:
                     del inputs[output_instant]
 
+        return self.inputs_to_orders(recipe, inputs, inputs_for_all_instants)
+
+    def inputs_to_orders(
+            self,
+            recipe: "recipes.Recipe",
+            inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+            inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
+        raise NotImplementedError(f"{self.__class__}.inputs_to_orders not implemented")
+
+
+class SimpleFlavour(Flavour):
+    def instantiate_order_step(
+            self,
+            recipe_step: "recipes.RecipeStep",
+            input_files: Dict[str, inputs.InputFile]) -> Step:
+        """
+        Instantiate the step class with the given flavour config
+        """
+        step_config = self.step_config(recipe_step.name)
+        return recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+
+    def inputs_to_orders(
+            self,
+            recipe: "recipes.Recipe",
+            inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+            inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
         res: List["orders.Order"] = []
         if inputs is not None:
             # For each instant we found, build an order
@@ -191,11 +237,135 @@ class Flavour:
                 res.append(orders.Order(
                     mixer=recipe.mixer,
                     input_files=input_files,
-                    flavour_name=self.name,
+                    relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
+                    basename=f"{recipe.name}+{output_instant.step:03d}",
                     recipe_name=recipe.name,
                     instant=output_instant,
                     order_steps=order_steps,
-                    log=log,
+                    output_options={},
+                    log=logger,
                 ))
+
+        return res
+
+
+class TiledFlavour(Flavour):
+    """
+    Flavour that generates tiled output.
+
+    ``tile`` in the flavour is a dictionary defining the requested tiling, with
+    these fields:
+     * ``zoom_min: Int = 3``: minimum zoom level to generate
+     * ``zoom_max: Int = 5``: maximum zoom level to generate
+     * ``lat_min: Float``: minimum latitude
+     * ``lat_max: Float``: maximum latitude
+     * ``lon_min: Float``: minimum longitude
+     * ``lon_max: Float``: maximum longitude
+    """
+    def __init__(self, *args, tile: Dict[str, Any] = None, **kw):
+        super().__init__(*args, **kw)
+        self.zoom_min = int(tile.get("zoom_min", 3))
+        self.zoom_max = int(tile.get("zoom_max", 5))
+        self.lat_min = float(tile["lat_min"])
+        self.lat_max = float(tile["lat_max"])
+        self.lon_min = float(tile["lon_min"])
+        self.lon_max = float(tile["lon_max"])
+        self.width = 256
+        self.height = 256
+        self.width_cm = self.width / 40.
+        self.height_cm = self.height / 40.
+
+    def instantiate_order_step(
+            self,
+            recipe_step: "recipes.RecipeStep",
+            input_files: Dict[str, inputs.InputFile],
+            bbox: List[float]) -> Step:
+        """
+        Instantiate the step class with the given flavour config
+        """
+        step_config = self.step_config(recipe_step.name)
+        if recipe_step.name == "add_basemap":
+            min_lon, min_lat, max_lon, max_lat = bbox
+            step_config.options.update(
+                subpage_lower_left_latitude=min_lat,
+                subpage_lower_left_longitude=min_lon,
+                subpage_upper_right_latitude=max_lat,
+                subpage_upper_right_longitude=max_lon,
+                page_x_length=self.width_cm,
+                page_y_length=self.height_cm,
+                super_page_x_length=self.width_cm,
+                super_page_y_length=self.height_cm,
+                subpage_x_length=self.width_cm,
+                subpage_y_length=self.height_cm,
+                subpage_x_position=0.,
+                subpage_y_position=0.,
+                subpage_frame='off',
+                output_width=self.width,
+                page_frame='off',
+                skinny_mode="on",
+                page_id_line='off',
+            )
+
+        return recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+
+    def inputs_to_orders(
+            self,
+            recipe: "recipes.Recipe",
+            inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+            inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
+        res: List["orders.Order"] = []
+        if inputs is not None:
+            # For each instant we found, build an order
+            for output_instant, input_files in inputs.items():
+                if inputs_for_all_instants:
+                    input_files.update(inputs_for_all_instants)
+
+                for z in range(self.zoom_min, self.zoom_max + 1):
+                    x_min, y_min = deg2num(self.lon_min, self.lat_min, z)
+                    x_max, y_max = deg2num(self.lon_max, self.lat_max, z)
+                    x_min, x_max = sorted((x_min, x_max))
+                    y_min, y_max = sorted((y_min, y_max))
+                    for x, y in itertools.product(
+                                range(x_min, x_max + 1),
+                                range(y_min, y_max + 1),
+                            ):
+                        nw = num2deg(x, y, z)
+                        se = num2deg(x + 1, y + 1, z)
+                        bbox = [nw[0], se[1], se[0], nw[1]]
+                        min_x, min_y, max_x, max_y = bbox
+
+                        logger = logging.getLogger(
+                                f"arkimaps.render.{self.name}.{recipe.name}"
+                                f"{output_instant.product_suffix()}.{z}.{x}.{y}")
+
+                        # Instantiate order steps from recipe steps
+                        order_steps: List[Step] = []
+                        for recipe_step in recipe.steps:
+                            try:
+                                s = self.instantiate_order_step(recipe_step, input_files, bbox)
+                            except StepSkipped:
+                                logger.debug("%s (skipped)", s.name)
+                                continue
+                            # self.log.debug("%s %r", step.name, step.get_params(mixer))
+                            order_steps.append(s)
+
+                        res.append(orders.Order(
+                            mixer=recipe.mixer,
+                            input_files=input_files,
+                            relpath=(
+                                f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
+                                f"{recipe.name}_{self.name}+{output_instant.step:03d}/"
+                                f"{z}/{x}/"
+                            ),
+                            basename=f"{y}",
+                            recipe_name=recipe.name,
+                            instant=output_instant,
+                            order_steps=order_steps,
+                            output_options={
+                                "output_cairo_transparent_background": True,
+                                "output_width": self.width,
+                            },
+                            log=logger,
+                        ))
 
         return res

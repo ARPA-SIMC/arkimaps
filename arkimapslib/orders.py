@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import logging
 
 # if TYPE_CHECKING:
@@ -16,24 +16,30 @@ class Order:
             self,
             mixer: str,
             input_files: Dict[str, inputs.InputFile],
-            flavour_name: str,
+            relpath: str,
+            basename: str,
             recipe_name: str,
             instant: "inputs.Instant",
             order_steps: List[steps.Step],
-            log: logging.Logger):
+            output_options: Dict[str, Any],
+            log: logging.Logger,
+            ):
         # Name of the Mixer to use
         self.mixer = mixer
         # Dict mapping source names to pathnames of GRIB files
         self.input_files = input_files
-        self.relpath = f"{instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe_name}_{flavour_name}"
+        # Destination directory inside the output
+        self.relpath = relpath
         # Destination file name (without path or .png extension)
-        self.basename = f"{recipe_name}+{instant.step:03d}"
+        self.basename = basename
         # Recipe name
         self.recipe_name = recipe_name
         # Product instant
         self.instant = instant
         # Output file name, set after the product has been rendered
         self.output: Optional[str] = None
+        # Extra options to be passed to Magics' output() macro
+        self.output_options = output_options
         # Logger for this output
         self.log = log
         # List of recipe steps instantiated for this order

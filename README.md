@@ -162,6 +162,16 @@ La configurazione di uno step può avere:
 * `params`: valore da usare come `params` se non esplicitamente specificato
   nella ricetta
 
+Per generare output con tiling, si può aggiungere una voce `tile` al flavour
+contenente:
+
+* `zoom_min: Int = 3`: livello di zoom minimo
+* `zoom_max: Int = 5`: livello di zoom massimo
+* `lat_min: Float`: latitudine minima
+* `lat_max: Float`: latitudine massima
+* `lon_min: Float`: longitudine minima
+* `lon_max: Float`: longitudine massima
+
 ## Struttura del codice
 
 * `Kitchen` contiene il contesto generale del run
