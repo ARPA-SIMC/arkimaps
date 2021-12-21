@@ -1,6 +1,5 @@
 # from __future__ import annotations
-from typing import List, Any, Optional, Dict
-import os
+from typing import List, Any, Dict
 
 # if TYPE_CHECKING:
 from . import inputs
@@ -32,18 +31,6 @@ class Worktop:
 
         # Elements passed after output to macro.plot
         self.parts: List[Any] = []
-
-        # Python script to reproduce this product
-        self.py_lines = ["import os"]
-        for name in ("MAGICS_STYLE_PATH", "MAGPLUS_QUIET"):
-            if name in os.environ:
-                self.py_lines.append(f"os.environ[{name!r}] = {os.environ[name]!r}")
-        self.py_lines += [
-            "from Magics import macro",
-            f"output = macro.output(output_formats=['png'], output_name={self.output_pathname!r},"
-            f" output_name_first_page_number='off')",
-            "parts = []",
-        ]
 
     def write_product(self):
         """
