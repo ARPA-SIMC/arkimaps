@@ -243,7 +243,7 @@ class SimpleFlavour(Flavour):
                     instant=output_instant,
                     order_steps=order_steps,
                     output_options={},
-                    log=log,
+                    log=logger,
                 ))
 
         return res
@@ -323,6 +323,8 @@ class TiledFlavour(Flavour):
                 for z in range(self.zoom_min, self.zoom_max + 1):
                     x_min, y_min = deg2num(self.lon_min, self.lat_min, z)
                     x_max, y_max = deg2num(self.lon_max, self.lat_max, z)
+                    x_min, x_max = sorted((x_min, x_max))
+                    y_min, y_max = sorted((y_min, y_max))
                     for x, y in itertools.product(
                                 range(x_min, x_max + 1),
                                 range(y_min, y_max + 1),
@@ -347,8 +349,6 @@ class TiledFlavour(Flavour):
                             # self.log.debug("%s %r", step.name, step.get_params(mixer))
                             order_steps.append(s)
 
-                        raise NotImplementedError("TODO: generate one Order per tile per zoom level")
-
                         res.append(orders.Order(
                             mixer=recipe.mixer,
                             input_files=input_files,
@@ -365,7 +365,7 @@ class TiledFlavour(Flavour):
                                 "output_cairo_transparent_background": True,
                                 "output_width": self.width,
                             },
-                            log=log,
+                            log=logger,
                         ))
 
         return res
