@@ -270,6 +270,43 @@ class TiledFlavour(Flavour):
         self.lat_max = float(tile["lat_max"])
         self.lon_min = float(tile["lon_min"])
         self.lon_max = float(tile["lon_max"])
+        self.width = 256
+        self.height = 256
+        self.width_cm = self.width / 40.
+        self.height_cm = self.height / 40.
+
+    def instantiate_order_step(
+            self,
+            recipe_step: "recipes.RecipeStep",
+            input_files: Dict[str, inputs.InputFile],
+            bbox: List[float]) -> Step:
+        """
+        Instantiate the step class with the given flavour config
+        """
+        step_config = self.step_config(recipe_step.name)
+        if recipe_step.name == "add_basemap":
+            min_lon, min_lat, max_lon, max_lat = bbox
+            step_config.options.update(
+                subpage_lower_left_latitude=min_lat,
+                subpage_lower_left_longitude=min_lon,
+                subpage_upper_right_latitude=max_lat,
+                subpage_upper_right_longitude=max_lon,
+                page_x_length=self.width_cm,
+                page_y_length=self.height_cm,
+                super_page_x_length=self.width_cm,
+                super_page_y_length=self.height_cm,
+                subpage_x_length=self.width_cm,
+                subpage_y_length=self.height_cm,
+                subpage_x_position=0.,
+                subpage_y_position=0.,
+                subpage_frame='off',
+                output_width=self.width,
+                page_frame='off',
+                skinny_mode="on",
+                page_id_line='off',
+            )
+
+        return recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
 
     def inputs_to_orders(
             self,
@@ -295,89 +332,40 @@ class TiledFlavour(Flavour):
                         bbox = [nw[0], se[1], se[0], nw[1]]
                         min_x, min_y, max_x, max_y = bbox
 
+                        logger = logging.getLogger(
+                                f"arkimaps.render.{self.name}.{recipe.name}"
+                                f"{output_instant.product_suffix()}.{z}.{x}.{y}")
+
+                        # Instantiate order steps from recipe steps
+                        order_steps: List[Step] = []
+                        for recipe_step in recipe.steps:
+                            try:
+                                s = self.instantiate_order_step(recipe_step, input_files, bbox)
+                            except StepSkipped:
+                                logger.debug("%s (skipped)", s.name)
+                                continue
+                            # self.log.debug("%s %r", step.name, step.get_params(mixer))
+                            order_steps.append(s)
+
                         raise NotImplementedError("TODO: generate one Order per tile per zoom level")
 
-                        # validity_time = args.emission_time + timedelta(hours=step)
-                        # output_name = (
-                        #     f"{args.product}/{validity_time:%Y%m%d%H}"
-                        #     f"/{z}/{x}/{y}"
-                        # )
-                        # basedir = os.path.dirname(output_name)
-                        # os.makedirs(basedir, exist_ok=True)
-
-                        # pool.apply_async(do_magics_plot, kwds={
-                        #         "bbox": bbox,
-                        #         "grib_params": grib_params,
-                        #         "contour_params": contour_params,
-                        #         "output_name": output_name,
-                        # })
-
-                        # def do_magics_plot(bbox, grib_params, contour_params, output_name):
-                        #     from Magics import macro
-                        #
-                        #
-                        #     print(f"Plotting {output_name}")
-                        #     min_x, min_y, max_x, max_y = bbox
-                        #
-                        #     grib = macro.mgrib(grib_params)
-                        #     mmap = macro.mmap(
-                        #         subpage_map_projection=crs_name,
-                        #         subpage_lower_left_latitude=min_y,
-                        #         subpage_lower_left_longitude=min_x,
-                        #         subpage_upper_right_latitude=max_y,
-                        #         subpage_upper_right_longitude=max_x,
-                        #         subpage_frame='off',
-                        #         page_x_length=width_cm,
-                        #         page_y_length=height_cm,
-                        #         super_page_x_length=width_cm,
-                        #         super_page_y_length=height_cm,
-                        #         subpage_x_length=width_cm,
-                        #         subpage_y_length=height_cm,
-                        #         subpage_x_position=0.,
-                        #         subpage_y_position=0.,
-                        #         output_width=width,
-                        #         page_frame='off',
-                        #         skinny_mode="on",
-                        #         page_id_line='off',
-                        #     )
-                        #     output = macro.output(
-                        #         output_formats=[output_format],
-                        #         output_name_first_page_number='off',
-                        #         output_cairo_transparent_background=True,
-                        #         output_width=width,
-                        #         output_name=output_name,
-                        #     )
-                        #
-                        #     contour = macro.mcont(**contour_params)
-                        #     macro.silent()
-                        #     os.environ["MAGPLUS_QUIET"] = "yes"
-                        #     macro.plot(output, mmap, grib, contour)
-
-                # TODO: tiling algorithms from https://gitlab.com/edg/meteotiles/-/blob/master/plot.py
-
-                # logger = logging.getLogger(
-                #         f"arkimaps.render.{self.name}.{recipe.name}{output_instant.product_suffix()}")
-
-                # # Instantiate order steps from recipe steps
-                # order_steps: List[Step] = []
-                # for recipe_step in recipe.steps:
-                #     try:
-                #         s = self.instantiate_order_step(recipe_step, input_files)
-                #     except StepSkipped:
-                #         logger.debug("%s (skipped)", s.name)
-                #         continue
-                #     # self.log.debug("%s %r", step.name, step.get_params(mixer))
-                #     order_steps.append(s)
-
-                # res.append(orders.Order(
-                #     mixer=recipe.mixer,
-                #     input_files=input_files,
-                #     relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
-                #     basename=f"{recipe.name}+{output_instant.step:03d}",
-                #     recipe_name=recipe.name,
-                #     instant=output_instant,
-                #     order_steps=order_steps,
-                #     log=log,
-                # ))
+                        res.append(orders.Order(
+                            mixer=recipe.mixer,
+                            input_files=input_files,
+                            relpath=(
+                                f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
+                                f"{recipe.name}_{self.name}+{output_instant.step:03d}/"
+                                f"{z}/{x}/"
+                            ),
+                            basename=f"{y}",
+                            recipe_name=recipe.name,
+                            instant=output_instant,
+                            order_steps=order_steps,
+                            output_options={
+                                "output_cairo_transparent_background": True,
+                                "output_width": self.width,
+                            },
+                            log=log,
+                        ))
 
         return res
