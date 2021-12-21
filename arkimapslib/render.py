@@ -118,6 +118,8 @@ class Renderer:
         """
         try:
             from .worktops import Worktop
+            # TODO: Magics also has macro.silent(), though I cannot easily find
+            #       its documentation
 
             path = os.path.join(self.workdir, order.relpath)
             os.makedirs(path, exist_ok=True)
@@ -131,10 +133,23 @@ class Renderer:
                 fd.write(python_code)
 
             # Render with Magics (Worktop's constructor is where Magics get imported)
-            worktop = Worktop(output_pathname=output_pathname, input_files=order.input_files)
+            worktop = Worktop(input_files=order.input_files)
             for step in order.order_steps:
                 step.run(worktop)
-            worktop.write_product()
+
+            # Settings of the PNG output
+            output = worktop.macro.output(
+                output_formats=['png'],
+                output_name=output_pathname,
+                output_name_first_page_number="off",
+            )
+
+            # Render the file and store the output file name into the order
+            worktop.macro.plot(
+                output,
+                *worktop.parts,
+            )
+
             order.output = output_pathname + ".png"
 
             return order
