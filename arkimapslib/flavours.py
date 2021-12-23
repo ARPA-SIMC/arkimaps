@@ -284,9 +284,16 @@ class TiledFlavour(Flavour):
         Instantiate the step class with the given flavour config
         """
         step_config = self.step_config(recipe_step.name)
+        compiled_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
         if recipe_step.name == "add_basemap":
             min_lon, min_lat, max_lon, max_lat = bbox
-            step_config.options.update(
+            params = compiled_step.params.get("params")
+            if params is None:
+                params = {}
+            else:
+                params = params.copy()
+            compiled_step.params["params"] = params
+            params.update(
                 subpage_lower_left_latitude=min_lat,
                 subpage_lower_left_longitude=min_lon,
                 subpage_upper_right_latitude=max_lat,
@@ -305,8 +312,7 @@ class TiledFlavour(Flavour):
                 skinny_mode="on",
                 page_id_line='off',
             )
-
-        return recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+        return compiled_step
 
     def inputs_to_orders(
             self,

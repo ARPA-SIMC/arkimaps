@@ -6,7 +6,9 @@ from typing import Dict, Any, Optional, List
 import unittest
 import yaml
 from arkimapslib.kitchen import ArkimetKitchen
+from arkimapslib.render import Renderer
 from arkimapslib import flavours
+from arkimapslib.unittest import scan_python_order
 
 
 def flavour(name: str, steps: Optional[Dict[str, Any]] = None, **kw) -> Dict[str, Any]:
@@ -148,7 +150,7 @@ class TestFlavour(unittest.TestCase):
                                                 "lat_min": 30.0, "lat_max": 50.0,
                                                 "lon_min": 0.0, "lon_max": 20.0})],
                           recipes={"test": [
-                              {"step": "add_basemap"},
+                              {"step": "add_basemap", "params": {"test": True}},
                               {"step": "add_grib", "grib": "t2m"},
                           ]}) as kitchen:
             self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
@@ -156,46 +158,56 @@ class TestFlavour(unittest.TestCase):
             self.assertEqual(len(orders), 12)
 
             basemap = self.get_step(orders[0], "add_basemap")
-            self.assertAlmostEqual(basemap.params["subpage_lower_left_latitude"], 40.9798981)
-            self.assertAlmostEqual(basemap.params["subpage_lower_left_longitude"], 0)
-            self.assertAlmostEqual(basemap.params["subpage_upper_right_latitude"], 66.5132604)
-            self.assertAlmostEqual(basemap.params["subpage_upper_right_longitude"], 45)
-            self.assertAlmostEqual(basemap.params["page_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["page_y_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["subpage_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["subpage_y_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["super_page_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["super_page_y_length"], 6.4)
-            self.assertEqual(basemap.params["subpage_x_position"], 0)
-            self.assertEqual(basemap.params["subpage_y_position"], 0)
-            self.assertEqual(basemap.params["output_width"], 256)
+            params = basemap.params["params"]
+            self.assertTrue(params["test"], 256)
+            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 40.9798981)
+            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
+            self.assertAlmostEqual(params["subpage_upper_right_latitude"], 66.5132604)
+            self.assertAlmostEqual(params["subpage_upper_right_longitude"], 45)
+            self.assertAlmostEqual(params["page_x_length"], 6.4)
+            self.assertAlmostEqual(params["page_y_length"], 6.4)
+            self.assertAlmostEqual(params["subpage_x_length"], 6.4)
+            self.assertAlmostEqual(params["subpage_y_length"], 6.4)
+            self.assertAlmostEqual(params["super_page_x_length"], 6.4)
+            self.assertAlmostEqual(params["super_page_y_length"], 6.4)
+            self.assertEqual(params["subpage_x_position"], 0)
+            self.assertEqual(params["subpage_y_position"], 0)
+            self.assertEqual(params["output_width"], 256)
+            parts = scan_python_order(orders[0])
+            mmap = [p for p in parts if p["__name__"] == "mmap"][0]
+            self.assertTrue(mmap["test"])
+            self.assertEqual(mmap["subpage_upper_right_longitude"], 45)
 
             basemap = self.get_step(orders[10], "add_basemap")
-            self.assertAlmostEqual(basemap.params["subpage_lower_left_latitude"], 31.9521622)
-            self.assertAlmostEqual(basemap.params["subpage_lower_left_longitude"], 11.25)
-            self.assertAlmostEqual(basemap.params["subpage_upper_right_latitude"], 40.9798981)
-            self.assertAlmostEqual(basemap.params["subpage_upper_right_longitude"], 22.5)
-            self.assertAlmostEqual(basemap.params["page_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["page_y_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["subpage_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["subpage_y_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["super_page_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["super_page_y_length"], 6.4)
-            self.assertEqual(basemap.params["subpage_x_position"], 0)
-            self.assertEqual(basemap.params["subpage_y_position"], 0)
-            self.assertEqual(basemap.params["output_width"], 256)
+            params = basemap.params["params"]
+            self.assertTrue(params["test"], 256)
+            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 31.9521622)
+            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 11.25)
+            self.assertAlmostEqual(params["subpage_upper_right_latitude"], 40.9798981)
+            self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
+            self.assertAlmostEqual(params["page_x_length"], 6.4)
+            self.assertAlmostEqual(params["page_y_length"], 6.4)
+            self.assertAlmostEqual(params["subpage_x_length"], 6.4)
+            self.assertAlmostEqual(params["subpage_y_length"], 6.4)
+            self.assertAlmostEqual(params["super_page_x_length"], 6.4)
+            self.assertAlmostEqual(params["super_page_y_length"], 6.4)
+            self.assertEqual(params["subpage_x_position"], 0)
+            self.assertEqual(params["subpage_y_position"], 0)
+            self.assertEqual(params["output_width"], 256)
 
             basemap = self.get_step(orders[11], "add_basemap")
-            self.assertAlmostEqual(basemap.params["subpage_lower_left_latitude"], 21.9430455)
-            self.assertAlmostEqual(basemap.params["subpage_lower_left_longitude"], 11.25)
-            self.assertAlmostEqual(basemap.params["subpage_upper_right_latitude"], 31.9521622)
-            self.assertAlmostEqual(basemap.params["subpage_upper_right_longitude"], 22.5)
-            self.assertAlmostEqual(basemap.params["page_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["page_y_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["subpage_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["subpage_y_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["super_page_x_length"], 6.4)
-            self.assertAlmostEqual(basemap.params["super_page_y_length"], 6.4)
-            self.assertEqual(basemap.params["subpage_x_position"], 0)
-            self.assertEqual(basemap.params["subpage_y_position"], 0)
-            self.assertEqual(basemap.params["output_width"], 256)
+            params = basemap.params["params"]
+            self.assertTrue(params["test"], 256)
+            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
+            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 11.25)
+            self.assertAlmostEqual(params["subpage_upper_right_latitude"], 31.9521622)
+            self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
+            self.assertAlmostEqual(params["page_x_length"], 6.4)
+            self.assertAlmostEqual(params["page_y_length"], 6.4)
+            self.assertAlmostEqual(params["subpage_x_length"], 6.4)
+            self.assertAlmostEqual(params["subpage_y_length"], 6.4)
+            self.assertAlmostEqual(params["super_page_x_length"], 6.4)
+            self.assertAlmostEqual(params["super_page_y_length"], 6.4)
+            self.assertEqual(params["subpage_x_position"], 0)
+            self.assertEqual(params["subpage_y_position"], 0)
+            self.assertEqual(params["output_width"], 256)

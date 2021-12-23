@@ -54,21 +54,26 @@ class Renderer:
         with multiprocessing.pool.Pool(initializer=self.worker_init, maxtasksperchild=16) as pool:
             yield pool
 
-    def render_one_to_python(self, order: 'Order') -> str:
+    def render_one_to_python(self, order: 'Order', testing=False) -> str:
         """
         Render one order to a Python trace file.
 
         Return the name of the file written
         """
-        py_lines = ["import os"]
-        for k, v in self.env_overrides.items():
-            py_lines.append(f"os.environ[{k!r}] = {v!r}")
-        py_lines += [
-            "from Magics import macro",
-            f"output = macro.output(output_formats=['png'], output_name={order.basename!r},"
-            f" output_name_first_page_number='off')",
-            "parts = []",
-        ]
+        if testing:
+            py_lines = ["from arkimapslib.unittest import mock_macro as macro"]
+        else:
+            py_lines = ["import os"]
+            for k, v in self.env_overrides.items():
+                py_lines.append(f"os.environ[{k!r}] = {v!r}")
+            py_lines.append("from Magics import macro")
+
+        output_pathname = os.path.join(self.workdir, order.relpath, order.basename)
+        order_args = "".join([f", {k}={v!r}" for k, v in order.output_options.items()])
+        py_lines.append(
+            f"parts = [macro.output(output_formats=['png'], output_name={output_pathname!r},"
+            f" output_name_first_page_number='off'{order_args})]",
+            )
 
         for step in order.order_steps:
             name, parms = step.as_magics_macro()
@@ -77,7 +82,7 @@ class Renderer:
                 py_parms.append(f"{k}={v!r}")
             py_lines.append(f"parts.append(macro.{name}({', '.join(py_parms)}))")
 
-        py_lines.append("macro.plot(output, *parts)")
+        py_lines.append("macro.plot(*parts)")
 
         code = "\n".join(py_lines)
         try:
