@@ -279,14 +279,14 @@ class TiledFlavour(Flavour):
             self,
             recipe_step: "recipes.RecipeStep",
             input_files: Dict[str, inputs.InputFile],
-            bbox: List[float]) -> Step:
+            min_lat: float, max_lat: float,
+            min_lon: float, max_lon: float) -> Step:
         """
         Instantiate the step class with the given flavour config
         """
         step_config = self.step_config(recipe_step.name)
         compiled_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
         if recipe_step.name == "add_basemap":
-            min_lon, min_lat, max_lon, max_lat = bbox
             params = compiled_step.params.get("params")
             if params is None:
                 params = {}
@@ -335,10 +335,8 @@ class TiledFlavour(Flavour):
                                 range(x_min, x_max + 1),
                                 range(y_min, y_max + 1),
                             ):
-                        nw = num2deg(x, y, z)
-                        se = num2deg(x + 1, y + 1, z)
-                        bbox = [nw[0], se[1], se[0], nw[1]]
-                        min_x, min_y, max_x, max_y = bbox
+                        min_lon, max_lat = num2deg(x, y, z)
+                        max_lon, min_lat = num2deg(x + 1, y + 1, z)
 
                         logger = logging.getLogger(
                                 f"arkimaps.render.{self.name}.{recipe.name}"
@@ -348,7 +346,8 @@ class TiledFlavour(Flavour):
                         order_steps: List[Step] = []
                         for recipe_step in recipe.steps:
                             try:
-                                s = self.instantiate_order_step(recipe_step, input_files, bbox)
+                                s = self.instantiate_order_step(
+                                        recipe_step, input_files, min_lat, max_lat, min_lon, max_lon)
                             except StepSkipped:
                                 logger.debug("%s (skipped)", s.name)
                                 continue
