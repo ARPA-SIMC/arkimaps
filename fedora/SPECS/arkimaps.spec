@@ -27,6 +27,9 @@ BuildRequires:  eccodes-devel
 Requires:       python3
 Requires:       python3-Magics
 Requires:       python3-eccodes
+# not strictly necessary, for code formatting:
+Requires:       python3-yapf
+
 
 
 %description
