@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        0.5
+Version:        0.6
 Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
@@ -85,6 +85,12 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Dec 23 2021 Daniele Branchini <dbranchini@arpae.it> - 0.6-1
+- Aggiunto il rendering di tile (#45)
+- Differenziati plot per reftime permettendo gestione corse multiple e analisi (#88, #77)
+- Modificata sintassi della modalità preview (#89)
+- Modificata struttura output e nomi dei file prodotti (#42, #77)
+
 * Mon Nov 22 2021 Daniele Branchini <dbranchini@arpae.it> - 0.5-1
 - added input validation (#85)
 

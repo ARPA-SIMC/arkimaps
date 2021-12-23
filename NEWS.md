@@ -1,6 +1,9 @@
-# Novità nella versione TODO
+# Novità nella versione 0.6
 
 * Aggiunto il rendering di tile (#45)
+* Differenziati plot per reftime permettendo gestione corse multiple e analisi (#88, #77)
+* Modificata sintassi della modalità preview (#89)
+* Modificata struttura output e nomi dei file prodotti (#42, #77)
 
 # Novità nella versione 0.5
 
@@ -16,19 +19,19 @@
 
 # Novità nella versione 0.3
 
-* aggiunta opzione `--grib` per rendering diretto di grib
-* migliorata documentazione
-* parzialmente introdotti campi erg5
+* Aggiunta opzione `--grib` per rendering diretto di grib
+* Migliorata documentazione
+* Parzialmente introdotti campi erg5
 
 # Novità nella versione 0.2
 
-* aggiunta di varianti ("flavour") per il rendering
-* implementato un set di aree per i plottaggi incluso una versione per visualizzazioni a layer priva di riferimenti cartografici e georeferenziabile
-* aggiunta di tipologie di prodotti:
+* Aggiunta di varianti ("flavour") per il rendering
+* Implementato un set di aree per i plottaggi incluso una versione per visualizzazioni a layer priva di riferimenti cartografici e georeferenziabile
+* Aggiunta di tipologie di prodotti:
   * precipitazione
   * vento
   * plot combinati (es.: geopotenziale, temperatura e vento a vari livelli di pressione)
-* implementata una modalità `preview` che permette di testare le singole ricette generando contestualmente uno script python autoconsistente utile per isolare/analizzare problematiche
+* Implementata una modalità `preview` che permette di testare le singole ricette generando contestualmente uno script python autoconsistente utile per isolare/analizzare problematiche
 
 # New in version 0.1
 
