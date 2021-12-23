@@ -2,22 +2,13 @@
 flavours:
  - name: emro_tiles
    tile:
-     zoom_mix: 3
-     zoom_max: 5
+     zoom_min: 5
+     zoom_max: 7
      lat_min: 43.4
      lat_max: 45.2
      lon_min: 9.0
      lon_max: 13.2
    steps:
-     add_basemap:
-       params:
-         page_id_line: off
-         output_cairo_transparent_background: True
-         subpage_map_projection: EPSG:3857
-         page_frame: off
-         subpage_frame: off
-         skinny_mode: on
-         map_grid: off
      add_coastlines_bg:
        skip: yes
      add_coastlines_fg:
