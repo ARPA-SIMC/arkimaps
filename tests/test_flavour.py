@@ -218,6 +218,7 @@ class TestFlavour(unittest.TestCase):
                                                 "lon_min": 9.0, "lon_max": 13.2})],
                           recipes={"test": [
                               {"step": "add_basemap"},
+                              {"step": "add_contour", 'params': {"legend": True}},
                               {"step": "add_grib", "grib": "t2m"},
                           ]}) as kitchen:
             self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
@@ -242,6 +243,8 @@ class TestFlavour(unittest.TestCase):
             parts = scan_python_order(orders[0])
             mmap = [p for p in parts if p["__name__"] == "mmap"][0]
             self.assertEqual(mmap["subpage_upper_right_longitude"], 45)
+            mcont = [p for p in parts if p["__name__"] == "mcont"][0]
+            self.assertNotIn("legend", mcont)
 
             basemap = self.get_step(orders[1], "add_basemap")
             params = basemap.params["params"]

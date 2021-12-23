@@ -312,6 +312,11 @@ class TiledFlavour(Flavour):
                 skinny_mode="on",
                 page_id_line='off',
             )
+        elif recipe_step.name == "add_contour":
+            # Strip legend from add_contour
+            params = compiled_step.params.get("params")
+            if params is not None:
+                compiled_step.params["params"] = {k: v for k, v in params.items() if not k.startswith("legend")}
         return compiled_step
 
     def inputs_to_orders(
