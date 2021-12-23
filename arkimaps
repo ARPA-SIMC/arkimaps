@@ -138,7 +138,7 @@ class RenderMixin:
                     # Move the generated image to the output tar
                     tarout.add(
                         order.output,
-                        os.path.join(f"{order.recipe_name}_{flavour.name}", order.basename + ".png"))
+                        os.path.join(os.path.join(order.relpath, order.basename) + ".png"))
                     os.unlink(order.output)
 
                 if self.log_collector.entries:
