@@ -1,0 +1,8 @@
+---
+inputs:
+  sottozone_allerta_er:
+    type: shape
+    path: shapes/Sottozone_allerta_ER
+  punti_citta:
+    type: static
+    path: puntiCitta.geo
