@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -27,10 +27,9 @@ BuildRequires:  eccodes-devel
 Requires:       python3
 Requires:       python3-Magics
 Requires:       python3-eccodes
-# not strictly necessary, for code formatting:
-Requires:       python3-yapf
-
-
+# not strictly necessary, for code formatting
+# (also: not available on CentOS8)
+%{?fedora:Requires: python3-yapf}
 
 %description
 Meteo plot generator from grib data
@@ -85,6 +84,10 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Mon Jan 17 2022 Daniele Branchini <dbranchini@arpae.it> - 0.6-2
+- Rimossa dipendenza python3-yapf per centos8
+- Correzioni a ricette geopotenziale per IFS+eccodes
+
 * Thu Dec 23 2021 Daniele Branchini <dbranchini@arpae.it> - 0.6-1
 - Aggiunto il rendering di tile (#45)
 - Differenziati plot per reftime permettendo gestione corse multiple e analisi (#88, #77)
