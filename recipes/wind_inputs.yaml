@@ -1,5 +1,5 @@
 ---
-description: Wind inputs
+description: Wind input definitions
 inputs:
  u10m:
    - model: cosmo

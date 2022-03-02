@@ -1,5 +1,5 @@
 ---
-description: Total Precipitation
+description: Total Precipitation input definitions
 inputs:
  tp:
    - model: cosmo

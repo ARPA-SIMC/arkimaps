@@ -1,13 +1,5 @@
 ---
 description: Temperature at 700hPa
-inputs:
- t700:
-  - model: cosmo
-    arkimet: product:GRIB1,,2,11;level:GRIB1,100,700
-    eccodes: shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 700
-  - model: ifs 
-    arkimet: product:GRIB1,98,128,130;level:GRIB1,100,700
-    eccodes: shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 700
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
