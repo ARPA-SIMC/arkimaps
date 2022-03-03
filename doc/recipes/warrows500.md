@@ -1,4 +1,4 @@
-# warrows500: Wind arrows 500hPa
+# tiles/warrows500: Wind arrows 500hPa
 
 Mixer: **default**
 

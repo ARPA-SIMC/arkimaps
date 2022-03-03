@@ -1,4 +1,4 @@
-# warrows10m: Wind arrows 10m
+# tiles/warrows10m: Wind arrows 10m
 
 Mixer: **default**
 
@@ -13,7 +13,8 @@ Mixer: **default**
         * **Inputs**: u10m, v10m
     * Model **erg5**:
         * **Preprocessing**: cat
-        * **Inputs**: wdir10m, ws10m
+        * **Inputs**: ws10m, wdir10m
+        * **mgrib {k}**: `sd`
 * **u10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`

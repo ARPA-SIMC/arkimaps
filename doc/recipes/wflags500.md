@@ -1,4 +1,4 @@
-# wflags500: Wind flags 500hPa
+# tiles/wflags500: Wind flags 500hPa
 
 Mixer: **default**
 
