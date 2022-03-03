@@ -1,0 +1,70 @@
+---
+description: Relative humidity inputs
+inputs:
+ q700:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,51;level:GRIB1,100,700
+    eccodes: shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 700
+  - model: ifs 
+    arkimet: product:GRIB1,98,128,133;level:GRIB1,100,700
+    eccodes: shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 700
+ q850:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,51;level:GRIB1,100,850
+    eccodes: shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 850
+  - model: ifs 
+    arkimet: product:GRIB1,98,128,133;level:GRIB1,100,850
+    eccodes: shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 850
+ q925:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,51;level:GRIB1,100,925
+    eccodes: shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 925
+  - model: ifs 
+    arkimet: product:GRIB1,98,128,133;level:GRIB1,100,925
+    eccodes: shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 925
+ 2d:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,17
+    eccodes: shortName is "2d"
+  - model: ifs 
+    arkimet: product:GRIB1,98,128,168
+    eccodes: shortName is "2d"
+ rh2m:
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t2m, 2d]
+  - model: ifs
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t2m, 2d]
+  - model: erg5
+    arkimet: product:GRIB2,00200,000,001,001,004,000;level:GRIB2S,103,003,0000001800
+    eccodes: shortName is "r" and level == 2
+ rh700:
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t700, q700]
+  - model: ifs
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t700, q700]
+ rh850:
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t850, q850]
+  - model: ifs
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t850, q850]
+ rh925:
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t925, q925]
+  - model: ifs
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t925, q925]
