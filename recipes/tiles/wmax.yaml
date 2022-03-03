@@ -1,0 +1,26 @@
+---
+description: Maximum wind gust speed
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: wmax
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: ["green", "yellow", "orange", "red"]
+    contour_level_list: [13.9, 17.1, 20.6, 24.2, 70.0]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_title_text: 'Maximum wind gust speed [m/s]'
+    legend_display_type: continuous
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries

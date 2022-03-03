@@ -1,9 +1,5 @@
 ---
 description: Maximum wind gust speed
-inputs:
- wmax:
-  arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187
-  eccodes: shortName is "10fg3" or shortName is "vmax_10m"
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
@@ -25,6 +21,17 @@ recipe:
     legend_title_text: 'Maximum wind gust speed [m/s]'
     legend_display_type: continuous
     legend_automatic_position: right
+ - step: add_grib
+   grib: uv10m
+ - step: add_wind
+   params:
+     wind_arrow_colour: black
+     wind_arrow_thickness: 1
+     wind_field_type: arrows
+     wind_flag_cross_boundary: off
+     wind_arrow_unit_velocity: 12.5
+     wind_arrow_calm_indicator: off
+     wind_thinning_factor: 2
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
