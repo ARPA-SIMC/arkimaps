@@ -1,8 +1,10 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, List, Set, Type, TextIO
 import inspect
 import json
 import logging
+import os
+from typing import TYPE_CHECKING, Dict, Any, List, Set, Type, TextIO
+
 from . import steps
 
 if TYPE_CHECKING:
@@ -106,6 +108,7 @@ class Recipe:
     def document(self, pantry: "pantry.Pantry", dest: str):
         from .flavours import Flavour
         empty_flavour = Flavour("default", defined_in=__file__)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)
             print(file=fd)
