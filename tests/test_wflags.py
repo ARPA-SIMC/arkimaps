@@ -14,4 +14,4 @@ class WFLAGS10MMixin:
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
-add_recipe_test_cases(__name__, "wflags10m")
+add_recipe_test_cases(__name__, "tiles/wflags10m")
