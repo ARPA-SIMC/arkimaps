@@ -15,7 +15,8 @@ class RHW700Mixin:
         self.assertEqual(len(orders), 1)
 
         self.assertProcessLogEqual([
-            'uv700:Cat:cat cosmo_u700_2021_1_10_0_0_0+12.grib,cosmo_v700_2021_1_10_0_0_0+12.grib'
+            f'uv700:Cat:cat {self.model_name}_u700_2021_1_10_0_0_0+12.grib,'
+            f'{self.model_name}_v700_2021_1_10_0_0_0+12.grib'
             ' uv700_2021_1_10_0_0_0+12.grib',
             'p700:VG6DTransform:vg6d_transform --comp-var-from-lev --trans-level-type=100 -'
             ' cosmo_p700_2021_1_10_0_0_0+12.grib',
