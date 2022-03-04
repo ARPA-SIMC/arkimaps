@@ -232,8 +232,9 @@ class RecipeTestMixin:
         """
         Check that the process log matches the given log template.
 
-        It calls assertEquals a list comparison after preprocessing the process
-        log, generating a string for each entry.
+        It calls assertCountEqual between after preprocessing the process log,
+        generating a string for each entry. Order is intentionally ignored
+        because the order of processing may change between runs.
 
         The string will have the name of the input, its class name, and the
         message after removing all occurrencies of the pantry basename, all
@@ -244,7 +245,7 @@ class RecipeTestMixin:
             simplified_log.append(
                     f"{e.input.name}:{e.input.__class__.__name__}:"
                     f"{e.message.replace(self.kitchen.pantry.data_root + '/', '')}")
-        self.assertEqual(simplified_log, log)
+        self.assertCountEqual(simplified_log, log)
 
     def assertMgribArgsEqual(self, order, cosmo=None, ifs=None, erg5=None):
         """

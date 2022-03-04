@@ -584,7 +584,7 @@ class Cat(Derived):
                     with open(input_file.pathname, "rb") as fd:
                         shutil.copyfileobj(fd, out)
             pantry.log_input_processing(
-                    self, "cat" + ",".join(shlex.quote(i.pathname) for i in input_files) + output_name)
+                    self, "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name)
 
             self.add_instant(instant)
 
