@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import Optional, BinaryIO, List, Tuple, Any, Dict
+from typing import Optional, BinaryIO, List, Tuple, Any, Dict, NamedTuple
 import contextlib
 import datetime
 import logging
@@ -19,6 +19,14 @@ from . import inputs
 log = logging.getLogger("arkimaps.pantry")
 
 
+class ProcessLogEntry(NamedTuple):
+    """
+    Entry used to trace input processing operations
+    """
+    input: inputs.Input
+    message: str
+
+
 class Pantry:
     """
     Storage of GRIB files used as inputs to recipes
@@ -26,6 +34,14 @@ class Pantry:
     def __init__(self, *args, **kw):
         # List of input definitions, indexed by name
         self.inputs: Dict[str, List[inputs.Input]] = {}
+        # Log of input processing operations performed
+        self.process_log: List[ProcessLogEntry] = []
+
+    def log_input_processing(self, input: inputs.Input, message: str):
+        """
+        Trace one input processing step
+        """
+        self.process_log.append(ProcessLogEntry(input, message))
 
     def add_input(self, inp: "inputs.Input"):
         """

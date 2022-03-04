@@ -20,6 +20,11 @@ class RH2MMixin:
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
 
+        self.assertProcessLogEqual([
+            'rh2m:VG6DTransform:vg6d_transform --output-variable-list=B13003 - cosmo_rh2m_2021_1_10_0_0_0+12.grib',
+            'rh2m:VG6DTransform:vg6d_transform --output-variable-list=B13003 - ifs_rh2m_2021_1_10_0_0_0+12.grib',
+        ])
+
         self.assertRenders(orders[0])
 
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
@@ -39,6 +44,8 @@ class RH2MERG5Mixin:
 
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
+
+        self.assertEqual(self.kitchen.pantry.process_log, [])
 
         self.assertRenders(orders[0], step=0)
 

@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence
+from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence, Tuple
 import datetime
 import os
 import pickle
@@ -227,6 +227,24 @@ class RecipeTestMixin:
         """
         renderer = Renderer(self.kitchen.workdir)
         return renderer.render_one_to_python(order)
+
+    def assertProcessLogEqual(self, log: List[str]):
+        """
+        Check that the process log matches the given log template.
+
+        It calls assertEquals a list comparison after preprocessing the process
+        log, generating a string for each entry.
+
+        The string will have the name of the input, its class name, and the
+        message after removing all occurrencies of the pantry basename, all
+        concatenated with colons.
+        """
+        simplified_log = []
+        for e in self.kitchen.pantry.process_log:
+            simplified_log.append(
+                    f"{e.input.name}:{e.input.__class__.__name__}:"
+                    f"{e.message.replace(self.kitchen.pantry.data_root + '/', '')}")
+        self.assertEqual(simplified_log, log)
 
     def assertMgribArgsEqual(self, order, cosmo=None, ifs=None, erg5=None):
         """

@@ -434,6 +434,8 @@ class Decumulate(Derived):
             if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
                 return
 
+            pantry.log_input_processing(self, " ".join(shlex.quote(c) for c in cmd))
+
             res = subprocess.run(
                     ["grib_filter", grib_filter_rules, decumulated_data],
                     stdout=subprocess.PIPE,
@@ -523,6 +525,8 @@ class VG6DTransform(Derived):
             if v6t.returncode != 0:
                 raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
 
+            pantry.log_input_processing(self, " ".join(shlex.quote(c) for c in cmd))
+
             if not os.path.exists(output_pathname):
                 log.warning("input %s: %s not found after running vg6d_transform", self.name, output_name)
                 pass
@@ -579,6 +583,8 @@ class Cat(Derived):
                 for input_file in input_files:
                     with open(input_file.pathname, "rb") as fd:
                         shutil.copyfileobj(fd, out)
+            pantry.log_input_processing(
+                    self, "cat" + ",".join(shlex.quote(i.pathname) for i in input_files) + output_name)
 
             self.add_instant(instant)
 
