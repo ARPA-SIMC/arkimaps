@@ -102,4 +102,4 @@ class LITOTA3NordMixin:
 
 
 add_recipe_test_cases(__name__, "litota3")
-add_recipe_test_cases(__name__, "litota3", LITOTA3NordMixin)
+add_recipe_test_cases(__name__, "litota3", test_mixin=LITOTA3NordMixin)

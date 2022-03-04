@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type
+from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence
 import datetime
 import os
 import pickle
@@ -275,18 +275,44 @@ class IFSMixin:
         return os.path.join("testdata", self.recipe_name, f"ifs_{input_name}+{step}.arkimet")
 
 
-def add_recipe_test_cases(module_name, recipe_name, test_mixin: Optional[Type] = None):
-    module = sys.modules[module_name]
-    if test_mixin is None:
-        test_name = recipe_name.upper()
-        test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
-    else:
-        test_name = test_mixin.__name__
-        if test_name.endswith("Mixin"):
-            test_name = test_name[:-5]
+class ERG5Mixin:
+    model_name = "erg5"
 
-    for model in ("IFS", "Cosmo"):
-        for dispatch in ("Arkimet", "Eccodes"):
+    def get_sample_path(self, input_name, step):
+        return os.path.join("testdata", self.recipe_name, f"erg5_{input_name}+{step}.arkimet")
+
+
+def add_recipe_test_cases(
+        module_name, recipe_name,
+        test_mixin: Optional[Type] = None,
+        models: Sequence[str] = ("IFS", "Cosmo")):
+    """
+    Create test cases for the given recipe.
+
+    Looks in the module ``module_name`` for a mixin class that it will
+
+    It generates dispatch- and model-specific test classes, combining a
+    dispatch specific-mixin, a model-specific mixin, and a test-specific mixin.
+
+    The test-specific mixin is the class passed as ``test_mixin``.
+
+    If ``test_mixin`` is not provided, it defaults to
+    ``{recipe_name.upper()}{model}Mixin`` or ``{recipe_name.upper()}Mixin``
+    looked up in module ``module_name``.
+    """
+    module = sys.modules[module_name]
+    for dispatch in ("Arkimet", "Eccodes"):
+        for model in models:
+            # Find mixin with the test methods
+            if test_mixin is None:
+                test_mixin = getattr(module, f"{recipe_name.upper()}{model}Mixin", None)
+                if test_mixin is None:
+                    test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
+
+            test_name = test_mixin.__name__
+            if test_name.endswith("Mixin"):
+                test_name = test_name[:-5]
+
             cls_name = f"Test{test_name}{dispatch}{model}"
 
             dispatch_mixin = globals()[f"{dispatch}Mixin"]
