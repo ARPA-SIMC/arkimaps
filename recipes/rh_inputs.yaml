@@ -41,30 +41,57 @@ inputs:
   - model: erg5
     arkimet: product:GRIB2,00200,000,001,001,004,000;level:GRIB2S,103,003,0000001800
     eccodes: shortName is "r" and level == 2
+ p700:
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--comp-var-from-lev", "--trans-level-type=100"]
+    inputs: [t700, q700]
+  - model: ifs
+    type: vg6d_transform
+    args: ["--comp-var-from-lev", "--trans-level-type=100"]
+    inputs: [t700, q700]
+ p850:
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--comp-var-from-lev", "--trans-level-type=100"]
+    inputs: [t850, q850]
+  - model: ifs
+    type: vg6d_transform
+    args: ["--comp-var-from-lev", "--trans-level-type=100"]
+    inputs: [t850, q850]
+ p925:
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--comp-var-from-lev", "--trans-level-type=100"]
+    inputs: [t925, q925]
+  - model: ifs
+    type: vg6d_transform
+    args: ["--comp-var-from-lev", "--trans-level-type=100"]
+    inputs: [t925, q925]
  rh700:
   - model: cosmo
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]
-    inputs: [t700, q700]
+    inputs: [t700, q700, p700]
   - model: ifs
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]
-    inputs: [t700, q700]
+    inputs: [t700, q700, p700]
  rh850:
   - model: cosmo
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]
-    inputs: [t850, q850]
+    inputs: [t850, q850, p850]
   - model: ifs
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]
-    inputs: [t850, q850]
+    inputs: [t850, q850, p850]
  rh925:
   - model: cosmo
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]
-    inputs: [t925, q925]
+    inputs: [t925, q925, p925]
   - model: ifs
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]
-    inputs: [t925, q925]
+    inputs: [t925, q925, p925]

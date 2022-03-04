@@ -1,5 +1,5 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type
+from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence, Tuple
 import datetime
 import os
 import pickle
@@ -155,7 +155,7 @@ class RecipeTestMixin:
         recipe = self.kitchen.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
-        sample_dir = os.path.join("testdata", recipe_name)
+        sample_dir = os.path.join("testdata", os.path.basename(recipe_name))
         for fn in os.listdir(sample_dir):
             if not fn.endswith(".arkimet"):
                 continue
@@ -174,6 +174,8 @@ class RecipeTestMixin:
                 for inp in inputs:
                     if inp.NAME != "default":
                         continue
+                    if inp.model is not None and inp.model != self.model_name:
+                        continue
                     reftime_str = (f"{reftime.year}_{reftime.month}_{reftime.day}"
                                    f"_{reftime.hour}_{reftime.minute}_{reftime.second}")
                     if inp.model is None:
@@ -183,12 +185,12 @@ class RecipeTestMixin:
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
 
-    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10)):
+    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), step=12):
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
         self.assertEqual(order.relpath, f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}")
-        self.assertEqual(order.basename, f"{self.recipe_name}+012")
+        self.assertEqual(order.basename, f"{os.path.basename(self.recipe_name)}+{step:03d}")
         renderer = Renderer(self.kitchen.workdir)
 
         # Stop testing at this point, if we know Magics would segfault or abort
@@ -213,7 +215,7 @@ class RecipeTestMixin:
         rendered = renderer.render_one(order)
         self.assertIsNotNone(rendered)
         self.assertIsNotNone(rendered.output)
-        self.assertEqual(os.path.basename(rendered.output), f"{self.recipe_name}+012.png")
+        self.assertEqual(os.path.basename(rendered.output), order.basename + ".png")
 
     def order_to_python(self, order) -> str:
         """
@@ -226,7 +228,26 @@ class RecipeTestMixin:
         renderer = Renderer(self.kitchen.workdir)
         return renderer.render_one_to_python(order)
 
-    def assertMgribArgsEqual(self, order, cosmo=None, ifs=None):
+    def assertProcessLogEqual(self, log: List[str]):
+        """
+        Check that the process log matches the given log template.
+
+        It calls assertCountEqual between after preprocessing the process log,
+        generating a string for each entry. Order is intentionally ignored
+        because the order of processing may change between runs.
+
+        The string will have the name of the input, its class name, and the
+        message after removing all occurrencies of the pantry basename, all
+        concatenated with colons.
+        """
+        simplified_log = []
+        for e in self.kitchen.pantry.process_log:
+            simplified_log.append(
+                    f"{e.input.name}:{e.input.__class__.__name__}:"
+                    f"{e.message.replace(self.kitchen.pantry.data_root + '/', '')}")
+        self.assertCountEqual(simplified_log, log)
+
+    def assertMgribArgsEqual(self, order, cosmo=None, ifs=None, erg5=None):
         """
         Check that the mgrib arguments passed to add_grib match the given
         values. It has different expected values depending on the model used
@@ -235,6 +256,7 @@ class RecipeTestMixin:
         expected_mgrib_args = {
             "cosmo": cosmo,
             "ifs": ifs,
+            "erg5": erg5,
         }
         self.assertEqual(step.params.get("params", {}), expected_mgrib_args[self.model_name])
 
@@ -275,18 +297,50 @@ class IFSMixin:
         return os.path.join("testdata", self.recipe_name, f"ifs_{input_name}+{step}.arkimet")
 
 
-def add_recipe_test_cases(module_name, recipe_name, test_mixin: Optional[Type] = None):
-    module = sys.modules[module_name]
-    if test_mixin is None:
-        test_name = recipe_name.upper()
-        test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
-    else:
-        test_name = test_mixin.__name__
-        if test_name.endswith("Mixin"):
-            test_name = test_name[:-5]
+class ERG5Mixin:
+    model_name = "erg5"
 
-    for model in ("IFS", "Cosmo"):
-        for dispatch in ("Arkimet", "Eccodes"):
+    def get_sample_path(self, input_name, step):
+        return os.path.join("testdata", self.recipe_name, f"erg5_{input_name}+{step}.arkimet")
+
+
+def add_recipe_test_cases(
+        module_name, recipe_name,
+        test_mixin: Optional[Type] = None,
+        models: Sequence[str] = ("IFS", "Cosmo")):
+    """
+    Create test cases for the given recipe.
+
+    Looks in the module ``module_name`` for a mixin class that it will
+
+    It generates dispatch- and model-specific test classes, combining a
+    dispatch specific-mixin, a model-specific mixin, and a test-specific mixin.
+
+    The test-specific mixin is the class passed as ``test_mixin``.
+
+    If ``test_mixin`` is not provided, it defaults to
+    ``{recipe_name.upper()}{model}Mixin`` or ``{recipe_name.upper()}Mixin``
+    looked up in module ``module_name``.
+    """
+    module = sys.modules[module_name]
+    base_recipe_name = os.path.basename(recipe_name)
+    for dispatch in ("Arkimet", "Eccodes"):
+        for model in models:
+            # Find mixin with the test methods
+            if test_mixin is None:
+                _test_mixin = getattr(module, f"{base_recipe_name.upper()}{model}Mixin", None)
+                if _test_mixin is None:
+                    _test_mixin = getattr(module, f"{base_recipe_name.upper()}Mixin")
+            else:
+                _test_mixin = test_mixin
+
+            if test_mixin is not None:
+                test_name = _test_mixin.__name__
+                if test_name.endswith("Mixin"):
+                    test_name = test_name[:-5]
+            else:
+                test_name = base_recipe_name.upper()
+
             cls_name = f"Test{test_name}{dispatch}{model}"
 
             dispatch_mixin = globals()[f"{dispatch}Mixin"]
@@ -294,7 +348,7 @@ def add_recipe_test_cases(module_name, recipe_name, test_mixin: Optional[Type] =
 
             test_case = type(
                     cls_name,
-                    (test_mixin, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
+                    (_test_mixin, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
                     {"recipe_name": recipe_name})
             test_case.__module__ = module_name
             setattr(module, cls_name, test_case)

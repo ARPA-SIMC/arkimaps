@@ -1,12 +1,13 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set, Tuple
-import re
 import fnmatch
 import itertools
 import logging
 import math
-from .steps import StepConfig, Step, StepSkipped
+import os
+import re
+from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set, Tuple
 
+from .steps import StepConfig, Step, StepSkipped
 from . import recipes
 from . import orders
 from . import inputs
@@ -238,7 +239,7 @@ class SimpleFlavour(Flavour):
                     mixer=recipe.mixer,
                     input_files=input_files,
                     relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
-                    basename=f"{recipe.name}+{output_instant.step:03d}",
+                    basename=f"{os.path.basename(recipe.name)}+{output_instant.step:03d}",
                     recipe_name=recipe.name,
                     instant=output_instant,
                     order_steps=order_steps,
