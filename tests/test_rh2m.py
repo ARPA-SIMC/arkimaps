@@ -27,10 +27,7 @@ class RH2MMixin:
 
 class RH2MERG5Mixin:
     def test_dispatch(self):
-        pantry_reftime = "2021_1_10_0_0_0"
-        self.fill_pantry(expected=[
-            f'{self.model_name}_2d_{pantry_reftime}+12.grib',
-            f'{self.model_name}_t2m_{pantry_reftime}+12.grib'])
+        self.fill_pantry(step=0)
 
         # Check that the right input was selected
         cpdec3h = self.kitchen.pantry.inputs.get("rh2m")
@@ -43,9 +40,9 @@ class RH2MERG5Mixin:
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
 
-        self.assertRenders(orders[0])
+        self.assertRenders(orders[0], step=0)
 
-        self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
+        self.assertMgribArgsEqual(orders[0], erg5={})
 
 
 add_recipe_test_cases(__name__, "rh2m", models=("IFS", "Cosmo", "ERG5"))

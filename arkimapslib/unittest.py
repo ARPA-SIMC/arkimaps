@@ -174,6 +174,8 @@ class RecipeTestMixin:
                 for inp in inputs:
                     if inp.NAME != "default":
                         continue
+                    if inp.model is not None and inp.model != self.model_name:
+                        continue
                     reftime_str = (f"{reftime.year}_{reftime.month}_{reftime.day}"
                                    f"_{reftime.hour}_{reftime.minute}_{reftime.second}")
                     if inp.model is None:
@@ -183,12 +185,12 @@ class RecipeTestMixin:
         for fn in expected:
             self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
 
-    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10)):
+    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), step=12):
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
         self.assertEqual(order.relpath, f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}")
-        self.assertEqual(order.basename, f"{self.recipe_name}+012")
+        self.assertEqual(order.basename, f"{self.recipe_name}+{step:03d}")
         renderer = Renderer(self.kitchen.workdir)
 
         # Stop testing at this point, if we know Magics would segfault or abort
@@ -213,7 +215,7 @@ class RecipeTestMixin:
         rendered = renderer.render_one(order)
         self.assertIsNotNone(rendered)
         self.assertIsNotNone(rendered.output)
-        self.assertEqual(os.path.basename(rendered.output), f"{self.recipe_name}+012.png")
+        self.assertEqual(os.path.basename(rendered.output), order.basename + ".png")
 
     def order_to_python(self, order) -> str:
         """
@@ -226,7 +228,7 @@ class RecipeTestMixin:
         renderer = Renderer(self.kitchen.workdir)
         return renderer.render_one_to_python(order)
 
-    def assertMgribArgsEqual(self, order, cosmo=None, ifs=None):
+    def assertMgribArgsEqual(self, order, cosmo=None, ifs=None, erg5=None):
         """
         Check that the mgrib arguments passed to add_grib match the given
         values. It has different expected values depending on the model used
@@ -235,6 +237,7 @@ class RecipeTestMixin:
         expected_mgrib_args = {
             "cosmo": cosmo,
             "ifs": ifs,
+            "erg5": erg5,
         }
         self.assertEqual(step.params.get("params", {}), expected_mgrib_args[self.model_name])
 
@@ -305,13 +308,18 @@ def add_recipe_test_cases(
         for model in models:
             # Find mixin with the test methods
             if test_mixin is None:
-                test_mixin = getattr(module, f"{recipe_name.upper()}{model}Mixin", None)
-                if test_mixin is None:
-                    test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
+                _test_mixin = getattr(module, f"{recipe_name.upper()}{model}Mixin", None)
+                if _test_mixin is None:
+                    _test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
+            else:
+                _test_mixin = test_mixin
 
-            test_name = test_mixin.__name__
-            if test_name.endswith("Mixin"):
-                test_name = test_name[:-5]
+            if test_mixin is not None:
+                test_name = _test_mixin.__name__
+                if test_name.endswith("Mixin"):
+                    test_name = test_name[:-5]
+            else:
+                test_name = recipe_name.upper()
 
             cls_name = f"Test{test_name}{dispatch}{model}"
 
@@ -320,7 +328,7 @@ def add_recipe_test_cases(
 
             test_case = type(
                     cls_name,
-                    (test_mixin, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
+                    (_test_mixin, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
                     {"recipe_name": recipe_name})
             test_case.__module__ = module_name
             setattr(module, cls_name, test_case)
