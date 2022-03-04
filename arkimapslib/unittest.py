@@ -155,7 +155,7 @@ class RecipeTestMixin:
         recipe = self.kitchen.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
-        sample_dir = os.path.join("testdata", recipe_name)
+        sample_dir = os.path.join("testdata", os.path.basename(recipe_name))
         for fn in os.listdir(sample_dir):
             if not fn.endswith(".arkimet"):
                 continue
@@ -190,7 +190,7 @@ class RecipeTestMixin:
         Render an order, collecting a debug_trace of all steps invoked
         """
         self.assertEqual(order.relpath, f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}")
-        self.assertEqual(order.basename, f"{self.recipe_name}+{step:03d}")
+        self.assertEqual(order.basename, f"{os.path.basename(self.recipe_name)}+{step:03d}")
         renderer = Renderer(self.kitchen.workdir)
 
         # Stop testing at this point, if we know Magics would segfault or abort
@@ -322,13 +322,14 @@ def add_recipe_test_cases(
     looked up in module ``module_name``.
     """
     module = sys.modules[module_name]
+    base_recipe_name = os.path.basename(recipe_name)
     for dispatch in ("Arkimet", "Eccodes"):
         for model in models:
             # Find mixin with the test methods
             if test_mixin is None:
-                _test_mixin = getattr(module, f"{recipe_name.upper()}{model}Mixin", None)
+                _test_mixin = getattr(module, f"{base_recipe_name.upper()}{model}Mixin", None)
                 if _test_mixin is None:
-                    _test_mixin = getattr(module, f"{recipe_name.upper()}Mixin")
+                    _test_mixin = getattr(module, f"{base_recipe_name.upper()}Mixin")
             else:
                 _test_mixin = test_mixin
 
@@ -337,7 +338,7 @@ def add_recipe_test_cases(
                 if test_name.endswith("Mixin"):
                     test_name = test_name[:-5]
             else:
-                test_name = recipe_name.upper()
+                test_name = base_recipe_name.upper()
 
             cls_name = f"Test{test_name}{dispatch}{model}"
 
