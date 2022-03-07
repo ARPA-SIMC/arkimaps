@@ -7,7 +7,7 @@ Version:        0.6
 Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
-License:        GPLv3+
+License:        GPLv2+
 URL:            https://github.com/ARPA-SIMC/%{name}
 Source0:        https://github.com/ARPA-SIMC/%{name}/archive/v%{version}-%{releaseno}.tar.gz#/%{srcarchivename}.tar.gz
 
