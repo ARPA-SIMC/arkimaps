@@ -19,6 +19,8 @@ class SF3HCosmoMixin:
         self.assertProcessLogEqual(
             ["snowsum:VG6DTransform:vg6d_transform --output-variable-list=B13205 -"
              f" cosmo_snowsum_2021_1_10_0_0_0+{step}.grib" for step in range(0, 13)] +
+            [f"snowcosmo:Or:cosmo_snowsum_2021_1_10_0_0_0+{step}.grib as cosmo_snowcosmo_2021_1_10_0_0_0+{step}.grib"
+             for step in range(0, 13)] +
             ["snowdec3h:Decumulate:vg6d_transform --comp-stat-proc=1 '--comp-step=0 03'"
              " --comp-frac-valid=0 --comp-full-steps - cosmo_snowdec3h-decumulated.grib"]
         )
