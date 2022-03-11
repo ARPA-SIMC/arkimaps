@@ -11,7 +11,7 @@ inputs:
      eccodes: shortName is "snow_con" or shortName is "snoc"
  snowgsp:
    - model: cosmo
-     arkimet: product:GRIB1,80,2,79
+     arkimet: product:GRIB1,,2,79
      eccodes: shortName is "snow_gsp" or shortName is "lssf"
  snowsum:
    - model: cosmo
