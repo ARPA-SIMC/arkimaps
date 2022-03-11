@@ -1,10 +1,10 @@
 ---
-description: Total snow fall 3h
+description: Total snow fall 1h
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   grib: snowdec3h
+   grib: snowdec1h
  - step: add_contour
    params:
     contour: "off"

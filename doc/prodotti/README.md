@@ -43,6 +43,11 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `cp6h`  | Precipitazione convettiva cumulata su 6h  |           |  [cp6h.md](../recipes/cp6h.md) |
 | `cp12h` | Precipitazione convettiva cumulata su 12h |           |  [cp12h.md](../recipes/cp12h.md) |
 | `cp24h` | Precipitazione convettiva cumulata su 24h | [cp24h.png](cp24h.png "Precipitazione convettiva su 24h")  |  [cp24h.md](../recipes/cp24h.md) |
+| `sf1h`  | Precipitazione nevosa totale cumulata su 1h      |           |  [sf1h.md](../recipes/sf1h.md) |
+| `sf3h`  | Precipitazione nevosa totale cumulata su 3h      |           |  [sf3h.md](../recipes/sf3h.md) |
+| `sf6h`  | Precipitazione nevosa totale cumulata su 6h      |           |  [sf6h.md](../recipes/sf6h.md) |
+| `sf12h` | Precipitazione nevosa totale cumulata su 12h     |           |  [sf12h.md](../recipes/sf12h.md) |
+| `sf24h` | Precipitazione nevosa totale cumulata su 24h     | [sf24h.png](sf24h.png "Precipitazione nevosa totale su 24h")  |  [sf24h.md](../recipes/sf24h.md) |
 | `litota3` | Densità media fulminazioni nelle ultime 3h | [litota3.png](litota3.png "Densità fulminazioni 3h") | [litota3.md](../recipes/litota3.md) |
 | `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
 | `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/viwve.md) |

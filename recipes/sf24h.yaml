@@ -1,10 +1,10 @@
 ---
-description: Total snow fall 3h
+description: Total snow fall 24h
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   grib: snowdec3h
+   grib: snowdec24h
  - step: add_contour
    params:
     contour: "off"
@@ -16,13 +16,13 @@ recipe:
     contour_shade_colour_method: "list"
     contour_shade_method: "area_fill"
     contour_shade_min_level: 0.5
-    contour_level_list: [0.5, 1.0 ,2.0, 5.0, 10.0 ,20.0, 30.0, 50.0, 70.0, 100.0, 150.0, 200.0]
-    contour_shade_colour_list: [ "rgb( 0.686,1.000,1.000)", "rgb( 0.000,1.000,1.000)",
+    contour_level_list: [1.0, 2.0, 5.0, 10.0, 20.0, 30.0, 50.0, 70.0, 100.0, 150.0, 200.0, 300.0, 500.0]
+    contour_shade_colour_list: ["rgb( 0.686,1.000,1.000)", "rgb( 0.000,1.000,1.000)",
             "rgb( 0.447,0.639,1.000)", "rgb( 0.000,0.498,1.000)",
             "rgb( 0.145,0.000,1.000)", "rgb( 0.145,0.435,0.435)",
             "rgb( 1.000,1.000,0.000)", "rgb( 1.000,0.498,0.000)",
             "rgb( 1.000,0.000,0.000)", "rgb(1.000,0.000,1.000)",
-            "rgb(0.615,0.403,0.937)" ]
+            "rgb(0.615,0.403,0.937)", "rgb(0.5,0.,0.5)"]
     legend: on
     legend_display_type: continuous
     legend_title: on

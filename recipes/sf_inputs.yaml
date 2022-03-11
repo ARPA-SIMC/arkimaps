@@ -1,0 +1,70 @@
+# See https://github.com/ARPA-SIMC/arkimaps/wiki/issue24
+---
+description: Total snow fall input definitions
+inputs:
+ sf:
+   - model: ifs
+     arkimet: product:GRIB1,98,128,144
+     eccodes: shortName is "sf"
+ snowcon:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,78
+     eccodes: shortName is "snow_con" or shortName is "snoc"
+ snowgsp:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,79
+     eccodes: shortName is "snow_gsp" or shortName is "lssf"
+ snowsum:
+   - model: cosmo
+     type: vg6d_transform
+     args: ["--output-variable-list=B13205"]
+     inputs: [snowcon, snowgsp]
+ snowcosmo:
+   - model: cosmo
+     type: or
+     inputs: [snowsum, snowgsp]
+ snowdec1h:
+   - model: cosmo
+     type: decumulate
+     step: 1
+     inputs: snowcosmo
+   - model: ifs
+     type: decumulate
+     step: 1
+     inputs: sf
+ snowdec3h:
+   - model: cosmo
+     type: decumulate
+     step: 3
+     inputs: snowcosmo
+   - model: ifs
+     type: decumulate
+     step: 3
+     inputs: sf
+ snowdec6h:
+   - model: cosmo
+     type: decumulate
+     step: 6
+     inputs: snowcosmo
+   - model: ifs
+     type: decumulate
+     step: 6
+     inputs: sf
+ snowdec12h:
+   - model: cosmo
+     type: decumulate
+     step: 12
+     inputs: snowcosmo
+   - model: ifs
+     type: decumulate
+     step: 12
+     inputs: sf
+ snowdec24h:
+   - model: cosmo
+     type: decumulate
+     step: 24
+     inputs: snowcosmo
+   - model: ifs
+     type: decumulate
+     step: 24
+     inputs: sf

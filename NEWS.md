@@ -1,3 +1,12 @@
+# Novità nella versione (unreleased)
+
+* Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :
+  * rhw700/850/900 (#94)
+  * jet (#93)
+  * wmaxw10m
+  * sf
+* Migliorata spazializzazione flag vento (#98)
+
 # Novità nella versione 0.6
 
 * Aggiunto il rendering di tile (#45)
