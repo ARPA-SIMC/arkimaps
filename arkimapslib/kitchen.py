@@ -64,6 +64,8 @@ class Kitchen:
                 inputs = recipe.get("inputs")
                 if inputs is not None:
                     for name, input_contents in inputs.items():
+                        if "_" in name:
+                            raise RuntimeError(f"{relfn}: '_' not allowed in input name {name!r}")
                         if isinstance(input_contents, list):
                             for ic in input_contents:
                                 self.pantry.add_input(Input.create(name=name, defined_in=relfn, **ic))

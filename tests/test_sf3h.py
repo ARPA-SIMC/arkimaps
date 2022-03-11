@@ -9,7 +9,7 @@ class SF3HCosmoMixin:
         self.fill_pantry(expected=[
             f"{self.model_name}_{prod}_{pantry_reftime}+{step}.grib"
             for step in range(0, 13)
-            for prod in ("snow_con", "snow_gsp")])
+            for prod in ("snowcon", "snowgsp")])
 
         orders = self.make_orders()
         self.assertGreaterEqual(len(orders), 4)
@@ -17,8 +17,8 @@ class SF3HCosmoMixin:
         self.assertEqual(len(orders), 1)
 
         self.assertProcessLogEqual(
-            ["snow_sum:VG6DTransform:vg6d_transform --output-variable-list=B13205 -"
-             f" cosmo_snow_sum_2021_1_10_0_0_0+{step}.grib" for step in range(0, 13)] +
+            ["snowsum:VG6DTransform:vg6d_transform --output-variable-list=B13205 -"
+             f" cosmo_snowsum_2021_1_10_0_0_0+{step}.grib" for step in range(0, 13)] +
             ["snowdec3h:Decumulate:vg6d_transform --comp-stat-proc=1 '--comp-step=0 03'"
              " --comp-frac-valid=0 --comp-full-steps - cosmo_snowdec3h-decumulated.grib"]
         )

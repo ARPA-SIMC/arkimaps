@@ -18,10 +18,10 @@ class LITOTA3Mixin:
         litota3 = self.kitchen.pantry.inputs.get("litota3")
         for i in litota3:
             self.assertEqual(i.__class__.__name__, "Source")
-        sottozone_allerta_er = self.kitchen.pantry.inputs.get("sottozone_allerta_er")
+        sottozone_allerta_er = self.kitchen.pantry.inputs.get("sottozoneAllertaER")
         for i in sottozone_allerta_er:
             self.assertEqual(i.__class__.__name__, "Shape")
-        punti_citta = self.kitchen.pantry.inputs.get("punti_citta")
+        punti_citta = self.kitchen.pantry.inputs.get("puntiCitta")
         for i in punti_citta:
             self.assertEqual(i.__class__.__name__, "Static")
 
@@ -81,10 +81,10 @@ class LITOTA3NordMixin:
         litota3 = self.kitchen.pantry.inputs.get("litota3")
         for i in litota3:
             self.assertEqual(i.__class__.__name__, "Source")
-        sottozone_allerta_er = self.kitchen.pantry.inputs.get("sottozone_allerta_er")
+        sottozone_allerta_er = self.kitchen.pantry.inputs.get("sottozoneAllertaER")
         for i in sottozone_allerta_er:
             self.assertEqual(i.__class__.__name__, "Shape")
-        punti_citta = self.kitchen.pantry.inputs.get("punti_citta")
+        punti_citta = self.kitchen.pantry.inputs.get("puntiCitta")
         for i in punti_citta:
             self.assertEqual(i.__class__.__name__, "Static")
 
@@ -93,8 +93,8 @@ class LITOTA3NordMixin:
 
         input_files = orders[0].input_files
         self.assertEqual(os.path.basename(input_files["litota3"].pathname), "litota3_2021_3_4_0_0_0+12.grib")
-        self.assertEqual(os.path.basename(input_files["sottozone_allerta_er"].pathname), "Sottozone_allerta_ER")
-        self.assertEqual(os.path.basename(input_files["punti_citta"].pathname), "puntiCitta.geo")
+        self.assertEqual(os.path.basename(input_files["sottozoneAllertaER"].pathname), "Sottozone_allerta_ER")
+        self.assertEqual(os.path.basename(input_files["puntiCitta"].pathname), "puntiCitta.geo")
 
         self.assertRenders(orders[0], reftime=datetime.datetime(2021, 3, 4))
 

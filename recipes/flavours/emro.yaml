@@ -32,9 +32,9 @@ flavours:
          map_label_height: 0.4
          map_label_latitude_frequency : 1
      add_user_boundaries:
-       shape: sottozone_allerta_er
+       shape: sottozoneAllertaER
        params:
          map_user_layer_colour: blue
          map_coastline_resolution: high
      add_geopoints:
-       points: punti_citta
+       points: puntiCitta
