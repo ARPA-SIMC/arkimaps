@@ -1,4 +1,4 @@
-# tiles/wmax: Maximum wind gust speed
+# standalone/wmaxw10m: Maximum wind gust speed
 
 Mixer: **default**
 
@@ -7,6 +7,31 @@ Mixer: **default**
 * **wmax**:
     * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187`
     * **grib_filter matcher**: `shortName is "10fg3" or shortName is "vmax_10m"`
+* **uv10m**:
+    * Model **cosmo**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **ifs**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **erg5**:
+        * **Preprocessing**: cat
+        * **Inputs**: ws10m, wdir10m
+        * **mgrib {k}**: `sd`
+* **u10m**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
+        * **grib_filter matcher**: `shortName is "10u"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,165`
+        * **grib_filter matcher**: `shortName is "10u"`
+* **v10m**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,105,10`
+        * **grib_filter matcher**: `shortName is "10v"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,166`
+        * **grib_filter matcher**: `shortName is "10v"`
 
 ## Steps
 
@@ -73,6 +98,36 @@ With arguments:
     "legend_title_text": "Maximum wind gust speed [m/s]",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right"
+  }
+}
+```
+
+### add_grib
+
+Add a grib file
+
+With arguments:
+```
+{
+  "grib": "uv10m"
+}
+```
+
+### add_wind
+
+Add wind flag rendering of the previous data
+
+With arguments:
+```
+{
+  "params": {
+    "wind_arrow_colour": "black",
+    "wind_arrow_thickness": 1,
+    "wind_field_type": "arrows",
+    "wind_flag_cross_boundary": false,
+    "wind_arrow_unit_velocity": 12.5,
+    "wind_arrow_calm_indicator": false,
+    "wind_thinning_factor": 2
   }
 }
 ```

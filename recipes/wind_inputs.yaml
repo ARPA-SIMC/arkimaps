@@ -123,5 +123,9 @@ inputs:
    type: cat
    inputs: [u925, v925]
  wmax:
-  arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187
-  eccodes: shortName is "10fg3" or shortName is "vmax_10m"
+   arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187
+   eccodes: shortName is "10fg3" or shortName is "vmax_10m"
+ wspeed250:
+   type: vg6d_transform
+   args: ["--output-variable-list=B11002"]
+   inputs: [u250, v250]

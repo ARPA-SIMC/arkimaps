@@ -1,0 +1,59 @@
+---
+description: Wind, Wind speed  and Geopotential at 250hPa
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: wspeed250
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: ["yellow", "beige", "gold", "khaki"]
+    contour_level_list: [35.0, 45.0, 55.0, 65.0, 150.0]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_title_text: 'Maximum wind gust speed [m/s]'
+    legend_display_type: continuous
+    legend_automatic_position: right
+ - step: add_grib
+   grib: z250
+ - step: add_contour
+   params:
+    contour_shade: off
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 4
+    contour_line_colour: black
+    contour_line_thickness: 3
+    contour_highlight: off
+    contour_label: on
+    contour_label_height: 0.6
+    contour_label_frequency: 2
+    contour_label_blanking: on
+    contour_label_colour: navy
+    legend: off
+ - step: add_grib
+   grib: uv250
+ - step: add_wind
+   params:
+     wind_arrow_colour: blue
+     wind_arrow_thickness: 1
+     wind_arrow_min_speed: 15.0
+     wind_field_type: arrows
+     wind_flag_cross_boundary: off
+     wind_arrow_unit_velocity: 12.5
+     wind_arrow_calm_indicator: off
+     wind_thinning_factor: 10
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
+ 

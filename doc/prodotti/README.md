@@ -47,6 +47,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
 | `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/viwve.md) |
 | `wmax`   | Raffica massima vento                            | [wmax.png](wmax.png)   | [wmax.md](../recipes/wmax.md)   |
+| `jet`    | Geopotenziale, vento, isotache a 250hPa          | [jet.png](jet.png)     | [jet.md](../recipes/jet.md)     |
 
 # Censimento prodotti attualmente pubblicati su infomet
 
