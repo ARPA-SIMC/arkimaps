@@ -6,18 +6,35 @@ inputs:
      arkimet: product:GRIB1,98,128,144
      eccodes: shortName is "sf"
  snow_con:
+     # FIXME: this is optional. If it is not present, it should be ignored/skipped
    - model: cosmo
      arkimet: product:GRIB1,,2,78
-     eccodes: shortName is "snow_con"
+     eccodes: shortName is "snow_con" or shortName is "snoc"
  snow_gsp:
    - model: cosmo
      arkimet: product:GRIB1,80,2,79
-     eccodes: shortName is "snow_gsp"
+     eccodes: shortName is "snow_gsp" or shortName is "lssf"
+ snow_sum:
+     # FIXME: if snow_con is missing, this step should be skipped and snow_gsp
+     # should be used instead of its output
+   - model: cosmo
+     type: vg6d_transform
+     args: ["--output-variable-list=B13205"]
+     inputs: [snow_con, snow_gsp]
+ snowdec3h:
+   - model: cosmo
+     type: decumulate
+     step: 3
+     inputs: snow_sum
+   - model: ifs
+     type: decumulate
+     step: 3
+     inputs: sf
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   grib: sfdec1h
+   grib: snowdec3h
  - step: add_contour
    params:
     contour: "off"
@@ -37,7 +54,7 @@ recipe:
             "rgb( 1.000,0.000,0.000)", "rgb(1.000,0.000,1.000)",
             "rgb(0.615,0.403,0.937)" ]
     legend: on
-# TODO: from this point on it's copied from th1h: is this valid also in this case?
+# TODO: from this point on it's copied from tp1h: is this valid also in this case?
     legend_display_type: continuous
     legend_title: on
     legend_text_colour: black
