@@ -6,7 +6,6 @@ inputs:
      arkimet: product:GRIB1,98,128,144
      eccodes: shortName is "sf"
  snowcon:
-     # FIXME: this is optional. If it is not present, it should be ignored/skipped
    - model: cosmo
      arkimet: product:GRIB1,,2,78
      eccodes: shortName is "snow_con" or shortName is "snoc"
@@ -15,17 +14,19 @@ inputs:
      arkimet: product:GRIB1,80,2,79
      eccodes: shortName is "snow_gsp" or shortName is "lssf"
  snowsum:
-     # FIXME: if snow_con is missing, this step should be skipped and snow_gsp
-     # should be used instead of its output
    - model: cosmo
      type: vg6d_transform
      args: ["--output-variable-list=B13205"]
      inputs: [snowcon, snowgsp]
+ snowcosmo:
+   - model: cosmo
+     type: or
+     inputs: [snowsum, snowgsp]
  snowdec3h:
    - model: cosmo
      type: decumulate
      step: 3
-     inputs: snowsum
+     inputs: snowcosmo
    - model: ifs
      type: decumulate
      step: 3

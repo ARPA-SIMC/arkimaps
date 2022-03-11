@@ -84,6 +84,7 @@ Input types are defined in ``arkimapslib/inputs.py`` and can currently be:
 * ``decumulate``: the output of decumulation of another input performed with vg6d_transform_
 * ``vg6d_transform``: the output of vg6d_transform_ run on another input, with
   arguments taken from the input definition
+* ``or``: choose the first available in a list of possible inputs
 
 Input types such as ``cat`` can be derived from one or more other inputs by
 computation, and Arkimaps will handle the chain of dependencies correctly
