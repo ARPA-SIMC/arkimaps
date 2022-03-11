@@ -41,12 +41,12 @@ flavours:
          map_administrative_boundaries_style: solid
          map_administrative_boundaries: on
      add_user_boundaries:
-       shape: sottozone_allerta_er
+       shape: sottozoneAllertaER
        params:
          map_user_layer_colour: blue
          map_coastline_resolution: high
      add_geopoints:
-       points: punti_citta
+       points: puntiCitta
  - name: centro
    steps:
      add_basemap:

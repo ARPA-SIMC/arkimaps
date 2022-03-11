@@ -1,11 +1,13 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence
 import datetime
+import fnmatch
 import os
 import pickle
 import sys
+from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence
 import unittest
 import yaml
+
 from .render import Renderer
 
 if TYPE_CHECKING:
@@ -142,7 +144,8 @@ class RecipeTestMixin:
             recipe_dirs=None,
             expected=None,
             recipe_name=None,
-            flavour_name=None):
+            flavour_name=None,
+            exclude=None):
         """
         Load recipes if needed, then fill the pantry with the inputs they require
         """
@@ -160,6 +163,8 @@ class RecipeTestMixin:
             if not fn.endswith(".arkimet"):
                 continue
             if not fn.startswith(self.model_name):
+                continue
+            if exclude is not None and fnmatch.fnmatch(fn, exclude):
                 continue
             self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
 

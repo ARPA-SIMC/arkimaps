@@ -319,7 +319,7 @@ class Derived(Input):
         if inputs is None:
             raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
-        self.inputs = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
+        self.inputs: List[str] = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
         # set of available steps
         self.instants: Set[Instant] = set()
 
@@ -586,6 +586,30 @@ class Cat(Derived):
             pantry.log_input_processing(
                     self, "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name)
 
+            self.add_instant(instant)
+
+
+@InputTypes.register
+class Or(Derived):
+    """
+    Represents the first of the inputs listed that has data for a step
+    """
+    NAME = "or"
+
+    def generate(self, pantry: "pantry.DiskPantry"):
+        available_instants: Dict[Instant, InputFile] = {}
+        for input_name in self.inputs:
+            for instant, input_file in pantry.get_instants(input_name).items():
+                available_instants.setdefault(instant, input_file)
+
+        # For each instant, concatenate all inputs to generate the output
+        for instant, input_file in available_instants.items():
+            output_name = pantry.get_basename(self, instant)
+            log.info("input %s: using %s for instant %s as %s", self.name, input_file.info.name, instant, output_name)
+            output_pathname = os.path.join(pantry.data_root, output_name)
+            os.link(input_file.pathname, output_pathname)
+            pantry.log_input_processing(
+                    self, input_file.pathname + " as " + output_name)
             self.add_instant(instant)
 
 

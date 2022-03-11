@@ -1,8 +1,8 @@
 ---
 inputs:
-  sottozone_allerta_er:
+  sottozoneAllertaER:
     type: shape
     path: shapes/Sottozone_allerta_ER
-  punti_citta:
+  puntiCitta:
     type: static
     path: puntiCitta.geo
