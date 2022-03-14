@@ -295,6 +295,7 @@ class TiledFlavour(Flavour):
                 params = params.copy()
             compiled_step.params["params"] = params
             params.update(
+                subpage_map_projection="EPSG:3857",
                 subpage_lower_left_latitude=min_lat,
                 subpage_lower_left_longitude=min_lon,
                 subpage_upper_right_latitude=max_lat,
