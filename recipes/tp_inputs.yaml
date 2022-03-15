@@ -4,10 +4,10 @@ inputs:
  tp:
    - model: cosmo
      arkimet: product:GRIB1,,2,61
-     eccodes: shortName is "tp"
+     eccodes: centre != 98 and shortName is "tp"
    - model: ifs
      arkimet: product:GRIB1,98,128,228
-     eccodes: shortName is "tp"
+     eccodes: centre == 98 and shortName is "tp"
  tpdec1h:
    - type: decumulate
      step: 1
