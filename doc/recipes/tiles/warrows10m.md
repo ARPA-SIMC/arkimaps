@@ -18,17 +18,17 @@ Mixer: **default**
 * **u10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
-        * **grib_filter matcher**: `shortName is "10u"`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10u"`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,165`
-        * **grib_filter matcher**: `shortName is "10u"`
+        * **grib_filter matcher**: `centre == 98 and shortName is "10u"`
 * **v10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,105,10`
-        * **grib_filter matcher**: `shortName is "10v"`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10v"`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,166`
-        * **grib_filter matcher**: `shortName is "10v"`
+        * **grib_filter matcher**: `centre == 98 and shortName is "10v"`
 
 ## Steps
 

@@ -1,23 +1,13 @@
-# standalone/wmaxw10m: Maximum wind gust speed
+# standalone/mslpw10m: Mean sea level pressure and wind at 10 metres
 
 Mixer: **default**
 
 ## Inputs
 
-* **wmax**:
-    * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187`
-    * **grib_filter matcher**: `shortName is "10fg3" or shortName is "vmax_10m"`
-* **uv10m**:
-    * Model **cosmo**:
-        * **Preprocessing**: cat
-        * **Inputs**: u10m, v10m
-    * Model **ifs**:
-        * **Preprocessing**: cat
-        * **Inputs**: u10m, v10m
-    * Model **erg5**:
-        * **Preprocessing**: cat
-        * **Inputs**: ws10m, wdir10m
-        * **mgrib {k}**: `sd`
+* **wspeed10m**:
+    * **vg6d_transform arguments**: --output-variable-list=B11002
+    * **Preprocessing**: vg6d_transform
+    * **Inputs**: u10m, v10m
 * **u10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
@@ -32,6 +22,24 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,166`
         * **grib_filter matcher**: `centre == 98 and shortName is "10v"`
+* **uv10m**:
+    * Model **cosmo**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **ifs**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **erg5**:
+        * **Preprocessing**: cat
+        * **Inputs**: ws10m, wdir10m
+        * **mgrib {k}**: `sd`
+* **mslp**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,2`
+        * **grib_filter matcher**: `shortName is "pmsl"`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,151`
+        * **grib_filter matcher**: `shortName is "msl"`
 
 ## Steps
 
@@ -61,7 +69,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "wmax"
+  "grib": "wspeed10m"
 }
 ```
 
@@ -94,8 +102,9 @@ With arguments:
     "contour_highlight": false,
     "contour_hilo": false,
     "legend": true,
+    "legend_text_colour": "black",
     "legend_title": true,
-    "legend_title_text": "Maximum wind gust speed [m/s]",
+    "legend_title_text": "Wind speed [m/s]",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right"
   }
@@ -121,13 +130,53 @@ With arguments:
 ```
 {
   "params": {
-    "wind_arrow_colour": "black",
-    "wind_arrow_thickness": 1,
-    "wind_field_type": "arrows",
-    "wind_flag_cross_boundary": false,
-    "wind_arrow_unit_velocity": 12.5,
-    "wind_arrow_calm_indicator": false,
-    "wind_thinning_factor": 2
+    "wind_field_type": "flags",
+    "wind_flag_colour": "black",
+    "wind_flag_length": 0.8,
+    "wind_flag_origin_marker": false,
+    "wind_flag_cross_boundary": true,
+    "wind_thinning_factor": 1,
+    "wind_thinning_method": "automatic"
+  }
+}
+```
+
+### add_grib
+
+Add a grib file
+
+With arguments:
+```
+{
+  "grib": "mslp",
+  "params": {
+    "grib_automatic_scaling": false,
+    "grib_scaling_factor": 0.01
+  }
+}
+```
+
+### add_contour
+
+Add contouring of the previous data
+
+With arguments:
+```
+{
+  "params": {
+    "contour_shade": false,
+    "contour": true,
+    "contour_level_selection_type": "interval",
+    "contour_interval": 4,
+    "contour_line_colour": "black",
+    "contour_line_thickness": 2,
+    "contour_highlight": false,
+    "contour_label": true,
+    "contour_label_height": 0.4,
+    "contour_label_frequency": 2,
+    "contour_label_blanking": true,
+    "contour_label_colour": "navy",
+    "legend": false
   }
 }
 ```

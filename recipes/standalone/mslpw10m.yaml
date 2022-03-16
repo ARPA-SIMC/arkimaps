@@ -1,0 +1,58 @@
+---
+description: Mean sea level pressure and wind at 10 metres
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: wspeed10m
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: ["green", "yellow", "orange", "red"]
+    contour_level_list: [13.9, 17.1, 20.6, 24.2, 70.0]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_text_colour: black
+    legend_title: on
+    legend_title_text: 'Wind speed [m/s]'
+    legend_display_type: continuous
+    legend_automatic_position: right
+ - step: add_grib
+   grib: uv10m
+ - step: add_wind
+   params:
+     wind_field_type: flags
+     wind_flag_colour: black
+     wind_flag_length: 0.8
+     wind_flag_origin_marker: off
+     wind_flag_cross_boundary: on
+     wind_thinning_factor: 1
+     wind_thinning_method: automatic
+ - step: add_grib
+   grib: mslp
+   params:
+    grib_automatic_scaling: off
+    grib_scaling_factor: 0.01
+ - step: add_contour
+   params:
+    contour_shade: off
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 4
+    contour_line_colour: black
+    contour_line_thickness: 2
+    contour_highlight: off
+    contour_label: on
+    contour_label_height: 0.4
+    contour_label_frequency: 2
+    contour_label_blanking: on
+    contour_label_colour: navy
+    legend: off     
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
