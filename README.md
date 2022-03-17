@@ -129,6 +129,9 @@ se quella di default non è l'ideale.
 È possibile specificare solo il nome della ricetta, e verrà renderizzata allo
 step piú piccolo, e al reference time piú piccolo disponibile (v. #89).
 
+Se la ricetta è annidata in una sottodirectory, va specificata anche quella
+(ad es.  `./arkimaps --debug preview workdir standalone/jet+000` (v. #99).
+
 È possibile specificare il reference time usando `--date`: la sintassi per le
 date è la stessa del comando `date --date=`.
 
