@@ -1,9 +1,9 @@
-%global releaseno 2
+%global releaseno 1
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        0.6
+Version:        0.7
 Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
@@ -84,6 +84,11 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Mar 17 2022 Daniele Branchini <dbranchini@arpae.it> - 0.7-1
+- Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :
+  rhw700/850/900 (#94), jet (#93), wmaxw10m, sf, mslpw10m (#95), w10mbeaufort (#96)
+- Migliorata spazializzazione flag vento (#98)
+- Bug fix minori
 * Mon Jan 17 2022 Daniele Branchini <dbranchini@arpae.it> - 0.6-2
 - Rimossa dipendenza python3-yapf per centos8
 - Correzioni a ricette geopotenziale per IFS+eccodes

@@ -1,4 +1,4 @@
-# Novità nella versione (unreleased)
+# Novità nella versione 0.7
 
 * Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :
   * rhw700/850/900 (#94)

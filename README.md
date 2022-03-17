@@ -8,7 +8,7 @@ Generazione mappe meteorologiche da file grib modelli previsionali.
 
 Attualmente implementati:
  * COSMO-LAMI
- * IFS-ECMWF (nella versione distribuita ai Centri Funzionali)
+ * IFS-ECMWF
  * ERG5 (https://dati.arpae.it/dataset/erg5-interpolazione-su-griglia-di-dati-meteo)
 
 Funziona sia come programma standalone che come postprocessatore per https://github.com/ARPA-SIMC/arkimet
@@ -21,7 +21,7 @@ Funziona sia come programma standalone che come postprocessatore per https://git
 
 opzionali:
  
- - https://github.com/ARPA-SIMC/libsim (per alcuni preprocessing specifici - es.: precipitazione)
+ - https://github.com/ARPA-SIMC/libsim (per alcuni preprocessing specifici - es.: precipitazione, umidità relativa in quota, modulo velocità vento)
  - https://github.com/ARPA-SIMC/arkimet
 
 ## Guida rapida
