@@ -5,7 +5,10 @@
   * jet (#93)
   * wmaxw10m
   * sf
+  * mslpw10m (#95)
+  * w10mbeaufort (#96)
 * Migliorata spazializzazione flag vento (#98)
+* Bug fix minori
 
 # Novità nella versione 0.6
 

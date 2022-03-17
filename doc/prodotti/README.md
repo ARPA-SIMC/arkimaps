@@ -57,6 +57,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `rhw850` | Umidità relativa e vento a 850hPa                | [rhw850.png](rhw850.png) | [rhw850.md](../recipes/standalone/rhw850.md) |
 | `rhw925` | Umidità relativa e vento a 925hPa                | [rhw925.png](rhw925.png) | [rhw925.md](../recipes/standalone/rhw925.md) |
 | `mslpw10m` | Pressione a livello del mare e vento a 10m     | [mslpw10m.png](mslpw10m.png) | [mslpw10m.md](../recipes/standalone/msalpw10m.md) |
+| `w10mbeaufort` | Vento a 10m scala Beaufort                 | [w10mbeaufort.png](w10mbeaufort.png) | [w10mbeaufort.md](../recipes/standalone/w10mbeaufort.md) |
 
 # Censimento prodotti attualmente pubblicati su infomet
 
