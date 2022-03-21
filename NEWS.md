@@ -1,3 +1,8 @@
+# Novità nella versione (unreleased) :
+
+* Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :
+  * vis (#103)
+
 # Novità nella versione 0.7
 
 * Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :

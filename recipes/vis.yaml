@@ -1,0 +1,45 @@
+---
+description: Visibility
+inputs:
+ vis:
+  - model: ifs
+    arkimet: product:GRIB1,98,3,20
+    eccodes: shortName is "vis"
+  - model: cosmo
+    type: vg6d_transform
+    args: ["--output-variable-list=B20001"]
+    inputs: [t2m, 2d]
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: vis
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_interpolation_floor: 0.0
+    contour_shade_colour_list: ["rgb(0.004,0.129,0.800)", "rgb(0.000,0.671,1.000)",
+                               "rgb(0.000,0.776,1.000)", "rgb(0.000,1.000,0.992)",
+                               "rgb(0.000,0.996,1.000)", "rgb(0.106,0.996,0.573)",
+                               "rgb(0.420,0.996,0.098)", "rgb(0.604,0.996,0.000)",
+                               "rgb(0.992,0.827,0.110)", "rgb(0.996,0.898,0.294)",
+                               "rgb(1.000,0.965,0.490)", "rgb(1.000,1.000,1.000)"]
+    contour_level_list: [0, 50, 100, 150, 200, 350, 600, 800, 1500, 3000, 5000, 8000, 10000]
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_title_text: "Visibility [m]"
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

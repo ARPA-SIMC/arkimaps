@@ -160,7 +160,7 @@ With arguments:
 {
   "params": {
     "wind_arrow_colour": "navy",
-    "wind_arrow_thickness": 1,
+    "wind_arrow_thickness": 2,
     "wind_field_type": "arrows",
     "wind_flag_cross_boundary": false,
     "wind_arrow_unit_velocity": 12.5,
