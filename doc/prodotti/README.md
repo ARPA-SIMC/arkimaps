@@ -27,9 +27,10 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `rh2m`  | Umidità relativa a 2 metri dal suolo      | [rh2m.png](rh2m.png "Umidità relativa a 2 metri") | [rh2m.md](../recipes/rh2m.md) |
 | `vis`   | Visibilità                                | [vis.png](vis.png "Visibilità")           | [vis.md](../recipes/vis.md) |
 | `tcc`   | Copertura nuvolosa totale                 | [tcc.png](tcc.png "Copertura nuvolosa")   | [tcc.md](../recipes/tcc.md) |
-| `hcc`   | Copertura nubi alte                       | [hcc.png](hcc.png "Copertura nubi alte")  | [hcc.md](../recipes/hcc.md) |
-| `mcc`   | Copertura nubi medie                      | [mcc.png](mcc.png "Copertura nubi medie") | [mcc.md](../recipes/mcc.md) |
-| `lcc`   | Copertura nubi basse                      | [lcc.png](lcc.png "Copertura nubi basse") | [lcc.md](../recipes/lcc.md) |
+| `hcc`   | Copertura nubi alte                       | [hcc.png](hcc.png "Copertura nubi alte")  | [hcc.md](../recipes/tiles/hcc.md) |
+| `mcc`   | Copertura nubi medie                      | [mcc.png](mcc.png "Copertura nubi medie") | [mcc.md](../recipes/tiles/mcc.md) |
+| `lcc`   | Copertura nubi basse                      | [lcc.png](lcc.png "Copertura nubi basse") | [lcc.md](../recipes/tiles/lcc.md) |
+| `cc`    | Copertura nubi strati (alte/medie/basse)  | [cc.png](cc.png "Copertura nubi strati")  | [cc.md](../recipes/standalone/cc.md)   |
 | `ztw500`| Geopotenziale, temperatura e vento a 500 hPa | [ztw500.png](ztw500.png)               | [ztw500.md](../recipes/standalone/ztw500.md) |
 | `ztw700`| Geopotenziale, temperatura e vento a 700 hPa | [ztw700.png](ztw700.png)               | [ztw700.md](../recipes/standalone/ztw700.md) |
 | `ztw850`| Geopotenziale, temperatura e vento a 850 hPa | [ztw850.png](ztw850.png)               | [ztw850.md](../recipes/standalone/ztw850.md) |
@@ -76,7 +77,6 @@ Nota: la legenda dinamica è una feature richiesta per non mostrare un range tro
 | ----- | -------------- | --------- | ------- |
 | alt0 | Altezza zero termico (#5) | Altezza zero termico (al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
 | rain | Precipitazione totale (passi 1,3,6,12,24h) (#38)  | Preci tot cum(al suolo), Preci nev cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 24h), cosmo1 CH (solo 3h), ifs (ita) (no 1h), ifs (atl) (no 1, 3h) |
-| nubS | Nubi strati (#104)     | Copertura nubi basse, Copertura nubi medie, Copertura nubi alte | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
 | thom | Indice di disagio-bioclimatico di Thom (#105) | Indice di Thom | cosmo 5M |
 | indK | indice K (#106)          | Indice K (n) | cosmo 5M, cosmo 5I backup, ifs (ita) |
 | cape | CAPE+CIN Nord Italia (#107) | C.A.P.E. (j/Kg), energia potenziale | cosmo 5M, cosmo 5I backup, cosmo 2I, cosmo 2I RUC |
@@ -135,5 +135,6 @@ I prodotti che seguono hanno preprocessing particolarmente complesso dedicato:
 | t2m  | Temp 2 metri      | Temperatura a 2m | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, cosmo1 CH, ifs (ita), ifs (atl) |
 | umid | U% 2 metri        | Umidità relativa 2 metri | cosmo 5M, cosmo 5I backup, cosmo 5M am, cosmo 2I |
 | visi | Visibilità        | Visibilità(m) | cosmo 5M, cosmo 2I, , ifs (ita) |
+| nubS | Nubi strati       | Copertura nubi basse, Copertura nubi medie, Copertura nubi alte | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
 
 

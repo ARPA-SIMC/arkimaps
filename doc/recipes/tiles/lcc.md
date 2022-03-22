@@ -1,18 +1,18 @@
-# mcc: Medium Cloud Cover
+# tiles/lcc: Low Cloud Cover
 
 Mixer: **default**
 
 ## Inputs
 
-* **mcc**:
+* **lcc**:
     * Model **cosmo**:
-        * **Arkimet matcher**: `product:GRIB1,,2,74`
-        * **grib_filter matcher**: `shortName is "clcm"`
+        * **Arkimet matcher**: `product:GRIB1,,2,73`
+        * **grib_filter matcher**: `shortName is "clcl"`
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `0.08`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,98,128,187`
-        * **grib_filter matcher**: `shortName is "mcc"`
+        * **Arkimet matcher**: `product:GRIB1,98,128,186`
+        * **grib_filter matcher**: `shortName is "lcc"`
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `8`
 
@@ -44,7 +44,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "mcc"
+  "grib": "lcc"
 }
 ```
 
@@ -70,12 +70,12 @@ With arguments:
       7.0,
       8.0
     ],
-    "contour_min_level": 3.0,
+    "contour_min_level": 2.0,
     "contour_max_level": 8.0,
     "contour_level_selection_type": "level_list",
     "contour_shade": true,
-    "contour_shade_max_level_colour": "rgba(0,0,255,0.4)",
-    "contour_shade_min_level_colour": "rgba(0,0,255,0.0)",
+    "contour_shade_max_level_colour": "rgba(255,0,0,0.2)",
+    "contour_shade_min_level_colour": "rgba(255,0,0,0.0)",
     "contour_shade_method": "area_fill",
     "contour_interpolation_ceiling": 7.99,
     "legend": true,
@@ -84,7 +84,7 @@ With arguments:
     "legend_text_font_size": 0.4,
     "legend_title_font_size": 0.5,
     "legend_automatic_position": "right",
-    "legend_title_text": "Medium cloud cover [okta]"
+    "legend_title_text": "Low cloud cover [okta]"
   }
 }
 ```

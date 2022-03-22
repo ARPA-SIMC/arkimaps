@@ -3,6 +3,11 @@ description: Cloud Cover Layers
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
+   params:
+    map_coastline_sea_shade_colour: black
+    map_coastline_sea_shade: on
+    map_coastline_land_shade_colour: black
+    map_coastline_land_shade: on
  - step: add_grib
    grib: lcc
  - step: add_contour
@@ -27,6 +32,8 @@ recipe:
     legend_title: on
     legend_text_font_size: 0.4
     legend_title_text: "nubi per strati [ottavi]"
+    legend_automatic_position: right
+    legend_entry_plot_orientation: top_bottom
  - step: add_grib
    grib: mcc
  - step: add_contour
@@ -51,6 +58,8 @@ recipe:
     legend_title: on
     legend_text_font_size: 0.4
     legend_title_text: "nubi per strati [ottavi]"
+    legend_automatic_position: right
+    legend_entry_plot_orientation: top_bottom
  - step: add_grib
    grib: hcc
  - step: add_contour
@@ -75,9 +84,21 @@ recipe:
     legend_title: on
     legend_text_font_size: 0.4
     legend_title_text: "nubi per strati [ottavi]"
+    legend_automatic_position: right
+    legend_entry_plot_orientation: top_bottom
  - step: add_coastlines_fg
+   params:
+    map_coastline_colour: white
+    map_coastline_thickness: 3
  - step: add_grid
  - step: add_boundaries
+   params:
+    map_boundaries: on
+    map_boundaries_colour: white
+    map_administrative_boundaries_countries_list: ["ITA"]
+    map_administrative_boundaries_style: solid
+    map_administrative_boundaries: on
+    map_administrative_boundaries_colour: white
  - step: add_user_boundaries
  - step: add_geopoints
  - step: add_symbols
