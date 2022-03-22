@@ -1,0 +1,55 @@
+---
+description: Cloud Cover input definitions
+inputs:
+ lcc:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,73
+    eccodes: shortName is "clcl"
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 0.08
+  - model: ifs
+    arkimet: product:GRIB1,98,128,186
+    eccodes: shortName is "lcc"
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 8
+ mcc:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,74
+    eccodes: shortName is "clcm"
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 0.08
+  - model: ifs
+    arkimet: product:GRIB1,98,128,187
+    eccodes: shortName is "mcc"
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 8
+ hcc:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,75
+    eccodes: shortName is "clch"
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 0.08
+  - model: ifs
+    arkimet: product:GRIB1,98,128,188
+    eccodes: shortName is "hcc"
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 8
+ tcc:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,71
+    eccodes: shortName is "clct"
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 0.08
+  - model: ifs
+    arkimet: product:GRIB1,98,128,164
+    eccodes: shortName is "tcc"
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 8

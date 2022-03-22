@@ -1,19 +1,5 @@
 ---
 description: Total cloud cover
-inputs:
- tcc:
-  - model: cosmo
-    arkimet: product:GRIB1,,2,71
-    eccodes: shortName is "clct"
-    mgrib:
-        grib_automatic_scaling: off
-        grib_scaling_factor: 0.08
-  - model: ifs
-    arkimet: product:GRIB1,98,128,164
-    eccodes: shortName is "tcc"
-    mgrib:
-        grib_automatic_scaling: off
-        grib_scaling_factor: 8
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

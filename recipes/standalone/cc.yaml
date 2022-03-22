@@ -1,0 +1,83 @@
+---
+description: Cloud Cover Layers
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: lcc
+ - step: add_contour
+   params:
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 1.0
+    contour_shade: on
+    contour_shade_method: dot
+    contour_shade_dot_size: 0.010
+    contour_shade_min_level: 2.0
+    contour_shade_max_level: 8.0
+    contour_shade_min_level_colour: red
+    contour_shade_max_level_colour: red
+    contour_shade_min_level_density: 1.0
+    contour_shade_max_level_density: 90
+    contour_line_colour: red
+    contour_highlight: off
+    contour_label: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_text_font_size: 0.4
+    legend_title_text: "nubi per strati [ottavi]"
+ - step: add_grib
+   grib: mcc
+ - step: add_contour
+   params:
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 1.0
+    contour_shade: on
+    contour_shade_method: dot
+    contour_shade_dot_size: 0.010
+    contour_shade_min_level: 3.0
+    contour_shade_max_level: 8.0
+    contour_shade_min_level_colour: green
+    contour_shade_max_level_colour: green
+    contour_shade_min_level_density: 1.0
+    contour_shade_max_level_density: 70
+    contour_line_colour: green
+    contour_highlight: off
+    contour_label: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_text_font_size: 0.4
+    legend_title_text: "nubi per strati [ottavi]"
+ - step: add_grib
+   grib: hcc
+ - step: add_contour
+   params:
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 1.0
+    contour_shade: on
+    contour_shade_method: dot
+    contour_shade_dot_size: 0.010
+    contour_shade_min_level: 4.0
+    contour_shade_max_level: 8.0
+    contour_shade_min_level_colour: cyan
+    contour_shade_max_level_colour: cyan
+    contour_shade_min_level_density: 1.0
+    contour_shade_max_level_density: 50
+    contour_line_colour: cyan
+    contour_highlight: off
+    contour_label: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_text_font_size: 0.4
+    legend_title_text: "nubi per strati [ottavi]"
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

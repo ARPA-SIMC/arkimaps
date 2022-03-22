@@ -1,19 +1,5 @@
 ---
 description: Medium Cloud Cover
-inputs:
- mcc:
-  - model: cosmo
-    arkimet: product:GRIB1,,2,74
-    eccodes: shortName is "clcm"
-    mgrib:
-        grib_automatic_scaling: off
-        grib_scaling_factor: 0.08
-  - model: ifs
-    arkimet: product:GRIB1,98,128,187
-    eccodes: shortName is "mcc"
-    mgrib:
-        grib_automatic_scaling: off
-        grib_scaling_factor: 8
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
