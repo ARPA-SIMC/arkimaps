@@ -2,10 +2,10 @@
 description: Frazione nevosa
 inputs:
  sffraction:
-   type: cat  # TODO: ratio
+   type: ratio
    inputs: [tpdec3h, snowdec3h]
    # grib_set:
-   #   shortName: deg0l
+   #   shortName: ??
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

@@ -16,7 +16,7 @@ class SFFRACTION3HMixin:
             # Precipitation decumulation
             ["tpdec3h:Decumulate:vg6d_transform --comp-stat-proc=1 '--comp-step=0 03' --comp-frac-valid=0"
              " --comp-full-steps - tpdec3h-decumulated.grib",
-             f"sffraction:Cat:cat tpdec3h_2021_1_10_0_0_0+3.grib,{self.model_name}_snowdec3h_2021_1_10_0_0_0+3.grib"
+             f"sffraction:Ratio:ratio tpdec3h_2021_1_10_0_0_0+3.grib {self.model_name}_snowdec3h_2021_1_10_0_0_0+3.grib"
              " sffraction_2021_1_10_0_0_0+3.grib"] +
 
             # Snow preprocessing
