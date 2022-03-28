@@ -145,7 +145,8 @@ class RecipeTestMixin:
             expected=None,
             recipe_name=None,
             flavour_name=None,
-            exclude=None):
+            exclude=None,
+            extra_sample_dirs: Sequence[str] = ()):
         """
         Load recipes if needed, then fill the pantry with the inputs they require
         """
@@ -158,15 +159,18 @@ class RecipeTestMixin:
         recipe = self.kitchen.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
-        sample_dir = os.path.join("testdata", os.path.basename(recipe_name))
-        for fn in os.listdir(sample_dir):
-            if not fn.endswith(".arkimet"):
-                continue
-            if not fn.startswith(self.model_name):
-                continue
-            if exclude is not None and fnmatch.fnmatch(fn, exclude):
-                continue
-            self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
+        sample_dirs = [os.path.basename(recipe_name)]
+        sample_dirs.extend(extra_sample_dirs)
+        for dirname in sample_dirs:
+            sample_dir = os.path.join("testdata", dirname)
+            for fn in os.listdir(sample_dir):
+                if not fn.endswith(".arkimet"):
+                    continue
+                if not fn.startswith(self.model_name):
+                    continue
+                if exclude is not None and fnmatch.fnmatch(fn, exclude):
+                    continue
+                self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
 
         # Check that we imported the right files with the right names
         input_names = flavour.list_inputs(recipe)
