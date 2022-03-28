@@ -9,6 +9,8 @@ class ALT0CosmoMixin:
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
 
+        self.assertProcessLogEqual([])
+
         self.assertRenders(orders[0])
 
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
@@ -16,6 +18,7 @@ class ALT0CosmoMixin:
 
 class ALT0IFSMixin:
     def test_process(self):
+        self.maxDiff = None
         self.fill_pantry(expected=[
             "ifs_alt0ground_2021_1_10_0_0_0+12.grib",
             "ifs_z_2021_1_10_0_0_0+0.grib",
@@ -23,6 +26,13 @@ class ALT0IFSMixin:
 
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
+
+        self.assertProcessLogEqual(
+            ["alt0:GroundToMSL:groundtomsl"
+             " ifs_z_2021_1_10_0_0_0+0.grib"
+             " ifs_alt0ground_2021_1_10_0_0_0+12.grib"
+             " ifs_alt0_2021_1_10_0_0_0+12.grib"]
+        )
 
         self.assertRenders(orders[0])
 

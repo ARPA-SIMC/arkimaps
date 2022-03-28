@@ -14,8 +14,10 @@ inputs:
     arkimet: product:GRIB1,80,201,84;level:GRIB1,4
     eccodes: shortName is "hzerocl"
   - model: ifs
-    type: cat  # TODO: it needs to be the sum
-    inputs: [alt0ground, orography]
+    type: groundtomsl
+    inputs: [z, alt0ground]
+    grib_set:
+      shortName: deg0l
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
