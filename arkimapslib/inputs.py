@@ -8,13 +8,15 @@ import shutil
 import subprocess
 
 import eccodes
-try:
-    import arkimet
-except ModuleNotFoundError:
-    pass
+
+from .grib import GRIB
 
 if TYPE_CHECKING:
     from . import pantry
+    try:
+        import arkimet
+    except ModuleNotFoundError:
+        pass
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -611,6 +613,69 @@ class Or(Derived):
             pantry.log_input_processing(
                     self, input_file.pathname + " as " + output_name)
             self.add_instant(instant)
+
+
+@InputTypes.register
+class GroundToMSL(Derived):
+    """
+    Convert heights above ground to heights above mean sea level, by adding
+    ground geopotential.
+
+    It takes two inputs: the ground geopotential, and the value to convert, in
+    that order.
+    """
+    def __init__(self, *args, grib_set: Optional[Dict[str, Any]] = None, **kw):
+        super().__init__(*args, **kw)
+        self.grib_set = grib_set if grib_set is not None else {}
+
+    def generate(self, pantry: "pantry.DiskPantry"):
+        if len(self.inputs) != 2:
+            raise RuntimeError(f"{self.name} has {len(self.inputs)} inputs instead of 2")
+
+        z_input: InputFile
+        for instant, input_file in pantry.get_instants(self.inputs[0]).items():
+            if instant.step != 0:
+                log.warning("input %s: ignoring input %s with step %d instead of 0",
+                            self.name, input_file.info.name, instant.step)
+            z_input = input_file
+            break
+        else:
+            log.info("input %s: missing z data", self.name)
+            return
+
+        with GRIB(z_input.pathname) as z_grib:
+            # Read z_input into a numpy matrix
+            z = z_grib.values
+            # Convert to meters
+            z /= 9.80665
+
+        has_output = False
+        for instant, input_file in pantry.get_instants(self.inputs[1]).items():
+            with GRIB(input_file.pathname) as val_grib:
+                # Add z
+                val_grib.values += z
+
+                # Set key=value entries from input definition
+                for k, v in self.grib_set.items():
+                    val_grib[k] = v
+
+                # Write output
+                output_name = pantry.get_basename(self, instant)
+                log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
+                output_pathname = os.path.join(pantry.data_root, output_name)
+                with open(output_pathname, "wb") as out:
+                    out.write(val_grib.dumps())
+                pantry.log_input_processing(
+                        self, " ".join((
+                            "groundtomsl",
+                            shlex.quote(z_input.pathname),
+                            shlex.quote(input_file.pathname),
+                            output_name)))
+                self.add_instant(instant)
+                has_output = True
+
+        if not has_output:
+            log.info("input %s: missing source data", self.name)
 
 
 class InputFile(NamedTuple):

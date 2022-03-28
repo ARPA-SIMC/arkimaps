@@ -18,4 +18,4 @@ class MCCMixin:
         )
 
 
-add_recipe_test_cases(__name__, "mcc")
+add_recipe_test_cases(__name__, "tiles/mcc")
