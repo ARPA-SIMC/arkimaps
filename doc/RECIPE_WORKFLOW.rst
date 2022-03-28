@@ -85,6 +85,12 @@ Input types are defined in ``arkimapslib/inputs.py`` and can currently be:
 * ``vg6d_transform``: the output of vg6d_transform_ run on another input, with
   arguments taken from the input definition
 * ``or``: choose the first available in a list of possible inputs
+* ``groundtomsl``: given two inputs, assume the first is ground geopotential
+  only available at instant 0, and the second is a value computed by height
+  above ground. The two are combined to convert the second value to a value
+  above mean sea level
+* ``ratio``: given two inputs, generate a new input dividing the first by the
+  second, and optionally applying a multiplication factor
 
 Input types such as ``cat`` can be derived from one or more other inputs by
 computation, and Arkimaps will handle the chain of dependencies correctly

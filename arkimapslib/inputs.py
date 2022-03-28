@@ -464,25 +464,8 @@ class Decumulate(Derived):
         super().document(file, indent)
 
 
-@InputTypes.register
-class VG6DTransform(Derived):
-    """
-    Process inputs with vg6d_transform
-    """
-    NAME = "vg6d_transform"
-
-    def __init__(self, args: Union[str, List[str]] = None, **kw):
-        if args is None:
-            raise RuntimeError(f"args must be present for '{self.NAME}' inputs")
-        super().__init__(**kw)
-        self.args = [args] if isinstance(args, str) else [str(x) for x in args]
-
-    def to_dict(self):
-        res = super().to_dict()
-        res["args"] = self.args
-        return res
-
-    def generate(self, pantry: "pantry.DiskPantry"):
+class AlignInstantsMixin:
+    def align_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], List["InputFile"]]:
         # Get the steps for each of our inputs
         available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
         for input_name in self.inputs:
@@ -505,6 +488,33 @@ class VG6DTransform(Derived):
         # Don't run preprocessing if we don't have data to preprocess
         if not available_instants:
             log.info("input %s: missing source data", self.name)
+            return {}
+
+        return available_instants
+
+
+@InputTypes.register
+class VG6DTransform(AlignInstantsMixin, Derived):
+    """
+    Process inputs with vg6d_transform
+    """
+    NAME = "vg6d_transform"
+
+    def __init__(self, args: Union[str, List[str]] = None, **kw):
+        if args is None:
+            raise RuntimeError(f"args must be present for '{self.NAME}' inputs")
+        super().__init__(**kw)
+        self.args = [args] if isinstance(args, str) else [str(x) for x in args]
+
+    def to_dict(self):
+        res = super().to_dict()
+        res["args"] = self.args
+        return res
+
+    def generate(self, pantry: "pantry.DiskPantry"):
+        # Get the steps for each of our inputs
+        available_instants = self.align_instants(pantry)
+        if not available_instants:
             return
 
         # For each step, run vg6d_transform to generate its output
@@ -545,7 +555,7 @@ class VG6DTransform(Derived):
 
 
 @InputTypes.register
-class Cat(Derived):
+class Cat(AlignInstantsMixin, Derived):
     """
     Concatenate inputs
     """
@@ -553,27 +563,8 @@ class Cat(Derived):
 
     def generate(self, pantry: "pantry.DiskPantry"):
         # Get the instants for each of our inputs
-        available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
-        for input_name in self.inputs:
-            input_instants = pantry.get_instants(input_name)
-            # Intersect the instants to get only those for which we have all inputs
-            if available_instants is None:
-                available_instants = {k: [v] for k, v in input_instants.items()}
-            else:
-                instants_to_delete = []
-                for instant, inputs in available_instants.items():
-                    input_file = input_instants.get(instant)
-                    if input_file is None:
-                        instants_to_delete.append(instant)
-                    else:
-                        inputs.append(input_file)
-                for instant in instants_to_delete:
-                    log.info("input %s: dropping instant %s missing in source input %s", self.name, instant, input_name)
-                    del available_instants[instant]
-
-        # Don't run preprocessing if we don't have data to preprocess
+        available_instants = self.align_instants(pantry)
         if not available_instants:
-            log.info("input %s: missing source data", self.name)
             return
 
         # For each instant, concatenate all inputs to generate the output
@@ -615,8 +606,25 @@ class Or(Derived):
             self.add_instant(instant)
 
 
+class GribSetMixin:
+    """
+    Mixin used for inputs that take a `grib_set` argument
+    """
+    def __init__(self, *args, grib_set: Optional[Dict[str, Any]] = None, **kw):
+        super().__init__(*args, **kw)
+        self.grib_set = grib_set if grib_set is not None else {}
+
+    def apply_grib_set(self, grib: GRIB):
+        """
+        Set key=value entries in the given grib from the `grib_set` input
+        definition
+        """
+        for k, v in self.grib_set.items():
+            grib[k] = v
+
+
 @InputTypes.register
-class GroundToMSL(Derived):
+class GroundToMSL(GribSetMixin, Derived):
     """
     Convert heights above ground to heights above mean sea level, by adding
     ground geopotential.
@@ -624,9 +632,7 @@ class GroundToMSL(Derived):
     It takes two inputs: the ground geopotential, and the value to convert, in
     that order.
     """
-    def __init__(self, *args, grib_set: Optional[Dict[str, Any]] = None, **kw):
-        super().__init__(*args, **kw)
-        self.grib_set = grib_set if grib_set is not None else {}
+    NAME = "groundtomsl"
 
     def generate(self, pantry: "pantry.DiskPantry"):
         if len(self.inputs) != 2:
@@ -653,11 +659,12 @@ class GroundToMSL(Derived):
         for instant, input_file in pantry.get_instants(self.inputs[1]).items():
             with GRIB(input_file.pathname) as val_grib:
                 # Add z
-                val_grib.values += z
+                vals = val_grib.values
+                vals += z
+                # TODO: vals[values <= z] = numpy.invalid
+                val_grib.values = vals
 
-                # Set key=value entries from input definition
-                for k, v in self.grib_set.items():
-                    val_grib[k] = v
+                self.apply_grib_set(val_grib)
 
                 # Write output
                 output_name = pantry.get_basename(self, instant)
@@ -676,6 +683,62 @@ class GroundToMSL(Derived):
 
         if not has_output:
             log.info("input %s: missing source data", self.name)
+
+
+@InputTypes.register
+class Ratio(AlignInstantsMixin, GribSetMixin, Derived):
+    """
+    Compute the ratio between two inputs.
+
+    Pair all matching steps of the first input with all matching steps of the
+    second input, and divide the first by the second.
+
+    Optionally scale the result by a factor (typically 100)
+    """
+    NAME = "ratio"
+
+    def __init__(self, *args, scale: Optional[float] = None, **kw):
+        super().__init__(*args, **kw)
+        self.scale = float(scale) if scale is not None else None
+
+    def generate(self, pantry: "pantry.DiskPantry"):
+        if len(self.inputs) != 2:
+            raise RuntimeError(f"{self.name} has {len(self.inputs)} inputs instead of 2")
+
+        available_instants = self.align_instants(pantry)
+        if not available_instants:
+            return
+
+        # For each instant, compute the ratio
+        for instant, input_files in available_instants.items():
+            with GRIB(input_files[0].pathname) as first_grib:
+                with GRIB(input_files[1].pathname) as second_grib:
+                    # Compute the ratio
+                    ratio = first_grib.values
+                    ratio[ratio != 0] /= second_grib.values[ratio != 0]
+
+                    # Optionally apply scale
+                    if self.scale is not None:
+                        ratio *= self.scale
+
+                    # Use first_grib as a template for our output
+                    first_grib.values = ratio
+                    self.apply_grib_set(first_grib)
+
+                    # Write output
+                    output_name = pantry.get_basename(self, instant)
+                    log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
+                    output_pathname = os.path.join(pantry.data_root, output_name)
+                    with open(output_pathname, "wb") as out:
+                        out.write(first_grib.dumps())
+                    pantry.log_input_processing(
+                            self, " ".join((
+                                "ratio",
+                                shlex.quote(input_files[0].pathname),
+                                shlex.quote(input_files[1].pathname),
+                                output_name)))
+
+                    self.add_instant(instant)
 
 
 class InputFile(NamedTuple):
