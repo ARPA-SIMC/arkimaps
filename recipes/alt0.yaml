@@ -16,6 +16,7 @@ inputs:
   - model: ifs
     type: groundtomsl
     inputs: [z, alt0ground]
+    invalid: -999
     grib_set:
       shortName: deg0l
 recipe:

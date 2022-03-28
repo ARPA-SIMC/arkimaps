@@ -631,8 +631,15 @@ class GroundToMSL(GribSetMixin, Derived):
 
     It takes two inputs: the ground geopotential, and the value to convert, in
     that order.
+
+    If `invalid` is provided, it is assigned to all values that result in a
+    lower height than ground level
     """
     NAME = "groundtomsl"
+
+    def __init__(self, *args, invalid: Optional[float] = None, **kw):
+        super().__init__(*args, **kw)
+        self.invalid = float(invalid) if invalid is not None else None
 
     def generate(self, pantry: "pantry.DiskPantry"):
         if len(self.inputs) != 2:
@@ -661,7 +668,8 @@ class GroundToMSL(GribSetMixin, Derived):
                 # Add z
                 vals = val_grib.values
                 vals += z
-                # TODO: vals[values <= z] = numpy.invalid
+                if self.invalid is not None:
+                    vals[vals < z] = self.invalid
                 val_grib.values = vals
 
                 self.apply_grib_set(val_grib)
