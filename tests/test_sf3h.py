@@ -3,7 +3,7 @@ from arkimapslib.unittest import add_recipe_test_cases
 
 
 class SF3HCosmoMixin:
-    def test_dispatch(self):
+    def test_process(self):
         self.maxDiff = None
         pantry_reftime = "2021_1_10_0_0_0"
         self.fill_pantry(expected=[
@@ -31,7 +31,7 @@ class SF3HCosmoMixin:
 
 
 class SF3HNoConvMixin:
-    def test_dispatch(self):
+    def test_process(self):
         self.maxDiff = None
         pantry_reftime = "2021_1_10_0_0_0"
         self.fill_pantry(
@@ -58,7 +58,7 @@ class SF3HNoConvMixin:
 
 
 class SF3HIFSMixin:
-    def test_dispatch(self):
+    def test_process(self):
         pantry_reftime = "2021_1_10_0_0_0"
         self.fill_pantry(expected=[f"{self.model_name}_sf_{pantry_reftime}+{step}.grib" for step in range(3, 13, 3)])
 
