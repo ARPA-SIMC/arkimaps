@@ -18,4 +18,4 @@ class HCCMixin:
         )
 
 
-add_recipe_test_cases(__name__, "hcc")
+add_recipe_test_cases(__name__, "tiles/hcc")

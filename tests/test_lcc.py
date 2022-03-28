@@ -18,4 +18,4 @@ class LCCMixin:
         )
 
 
-add_recipe_test_cases(__name__, "lcc")
+add_recipe_test_cases(__name__, "tiles/lcc")
