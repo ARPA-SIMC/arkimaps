@@ -3,6 +3,9 @@
 * Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :
   * vis (#103)
   * cc (#104)
+* Nuovi tipi di input:
+  * groundtomsl
+  * ratio
 
 # Novità nella versione 0.7
 
