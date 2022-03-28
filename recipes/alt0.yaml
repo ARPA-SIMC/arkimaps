@@ -5,7 +5,7 @@ inputs:
   - model: ifs
     arkimet: product:GRIB1,98,228,24;level:GRIB1,1
     eccodes: shortName is "deg0l"
- orography:
+ z:
   - model: ifs
     arkimet: product:GRIB1,98,128,129;level:GRIB1,1
     eccodes: shortName is "z"
