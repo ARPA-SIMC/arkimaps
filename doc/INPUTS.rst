@@ -1,6 +1,6 @@
-==================
-Recipe input types
-==================
+=============
+Recipe inputs
+=============
 
 Input types are defined in ``arkimapslib/inputs.py``, and this is their
 reference manual.
@@ -14,6 +14,72 @@ computation, and Arkimaps will handle the chain of dependencies correctly.
 
 Inputs can be defined anywhere in the recipe directory, and dependencies
 between them will be handled correctly.
+
+Input definition
+================
+
+An input has a ``name``, a ``type``, optionally a ``model``, optionally some
+``notes`` for the documentation, and other keywords depending on the type.
+
+This is an example input definition for a recipe, with an input valid for any
+model::
+
+  inputs:
+    sf:
+      - model: ifs
+        arkimet: product:GRIB1,98,128,144
+        eccodes: shortName is "sf"
+
+This is an example input definition that matches GRIBs differently depending on
+the model that generated the data::
+
+  inputs:
+    tp:
+      - model: cosmo
+        arkimet: product:GRIB1,,2,61
+        eccodes: centre != 98 and shortName is "tp"
+      - model: ifs
+        arkimet: product:GRIB1,98,128,228
+        eccodes: centre == 98 and shortName is "tp"
+
+This is an example input definition that processes GRIBs differently depending on
+the model that generated the data::
+
+  inputs:
+    sf:
+      - model: ifs
+        arkimet: product:GRIB1,98,128,144
+        eccodes: shortName is "sf"
+    snowcon:
+      - model: cosmo
+        arkimet: product:GRIB1,,2,78
+        eccodes: shortName is "snow_con" or shortName is "snoc"
+    snowgsp:
+      - model: cosmo
+        arkimet: product:GRIB1,,2,79
+        eccodes: shortName is "snow_gsp" or shortName is "lssf"
+    snowsum:
+      - model: cosmo
+        type: vg6d_transform
+        args: ["--output-variable-list=B13205"]
+        inputs: [snowcon, snowgsp]
+    snowcosmo:
+      - model: cosmo
+        type: or
+        inputs: [snowsum, snowgsp]
+    snowdec1h:
+      - model: cosmo
+        type: decumulate
+        step: 1
+        inputs: snowcosmo
+      - model: ifs
+        type: decumulate
+        step: 1
+        inputs: sf
+
+Inputs are referenced by name. They can be defined in the same file as recipes,
+but don't need to, and recipes can reference inputs defined in any other yaml
+file.
 
 
 Input type reference
