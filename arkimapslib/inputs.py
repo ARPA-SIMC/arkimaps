@@ -8,6 +8,7 @@ import shutil
 import subprocess
 
 import eccodes
+import numpy
 
 from .grib import GRIB
 
@@ -610,9 +611,10 @@ class GribSetMixin:
     """
     Mixin used for inputs that take a `grib_set` argument
     """
-    def __init__(self, *args, grib_set: Optional[Dict[str, Any]] = None, **kw):
+    def __init__(self, *args, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kw):
         super().__init__(*args, **kw)
         self.grib_set = grib_set if grib_set is not None else {}
+        self.clip = compile(clip, filename=self.defined_in, mode='exec') if clip is not None else None
 
     def apply_grib_set(self, grib: GRIB):
         """
@@ -621,6 +623,14 @@ class GribSetMixin:
         """
         for k, v in self.grib_set.items():
             grib[k] = v
+
+    def apply_clip(self, values: Dict[str, numpy.array]):
+        """
+        Evaluate the clip expression using the keyword arguments as locals
+        """
+        if self.clip is None:
+            return
+        eval(self.clip, values)
 
 
 @InputTypes.register
@@ -668,11 +678,10 @@ class GroundToMSL(GribSetMixin, Derived):
                 # Add z
                 vals = val_grib.values
                 vals += z
-                if self.invalid is not None:
-                    vals[vals < z] = self.invalid
-                val_grib.values = vals
-
+                self.apply_clip({self.name: vals, "z": z})
                 self.apply_grib_set(val_grib)
+
+                val_grib.values = vals
 
                 # Write output
                 output_name = pantry.get_basename(self, instant)

@@ -174,18 +174,20 @@ Given two inputs, assume that:
 The two values are combined to convert the second value to a value above mean
 sea level.
 
-``grib_set`` is applied if present.
+``grib_set`` and ``clip`` are applied if present.
+
+Due to internal optimization, the second input value is not available in the
+``clip`` expression.
 
 Example::
 
+ alt0:
   - model: ifs
     type: groundtomsl
     inputs: [z, alt0ground]                                                
-    invalid: -999
+    clip: "alt0[alt0 < z] = -999"
     grib_set:
       shortName: deg0l
-
-.. TODO invalid becomes clip
 
 
 ``ratio``
@@ -194,7 +196,7 @@ Example::
 given two inputs, generate a new input dividing the first by the
   second, and optionally applying a multiplication factor
 
-``grib_set`` is applied if present.
+``grib_set`` and ``clip`` are applied if present.
 
 
 Reference of arguments shared by at least two input types
@@ -229,12 +231,13 @@ the source inputs, as well as the name of the current input. The variables will
 be numpy arrays. The goal is to change the array named as the current input, to
 postprocess it before writing it out.
 
-For example, one can clip like this::
+Example::
 
-   example:
-      type: groundtomsl
-      inputs: [z, val]
-      clip: example[example < 0] = -999
+ alt0:
+  - model: ifs
+    type: groundtomsl
+    inputs: [z, alt0ground]
+    clip: "alt0[alt0 < z] = -999"
 
 
 
