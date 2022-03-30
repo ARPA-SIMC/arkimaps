@@ -219,7 +219,7 @@ are listed.
 
 
 ``grib_set``
-~~~~~~~~~~~~
+------------
 
 In these input types, you can optionally add a ``grib_set`` dictionary
 argument, which is a set of ``key=value`` assignments done via eccodes on the
@@ -228,8 +228,8 @@ resulting grib before writing it out.
 This can be used to correct the GRIB metadata after processing.
 
 
-``clip`` argument to groundtomsl and ratio
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``clip``
+--------
 
 In these input types, you can optionally add a ``clip`` expression as a string.
 
