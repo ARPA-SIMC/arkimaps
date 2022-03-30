@@ -75,29 +75,7 @@ Inputs defined in recipes have a ``type`` that defines if they correspond to
 GRIB data as found in the stream to be processed, if they need to be fetched
 from other locations, or if they need to be computed from other inputs.
 
-Input types are defined in ``arkimapslib/inputs.py`` and can currently be:
-
-* ``default``: a GRIB matched from the stream of data to be processed
-* ``static``: a file distributed with Arkimaps
-* ``shape``: a shapefile_ distributed with Arkimaps
-* ``cat``: concatenation of two or more other inputs
-* ``decumulate``: the output of decumulation of another input performed with vg6d_transform_
-* ``vg6d_transform``: the output of vg6d_transform_ run on another input, with
-  arguments taken from the input definition
-* ``or``: choose the first available in a list of possible inputs
-* ``groundtomsl``: given two inputs, assume the first is ground geopotential
-  only available at instant 0, and the second is a value computed by height
-  above ground. The two are combined to convert the second value to a value
-  above mean sea level
-* ``ratio``: given two inputs, generate a new input dividing the first by the
-  second, and optionally applying a multiplication factor
-
-Input types such as ``cat`` can be derived from one or more other inputs by
-computation, and Arkimaps will handle the chain of dependencies correctly
-regardless of where inputs are defined in the recipe directory.
-
-The output of input postprocessors is split by step using ecCodes_'
-``endStep``, and stored in the pantry as ``$name+$step.grib``.
+See ``INPUTS.rst`` for a detailed description of available input types.
 
 
 Computing model steps for which an order can be made
@@ -144,5 +122,3 @@ rendered to a to a multiprocessing pool of simple executors.
 
 .. _ecCodes: https://confluence.ecmwf.int/display/ECC/ecCodes+Home
 .. _Arkimet: https://github.com/ARPA-SIMC/arkimet
-.. _shapefile: https://en.wikipedia.org/wiki/Shapefile
-.. _vg6d_transform: https://github.com/ARPA-SIMC/libsim
