@@ -135,14 +135,6 @@ Se la ricetta è annidata in una sottodirectory, va specificata anche quella
 È possibile specificare il reference time usando `--date`: la sintassi per le
 date è la stessa del comando `date --date=`.
 
-### Creazione di test per nuove ricette
-
-1. Fare dispatch di un output di modello per avere i dati di input grezzi
-   (ripetere per COSMO e IFS)
-2. Prendere un campione di dati dalle workdir in `pantry/nomericetta`
-3. Processarli con `arki-scan --inline file.grib > file.arkimet`
-4. Salvarli in `testdata/nomericetta`
-
 ## Creazione di varianti (flavour) per il rendering
 
 Nei file `.yaml` dentro a `recipes/` è possibile aggiungere una sezione
