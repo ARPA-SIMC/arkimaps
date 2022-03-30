@@ -2,8 +2,9 @@
 description: Frazione nevosa
 inputs:
  sffraction:
-   type: ratio
+   type: expr
    inputs: [tpdec3h, snowdec3h]
+   expr: sffraction = snowdec3h[snowdec3h != 0] * 100 / tpdec3h[snowdec3h != 0]
    # grib_set:
    #   shortName: ??
 recipe:

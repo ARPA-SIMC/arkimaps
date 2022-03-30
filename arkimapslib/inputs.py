@@ -1,5 +1,6 @@
 # from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Union, Set
+import contextlib
 import datetime
 import logging
 import os
@@ -624,13 +625,17 @@ class GribSetMixin:
         for k, v in self.grib_set.items():
             grib[k] = v
 
-    def apply_clip(self, values: Dict[str, numpy.array]):
+    def apply_clip(self, values: Dict[str, numpy.array]) -> numpy.array:
         """
-        Evaluate the clip expression using the keyword arguments as locals
+        Evaluate the clip expression using the keyword arguments as locals.
+
+        Returns values[self.name], which might be a different array than what
+        is in values when the function was called, in case the expression
+        creates a new array for it.
         """
-        if self.clip is None:
-            return
-        eval(self.clip, values)
+        if self.clip is not None:
+            eval(self.clip, values)
+        return values[self.name]
 
 
 @InputTypes.register
@@ -678,9 +683,8 @@ class GroundToMSL(GribSetMixin, Derived):
                 # Add z
                 vals = val_grib.values
                 vals += z
-                self.apply_clip({self.name: vals, "z": z})
+                vals = self.apply_clip({self.name: vals, "z": z})
                 self.apply_grib_set(val_grib)
-
                 val_grib.values = vals
 
                 # Write output
@@ -703,59 +707,66 @@ class GroundToMSL(GribSetMixin, Derived):
 
 
 @InputTypes.register
-class Ratio(AlignInstantsMixin, GribSetMixin, Derived):
+class Expr(AlignInstantsMixin, GribSetMixin, Derived):
     """
-    Compute the ratio between two inputs.
+    Compute the result using a Python expression of the input values, as numpy
+    arrays.
 
-    Pair all matching steps of the first input with all matching steps of the
-    second input, and divide the first by the second.
-
-    Optionally scale the result by a factor (typically 100)
+    The first input GRIB is used as a template for the output GRIB, so all its
+    metadata is copied to the output as-is, unless amended by ``grib_set``.
     """
-    NAME = "ratio"
+    NAME = "expr"
 
-    def __init__(self, *args, scale: Optional[float] = None, **kw):
+    def __init__(self, *args, expr: str, **kw):
         super().__init__(*args, **kw)
-        self.scale = float(scale) if scale is not None else None
+        self.expr = compile(expr, filename=self.defined_in, mode='exec')
 
     def generate(self, pantry: "pantry.DiskPantry"):
-        if len(self.inputs) != 2:
-            raise RuntimeError(f"{self.name} has {len(self.inputs)} inputs instead of 2")
-
         available_instants = self.align_instants(pantry)
         if not available_instants:
             return
 
-        # For each instant, compute the ratio
+        # For each instant, run the expression
         for instant, input_files in available_instants.items():
-            with GRIB(input_files[0].pathname) as first_grib:
-                with GRIB(input_files[1].pathname) as second_grib:
-                    # Compute the ratio
-                    ratio = first_grib.values
-                    ratio[ratio != 0] /= second_grib.values[ratio != 0]
+            with contextlib.ExitStack() as stack:
+                # Open all input GRIBs
+                gribs: Dict[str, GRIB] = {}
+                template: Optional[GRIB] = None
+                for f in input_files:
+                    grib = stack.enter_context(GRIB(f.pathname))
+                    gribs[f.info.name] = grib
+                    if template is None:
+                        template = grib
 
-                    # Optionally apply scale
-                    if self.scale is not None:
-                        ratio *= self.scale
+                # Build the variable dict to use to evaluate self.expr
+                values = {name: grib.values for name, grib in gribs.items()}
 
-                    # Use first_grib as a template for our output
-                    first_grib.values = ratio
-                    self.apply_grib_set(first_grib)
+                # Evaluate the expression
+                eval(self.expr, values)
 
-                    # Write output
-                    output_name = pantry.get_basename(self, instant)
-                    log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
-                    output_pathname = os.path.join(pantry.data_root, output_name)
-                    with open(output_pathname, "wb") as out:
-                        out.write(first_grib.dumps())
-                    pantry.log_input_processing(
-                            self, " ".join((
-                                "ratio",
-                                shlex.quote(input_files[0].pathname),
-                                shlex.quote(input_files[1].pathname),
-                                output_name)))
+                # Extract the result
+                result = values.get(self.name)
+                if result is None:
+                    log.warning("input %s: the expression did not set %s: skipping step", self.name, self.name)
+                    continue
 
-                    self.add_instant(instant)
+                # Apply clip
+                result = self.apply_clip(values)
+
+                # Fill the template
+                self.apply_grib_set(template)
+                template.values = result
+
+                # Write output
+                output_name = pantry.get_basename(self, instant)
+                log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
+                output_pathname = os.path.join(pantry.data_root, output_name)
+                with open(output_pathname, "wb") as out:
+                    out.write(template.dumps())
+                pantry.log_input_processing(
+                        self, "expr " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name)
+
+                self.add_instant(instant)
 
 
 class InputFile(NamedTuple):

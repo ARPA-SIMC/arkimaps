@@ -190,13 +190,20 @@ Example::
       shortName: deg0l
 
 
-``ratio``
+``expr``
 ---------
 
-given two inputs, generate a new input dividing the first by the
-  second, and optionally applying a multiplication factor
+given one or more source inputs, generate a new input computing its values
+using an expression between numpy arrays.
 
 ``grib_set`` and ``clip`` are applied if present.
+
+Example::
+
+ sffraction:
+   type: expr
+   inputs: [tpdec3h, snowdec3h]
+   expr: sffraction = snowdec3h[snowdec3h != 0] * 100 / tpdec3h[snowdec3h != 0]
 
 
 Reference of arguments shared by at least two input types
