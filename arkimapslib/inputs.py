@@ -86,7 +86,13 @@ class Input:
     """
     NAME: str
 
-    def __init__(self, name: str, defined_in: str, model: Optional[str] = None, mgrib: Optional['Kwargs'] = None):
+    def __init__(
+            self,
+            name: str,
+            defined_in: str,
+            model: Optional[str] = None,
+            mgrib: Optional['Kwargs'] = None,
+            notes: Optional[str] = None):
         # Name of the input in the recipe
         self.name = name
         # model, identifying this instance among other alternatives for this input
@@ -95,6 +101,8 @@ class Input:
         self.defined_in = defined_in
         # Extra arguments passed to mgrib on loading
         self.mgrib = mgrib
+        # Optional notes for the documentation
+        self.notes = notes
 
     @classmethod
     def create(cls, type: str = "default", **kw):
@@ -179,6 +187,8 @@ class Input:
         Document the details about this input in Markdown
         """
         ind = " " * indent
+        if self.note:
+            print(f"{ind}**Note**: {self.note}", file=file)
         if self.mgrib:
             for k, v in self.mgrib.items():
                 print(f"{ind}* **mgrib {{k}}**: `{v}`", file=file)
