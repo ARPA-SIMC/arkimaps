@@ -3,7 +3,7 @@ import inspect
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, TextIO, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Set, TextIO, Type
 
 from . import steps
 
@@ -74,14 +74,14 @@ class Recipe:
     """
     A parsed and validated recipe
     """
-    def __init__(self, name: str, defined_in: str, data: 'Kwargs', notes: Optional[str] = None):
+    def __init__(self, name: str, defined_in: str, data: 'Kwargs'):
         from .mixers import mixers
         # Name of the recipe
         self.name = name
         # File where the recipe was defined
         self.defined_in = defined_in
         # Optional notes for the documentation
-        self.notes = notes
+        self.notes = data.get("notes")
 
         # Get the recipe description
         self.description: str = data.get("description", "Unnamed recipe")
