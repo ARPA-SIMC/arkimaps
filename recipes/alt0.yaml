@@ -17,7 +17,7 @@ inputs:
   - model: ifs
     type: groundtomsl
     inputs: [z, alt0ground]
-    clip: "alt0[alt0 < z] = -999"
+    clip: "alt0[alt0 <= z] = -999"
     grib_set:
       shortName: deg0l
 recipe:
