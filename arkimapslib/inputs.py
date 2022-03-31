@@ -187,8 +187,8 @@ class Input:
         Document the details about this input in Markdown
         """
         ind = " " * indent
-        if self.note:
-            print(f"{ind}**Note**: {self.note}", file=file)
+        if self.notes:
+            print(f"{ind}**Note**: {self.notes}", file=file)
         if self.mgrib:
             for k, v in self.mgrib.items():
                 print(f"{ind}* **mgrib {{k}}**: `{v}`", file=file)
