@@ -79,12 +79,12 @@ class TestInputs(unittest.TestCase):
     def test_apply_clip(self):
         class Tester(arkimapslib.inputs.GribSetMixin):
             def __init__(self, clip: str):
-                self.name = "alt0"
+                self.name = "hzero"
                 self.defined_in = __file__
                 super().__init__(clip=clip)
 
-        o = Tester(clip="alt0[alt0 < z] = -999")
-        alt0 = numpy.array([1, 2, 3, 4])
+        o = Tester(clip="hzero[hzero < z] = -999")
+        hzero = numpy.array([1, 2, 3, 4])
         z = numpy.array([4, 3, 2, 1])
-        alt0 = o.apply_clip({"alt0": alt0, "z": z})
-        self.assertEqual(alt0.tolist(), [-999, -999, 3, 4])
+        hzero = o.apply_clip({"hzero": hzero, "z": z})
+        self.assertEqual(hzero.tolist(), [-999, -999, 3, 4])

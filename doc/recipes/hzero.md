@@ -1,4 +1,4 @@
-# alt0: Altezza dello zero termico
+# hzero: Height of zero degree level
 
 Mixer: **default**
 
@@ -8,13 +8,13 @@ for IFS model it needs both "deg0l" and "z" variables
 
 ## Inputs
 
-* **alt0**:
+* **hzero**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,80,201,84;level:GRIB1,4`
         * **grib_filter matcher**: `shortName is "hzerocl"`
     * Model **ifs**:
         * **Preprocessing**: groundtomsl
-        * **Inputs**: z, alt0ground
+        * **Inputs**: z, hzeroground
 
 ## Steps
 
@@ -44,7 +44,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "alt0"
+  "grib": "hzero"
 }
 ```
 
@@ -133,7 +133,7 @@ With arguments:
     "legend": true,
     "legend_display_type": "continuous",
     "legend_title": true,
-    "legend_title_text": "Altezza dello zero termico (m)",
+    "legend_title_text": "Height of zero degree level (m)",
     "legend_text_colour": "black",
     "legend_text_font_size": 0.4,
     "legend_title_font_size": 0.5,

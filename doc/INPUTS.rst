@@ -247,11 +247,11 @@ Due to internal optimization, the second input value is not available in the
 
 Example::
 
- alt0:
+ hzero:
   - model: ifs
     type: groundtomsl
-    inputs: [z, alt0ground]                                                
-    clip: "alt0[alt0 < z] = -999"
+    inputs: [z, hzeroground]                                                
+    clip: "hzero[hzero <= z] = -999"
     grib_set:
       shortName: deg0l
 
@@ -306,11 +306,11 @@ postprocess it before writing it out.
 
 Example::
 
- alt0:
+ hzero:
   - model: ifs
     type: groundtomsl
-    inputs: [z, alt0ground]
-    clip: "alt0[alt0 < z] = -999"
+    inputs: [z, hzeroground]
+    clip: "hzero[hzero <= z] = -999"
 
 
 

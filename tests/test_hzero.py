@@ -2,9 +2,9 @@
 from arkimapslib.unittest import add_recipe_test_cases
 
 
-class ALT0CosmoMixin:
+class HZEROCosmoMixin:
     def test_process(self):
-        self.fill_pantry(expected=["cosmo_alt0_2021_1_10_0_0_0+12.grib"])
+        self.fill_pantry(expected=["cosmo_hzero_2021_1_10_0_0_0+12.grib"])
 
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
@@ -16,11 +16,11 @@ class ALT0CosmoMixin:
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
-class ALT0IFSMixin:
+class HZEROIFSMixin:
     def test_process(self):
         self.maxDiff = None
         self.fill_pantry(expected=[
-            "ifs_alt0ground_2021_1_10_0_0_0+12.grib",
+            "ifs_hzeroground_2021_1_10_0_0_0+12.grib",
             "ifs_z_2021_1_10_0_0_0+0.grib",
         ])
 
@@ -28,10 +28,10 @@ class ALT0IFSMixin:
         self.assertEqual(len(orders), 1)
 
         self.assertProcessLogEqual(
-            ["alt0:GroundToMSL:groundtomsl"
+            ["hzero:GroundToMSL:groundtomsl"
              " ifs_z_2021_1_10_0_0_0+0.grib"
-             " ifs_alt0ground_2021_1_10_0_0_0+12.grib"
-             " ifs_alt0_2021_1_10_0_0_0+12.grib"]
+             " ifs_hzeroground_2021_1_10_0_0_0+12.grib"
+             " ifs_hzero_2021_1_10_0_0_0+12.grib"]
         )
 
         self.assertRenders(orders[0])
@@ -39,4 +39,4 @@ class ALT0IFSMixin:
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
-add_recipe_test_cases(__name__, "alt0")
+add_recipe_test_cases(__name__, "hzero")

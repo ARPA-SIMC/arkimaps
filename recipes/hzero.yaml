@@ -1,8 +1,8 @@
 ---
-description: Altezza dello zero termico
+description: Height of zero degree level
 notes: for IFS model it needs both "deg0l" and "z" variables
 inputs:
- alt0ground:
+ hzeroground:
   - model: ifs
     arkimet: product:GRIB1,98,228,24;level:GRIB1,1
     eccodes: shortName is "deg0l"
@@ -10,21 +10,21 @@ inputs:
   - model: ifs
     arkimet: product:GRIB1,98,128,129;level:GRIB1,1
     eccodes: shortName is "z"
- alt0:
+ hzero:
   - model: cosmo
     arkimet: product:GRIB1,80,201,84;level:GRIB1,4
     eccodes: shortName is "hzerocl"
   - model: ifs
     type: groundtomsl
-    inputs: [z, alt0ground]
-    clip: "alt0[alt0 <= z] = -999"
+    inputs: [z, hzeroground]
+    clip: "hzero[hzero <= z] = -999"
     grib_set:
       shortName: deg0l
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   grib: alt0
+   grib: hzero
  - step: add_contour
    params:
     contour: off
@@ -47,7 +47,7 @@ recipe:
     legend: on
     legend_display_type: continuous
     legend_title: on
-    legend_title_text: "Altezza dello zero termico (m)"
+    legend_title_text: "Height of zero degree level (m)"
     legend_text_colour: black
     legend_text_font_size: 0.4
     legend_title_font_size: 0.5
