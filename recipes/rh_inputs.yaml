@@ -53,6 +53,14 @@ inputs:
     type: vg6d_transform
     args: ["--comp-var-from-lev", "--trans-level-type=100"]
     inputs: [t925, q925]
+ td700:
+    type: vg6d_transform
+    args: ["--output-variable-list=B12103"]
+    inputs: [t700, q700, p700]
+ td850:
+    type: vg6d_transform
+    args: ["--output-variable-list=B12103"]
+    inputs: [t850, q850, p850]
  rh700:
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]
