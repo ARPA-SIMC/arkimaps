@@ -150,7 +150,7 @@ class WorkingKitchen(Kitchen):
                 continue
             selected.append(o)
         if not selected:
-            raise RuntimeError(f"not enough data to prepare {recipe.name}+{step:03d}")
+            raise RuntimeError(f"not enough data to prepare {recipe.name}")
         selected.sort(key=lambda x: x.instant)
         return selected[0]
 
