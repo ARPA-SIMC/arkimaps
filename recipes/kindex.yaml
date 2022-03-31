@@ -1,0 +1,36 @@
+---
+description: K-index
+inputs:
+  kindex:
+    type: expr
+    inputs: [t500, t700, t850, td700, td850]
+    expr: kindex = t850 - t500 + td850 - (t700 - td700)
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: kindex
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: [ "cyan", "green", "yellow", "red" ]
+    contour_level_list: [ 25, 30, 35, 40, 60 ]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_text_font_size: 0.4
+    legend_title_text: "K index [n]"
+    legend_text_colour: black
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

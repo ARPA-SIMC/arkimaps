@@ -60,6 +60,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `rhw925` | Umidità relativa e vento a 925hPa                | [rhw925.png](rhw925.png) | [rhw925.md](../recipes/standalone/rhw925.md) |
 | `mslpw10m` | Pressione a livello del mare e vento a 10m     | [mslpw10m.png](mslpw10m.png) | [mslpw10m.md](../recipes/standalone/msalpw10m.md) |
 | `w10mbeaufort` | Vento a 10m scala Beaufort                 | [w10mbeaufort.png](w10mbeaufort.png) | [w10mbeaufort.md](../recipes/standalone/w10mbeaufort.md) |
+| `kindex`   | Indice K                                       | [kindex.png](kindex.png)     | [kindex.md](../recipes/kindex.md) |
 
 # Censimento prodotti attualmente pubblicati su infomet
 
@@ -78,7 +79,6 @@ Nota: la legenda dinamica è una feature richiesta per non mostrare un range tro
 | alt0 | Altezza zero termico (#5) | Altezza zero termico (al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
 | rain | Precipitazione totale (passi 1,3,6,12,24h) (#38)  | Preci tot cum(al suolo), Preci nev cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 24h), cosmo1 CH (solo 3h), ifs (ita) (no 1h), ifs (atl) (no 1, 3h) |
 | thom | Indice di disagio-bioclimatico di Thom (#105) | Indice di Thom | cosmo 5M |
-| indK | indice K (#106)          | Indice K (n) | cosmo 5M, cosmo 5I backup, ifs (ita) |
 | cape | CAPE+CIN Nord Italia (#107) | C.A.P.E. (j/Kg), energia potenziale | cosmo 5M, cosmo 5I backup, cosmo 2I, cosmo 2I RUC |
 | cape | Cape Italia (#107)          | C.A.P.E. (j/Kg)                     | cosmo 5M, cosmo1 CH (area: nord italia), ifs (ita), ifs (atl) |
 | 2PV  | tetaE alla 2 PV (#108)      | TetaE + Vento + Pressione | ifs (ita), ifs (atl) |
@@ -136,5 +136,5 @@ I prodotti che seguono hanno preprocessing particolarmente complesso dedicato:
 | umid | U% 2 metri        | Umidità relativa 2 metri | cosmo 5M, cosmo 5I backup, cosmo 5M am, cosmo 2I |
 | visi | Visibilità        | Visibilità(m) | cosmo 5M, cosmo 2I, , ifs (ita) |
 | nubS | Nubi strati       | Copertura nubi basse, Copertura nubi medie, Copertura nubi alte | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
-
+| indK | indice K          | Indice K (n) | cosmo 5M, cosmo 5I backup, ifs (ita) |
 
