@@ -3,12 +3,15 @@ import contextlib
 import datetime
 import os
 import tempfile
-from typing import Optional, List
 import unittest
-from arkimapslib.pantry import DiskPantry
+from typing import List, Optional
+
+import arkimet
+import numpy
+
 import arkimapslib.inputs
 from arkimapslib.inputs import Instant
-import arkimet
+from arkimapslib.pantry import DiskPantry
 
 
 class TestInputs(unittest.TestCase):
@@ -72,3 +75,16 @@ class TestInputs(unittest.TestCase):
             self.assertCountEqual(test.instants, [instant1])
             self.assertCountEqual(test.instants_to_truncate, [])
             self.assertEqual(os.path.getsize(data_file), len(mds[0].data))
+
+    def test_apply_clip(self):
+        class Tester(arkimapslib.inputs.GribSetMixin):
+            def __init__(self, clip: str):
+                self.name = "alt0"
+                self.defined_in = __file__
+                super().__init__(clip=clip)
+
+        o = Tester(clip="alt0[alt0 < z] = -999")
+        alt0 = numpy.array([1, 2, 3, 4])
+        z = numpy.array([4, 3, 2, 1])
+        alt0 = o.apply_clip({"alt0": alt0, "z": z})
+        self.assertEqual(alt0.tolist(), [-999, -999, 3, 4])
