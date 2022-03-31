@@ -1,5 +1,6 @@
 ---
 description: Altezza dello zero termico
+notes: for IFS model it needs both "deg0l" and "z" variables
 inputs:
  alt0ground:
   - model: ifs
