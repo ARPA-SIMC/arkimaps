@@ -1,11 +1,14 @@
 # Novità nella versione (unreleased) :
 
-* Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :
+* Nuovi prodotti (vedere doc/prodotti/README.md per dettagli) :
+  * hzero (#5)
   * vis (#103)
   * cc (#104)
-* Nuovi tipi di input:
+  * kindex (#106)
+* Nuovi tipi di input (vedere doc/INPUTS.rst per dettagli):
   * groundtomsl
-  * ratio
+  * expr
+* Migliorata documentazione
 
 # Novità nella versione 0.7
 

@@ -26,6 +26,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `t2m`   | Temperatura a 2 metri dal suolo           | [t2m.png](t2m.png "Temperatura a 2 metri") | [t2m.md](../recipes/t2m.md) |
 | `rh2m`  | Umidità relativa a 2 metri dal suolo      | [rh2m.png](rh2m.png "Umidità relativa a 2 metri") | [rh2m.md](../recipes/rh2m.md) |
 | `vis`   | Visibilità                                | [vis.png](vis.png "Visibilità")           | [vis.md](../recipes/vis.md) |
+| `hzero` | Altezza dello zero termico                | [hzero.png](hzero.png "Altezza dello zero termico") | [hzero.md](../recipes/hzero.md) |
 | `tcc`   | Copertura nuvolosa totale                 | [tcc.png](tcc.png "Copertura nuvolosa")   | [tcc.md](../recipes/tcc.md) |
 | `hcc`   | Copertura nubi alte                       | [hcc.png](hcc.png "Copertura nubi alte")  | [hcc.md](../recipes/tiles/hcc.md) |
 | `mcc`   | Copertura nubi medie                      | [mcc.png](mcc.png "Copertura nubi medie") | [mcc.md](../recipes/tiles/mcc.md) |
@@ -76,7 +77,6 @@ Nota: la legenda dinamica è una feature richiesta per non mostrare un range tro
 
 | cod.int. | Prodotto       | Variabili | Modello |
 | ----- | -------------- | --------- | ------- |
-| alt0 | Altezza zero termico (#5) | Altezza zero termico (al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
 | rain | Precipitazione totale (passi 1,3,6,12,24h) (#38)  | Preci tot cum(al suolo), Preci nev cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 24h), cosmo1 CH (solo 3h), ifs (ita) (no 1h), ifs (atl) (no 1, 3h) |
 | thom | Indice di disagio-bioclimatico di Thom (#105) | Indice di Thom | cosmo 5M |
 | cape | CAPE+CIN Nord Italia (#107) | C.A.P.E. (j/Kg), energia potenziale | cosmo 5M, cosmo 5I backup, cosmo 2I, cosmo 2I RUC |
@@ -117,6 +117,7 @@ I prodotti che seguono hanno preprocessing particolarmente complesso dedicato:
 
 | cod.int. | Prodotto       | Variabili | Modello |
 | ----- | -------------- | --------- | ------- |
+| alt0 | Altezza zero termico | Altezza zero termico (al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
 | ztw | Z500 + T500    | Geopotenziale(500 hPa), Temperatura generica(500 hPa), Vento(500 hPa) | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, ifs (ita), ifs (atl) |
 | ztw | Z700 + T700    | Geopotenziale(700 hPa), Temperatura generica(700 hPa), Vento(700 hPa) | cosmo 5M, cleps det, ifs (ita) |
 | ztw  | Z850 + T850    | Geopotenziale(850 hPa), Temperatura generica(850 hPa), Vento(850 hPa) | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, ifs (ita), ifs (atl) |
