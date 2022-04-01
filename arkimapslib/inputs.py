@@ -625,7 +625,14 @@ class GribSetMixin:
     def __init__(self, *args, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kw):
         super().__init__(*args, **kw)
         self.grib_set = grib_set if grib_set is not None else {}
-        self.clip = compile(clip, filename=self.defined_in, mode='exec') if clip is not None else None
+        self.clip = clip
+        self.clip_fn = compile(clip, filename=self.defined_in, mode='exec') if clip is not None else None
+
+    def to_dict(self):
+        res = super().to_dict()
+        res["grib_set"] = self.grib_set
+        res["clip"] = self.clip
+        return res
 
     def apply_grib_set(self, grib: GRIB):
         """
@@ -643,8 +650,8 @@ class GribSetMixin:
         is in values when the function was called, in case the expression
         creates a new array for it.
         """
-        if self.clip is not None:
-            eval(self.clip, values)
+        if self.clip_fn is not None:
+            eval(self.clip_fn, values)
         return values[self.name]
 
 
@@ -656,15 +663,8 @@ class GroundToMSL(GribSetMixin, Derived):
 
     It takes two inputs: the ground geopotential, and the value to convert, in
     that order.
-
-    If `invalid` is provided, it is assigned to all values that result in a
-    lower height than ground level
     """
     NAME = "groundtomsl"
-
-    def __init__(self, *args, invalid: Optional[float] = None, **kw):
-        super().__init__(*args, **kw)
-        self.invalid = float(invalid) if invalid is not None else None
 
     def generate(self, pantry: "pantry.DiskPantry"):
         if len(self.inputs) != 2:
@@ -729,7 +729,13 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
 
     def __init__(self, *args, expr: str, **kw):
         super().__init__(*args, **kw)
-        self.expr = compile(expr, filename=self.defined_in, mode='exec')
+        self.expr = expr
+        self.expr_fn = compile(expr, filename=self.defined_in, mode='exec')
+
+    def to_dict(self):
+        res = super().to_dict()
+        res["expr"] = self.expr
+        return res
 
     def generate(self, pantry: "pantry.DiskPantry"):
         available_instants = self.align_instants(pantry)
@@ -748,11 +754,11 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
                     if template is None:
                         template = grib
 
-                # Build the variable dict to use to evaluate self.expr
+                # Build the variable dict to use to evaluate self.expr_fn
                 values = {name: grib.values for name, grib in gribs.items()}
 
                 # Evaluate the expression
-                eval(self.expr, values)
+                eval(self.expr_fn, values)
 
                 # Extract the result
                 result = values.get(self.name)
