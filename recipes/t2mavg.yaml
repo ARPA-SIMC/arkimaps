@@ -1,0 +1,61 @@
+---
+description: Average temperature at 2 metres
+inputs:
+  t2mavg:
+    - type: decumulate
+      step: 24
+      inputs: t2m
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: t2m
+ - step: add_contour
+   params:
+    contour: off
+    contour_highlight_frequency: 100
+    contour_highlight_thickness: 5
+    contour_interval: 2.0
+    contour_label_height: 0.4
+    contour_label_colour: navy
+    contour_label_frequency: 1
+    contour_label_blanking: off
+    contour_level_selection_type: interval
+    contour_line_thickness: 3
+    contour_shade: on
+    contour_shade_colour_list: ["rgb(1,0.8,0)","rgb(1,0.6,0)",
+                                  "rgb(1,0.4,0)","rgb(1,0,0)",
+                                  "rgb(0.8,0,0)","rgb(0.6,0,0)",
+                                  "rgb(0.4,0,0)","rgb(0.4,0,0.4)",
+                                  "rgb(0.6,0,0.6)","rgb(0.8,0,0.8)",
+                                  "rgb(1,0,1)","rgb(0.75,0,1)",
+                                  "rgb(0.45,0,1)","rgb(0,0,1)",
+                                  "rgb(0,0.35,1)","rgb(0,0.55,1)",
+                                  "rgb(0,0.75,1)","rgb(0,1,1)",
+                                  "rgb(0,0.9,0.8)","rgb(0,0.8,0.5)",
+                                  "rgb(0,0.7,0.0)","rgb(0.5,0.8,0.0)",
+                                  "rgb(0.8,0.9,0.0)","rgb(1,1,0)",
+                                  "rgb(1,0.8,0)","rgb(1,0.6,0)",
+                                  "rgb(1,0.4,0)","rgb(1,0,0)",
+                                  "rgb(0.8,0,0)","rgb(0.6,0,0)",
+                                  "rgb(0.4,0,0)","rgb(0.4,0,0.4)",
+                                  "rgb(0.6,0,0.6)","rgb(0.8,0,0.8)",
+                                  "rgb(1,0,1)","rgb(0.75,0,1)","rgb(0.45,0,1)"]
+    contour_shade_colour_method: list
+    contour_shade_max_level: 46.0
+    contour_shade_method: area_fill
+    contour_shade_min_level: -30.0
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_title_text: "24h Average temperature at 2m [°C]"
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
