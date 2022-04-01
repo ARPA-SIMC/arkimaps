@@ -5,10 +5,12 @@
   * vis (#103)
   * cc (#104)
   * kindex (#106)
+  * thetaePV (#108)
+  * thetae925 (#108)
 * Nuovi tipi di input (vedere doc/INPUTS.rst per dettagli):
   * groundtomsl
   * expr
-* Migliorata documentazione
+* Estesa documentazione
 
 # Novità nella versione 0.7
 
