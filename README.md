@@ -81,26 +81,22 @@ Ad esempio, per plot ritagliati sull'Emilia-Romagna:
 
 ## Documentazione
 
-Informazioni sull'inventario di aree e prodotti implementati sono
-disponibili nella directory [doc/prodotti](../master/doc/prodotti/README.md).
-
-E' disponibile un glossario sui termini in uso: [Glossary](../master/doc/GLOSSARY.rst).
-
+ * Informazioni sull'inventario di aree e prodotti implementati: [doc/prodotti/README.md](../master/doc/prodotti/README.md)
+ * Glossario sui termini in uso: [Glossary](../master/doc/GLOSSARY.rst)
+ * Documentazione sulle modalità di input delle ricette: [Recipe inputs](../master/doc/INPUTS.rst)
+ * Step per creazione nuove ricette: [New Recipe](../master/doc/new_recipe.md)
+ * Descrizione di come i dati sono processati da una ricetta all'output generato: [Recipe workflow](../master/doc/RECIPE_WORKFLOW.rst).
 
 Per una descrizione delle opzioni vedi:
 ```
 ./arkimaps -h
 ```
 
-É anche disponibile un ulteriore descrizione per ogni subcommand, ad es.:
+È anche disponibile un ulteriore descrizione per ogni subcommand, ad es.:
 
 ```
 ./arkimaps process -h
 ```
-
-Una descrizione sul workflow completo dall'interpretazione delle ricette agli output generati
-è disponibile qui: [Recipe workflow](../master/doc/RECIPE_WORKFLOW.rst).
-
 
 ## Informazioni sulle ricette
 
@@ -177,7 +173,7 @@ contenente:
 
 ## Contact and copyright information
 
-arkimaps is Copyright (C) 2020-2021 ARPAE-SIMC <urpsim@arpae.it>
+arkimaps is Copyright (C) 2020-2022 ARPAE-SIMC <urpsim@arpae.it>
 
 arkimaps is Free Software, licensed under the terms of the GNU General Public
 License version 2.
