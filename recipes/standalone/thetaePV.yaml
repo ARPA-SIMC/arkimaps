@@ -1,0 +1,80 @@
+---
+description: Theta-e at potential vorticity surface
+inputs:
+  thetaePV:
+    arkimet: product:GRIB1,98,128,3;level:GRIB1,117,2000
+    eccodes: centre == 98 and shortname is "pt" and indicatorOfTypeOfLevel == 117 and level == 2000
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: thetaePV
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: [ "rgb(0.07451,0.00000,0.48235)", "rgb(0.05882,0.14510,0.55294)",
+                               "rgb(0.04314,0.28235,0.61176)", "rgb(0.02745,0.41961,0.67843)",
+                               "rgb(0.00784,0.55686,0.74510)", "rgb(0.00392,0.61569,0.71373)",
+                               "rgb(0.00392,0.59608,0.58824)", "rgb(0.00000,0.58431,0.46667)",
+                               "rgb(0.00392,0.54902,0.33725)", "rgb(0.00000,0.52941,0.21569)",
+                               "rgb(0.22353,0.63922,0.16863)", "rgb(0.44314,0.74118,0.12157)",
+                               "rgb(0.66667,0.84314,0.07451)", "rgb(0.89020,0.94902,0.02353)",
+                               "rgb(1.00000,0.89020,0.00000)", "rgb(1.00000,0.66667,0.00000)",
+                               "rgb(1.00000,0.44314,0.00000)", "rgb(1.00000,0.22353,0.00000)",
+                               "rgb(1.00000,0.00000,0.00000)" ]
+    contour_level_list: [ 270, 295, 300, 305, 310, 315, 320, 325, 330, 335, 340,
+                        345, 350, 355, 360, 365, 370, 375, 380, 440]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_display_type: continuous
+    legend_text_font_size: 0.4
+    legend_title_text: "Theta-e at PV surface [°K]"
+    legend_text_colour: black
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+ - step: add_grib
+   grib: uvpv
+ - step: add_wind
+   params:
+   params:
+     wind_arrow_colour: blue
+     wind_arrow_thickness: 1
+     wind_field_type: arrows
+     wind_flag_cross_boundary: off
+     wind_arrow_unit_velocity: 25.0
+     wind_arrow_min_speed: 15.0
+     wind_arrow_calm_indicator: off
+     wind_thinning_factor: 1
+     wind_thinning_method: automatic
+ - step: add_grib
+   grib: mslp
+   params:
+    grib_automatic_scaling: off
+    grib_scaling_factor: 0.01
+ - step: add_contour
+   params:
+    contour_shade: off
+    contour: on
+    contour_level_selection_type: interval
+    contour_interval: 4
+    contour_line_colour: black
+    contour_line_thickness: 3
+    contour_highlight: off
+    contour_label: on
+    contour_label_height: 0.5
+    contour_label_frequency: 2
+    contour_label_blanking: on
+    contour_label_colour: navy
+    legend: off
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
