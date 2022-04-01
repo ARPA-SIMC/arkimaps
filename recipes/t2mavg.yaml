@@ -2,14 +2,14 @@
 description: Average temperature at 2 metres
 inputs:
   t2mavg:
-    - type: decumulate
+    - type: average
       step: 24
       inputs: t2m
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   grib: t2m
+   grib: t2mavg
  - step: add_contour
    params:
     contour: off
