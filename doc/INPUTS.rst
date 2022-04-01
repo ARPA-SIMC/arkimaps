@@ -180,6 +180,23 @@ Example::
        inputs: tp
 
 
+``average``
+--------------
+
+Performs averaging using vg6d_transform_.
+
+The output of vg6d_transform_is split by step using ecCodes_' ``endStep``, and
+stored in the pantry as ``$name+$step.grib``.
+
+Example::
+
+  inputs:
+    t2mavg:
+      - type: average
+        step: 24
+        inputs: t2m
+
+
 ``vg6d_transform``
 ------------------
 
