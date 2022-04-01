@@ -379,12 +379,10 @@ class Derived(Input):
         super().document(file, indent)
 
 
-@InputTypes.register
-class Decumulate(Derived):
-    """
-    Decumulate inputs
-    """
-    NAME = "decumulate"
+class VG6DStatProcMixin:
+    # Arguments to pass to vg6d_transform. {step} will be expanded with string
+    # formatting
+    args: List[str]
 
     def __init__(self, step: int = None, **kw):
         if step is None:
@@ -430,8 +428,9 @@ class Decumulate(Derived):
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 
-        cmd = ["vg6d_transform", "--comp-stat-proc=1",
-               f"--comp-step=0 {self.step:02d}", "--comp-frac-valid=0"]
+        cmd = ["vg6d_transform", "--comp-frac-valid=0", f"--comp-step=0 {self.step:02d}"]
+        for a in self.args:
+            cmd.append(a.format(step=self.step))
         if self.step != 24:
             cmd.append("--comp-full-steps")
         cmd += ["-", decumulated_data]
@@ -446,6 +445,7 @@ class Decumulate(Derived):
                 raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
 
             if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
+                log.warning("%s: vg6d_transform generated empty output", self.name)
                 return
 
             pantry.log_input_processing(self, " ".join(shlex.quote(c) for c in cmd))
@@ -470,9 +470,33 @@ class Decumulate(Derived):
             if os.path.exists(decumulated_data):
                 os.unlink(decumulated_data)
 
+
+@InputTypes.register
+class Decumulate(VG6DStatProcMixin, Derived):
+    """
+    Decumulate inputs
+    """
+    NAME = "decumulate"
+    comp_stat_proc = "1"
+    args = ["--comp-stat-proc=1"]
+
     def document(self, file, indent=4):
         ind = " " * indent
         print(f"{ind}* **Decumulation step**: {self.step}", file=file)
+        super().document(file, indent)
+
+
+@InputTypes.register
+class Average(VG6DStatProcMixin, Derived):
+    """
+    Average inputs
+    """
+    NAME = "average"
+    args = ["--comp-stat-proc=254:0"]
+
+    def document(self, file, indent=4):
+        ind = " " * indent
+        print(f"{ind}* **Averaging step**: {self.step}", file=file)
         super().document(file, indent)
 
 

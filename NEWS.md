@@ -10,6 +10,7 @@
 * Nuovi tipi di input (vedere doc/INPUTS.rst per dettagli):
   * groundtomsl
   * expr
+  * average
 * Estesa documentazione
 
 # Novità nella versione 0.7
