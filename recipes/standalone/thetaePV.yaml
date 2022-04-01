@@ -3,7 +3,7 @@ description: Theta-e at potential vorticity surface
 inputs:
   thetaePV:
     arkimet: product:GRIB1,98,128,3;level:GRIB1,117,2000
-    eccodes: centre == 98 and shortname is "pt" and indicatorOfTypeOfLevel == 117 and level == 2000
+    eccodes: centre == 98 and shortName is "pt" and indicatorOfTypeOfLevel == 117 and level == 2000
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

@@ -124,10 +124,10 @@ inputs:
    inputs: [u925, v925]
  upv:
    arkimet: product:GRIB1,98,128,131;level:GRIB1,117,2000
-   eccodes: centre == 98 and shortname is "u" and indicatorOfTypeOfLevel == 117 and level == 2000
+   eccodes: centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 117 and level == 2000
  vpv:
    arkimet: product:GRIB1,98,128,132;level:GRIB1,117,2000
-   eccodes: centre == 98 and shortname is "v" and indicatorOfTypeOfLevel == 117 and level == 2000
+   eccodes: centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 117 and level == 2000
  uvpv:
    type: cat
    inputs: [upv, vpv]
