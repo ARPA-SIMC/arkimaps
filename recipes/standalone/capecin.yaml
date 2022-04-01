@@ -1,0 +1,76 @@
+---
+description: Convective Available Potential Energy (C.A.P.E.) and Convective Inhibition (CIN)
+inputs:
+  cin:
+    arkimet: product:GRIB1,,201,146
+    eccodes: centre != 98 and shortName is "cin_ml"
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: cape
+ - step: add_contour
+   params:
+     contour: off
+     contour_shade: on
+     contour_level_selection_type: level_list
+     contour_shade_colour_method: calculate
+     contour_shade_method: area_fill
+     contour_shade_colour_list: [ "rgb(1.00,0.35,0.00)", "rgb(1.00,0.55,0.00)",
+                                "rgb(1.00,0.67,0.00)", "rgb(1.00,0.78,0.00)",
+                                "rgb(1.00,0.89,0.00)", "rgb(1.00,1.00,0.00)",
+                                "rgb(0.75,0.98,0.00)", "rgb(0.60,0.86,0.10)",
+                                "rgb(0.43,0.77,0.20)", "rgb(0.30,0.68,0.40)",
+                                "rgb(0.50,0.90,1.00)", "rgb(0.50,0.70,1.00)",
+                                "rgb(0.37,0.50,1.00)", "rgb(0.20,0.30,0.90)",
+                                "rgb(0.10,0.15,0.75)", "rgb(0.00,0.05,0.55)",
+                                "rgb(0.00,0.00,0.35)", "rgb(0.00,0.00,0.20)" ]
+     contour_shade_max_level: 4200.00
+     contour_shade_min_level: 100.00
+     contour_level_list: [ 100.00, 200.00, 300.0, 500.00, 750.00, 1000.00, 1250.00,
+                         1500.00, 1750.00, 2000.00, 2250.00, 2500.00, 2750.00, 3000.00,
+                         3500.00, 4000.00, 4500.00 ]
+     contour_highlight: off
+     contour_hilo: off
+     contour_label: off
+     legend: on
+     legend_title: on
+     legend_text_font_size: 0.4
+     legend_title_text: "C.A.P.E. [J/kg]"
+     legend_text_colour: black
+     legend_title_font_size: 0.5
+     legend_automatic_position: right
+     legend_display_type: continuous
+ - step: add_grib
+   grib: cin
+ - step: add_contour
+   params:
+     contour: off
+     contour_shade: on
+     contour_shade_method: dot
+     contour_level_selection_type: interval
+     contour_interval: 200.0
+     contour_shade_dot_size: 0.010
+     contour_shade_min_level: 50.0
+     contour_shade_max_level: 800.0
+     contour_shade_min_level_colour: blue
+     contour_shade_max_level_colour: blue
+     contour_shade_min_level_density: 25.0
+     contour_shade_max_level_density: 130.0
+     contour_line_colour: blue
+     contour_highlight: off
+     contour_label: off
+     contour_hilo: off
+     legend: on
+     legend_title: on
+     legend_title_font_size: 0.5
+     legend_title_text: "C.A.P.E. [J/kg]"
+     legend_text_font_size: 0.4
+     legend_automatic_position: right
+     legend_display_type: continuous
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

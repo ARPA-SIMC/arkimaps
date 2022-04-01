@@ -106,8 +106,6 @@ With arguments:
       "rgb(0.937,0.769,0.827)"
     ],
     "contour_level_list": [
-      265,
-      268,
       271,
       274,
       277,

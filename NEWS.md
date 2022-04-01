@@ -5,6 +5,9 @@
   * vis (#103)
   * cc (#104)
   * kindex (#106)
+  * cape (#107)
+  * capecin (#107)
+  * capeshear (#107)
   * thetaePV (#108)
   * thetae925 (#108)
 * Nuovi tipi di input (vedere doc/INPUTS.rst per dettagli):

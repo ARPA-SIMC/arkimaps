@@ -1,0 +1,41 @@
+---
+description: Convective available potential energy shear (m**2 s**-2)
+inputs:
+  capeshear:
+    arkimet: product:GRIB1,98,228,44
+    eccodes: centre == 98 and shortName is "capes"
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: capeshear
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: level_list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: [ "#bcbdef", "#7778ef", "#0178ff", "#02bcff",
+                               "#04fdef", "#01acac", "#00781d", "#06fb2f",
+                               "#cefb02", "#ff9a00", "#ff1e00", "#ac1a77",
+                               "#fe38ff", "#7730ff" ]
+    contour_level_list: [ 10, 50, 100, 200, 300, 400, 500, 600, 800,
+                        1000, 1250, 1500, 1750, 2000, 4000 ]
+    contour_highlight: off
+    contour_hilo: off
+    contour_label: off
+    legend: on
+    legend_title: on
+    legend_text_font_size: 0.4
+    legend_title_text: "Cape Shear [m**2/s**2]"
+    legend_text_colour: black
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+    legend_display_type: continuous
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
