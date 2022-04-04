@@ -10,6 +10,9 @@ recipe:
  - step: add_coastlines_bg
  - step: add_grib
    grib: t2mavg
+   params:
+     grib_automatic_scaling: off
+     grib_scaling_offset: -273.15
  - step: add_contour
    params:
     contour: off

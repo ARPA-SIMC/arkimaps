@@ -10,6 +10,7 @@
   * capeshear (#107)
   * thetaePV (#108)
   * thetae925 (#108)
+  * t2mavg (#109)
 * Nuovi tipi di input (vedere doc/INPUTS.rst per dettagli):
   * groundtomsl
   * expr

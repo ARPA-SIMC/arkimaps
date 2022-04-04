@@ -55,6 +55,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
 | `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/viwve.md) |
 | `wmax`   | Raffica massima vento                          | [wmax.png](wmax.png)   | [wmax.md](../recipes/tiles/wmax.md)   |
+| `t2mavg` | Media giornaliera temperatura a 2 metri dal suolo  | [t2mavg.png](t2mavg.png) | [t2mavg.md](../recipes/t2mavg.md) |
 | `jet`    | Geopotenziale, vento, isotache a 250hPa          | [jet.png](jet.png)     | [jet.md](../recipes/standalone/jet.md)     |
 | `rhw700` | Umidità relativa e vento a 700hPa                | [rhw700.png](rhw700.png) | [rhw700.md](../recipes/standalone/rhw700.md) |
 | `rhw850` | Umidità relativa e vento a 850hPa                | [rhw850.png](rhw850.png) | [rhw850.md](../recipes/standalone/rhw850.md) |
@@ -65,6 +66,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `thetaePV` `thetae850`  | Temperatura equivalente potenziale | [thetaePV.png](thetaePV.png) | [thetaePV.md](../recipes/standalone/thetaePV.md) |
 | `cape` `capecin` | Convective Available Potential Energy, Convective Inhibition (CIN) | [capecin.png](capecin.png) | [capecin.md](../recipes/standalone/capecin.md) |
 | `capeshear` | Convective Available Potential Energy Shear | [capeshear.png](capeshear.png) | [capeshear.md](../recipes/capeshear.md) |
+
 
 # Censimento prodotti attualmente pubblicati su infomet
 
@@ -82,7 +84,6 @@ Nota: la legenda dinamica è una feature richiesta per non mostrare un range tro
 | ----- | -------------- | --------- | ------- |
 | rain | Precipitazione totale (passi 1,3,6,12,24h) (#38)  | Preci tot cum(al suolo), Preci nev cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 24h), cosmo1 CH (solo 3h), ifs (ita) (no 1h), ifs (atl) (no 1, 3h) |
 | thom | Indice di disagio-bioclimatico di Thom (#105) | Indice di Thom | cosmo 5M |
-|      | Temperatura media giornaliera (#109) | media temperatura a 2m | cosmo 5M, ifs (ita)  |
 
 ## Opzionali, complessi, a bassa priorità
 
@@ -141,3 +142,4 @@ I prodotti che seguono hanno preprocessing particolarmente complesso dedicato:
 | 2PV  | tetaE alla 2 PV   | TetaE + Vento + Pressione | ifs (ita), ifs (atl) |
 | cape | CAPE+CIN Nord Italia | C.A.P.E. (j/Kg), energia potenziale | cosmo 5M, cosmo 5I backup, cosmo 2I, cosmo 2I RUC |
 | cape | Cape Italia          | C.A.P.E. (j/Kg)                     | cosmo 5M, cosmo1 CH (area: nord italia), ifs (ita), ifs (atl) |
+|      | Temperatura media giornaliera | media temperatura a 2m | cosmo 5M, ifs (ita)  |
