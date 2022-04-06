@@ -13,7 +13,8 @@ recipe:
      wind_flag_cross_boundary: off
      wind_arrow_unit_velocity: 12.5
      wind_arrow_calm_indicator: off
-     wind_thinning_factor: 2
+     wind_thinning_method: automatic
+     wind_thinning_factor: 1
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries

@@ -67,7 +67,8 @@ With arguments:
     "wind_flag_length": 0.8,
     "wind_flag_origin_marker": false,
     "wind_flag_cross_boundary": true,
-    "wind_thinning_factor": 2
+    "wind_thinning_method": "automatic",
+    "wind_thinning_factor": 1
   }
 }
 ```
