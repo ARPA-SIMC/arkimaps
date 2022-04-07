@@ -4,6 +4,7 @@
   * hzero (#5)
   * vis (#103)
   * cc (#104)
+  * thomindex (#105)
   * kindex (#106)
   * cape (#107)
   * capecin (#107)

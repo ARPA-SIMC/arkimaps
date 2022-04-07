@@ -8,9 +8,7 @@ inputs:
   thomindex:
     type: expr
     inputs: [t2m, wb]
-    expr: thomindex = ( 0.4 * ( t2m - 273.15 + wb - 273.15 ) ) + 4.8
-    mgrib:
-      grib_automatic_scaling: off
+    expr: thomindex = ( 0.4 * ( t2m - 273.15 + wb - 273.15 ) ) + 4.8 + 273.15
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
