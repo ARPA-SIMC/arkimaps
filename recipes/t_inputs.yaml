@@ -39,3 +39,10 @@ inputs:
   - model: ifs 
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,925
     eccodes: centre == 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 925
+ t1000:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,11;level:GRIB1,100,1000
+    eccodes: centre != 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 1000
+  - model: ifs
+    arkimet: product:GRIB1,98,128,130;level:GRIB1,100,1000
+    eccodes: centre == 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 1000

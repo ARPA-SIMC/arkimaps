@@ -1,0 +1,43 @@
+---
+description: Thom discomfort index
+inputs:
+  wb:
+    type: vg6d_transform
+    args: ["--rounding","--output-variable-list=B12102"]
+    inputs: [t2m, 2d, p1000]
+  thomindex:
+    type: expr
+    inputs: [t2m, wb]
+    expr: thomindex = ( 0.4 * ( t2m - 273.15 + wb - 273.15 ) ) + 4.8
+    mgrib:
+      grib_automatic_scaling: off
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: thomindex
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: [ "cyan", "green", "yellow", "orange", "red", "rust" ]
+    contour_level_list: [ 0, 21, 24, 27, 29, 32, 50 ]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_title: on
+    legend_text_font_size: 0.4
+    legend_title_text: "Thom discomfort index"
+    legend_text_colour: black
+    legend_title_font_size: 0.5
+    legend_display_type: continuous
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
