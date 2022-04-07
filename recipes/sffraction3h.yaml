@@ -4,9 +4,9 @@ inputs:
  sffraction:
    type: expr
    inputs: [tpdec3h, snowdec3h]
-   expr: sffraction = snowdec3h[snowdec3h != 0] * 100 / tpdec3h[snowdec3h != 0]
-   # grib_set:
-   #   shortName: ??
+   expr: sffraction = snowdec3h[snowdec3h != 0] * 100 / tpdec3h[tpdec3h != 0]
+   grib_set:
+     shortName: tp
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
