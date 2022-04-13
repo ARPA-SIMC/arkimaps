@@ -1,4 +1,4 @@
-# Novità nella versione (unreleased) :
+# Novità nella versione 0.8
 
 * Nuovi prodotti (vedere doc/prodotti/README.md per dettagli) :
   * hzero (#5)

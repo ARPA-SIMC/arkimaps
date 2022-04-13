@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        0.7
+Version:        0.8
 Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
@@ -84,6 +84,24 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed Apr 13 2022 Daniele Branchini <dbranchini@arpae.it> - 0.8-1
+- Nuovi prodotti (vedere doc/prodotti/README.md per dettagli) :
+  hzero (#5)
+  vis (#103)
+  cc (#104)
+  thomindex (#105)
+  kindex (#106)
+  cape (#107)
+  capecin (#107)
+  capeshear (#107)
+  thetaePV (#108)
+  thetae925 (#108)
+  t2mavg (#109)
+- Nuovi tipi di input (vedere doc/INPUTS.rst per dettagli):
+  groundtomsl
+  expr
+  average
+- Estesa documentazione
 * Thu Mar 17 2022 Daniele Branchini <dbranchini@arpae.it> - 0.7-1
 - Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :
   rhw700/850/900 (#94), jet (#93), wmaxw10m, sf, mslpw10m (#95), w10mbeaufort (#96)
