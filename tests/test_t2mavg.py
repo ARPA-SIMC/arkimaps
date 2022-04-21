@@ -16,7 +16,11 @@ class T2MAVGMixin:
 
         self.assertRenders(orders[0], step=24)
 
-        self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
+        self.assertMgribArgsEqual(orders[0], cosmo={
+                'grib_automatic_scaling': False, 'grib_scaling_offset': -273.15,
+            }, ifs={
+                'grib_automatic_scaling': False, 'grib_scaling_offset': -273.15,
+            })
 
 
 add_recipe_test_cases(__name__, "t2mavg")
