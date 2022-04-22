@@ -5,7 +5,7 @@ inputs:
    type: expr
    inputs: [tpdec3h, snowdec3h]
    expr: |
-           snowdec3h[tpdec3h == 0] = 0
+           snowdec3h[tpdec3h <= 0.5] = 0
            tpdec3h[tpdec3h == 0] = 1
            sffraction = snowdec3h * 100 / tpdec3h
            sffraction.clip(0, 100, out=sffraction)
