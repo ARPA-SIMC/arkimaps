@@ -1,0 +1,28 @@
+---
+description: Snow fraction 6h
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: sffraction6h
+ - step: add_contour
+   params:
+    contour_shade: off
+    contour: on
+    contour_level_selection_type: interval
+    contour_line_colour: red
+    contour_line_style: dot
+    contour_line_thickness: 2
+    contour_label_height: 0.40
+    contour_highlight: off
+    contour_label: on
+    contour_min_level: 25.0
+    contour_max_level: 100.0
+    contour_interval: 25.
+    legend: off
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

@@ -1,11 +1,11 @@
-# tp1h: Total precipitation 1h
+# tiles/tp3h: Total precipitation 3h
 
 Mixer: **default**
 
 ## Inputs
 
-* **tpdec1h**:
-    * **Decumulation step**: 1
+* **tpdec3h**:
+    * **Decumulation step**: 3
     * **Preprocessing**: decumulate
     * **Inputs**: tp
 * **tp**:
@@ -44,7 +44,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "tpdec1h"
+  "grib": "tpdec3h"
 }
 ```
 

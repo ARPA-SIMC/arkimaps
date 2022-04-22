@@ -1,11 +1,14 @@
-# tp12h: Total precipitation 12h
+# tiles/sffraction24h: Snow fraction 24h
 
 Mixer: **default**
 
 ## Inputs
 
-* **tpdec12h**:
-    * **Decumulation step**: 12
+* **sffraction24h**:
+    * **Preprocessing**: expr
+    * **Inputs**: tpdec24h, snowdec24h
+* **tpdec24h**:
+    * **Decumulation step**: 24
     * **Preprocessing**: decumulate
     * **Inputs**: tp
 * **tp**:
@@ -15,6 +18,28 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,228`
         * **grib_filter matcher**: `centre == 98 and shortName is "tp"`
+* **snowdec24h**:
+    * Model **cosmo**:
+        * **Decumulation step**: 24
+        * **Preprocessing**: decumulate
+        * **Inputs**: snowcosmo
+    * Model **ifs**:
+        * **Decumulation step**: 24
+        * **Preprocessing**: decumulate
+        * **Inputs**: sf
+* **snowcosmo**:
+    * **Preprocessing**: or
+    * **Inputs**: snowsum, snowgsp
+* **snowsum**:
+    * **vg6d_transform arguments**: --output-variable-list=B13205
+    * **Preprocessing**: vg6d_transform
+    * **Inputs**: snowcon, snowgsp
+* **snowcon**:
+    * **Arkimet matcher**: `product:GRIB1,,2,78`
+    * **grib_filter matcher**: `shortName is "snow_con" or shortName is "snoc"`
+* **snowgsp**:
+    * **Arkimet matcher**: `product:GRIB1,,2,79`
+    * **grib_filter matcher**: `shortName is "snow_gsp" or shortName is "lssf"`
 
 ## Steps
 
@@ -44,7 +69,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "tpdec12h"
+  "grib": "sffraction24h"
 }
 ```
 
@@ -56,52 +81,19 @@ With arguments:
 ```
 {
   "params": {
-    "contour": "off",
-    "contour_highlight": "off",
-    "contour_hilo": "off",
-    "contour_label": "off",
-    "contour_level_selection_type": "level_list",
-    "contour_shade": "on",
-    "contour_shade_colour_method": "list",
-    "contour_shade_method": "area_fill",
-    "contour_shade_min_level": 0.5,
-    "contour_level_list": [
-      1.0,
-      2.0,
-      5.0,
-      10.0,
-      20.0,
-      30.0,
-      50.0,
-      70.0,
-      100.0,
-      150.0,
-      200.0,
-      300.0,
-      500.0
-    ],
-    "contour_shade_colour_list": [
-      "rgb( 0.686,1.000,1.000)",
-      "rgb( 0.000,1.000,1.000)",
-      "rgb( 0.447,0.639,1.000)",
-      "rgb( 0.000,0.498,1.000)",
-      "rgb( 0.145,0.000,1.000)",
-      "rgb( 0.145,0.435,0.435)",
-      "rgb( 1.000,1.000,0.000)",
-      "rgb( 1.000,0.498,0.000)",
-      "rgb( 1.000,0.000,0.000)",
-      "rgb(1.000,0.000,1.000)",
-      "rgb(0.615,0.403,0.937)",
-      "rgb(0.5,0.,0.5)"
-    ],
-    "legend": true,
-    "legend_display_type": "continuous",
-    "legend_title": true,
-    "legend_text_colour": "black",
-    "legend_text_font_size": 0.4,
-    "legend_title_font_size": 0.5,
-    "legend_title_text": "Total precipitation [mm]",
-    "legend_automatic_position": "right"
+    "contour_shade": false,
+    "contour": true,
+    "contour_level_selection_type": "interval",
+    "contour_line_colour": "red",
+    "contour_line_style": "dot",
+    "contour_line_thickness": 2,
+    "contour_label_height": 0.4,
+    "contour_highlight": false,
+    "contour_label": true,
+    "contour_min_level": 25.0,
+    "contour_max_level": 100.0,
+    "contour_interval": 25.0,
+    "legend": false
   }
 }
 ```

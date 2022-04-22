@@ -1,11 +1,11 @@
-# tp24h: Total precipitation 24h
+# tiles/tp1h: Total precipitation 1h
 
 Mixer: **default**
 
 ## Inputs
 
-* **tpdec24h**:
-    * **Decumulation step**: 24
+* **tpdec1h**:
+    * **Decumulation step**: 1
     * **Preprocessing**: decumulate
     * **Inputs**: tp
 * **tp**:
@@ -44,7 +44,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "tpdec24h"
+  "grib": "tpdec1h"
 }
 ```
 
@@ -66,6 +66,7 @@ With arguments:
     "contour_shade_method": "area_fill",
     "contour_shade_min_level": 0.5,
     "contour_level_list": [
+      0.5,
       1.0,
       2.0,
       5.0,
@@ -76,9 +77,7 @@ With arguments:
       70.0,
       100.0,
       150.0,
-      200.0,
-      300.0,
-      500.0
+      200.0
     ],
     "contour_shade_colour_list": [
       "rgb( 0.686,1.000,1.000)",
@@ -91,8 +90,7 @@ With arguments:
       "rgb( 1.000,0.498,0.000)",
       "rgb( 1.000,0.000,0.000)",
       "rgb(1.000,0.000,1.000)",
-      "rgb(0.615,0.403,0.937)",
-      "rgb(0.5,0.,0.5)"
+      "rgb(0.615,0.403,0.937)"
     ],
     "legend": true,
     "legend_display_type": "continuous",
