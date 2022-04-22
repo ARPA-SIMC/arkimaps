@@ -8,6 +8,7 @@ inputs:
            snowdec3h[tpdec3h == 0] = 0
            tpdec3h[tpdec3h == 0] = 1
            sffraction = snowdec3h * 100 / tpdec3h
+           sffraction.clip(0, 100, out=sffraction)
    grib_set:
      shortName: tp
 recipe:
