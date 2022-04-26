@@ -2,6 +2,7 @@
 import contextlib
 import datetime
 import os
+import re
 import tempfile
 import unittest
 from typing import List, Optional
@@ -10,8 +11,8 @@ import arkimet
 import numpy
 
 import arkimapslib.inputs
-from arkimapslib.inputs import Instant
-from arkimapslib.pantry import DiskPantry
+from arkimapslib.inputs import Instant, Input
+from arkimapslib.pantry import Pantry, DiskPantry
 
 
 class TestInputs(unittest.TestCase):
@@ -26,6 +27,43 @@ class TestInputs(unittest.TestCase):
             for inp in inputs:
                 pantry.add_input(inp)
             yield pantry
+
+    def add_to_pantry(
+            self,
+            pantry: Pantry,
+            fname: str,
+            instant: Optional[Instant] = None,
+            name: Optional[str] = None):
+        fn_match = re.compile(
+                r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_"
+                r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
+
+        mo = fn_match.match(os.path.basename(fname))
+        if instant is None:
+            instant = Instant(
+                    datetime.datetime.strptime(mo.group("reftime"), "%Y_%m_%d_%H_%M_%S"),
+                    int(mo.group("step")))
+
+        if name is None:
+            name = mo.group("name")
+
+        inp = pantry.inputs.get(name)
+        if inp is None:
+            inp = arkimapslib.inputs.Source(name=name, defined_in=__file__, arkimet="", eccodes="")
+            pantry.add_input(inp)
+
+        testsource = os.path.join("testdata", fname)
+        with open(testsource, "rb") as infd:
+            mds = arkimet.Metadata.read_bundle(infd)
+        self.assertGreater(len(mds), 0)
+
+        data_file = pantry.get_fullname(inp, instant)
+
+        # Write one GRIB to data_file
+        with open(data_file, "wb") as out:
+            out.write(mds[0].data)
+
+        inp.add_instant(instant)
 
     def test_trim(self):
         test = arkimapslib.inputs.Source(name="test", defined_in=__file__, arkimet="", eccodes="")
@@ -88,3 +126,24 @@ class TestInputs(unittest.TestCase):
         z = numpy.array([4, 3, 2, 1])
         hzero = o.apply_clip({"hzero": hzero, "z": z})
         self.assertEqual(hzero.tolist(), [-999, -999, 3, 4])
+
+    def test_model_mix(self):
+        with self.pantry() as pantry:
+            # Inputs from two different models
+            self.add_to_pantry(pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet",
+                               Instant(datetime.datetime(2021, 1, 10), 12))
+            self.add_to_pantry(pantry, "wflags10m/ifs_v_2021_1_10_0_0_0+12.arkimet",
+                               Instant(datetime.datetime(2021, 1, 10), 12))
+
+            # Derived input that could take them both
+            cat = Input.create(name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+            pantry.add_input(cat)
+
+            # Verificare che non è soddisfatto
+            instants = cat.get_instants(pantry)
+
+            self.assertEqual(instants, {})
+
+        # TODO: input di un modello, derivato generico
+        # TODO: verificare che ci sia il nome del modello nell'output
+        ...
