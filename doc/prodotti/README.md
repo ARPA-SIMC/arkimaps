@@ -37,20 +37,9 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `ztw850`| Geopotenziale, temperatura e vento a 850 hPa | [ztw850.png](ztw850.png)               | [ztw850.md](../recipes/standalone/ztw850.md) |
 | `ztw925`| Geopotenziale, temperatura e vento a 925 hPa | [ztw925.png](ztw925.png)               | [ztw925.md](../recipes/standalone/ztw925.md) |
 | `z500t850`| Geopotenziale a 500 hPa, temperatura a 850 hPa | [z500t850.png](z500t850.png)       | [z500t850.md](../recipes/standalone/z500t850.md) |
-| `tp1h`  | Precipitazione totale cumulata su 1h      |           |  [tp1h.md](../recipes/tp1h.md) |
-| `tp3h`  | Precipitazione totale cumulata su 3h      |           |  [tp3h.md](../recipes/tp3h.md) |
-| `tp6h`  | Precipitazione totale cumulata su 6h      |           |  [tp6h.md](../recipes/tp6h.md) |
-| `tp12h` | Precipitazione totale cumulata su 12h     |           |  [tp12h.md](../recipes/tp12h.md) |
-| `tp24h` | Precipitazione totale cumulata su 24h     | [tp24h.png](tp24h.png "Precipitazione totale su 24h")  |  [tp24h.md](../recipes/tp24h.md) |
-| `cp3h`  | Precipitazione convettiva cumulata su 3h  |           |  [cp3h.md](../recipes/cp3h.md) |
-| `cp6h`  | Precipitazione convettiva cumulata su 6h  |           |  [cp6h.md](../recipes/cp6h.md) |
-| `cp12h` | Precipitazione convettiva cumulata su 12h |           |  [cp12h.md](../recipes/cp12h.md) |
-| `cp24h` | Precipitazione convettiva cumulata su 24h | [cp24h.png](cp24h.png "Precipitazione convettiva su 24h")  |  [cp24h.md](../recipes/cp24h.md) |
-| `sf1h`  | Precipitazione nevosa totale cumulata su 1h      |           |  [sf1h.md](../recipes/sf1h.md) |
-| `sf3h`  | Precipitazione nevosa totale cumulata su 3h      |           |  [sf3h.md](../recipes/sf3h.md) |
-| `sf6h`  | Precipitazione nevosa totale cumulata su 6h      |           |  [sf6h.md](../recipes/sf6h.md) |
-| `sf12h` | Precipitazione nevosa totale cumulata su 12h     |           |  [sf12h.md](../recipes/sf12h.md) |
-| `sf24h` | Precipitazione nevosa totale cumulata su 24h     | [sf24h.png](sf24h.png "Precipitazione nevosa totale su 24h")  |  [sf24h.md](../recipes/sf24h.md) |
+| `tp1h` `tp3h` `tp6h` `tp12h` `tp24h` | Precipitazione totale cumulata su 1/3/6/12/24h con frazione nevosa  | [tp24h.png](tp24h.png) | [tp1h.md](../recipes/standalone/tp1h.md) [tp3h.md](../recipes/standalone/tp3h.md) [tp6h.md](../recipes/standalone/tp6h.md) [tp12h.md](../recipes/standalone/tp12h.md) [tp24h.md](../recipes/standalone/tp24h.md) |
+| `cp3h` `cp6h` `cp12h` `cp24h` | Precipitazione convettiva cumulata su 3/6/12/24h | [cp24h.png](cp24h.png)  |  [cp3h.md](../recipes/cp3h.md) [cp6h.md](../recipes/cp6h.md) [cp12h.md](../recipes/cp12h.md) [cp24h.md](../recipes/cp24h.md) |
+| `sf1h` `sf3h` `sf6h` `sf12h` `sf24h` | Precipitazione nevosa totale cumulata su 1/3/6/12/24h     | [sf24h.png](sf24h.png)  |  [sf1h.md](../recipes/sf1h.md) [sf3h.md](../recipes/sf3h.md) [sf6h.md](../recipes/sf6h.md) [sf12h.md](../recipes/sf12h.md) [sf24h.md](../recipes/sf24h.md) |
 | `litota3` | Densità media fulminazioni nelle ultime 3h | [litota3.png](litota3.png "Densità fulminazioni 3h") | [litota3.md](../recipes/litota3.md) |
 | `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
 | `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/viwve.md) |
@@ -71,50 +60,11 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 
 # Censimento prodotti attualmente pubblicati su infomet
 
-Nota: L'elenco che segue riguarda una lista di prodotti di riferimento, non ancora completamente implementati in arkimaps.
+Nota: L'elenco che segue riguarda una lista di prodotti di riferimento sulla piattaforma "infomet" di ARPAE-SIMC
 
 *modelli censiti: cosmo 5M operativo, cosmo 5I backup, cosmo 5M AM, cleps det, cosmo 2I, cosmo 2I ruc, cosmo1ch, ifs_ita010*
 
-Immagini di riferimento dei prodotti nella cartella "prodotti" che contiene anche questo README (output relativo al primo dei modelli citati)
-
-Nota: la legenda dinamica è una feature richiesta per non mostrare un range troppo esteso (stagionalità della temperatura, etc). Un possibile compromesso potrebbe essere calcolare un range min e max sull'intera corsa.
-
-## Lista prodotti da fare
-
-| cod.int. | Prodotto       | Variabili | Modello |
-| ----- | -------------- | --------- | ------- |
-| rain | Precipitazione totale (passi 1,3,6,12,24h) (#38)  | Preci tot cum(al suolo), Preci nev cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 24h), cosmo1 CH (solo 3h), ifs (ita) (no 1h), ifs (atl) (no 1, 3h) |
-
-## Opzionali, complessi, a bassa priorità
-
- - I modelli probabilistici necessiterebbero di mappe multi panel
- - I modelli triorari (cosmo 2I RUC, cosmo 1 CH) avrebbero pannelli di confronto di preci trioraria fra corse 
-
-
-I prodotti che seguono hanno preprocessing particolarmente complesso dedicato:
-
-
-| Prodotto       | Variabili | Modello |
-| -------------- | --------- | ------- |
-| Variazione Z500 12 ore | Variazione Geopotenziale 500hPa (dam/12 ore)   | cosmo 5M |
-| Delta T500 12 ore      | Variazione temperatura 500hPa (°K/12 ore)      | cosmo 5M |
-| LLJ+Jet                | Jet Streak 200 hPa, Low level Jet 925hPa       | cosmo 5M |
-| Shear bassa troposfera | Shear del vento nei primi 3000 metri (m/s)     | cosmo 5M |
-| Shear media troposfera | Shear del vento fra 500 e 925 hPa (m/s)        | cosmo 5M |
-| MCS index              | Mesoscale Convective System Index (n)          | cosmo 5M |
-| Velocità verticale 700 hPa | Velocità verticale (omega) a 700hPa (Pa/s) | cosmo 5M |
-| Lifted index           | Lifted index (n)                               | cosmo 5M |
-| Avvezione termica 700 hPa  | Avvezione termica (°K/s) e Geopotenziale a 700hPa | cosmo 5M |
-| Contenuto totale di vapore | Acqua precipitabile (mm), Vento 850hPa, Vento 500hPa | cosmo 5M, ifs (atl) |
-| Vorticità assoluta a 500 hPa | Vorticità assoluta e Geopotenziale a 500 hPa | cosmo 5M |
-| TetaE 925 hPa          | Temperatura equivalente potenziale a 925hPa        | cosmo 5M |
-| Cape+Shear media troposfera | Surface geopotential (S), Convective Available Potential Energy, mean layer | cosmo 5M |
-| Altezza temperatura bulbo bagnato 0 | Wet Bulb Zero Height (m) | cosmo 5M |
-| Downward CAPE               | Downburst Available Potential Energy | cosmo 5M |
-| Wet Microburst Index        | Wet Microburst Severity Index (WMSI)  | cosmo 5M |
-| Dry Microburst Index        | Dry Microburst Index (DMI) | cosmo 5M |
-
-## Prodotti infomet già implementati
+## Prodotti infomet (già implementati)
 
 | cod.int. | Prodotto       | Variabili | Modello |
 | ----- | -------------- | --------- | ------- |
@@ -131,6 +81,7 @@ I prodotti che seguono hanno preprocessing particolarmente complesso dedicato:
 | mslp | MSLP + vento 10m | Pressione(slm), Vento(10m), Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita), ifs (atl) |
 | beau | Isotache scala Beaufort | Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 5M am, ifs (ita) |
 | vmax | Vento massimo | vmax(10m), Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 2I, , ifs (ita) (triorario) |
+| rain | Precipitazione totale (passi 1,3,6,12,24h)   | Preci tot cum(al suolo), Preci nev cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 24h), cosmo1 CH (solo 3h), ifs (ita) (no 1h), ifs (atl) (no 1, 3h) |
 | neve | Precipitazione nevosa (passi 1,3,6,12,24h)   | Preci nev cum(al suolo)  | cosmo 5M, cosmo 5I backup, cosmo 5M am (solo 6,12,24h), cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 12 e 24h), cosmo1 CH (solo 3h), ifs (ita) (no 3h), ifs (atl) (solo 24h) |
 | conv | Precipitazione convettiva (passi 3,6,12,24h) | Preci conv cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am (solo 6,12h), cleps det, ifs (ita) (no 3h) |
 | nTot | Nuvolosità totale | Copertura nuovolosa totale | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, ifs (ita), ifs (atl) |
