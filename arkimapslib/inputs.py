@@ -815,7 +815,7 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
 @InputTypes.register
 class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
     """
-    Compute show fraction percentage based on formulas documented in #38
+    Compute snow fraction percentage based on formulas documented in #38
 
     It takes two inputs: the first is total precipitation, the second is total
     snow precipitation.

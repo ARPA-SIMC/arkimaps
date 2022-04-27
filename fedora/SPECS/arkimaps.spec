@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -84,7 +84,7 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
-* Wed Apr 27 2022 Daniele Branchini <dbranchini@arpae.it> - 0.9-1
+* Wed Apr 27 2022 Daniele Branchini <dbranchini@arpae.it> - 0.9-2
 - Aggiunto prodotto e input type snow fraction (#38)
 - Aggiunti filtri per calcolare variabili derivate solo da modelli specifici
 - Correzione bug minori

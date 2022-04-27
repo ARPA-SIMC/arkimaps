@@ -1,6 +1,7 @@
 # Novità nella versione 0.9
 
-* Aggiunto prodotto e input type snow fraction (#38)
+* Aggiunto prodotto snow fraction (#38)
+* Aggiunto tipo di input sffraction
 * Aggiunti filtri per calcolare variabili derivate solo da modelli specifici
 * Correzione bug minori
 

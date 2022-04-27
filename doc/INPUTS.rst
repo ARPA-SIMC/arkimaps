@@ -272,9 +272,33 @@ Example::
     grib_set:
       shortName: deg0l
 
+``sffraction``
+--------------
 
+Compute snow fraction percentage on total precipitation.
+
+Given two inputs, assume that:
+
+* the first is total precipitation
+* the second is total snow preciptation
+
+The fraction is calculated only on points with total precipitation >= 0.5mm
+
+The fraction is clipped between 0 and 100.
+
+``grib_set`` is applied if present.
+
+Example::
+
+ sffraction24h:
+   type: sffraction
+   inputs: [tpdec24h, snowdec24h]
+   grib_set:
+     shortName: tp
+
+      
 ``expr``
----------
+--------
 
 given one or more source inputs, generate a new input computing its values
 using an expression between numpy arrays.
