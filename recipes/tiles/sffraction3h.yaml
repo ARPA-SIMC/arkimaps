@@ -5,6 +5,8 @@ recipe:
  - step: add_coastlines_bg
  - step: add_grib
    grib: sffraction3h
+   params:
+     grib_automatic_scaling: off
  - step: add_contour
    params:
     contour_shade: off

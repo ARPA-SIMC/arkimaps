@@ -5,7 +5,7 @@ Mixer: **default**
 ## Inputs
 
 * **sffraction1h**:
-    * **Preprocessing**: expr
+    * **Preprocessing**: sffraction
     * **Inputs**: tpdec1h, snowdec1h
 * **tpdec1h**:
     * **Decumulation step**: 1
@@ -69,7 +69,10 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "sffraction1h"
+  "grib": "sffraction1h",
+  "params": {
+    "grib_automatic_scaling": false
+  }
 }
 ```
 
