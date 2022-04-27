@@ -30,7 +30,8 @@ class SFFRACTION3HMixin:
 
         self.assertRenders(orders[0], step=3)
 
-        self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
+        self.assertMgribArgsEqual(
+                orders[0], cosmo={'grib_automatic_scaling': False}, ifs={'grib_automatic_scaling': False})
 
     def get_snow_preprocessing_log(self) -> List[str]:
         if self.model_name == "ifs":
