@@ -287,6 +287,9 @@ class Source(Input):
         # elements and needs to be truncated
         self.instants_to_truncate: Set[Instant] = set()
 
+    def __repr__(self):
+        return f"Source:{self.model}:{self.name}"
+
     def to_dict(self):
         res = super().to_dict()
         res["arkimet"] = self.arkimet
@@ -505,7 +508,7 @@ class AlignInstantsMixin:
         # Get the steps for each of our inputs
         available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
         for input_name in self.inputs:
-            input_instants = pantry.get_instants(input_name)
+            input_instants = pantry.get_instants(input_name, model=self.model)
             # Intersect the steps to get only those for which we have all inputs
             if available_instants is None:
                 available_instants = {k: [v] for k, v in input_instants.items()}

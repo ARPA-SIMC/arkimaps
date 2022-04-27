@@ -48,8 +48,11 @@ class TestInputs(unittest.TestCase):
             name = mo.group("name")
 
         inp = pantry.inputs.get(name)
-        if inp is None:
-            inp = arkimapslib.inputs.Source(name=name, defined_in=__file__, arkimet="", eccodes="")
+        if inp is not None:
+            inp = [x for x in inp if x.model == mo.group("model")]
+        if not inp:
+            inp = arkimapslib.inputs.Source(
+                    model=mo.group("model"), name=name, defined_in=__file__, arkimet="", eccodes="")
             pantry.add_input(inp)
 
         testsource = os.path.join("testdata", fname)
@@ -127,7 +130,7 @@ class TestInputs(unittest.TestCase):
         hzero = o.apply_clip({"hzero": hzero, "z": z})
         self.assertEqual(hzero.tolist(), [-999, -999, 3, 4])
 
-    def test_model_mix(self):
+    def test_model_mix_allowed(self):
         with self.pantry() as pantry:
             # Inputs from two different models
             self.add_to_pantry(pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet",
@@ -135,15 +138,48 @@ class TestInputs(unittest.TestCase):
             self.add_to_pantry(pantry, "wflags10m/ifs_v_2021_1_10_0_0_0+12.arkimet",
                                Instant(datetime.datetime(2021, 1, 10), 12))
 
-            # Derived input that could take them both
+            # Derived input defined for any model
             cat = Input.create(name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
             pantry.add_input(cat)
 
-            # Verificare che non è soddisfatto
-            instants = cat.get_instants(pantry)
+            # Derived input prerequisites are not satisfied
+            res = cat.get_instants(pantry)
+            self.assertCountEqual(res.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
-            self.assertEqual(instants, {})
+            # Check that the output file is not tagged with the model name
+            input_file = list(res.values())[0]
+            self.assertRegex(input_file.pathname, r"/pantry/uv_")
 
-        # TODO: input di un modello, derivato generico
-        # TODO: verificare che ci sia il nome del modello nell'output
-        ...
+    def test_model_mix_restricted(self):
+        with self.pantry() as pantry:
+            # Inputs from two different models
+            self.add_to_pantry(pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet",
+                               Instant(datetime.datetime(2021, 1, 10), 12))
+            self.add_to_pantry(pantry, "wflags10m/ifs_v_2021_1_10_0_0_0+12.arkimet",
+                               Instant(datetime.datetime(2021, 1, 10), 12))
+
+            # Derived input defined only for cosmo
+            cat = Input.create(model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+            pantry.add_input(cat)
+
+            # Derived input prerequisites are not satisfied
+            self.assertEqual(cat.get_instants(pantry), {})
+
+        with self.pantry() as pantry:
+            # Inputs from two different models
+            self.add_to_pantry(pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet",
+                               Instant(datetime.datetime(2021, 1, 10), 12))
+            self.add_to_pantry(pantry, "wflags10m/cosmo_v_2021_1_10_0_0_0+12.arkimet",
+                               Instant(datetime.datetime(2021, 1, 10), 12))
+
+            # Derived input defined only for cosmo
+            cat = Input.create(model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+            pantry.add_input(cat)
+
+            # Derived input prerequisites are not satisfied
+            res = cat.get_instants(pantry)
+            self.assertCountEqual(res.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
+
+            # Check that the output file is tagged with the model name
+            input_file = list(res.values())[0]
+            self.assertRegex(input_file.pathname, r"/pantry/cosmo_uv_")
