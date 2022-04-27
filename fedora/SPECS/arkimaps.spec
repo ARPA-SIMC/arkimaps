@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        0.8
+Version:        0.9
 Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
@@ -84,6 +84,11 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed Apr 27 2022 Daniele Branchini <dbranchini@arpae.it> - 0.9-1
+- Aggiunto prodotto e input type snow fraction (#38)
+- Aggiunti filtri per calcolare variabili derivate solo da modelli specifici
+- Correzione bug minori
+
 * Wed Apr 13 2022 Daniele Branchini <dbranchini@arpae.it> - 0.8-1
 - Nuovi prodotti (vedere doc/prodotti/README.md per dettagli) :
   hzero (#5)
@@ -102,11 +107,13 @@ Meteo plot generator from grib data postprocessor for arkimet
   expr
   average
 - Estesa documentazione
+
 * Thu Mar 17 2022 Daniele Branchini <dbranchini@arpae.it> - 0.7-1
 - Nuovi prodotti (vedere README.md nella dir doc/prodotti per dettagli) :
   rhw700/850/900 (#94), jet (#93), wmaxw10m, sf, mslpw10m (#95), w10mbeaufort (#96)
 - Migliorata spazializzazione flag vento (#98)
 - Bug fix minori
+
 * Mon Jan 17 2022 Daniele Branchini <dbranchini@arpae.it> - 0.6-2
 - Rimossa dipendenza python3-yapf per centos8
 - Correzioni a ricette geopotenziale per IFS+eccodes
