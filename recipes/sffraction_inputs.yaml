@@ -3,52 +3,27 @@
 description: Snow fraction input definitions
 inputs:
  sffraction1h:
-   type: expr
+   type: sffraction
    inputs: [tpdec1h, snowdec1h]
-   expr: |
-           snowdec1h[tpdec1h <= 0.5] = 0
-           tpdec1h[tpdec1h == 0] = 1
-           sffraction1h = snowdec1h * 100 / tpdec1h
-           sffraction1h.clip(0, 100, out=sffraction1h)
    grib_set:
      shortName: tp
  sffraction3h:
-   type: expr
+   type: sffraction
    inputs: [tpdec3h, snowdec3h]
-   expr: |
-           snowdec3h[tpdec3h <= 0.5] = 0
-           tpdec3h[tpdec3h == 0] = 1
-           sffraction3h = snowdec3h * 100 / tpdec3h
-           sffraction3h.clip(0, 100, out=sffraction3h)
    grib_set:
      shortName: tp
  sffraction6h:
-   type: expr
+   type: sffraction
    inputs: [tpdec6h, snowdec6h]
-   expr: |
-           snowdec6h[tpdec6h <= 0.5] = 0
-           tpdec6h[tpdec6h == 0] = 1
-           sffraction6h = snowdec6h * 100 / tpdec6h
-           sffraction6h.clip(0, 100, out=sffraction6h)
    grib_set:
      shortName: tp
  sffraction12h:
-   type: expr
+   type: sffraction
    inputs: [tpdec12h, snowdec12h]
-   expr: |
-           snowdec12h[tpdec12h <= 0.5] = 0
-           tpdec12h[tpdec12h == 0] = 1
-           sffraction12h = snowdec12h * 100 / tpdec12h
-           sffraction12h.clip(0, 100, out=sffraction12h)
    grib_set:
      shortName: tp
  sffraction24h:
-   type: expr
+   type: sffraction
    inputs: [tpdec24h, snowdec24h]
-   expr: |
-           snowdec24h[tpdec24h <= 0.5] = 0
-           tpdec24h[tpdec24h == 0] = 1
-           sffraction24h = snowdec24h * 100 / tpdec24h
-           sffraction24h.clip(0, 100, out=sffraction24h)
    grib_set:
      shortName: tp

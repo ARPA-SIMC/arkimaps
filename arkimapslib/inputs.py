@@ -812,6 +812,57 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
                 self.add_instant(instant)
 
 
+@InputTypes.register
+class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
+    """
+    Compute show fraction percentage based on formulas documented in #38
+
+    It takes two inputs: the first is total precipitation, the second is total
+    snow precipitation.
+    """
+    NAME = "sffraction"
+
+    def generate(self, pantry: "pantry.DiskPantry"):
+        if len(self.inputs) != 2:
+            raise RuntimeError(f"{self.name} has {len(self.inputs)} inputs instead of 2")
+
+        available_instants = self.align_instants(pantry)
+        if not available_instants:
+            return
+
+        # For each instant, run the expression
+        for instant, input_files in available_instants.items():
+            with GRIB(input_files[0].pathname) as grib_tp:
+                template = grib_tp
+                with GRIB(input_files[1].pathname) as grib_snow:
+                    snow = grib_snow.values
+                    tp = grib_tp.values
+
+                    snow[tp <= 0.5] = 0
+                    tp[tp == 0] = 1
+                    sffraction = snow * 100 / tp
+                    sffraction.clip(0, 100, out=sffraction)
+
+                # Apply clip
+                sffraction = self.apply_clip({self.name: sffraction})
+
+                # Fill the template
+                self.apply_grib_set(template)
+                template.values = sffraction
+
+                # Write output
+                output_name = pantry.get_basename(self, instant)
+                log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
+                output_pathname = os.path.join(pantry.data_root, output_name)
+                with open(output_pathname, "wb") as out:
+                    out.write(template.dumps())
+                pantry.log_input_processing(
+                        self,
+                        "sffraction " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name)
+
+                self.add_instant(instant)
+
+
 class InputFile(NamedTuple):
     """
     An input file stored in the pantry
