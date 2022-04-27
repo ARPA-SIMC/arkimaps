@@ -840,7 +840,7 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
 
                     units = grib_tp.get_string("units")
                     if units == "m":
-                        threshold = 0.5
+                        threshold = 0.0005
                     elif units == "kg m**-2":
                         threshold = 0.5
                     else:
