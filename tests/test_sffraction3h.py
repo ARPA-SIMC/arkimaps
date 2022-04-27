@@ -16,8 +16,8 @@ class SFFRACTION3HMixin:
             # Precipitation decumulation
             ["tpdec3h:Decumulate:vg6d_transform --comp-frac-valid=0 '--comp-step=0 03' --comp-stat-proc=1"
              " --comp-full-steps - tpdec3h-decumulated.grib",
-             f"sffraction:Expr:expr tpdec3h_2021_1_10_0_0_0+3.grib,{self.model_name}_snowdec3h_2021_1_10_0_0_0+3.grib"
-             " sffraction_2021_1_10_0_0_0+3.grib"] +
+             f"sffraction3h:Expr:expr tpdec3h_2021_1_10_0_0_0+3.grib,{self.model_name}_snowdec3h_2021_1_10_0_0_0+3.grib"
+             " sffraction3h_2021_1_10_0_0_0+3.grib"] +
 
             # Snow preprocessing
             self.get_snow_preprocessing_log() +
@@ -43,4 +43,4 @@ class SFFRACTION3HMixin:
         )
 
 
-add_recipe_test_cases(__name__, "sffraction3h")
+add_recipe_test_cases(__name__, "tiles/sffraction3h")

@@ -41,4 +41,4 @@ class TP1HMixin:
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
-add_recipe_test_cases(__name__, "tp1h")
+add_recipe_test_cases(__name__, "tiles/tp1h")
