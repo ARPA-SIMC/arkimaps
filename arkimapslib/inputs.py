@@ -838,7 +838,16 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
                     snow = grib_snow.values
                     tp = grib_tp.values
 
-                    snow[tp <= 0.5] = 0
+                    units = grib_tp.get_string("units")
+                    if units == "m":
+                        threshold = 0.5
+                    elif units == "kg m**-2":
+                        threshold = 0.5
+                    else:
+                        log.warning("Unsupported unit %s for tp input in sffraction processing", units)
+                        threshold = 0.5
+
+                    snow[tp <= threshold] = 0
                     tp[tp == 0] = 1
                     sffraction = snow * 100 / tp
                     sffraction.clip(0, 100, out=sffraction)

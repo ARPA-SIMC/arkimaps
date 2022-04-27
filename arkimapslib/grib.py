@@ -32,6 +32,15 @@ else:
             eccodes.codes_release(self.gid)
             self.fd.close()
 
+        def get_long(self, k: str) -> int:
+            return eccodes.codes_get_long(self.gid, k)
+
+        def get_string(self, k: str) -> str:
+            return eccodes.codes_get_string(self.gid, k)
+
+        def get_double(self, k: str) -> float:
+            return eccodes.codes_get_double(self.gid, k)
+
         def __setitem__(self, k: str, v: Union[int, float, str]):
             try:
                 if isinstance(v, int):
