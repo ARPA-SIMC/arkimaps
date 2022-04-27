@@ -162,7 +162,10 @@ class DiskPantry(Pantry):
             pantry_basename = f"{inp.model}_{inp.name}"
         return f"{self.data_root}/{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
 
-    def get_instants(self, input_name: str) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
+    def get_instants(
+            self,
+            input_name: str,
+            model: Optional[str] = None) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
         """
         Return the instants available in the pantry for the input with the given
         name
@@ -173,6 +176,9 @@ class DiskPantry(Pantry):
 
         res: Dict[Optional[inputs.Instant], "inputs.InputFile"] = {}
         for inp in inps:
+            # Skip inputs for mismatching models (see #114)
+            if model is not None and inp.model is not None and model != inp.model:
+                continue
             instants = inp.get_instants(self)
             for instant, input_file in instants.items():
                 # Keep the first available version for each instant
