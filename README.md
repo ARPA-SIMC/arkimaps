@@ -48,7 +48,9 @@ Per ottenere i parametri arki-query di tutte le ricette attualmente disponibili:
 
 ### Output
 
-L'output è un file `tar` che contiene una directory per ogni recipe name; all'interno di ogni directory è presente un plot per ogni scadenza.
+L'output è un file `tar` che contiene una directory per ogni recipe
+name; all'interno di ogni directory è presente un plot per ogni
+scadenza.
 
 Per spacchettare automaticamente il file tar:
 ```
@@ -57,21 +59,30 @@ Per spacchettare automaticamente il file tar:
 
 #### Ritagli su aree diverse
 
-È possibile usare l'opzione `--flavours` per specificare diverse modalità di output.
+È possibile usare l'opzione `--flavours` per specificare diverse
+modalità di output.
 
 Ad esempio, per plot ritagliati sull'Emilia-Romagna:
 ```
 ./arkimaps process --filter=eccodes --flavours=emro < test.arkimet
 ```
 
-L'elenco completo delle aree implementate è disponibile nella directory [doc/prodotti](../master/doc/prodotti/README.md).
+L'elenco completo delle aree implementate è disponibile nella
+directory [doc/prodotti](../master/doc/prodotti/README.md).
 
-È possibile aggiungere nuove aree modificando il contenuto del file [recipes/flavours/default.yaml](../master/recipes/flavours/default.yaml), vedi oltre alla sezione "Creazione di varianti (flavour) per il rendering".
+È possibile aggiungere nuove aree modificando il contenuto del file
+[recipes/flavours/default.yaml](../master/recipes/flavours/default.yaml),
+vedi oltre alla sezione "Creazione di varianti (flavour) per il
+rendering".
 
 ### Specificare tipologia di prodotti in output
 
-Di default arkimaps produce tutti gli output realizzabili con i dati in input.
-Se si vuole ridurre il numero di prodotti in uscita è possibile copiarsi le sole ricette desiderate dalla cartella `recipes` e puntare alla nuova cartella con l'opzione `--recipes dir`
+Di default arkimaps produce tutti gli output realizzabili con i dati
+in input.  Se si vuole ridurre il numero di prodotti in uscita è
+possibile copiarsi le sole ricette desiderate dalla cartella `recipes`
+e puntare alla nuova cartella con l'opzione `--recipes dir`.  In
+alternativa è possibile filtrare le ricette tramite un flavour (vedere
+oltre alla voce "Creazione di varianti (flavour) per il rendering").
 
 Esempio:
 Ad esempio, per plot ritagliati sull'Emilia-Romagna:
