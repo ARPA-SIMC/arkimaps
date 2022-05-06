@@ -55,9 +55,9 @@ mkdir -p %{buildroot}%{_datadir}/%{name}/recipes
 install -D -m664 recipes/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/
 mkdir -p %{buildroot}%{_datadir}/%{name}/recipes/flavours
 install -D -m664 recipes/flavours/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/flavours/
-mkdir -p %{buildroot}%{_datadir}/%{name}/standalone
+mkdir -p %{buildroot}%{_datadir}/%{name}/recipes/standalone
 install -D -m664 recipes/standalone/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/standalone/
-mkdir -p %{buildroot}%{_datadir}/%{name}/tiles
+mkdir -p %{buildroot}%{_datadir}/%{name}/recipes/tiles
 install -D -m664 recipes/tiles/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/tiles/
 
 #generate recipes doc
