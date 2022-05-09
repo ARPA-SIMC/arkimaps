@@ -54,6 +54,8 @@ class Flavour:
 
         self.recipes_filter: List[re.compile] = []
         if recipes_filter is not None:
+            if not isinstance(recipes_filter, list):
+                raise ValueError(f"{defined_in}: recipes_filter is {type(recipes_filter).__name__} instead of list")
             for expr in recipes_filter:
                 self.recipes_filter.append(
                         re.compile(fnmatch.translate(expr)))
@@ -62,6 +64,9 @@ class Flavour:
         if steps is not None:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)
+
+    def __str__(self):
+        return self.name
 
     @classmethod
     def create(cls,

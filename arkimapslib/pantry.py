@@ -198,7 +198,7 @@ class DiskPantry(Pantry):
                 r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_"
                 r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
         for fn in os.listdir(self.data_root):
-            if fn == "grib_filter_rules" or fn.endswith("-processed"):
+            if fn.endswith("-grib_filter_rules.txt") or fn.endswith("-processed"):
                 continue
 
             mo = fn_match.match(fn)

@@ -2,6 +2,7 @@
 # from __future__ import annotations
 from typing import List
 import argparse
+from collections import defaultdict
 import datetime
 import logging
 import tarfile
@@ -150,6 +151,20 @@ class RenderMixin:
                 # Let the Pantry store processing artifacts if it has any
                 self.kitchen.pantry.store_processing_artifacts(tarout)
 
+    def print_render_plan(self):
+        """
+        Print a list of operations that would be done during rendering
+        """
+        flavours = self.parse_flavours()
+        for flavour in flavours:
+            # List of products that should be rendered
+            orders = self.kitchen.make_orders(flavour=flavour)
+            by_name = defaultdict(list)
+            for order in orders:
+                by_name[order.recipe_name].append(order.instant)
+            for name, instants in by_name.items():
+                print(f"{flavour}: {order.recipe_name}: {len(instants)} instants")
+
 
 class WorkingKitchenMixin:
     """
@@ -292,6 +307,9 @@ class Render(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         parser = super().make_subparser(subparsers)
         parser.add_argument("workdir", metavar="dir", action="store",
                             help="working directory")
+        parser.add_argument("--simulate", action="store_true",
+                            help="print what products would be generated"
+                                 " (note that this will still generate derived inputs)")
         return parser
 
     def __init__(self, *args, **kw):
@@ -304,7 +322,10 @@ class Render(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         """
         Render all recipes for which inputs are available
         """
-        self.render_tarball()
+        if self.args.simulate:
+            self.print_render_plan()
+        else:
+            self.render_tarball()
 
 
 class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
