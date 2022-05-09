@@ -63,6 +63,9 @@ class Flavour:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)
 
+    def __str__(self):
+        return self.name
+
     @classmethod
     def create(cls,
                name: str,
