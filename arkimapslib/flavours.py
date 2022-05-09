@@ -54,6 +54,8 @@ class Flavour:
 
         self.recipes_filter: List[re.compile] = []
         if recipes_filter is not None:
+            if not isinstance(recipes_filter, list):
+                raise ValueError(f"{defined_in}: recipes_filter is {type(recipes_filter).__name__} instead of list")
             for expr in recipes_filter:
                 self.recipes_filter.append(
                         re.compile(fnmatch.translate(expr)))
