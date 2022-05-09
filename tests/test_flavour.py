@@ -50,6 +50,8 @@ class TestFlavour(unittest.TestCase):
 
             # Write recipes definitions
             for name, steps in recipes.items():
+                if "/" in name:
+                    os.makedirs(os.path.join(recipe_dir, os.path.dirname(name)), exist_ok=True)
                 with open(os.path.join(recipe_dir, f"{name}.yaml"), "wt") as fd:
                     yaml.dump({"recipe": steps}, fd)
 
@@ -132,6 +134,25 @@ class TestFlavour(unittest.TestCase):
                           ],
                           recipes={
                               "t2m": [{"step": "add_grib", "grib": "t2m"}],
+                              "tcc": [{"step": "add_grib", "grib": "t2m"}],
+                          }) as kitchen:
+            orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
+            self.assertCountEqual(
+                    [o.basename for o in orders],
+                    ["t2m+012", "tcc+012"])
+
+            orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
+            self.assertCountEqual(
+                    [o.basename for o in orders],
+                    ["t2m+012"])
+
+    def test_recipe_filter_subdir(self):
+        with self.kitchen(flavours=[
+                              flavour("default"),
+                              flavour("test", recipes_filter=["test/t2m"]),
+                          ],
+                          recipes={
+                              "test/t2m": [{"step": "add_grib", "grib": "t2m"}],
                               "tcc": [{"step": "add_grib", "grib": "t2m"}],
                           }) as kitchen:
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
