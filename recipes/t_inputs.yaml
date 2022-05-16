@@ -4,13 +4,16 @@ inputs:
  t2m:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,105,2
-    eccodes: centre != 98 and shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2
+    eccodes: centre != 98 and shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2 and editionNumber = 1
   - model: ifs 
     arkimet: product:GRIB1,98,128,167;level:GRIB1,1
     eccodes: centre == 98 and shortName is "2t" and indicatorOfTypeOfLevel == 1 and level == 0 and timeRangeIndicator == 0
   - model: erg5
     arkimet: product:GRIB2,00200,000,000,000,004,000;level:GRIB2S,103,003,0000001800
     eccodes: shortName is "t" and level == 2
+  - model: icon
+    arkimet: product:GRIB2,00080,000,000,000,015,001;level:GRIB2S,103,000,0000000002
+    eccodes: shortname is "2t" and level == 2 and editionNumber = 2
  t500:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,100,500
