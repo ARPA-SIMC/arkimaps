@@ -25,10 +25,13 @@ inputs:
  2d:
   - model: cosmo
     arkimet: product:GRIB1,,2,17
-    eccodes: centre != 98 and shortName is "2d"
+    eccodes: centre != 98 and shortName is "2d" and editionNumber = 1
   - model: ifs 
     arkimet: product:GRIB1,98,128,168
     eccodes: centre == 98 and shortName is "2d"
+  - model: icon
+    arkimet: product:GRIB2,,000,000,006,015,001
+    eccodes: centre != 98 and shortName is "2d" and editionNumber = 2
  rh2m:
   - model: cosmo
     type: vg6d_transform
@@ -41,6 +44,10 @@ inputs:
   - model: erg5
     arkimet: product:GRIB2,00200,000,001,001,004,000;level:GRIB2S,103,003,0000001800
     eccodes: shortName is "r" and level == 2
+  - model: icon
+    type: vg6d_transform
+    args: ["--output-variable-list=B13003"]
+    inputs: [t2m, 2d]
  p700:
     type: vg6d_transform
     args: ["--comp-var-from-lev", "--trans-level-type=100"]

@@ -54,7 +54,7 @@ inputs:
         grib_automatic_scaling: off
         grib_scaling_factor: 8
   - model: icon
-    arkimet: product:GRIB2,00080,000,006,001,015,001;level:GRIB2S,001,000,0000000000
+    arkimet: product:GRIB2,,000,006,001,015,001;level:GRIB2S,001,000,0000000000
     eccodes: shortname is "clct" and editionNumber = 2
     mgrib:
         grib_automatic_scaling: off
