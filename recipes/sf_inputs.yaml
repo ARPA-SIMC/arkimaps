@@ -9,13 +9,23 @@ inputs:
  snowcon:
    - model: cosmo
      arkimet: product:GRIB1,,2,78
-     eccodes: shortName is "snow_con" or shortName is "snoc"
+     eccodes: shortName is "snoc" or shortName is "snow_con" and editionNumber = 1
+   - model: icon
+     arkimet: product:GRIB2,,000,001,055,015,001
+     eccodes: shortname is "snow_con" and editionNumber = 2
  snowgsp:
    - model: cosmo
      arkimet: product:GRIB1,,2,79
-     eccodes: shortName is "snow_gsp" or shortName is "lssf"
+     eccodes: shortName is "lssf" or shortName is "snow_gsp" and editionNumber = 1
+   - model: icon
+     arkimet: product:GRIB2,,000,001,056,015,001
+     eccodes: shortname is "snow_gsp" and editionNumber = 2
  snowsum:
    - model: cosmo
+     type: vg6d_transform
+     args: ["--output-variable-list=B13205"]
+     inputs: [snowcon, snowgsp]
+   - model: icon
      type: vg6d_transform
      args: ["--output-variable-list=B13205"]
      inputs: [snowcon, snowgsp]
@@ -23,8 +33,15 @@ inputs:
    - model: cosmo
      type: or
      inputs: [snowsum, snowgsp]
+   - model: icon
+     type: or
+     inputs: [snowsum, snowgsp]
  snowdec1h:
    - model: cosmo
+     type: decumulate
+     step: 1
+     inputs: snowcosmo
+   - model: icon
      type: decumulate
      step: 1
      inputs: snowcosmo
@@ -37,12 +54,20 @@ inputs:
      type: decumulate
      step: 3
      inputs: snowcosmo
+   - model: icon
+     type: decumulate
+     step: 3
+     inputs: snowcosmo
    - model: ifs
      type: decumulate
      step: 3
      inputs: sf
  snowdec6h:
    - model: cosmo
+     type: decumulate
+     step: 6
+     inputs: snowcosmo
+   - model: icon
      type: decumulate
      step: 6
      inputs: snowcosmo
@@ -55,12 +80,20 @@ inputs:
      type: decumulate
      step: 12
      inputs: snowcosmo
+   - model: icon
+     type: decumulate
+     step: 12
+     inputs: snowcosmo
    - model: ifs
      type: decumulate
      step: 12
      inputs: sf
  snowdec24h:
    - model: cosmo
+     type: decumulate
+     step: 24
+     inputs: snowcosmo
+   - model: icon
      type: decumulate
      step: 24
      inputs: snowcosmo
