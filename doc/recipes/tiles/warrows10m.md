@@ -15,20 +15,29 @@ Mixer: **default**
         * **Preprocessing**: cat
         * **Inputs**: ws10m, wdir10m
         * **mgrib {k}**: `sd`
+    * Model **icon**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
 * **u10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
-        * **grib_filter matcher**: `centre != 98 and shortName is "10u"`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber = 1`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,165`
         * **grib_filter matcher**: `centre == 98 and shortName is "10u"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,00080,000,002,002,015,001;level:GRIB2S,103,000,0000000010`
+        * **grib_filter matcher**: `centre != 98 and shortname is "10u" and editionNumber = 2`
 * **v10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,105,10`
-        * **grib_filter matcher**: `centre != 98 and shortName is "10v"`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber = 1`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,166`
         * **grib_filter matcher**: `centre == 98 and shortName is "10v"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,00080,000,002,003,015,001;level:GRIB2S,103,000,0000000010`
+        * **grib_filter matcher**: `centre != 98 and shortname is "10v" and editionNumber = 2`
 
 ## Steps
 

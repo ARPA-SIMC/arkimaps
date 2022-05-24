@@ -7,13 +7,16 @@ Mixer: **default**
 * **t2m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
-        * **grib_filter matcher**: `centre != 98 and shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2`
+        * **grib_filter matcher**: `centre != 98 and shortName is "2t" and indicatorOfTypeOfLevel == 105 and timeRangeIndicator == 0 and level == 2 and editionNumber = 1`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,167;level:GRIB1,1`
         * **grib_filter matcher**: `centre == 98 and shortName is "2t" and indicatorOfTypeOfLevel == 1 and level == 0 and timeRangeIndicator == 0`
     * Model **erg5**:
         * **Arkimet matcher**: `product:GRIB2,00200,000,000,000,004,000;level:GRIB2S,103,003,0000001800`
         * **grib_filter matcher**: `shortName is "t" and level == 2`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,000,000,000,015,001;level:GRIB2S,103,000,0000000002`
+        * **grib_filter matcher**: `centre != 98 and shortname is "2t" and level == 2 and editionNumber = 2`
 
 ## Steps
 

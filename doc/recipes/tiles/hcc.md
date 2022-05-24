@@ -10,6 +10,11 @@ Mixer: **default**
         * **grib_filter matcher**: `shortName is "clch"`
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `0.08`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,000,006,022,015,001;level:GRIB2D,100,000,0000000000,100,000,0000040000`
+        * **grib_filter matcher**: `shortname is "ccl" and scaledValueOfFirstFixedSurface == 0 and scaledValueOfSecondFixedSurface == 40000 and editionNumber = 2`
+        * **mgrib {k}**: `False`
+        * **mgrib {k}**: `0.08`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,188`
         * **grib_filter matcher**: `shortName is "hcc"`
