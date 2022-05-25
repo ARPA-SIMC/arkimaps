@@ -26,30 +26,17 @@ Mixer: **default**
         * **Decumulation step**: 24
         * **Preprocessing**: decumulate
         * **Inputs**: snowcosmo
-    * Model **icon**:
-        * **Decumulation step**: 24
-        * **Preprocessing**: decumulate
-        * **Inputs**: snowcosmo
     * Model **ifs**:
         * **Decumulation step**: 24
         * **Preprocessing**: decumulate
         * **Inputs**: sf
 * **snowcosmo**:
-    * Model **cosmo**:
-        * **Preprocessing**: or
-        * **Inputs**: snowsum, snowgsp
-    * Model **icon**:
-        * **Preprocessing**: or
-        * **Inputs**: snowsum, snowgsp
+    * **Preprocessing**: or
+    * **Inputs**: snowsum, snowgsp
 * **snowsum**:
-    * Model **cosmo**:
-        * **vg6d_transform arguments**: --output-variable-list=B13205
-        * **Preprocessing**: vg6d_transform
-        * **Inputs**: snowcon, snowgsp
-    * Model **icon**:
-        * **vg6d_transform arguments**: --output-variable-list=B13205
-        * **Preprocessing**: vg6d_transform
-        * **Inputs**: snowcon, snowgsp
+    * **vg6d_transform arguments**: --output-variable-list=B13205
+    * **Preprocessing**: vg6d_transform
+    * **Inputs**: snowcon, snowgsp
 * **snowcon**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,78`

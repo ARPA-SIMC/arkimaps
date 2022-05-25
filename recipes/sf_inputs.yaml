@@ -21,27 +21,14 @@ inputs:
      arkimet: product:GRIB2,,000,001,056,015,001
      eccodes: shortName is "snow_gsp" and editionNumber == 2
  snowsum:
-   - model: cosmo
-     type: vg6d_transform
-     args: ["--output-variable-list=B13205"]
-     inputs: [snowcon, snowgsp]
-   - model: icon
-     type: vg6d_transform
+   - type: vg6d_transform
      args: ["--output-variable-list=B13205"]
      inputs: [snowcon, snowgsp]
  snowcosmo:
-   - model: cosmo
-     type: or
-     inputs: [snowsum, snowgsp]
-   - model: icon
-     type: or
+   - type: or
      inputs: [snowsum, snowgsp]
  snowdec1h:
    - model: cosmo
-     type: decumulate
-     step: 1
-     inputs: snowcosmo
-   - model: icon
      type: decumulate
      step: 1
      inputs: snowcosmo
@@ -54,20 +41,12 @@ inputs:
      type: decumulate
      step: 3
      inputs: snowcosmo
-   - model: icon
-     type: decumulate
-     step: 3
-     inputs: snowcosmo
    - model: ifs
      type: decumulate
      step: 3
      inputs: sf
  snowdec6h:
    - model: cosmo
-     type: decumulate
-     step: 6
-     inputs: snowcosmo
-   - model: icon
      type: decumulate
      step: 6
      inputs: snowcosmo
@@ -80,20 +59,12 @@ inputs:
      type: decumulate
      step: 12
      inputs: snowcosmo
-   - model: icon
-     type: decumulate
-     step: 12
-     inputs: snowcosmo
    - model: ifs
      type: decumulate
      step: 12
      inputs: sf
  snowdec24h:
    - model: cosmo
-     type: decumulate
-     step: 24
-     inputs: snowcosmo
-   - model: icon
      type: decumulate
      step: 24
      inputs: snowcosmo
