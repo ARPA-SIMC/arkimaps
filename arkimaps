@@ -18,7 +18,7 @@ from arkimapslib.render import Renderer
 # if TYPE_CHECKING:
 from arkimapslib.flavours import Flavour
 
-VERSION = "0.9"
+VERSION = "0.10"
 SYSTEM_RECIPE_DIR = "/usr/share/arkimaps/recipes"
 
 log = logging.getLogger("arkimaps")
