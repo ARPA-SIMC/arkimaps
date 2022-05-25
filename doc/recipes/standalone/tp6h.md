@@ -11,13 +11,13 @@ Mixer: **default**
 * **tp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,61`
-        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber = 1`
+        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 1`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,228`
         * **grib_filter matcher**: `centre == 98 and shortName is "tp"`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,001,052,015,001`
-        * **grib_filter matcher**: `centre != 98 and shortname is "tp" and editionNumber = 2`
+        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2`
 * **sffraction6h**:
     * **Preprocessing**: sffraction
     * **Inputs**: tpdec6h, snowdec6h
@@ -53,17 +53,17 @@ Mixer: **default**
 * **snowcon**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,78`
-        * **grib_filter matcher**: `shortName is "snoc" or shortName is "snow_con" and editionNumber = 1`
+        * **grib_filter matcher**: `( shortName is "snoc" or shortName is "snow_con" ) and editionNumber == 1`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,001,055,015,001`
-        * **grib_filter matcher**: `shortname is "snow_con" and editionNumber = 2`
+        * **grib_filter matcher**: `shortName is "snow_con" and editionNumber == 2`
 * **snowgsp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,79`
-        * **grib_filter matcher**: `shortName is "lssf" or shortName is "snow_gsp" and editionNumber = 1`
+        * **grib_filter matcher**: `( shortName is "lssf" or shortName is "snow_gsp" ) and editionNumber == 1`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,001,056,015,001`
-        * **grib_filter matcher**: `shortname is "snow_gsp" and editionNumber = 2`
+        * **grib_filter matcher**: `shortName is "snow_gsp" and editionNumber == 2`
 
 ## Steps
 

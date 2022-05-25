@@ -11,13 +11,13 @@ Mixer: **default**
 * **tp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,61`
-        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber = 1`
+        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 1`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,228`
         * **grib_filter matcher**: `centre == 98 and shortName is "tp"`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,001,052,015,001`
-        * **grib_filter matcher**: `centre != 98 and shortname is "tp" and editionNumber = 2`
+        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2`
 
 ## Steps
 

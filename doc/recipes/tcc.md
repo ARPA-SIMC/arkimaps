@@ -7,7 +7,7 @@ Mixer: **default**
 * **tcc**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,71`
-        * **grib_filter matcher**: `shortname is "clct" and editionNumber = 1`
+        * **grib_filter matcher**: `shortName is "clct" and editionNumber == 1`
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `0.08`
     * Model **ifs**:
@@ -17,7 +17,7 @@ Mixer: **default**
         * **mgrib {k}**: `8`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,006,001,015,001;level:GRIB2S,001,000,0000000000`
-        * **grib_filter matcher**: `shortname is "clct" and editionNumber = 2`
+        * **grib_filter matcher**: `shortName is "clct" and editionNumber == 2`
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `0.08`
 
