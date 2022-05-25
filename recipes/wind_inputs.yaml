@@ -4,24 +4,24 @@ inputs:
  u10m:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,105,10
-     eccodes: centre != 98 and shortName is "10u" and editionNumber = 1
+     eccodes: centre != 98 and shortName is "10u" and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,165
      eccodes: centre == 98 and shortName is "10u"
    - model: icon
      arkimet: product:GRIB2,00080,000,002,002,015,001;level:GRIB2S,103,000,0000000010
-     eccodes: centre != 98 and shortname is "10u" and editionNumber = 2
+     eccodes: centre != 98 and shortName is "10u" and editionNumber == 2
    
  v10m:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,105,10
-     eccodes: centre != 98 and shortName is "10v" and editionNumber = 1
+     eccodes: centre != 98 and shortName is "10v" and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,166
      eccodes: centre == 98 and shortName is "10v"
    - model: icon
      arkimet: product:GRIB2,00080,000,002,003,015,001;level:GRIB2S,103,000,0000000010
-     eccodes: centre != 98 and shortname is "10v" and editionNumber = 2
+     eccodes: centre != 98 and shortName is "10v" and editionNumber == 2
  ws10m:
    - model: erg5
      arkimet: product:GRIB2,00200, 000, 002, 001, 004, 000;level:GRIB2S,103,003,0000010000

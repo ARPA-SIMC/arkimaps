@@ -10,7 +10,7 @@ inputs:
         grib_scaling_factor: 0.08
   - model: icon
     arkimet: product:GRIB2,,000,006,022,015,001;level:GRIB2D,100,000,0000080000,001,000,0000000000
-    eccodes: shortname is "ccl" and scaledValueOfFirstFixedSurface == 80000 and scaledValueOfSecondFixedSurface == 0 and editionNumber = 2
+    eccodes: shortName is "ccl" and scaledValueOfFirstFixedSurface == 80000 and scaledValueOfSecondFixedSurface == 0 and editionNumber == 2
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08    
@@ -29,7 +29,7 @@ inputs:
         grib_scaling_factor: 0.08
   - model: icon
     arkimet: product:GRIB2,,000,006,022,015,001;level:GRIB2D,100,000,0000040000,100,000,0000080000
-    eccodes: shortname is "ccl" and scaledValueOfFirstFixedSurface == 40000 and scaledValueOfSecondFixedSurface == 80000 and editionNumber = 2
+    eccodes: shortName is "ccl" and scaledValueOfFirstFixedSurface == 40000 and scaledValueOfSecondFixedSurface == 80000 and editionNumber == 2
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08    
@@ -48,7 +48,7 @@ inputs:
         grib_scaling_factor: 0.08
   - model: icon
     arkimet: product:GRIB2,,000,006,022,015,001;level:GRIB2D,100,000,0000000000,100,000,0000040000
-    eccodes: shortname is "ccl" and scaledValueOfFirstFixedSurface == 0 and scaledValueOfSecondFixedSurface == 40000 and editionNumber = 2
+    eccodes: shortName is "ccl" and scaledValueOfFirstFixedSurface == 0 and scaledValueOfSecondFixedSurface == 40000 and editionNumber == 2
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08    
@@ -61,7 +61,7 @@ inputs:
  tcc:
   - model: cosmo
     arkimet: product:GRIB1,,2,71
-    eccodes: shortname is "clct" and editionNumber = 1
+    eccodes: shortName is "clct" and editionNumber == 1
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
@@ -73,7 +73,7 @@ inputs:
         grib_scaling_factor: 8
   - model: icon
     arkimet: product:GRIB2,,000,006,001,015,001;level:GRIB2S,001,000,0000000000
-    eccodes: shortname is "clct" and editionNumber = 2
+    eccodes: shortName is "clct" and editionNumber == 2
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08

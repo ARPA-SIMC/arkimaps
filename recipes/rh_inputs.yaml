@@ -25,13 +25,13 @@ inputs:
  2d:
   - model: cosmo
     arkimet: product:GRIB1,,2,17
-    eccodes: centre != 98 and shortName is "2d" and editionNumber = 1
+    eccodes: centre != 98 and shortName is "2d" and editionNumber == 1
   - model: ifs 
     arkimet: product:GRIB1,98,128,168
     eccodes: centre == 98 and shortName is "2d"
   - model: icon
     arkimet: product:GRIB2,,000,000,006,015,001
-    eccodes: centre != 98 and shortName is "2d" and editionNumber = 2
+    eccodes: centre != 98 and shortName is "2d" and editionNumber == 2
  rh2m:
   - model: cosmo
     type: vg6d_transform

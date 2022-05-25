@@ -4,13 +4,13 @@ inputs:
  mslp:
   - model: cosmo
     arkimet: product:GRIB1,,2,2
-    eccodes: shortName is "pmsl" and editionNumber = 1
+    eccodes: shortName is "pmsl" and editionNumber == 1
   - model: ifs
     arkimet: product:GRIB1,98,128,151
     eccodes: shortName is "msl"
   - model: icon
     arkimet: product:GRIB2,00080,000,003,001,015,001;level:GRIB2S,101,000,0000000000
-    eccodes: shortname is "pmsl" and editionNumber = 2
+    eccodes: shortName is "pmsl" and editionNumber == 2
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
