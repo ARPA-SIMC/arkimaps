@@ -1,3 +1,9 @@
+# Novità nella versione 0.10
+
+* Aggiunti prodotti grib2 (t2m, uv10m, mslp, tp, 2d/rh2m, cc, sf)
+* Aggiunta area `ita_small`
+* Verifica formato `recipes_filter` per i flavour (#116)
+
 # Novità nella versione 0.9
 
 * Aggiunto prodotto snow fraction (#38)

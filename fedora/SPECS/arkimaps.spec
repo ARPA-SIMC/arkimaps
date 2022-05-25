@@ -1,9 +1,9 @@
-%global releaseno 3
+%global releaseno 1
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        0.9
+Version:        0.10
 Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
@@ -88,6 +88,11 @@ Meteo plot generator from grib data postprocessor for arkimet
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed May 25 2022 Daniele Branchini <dbranchini@arpae.it> - 0.10-1
+- Aggiunti prodotti grib2 (t2m, uv10m, mslp, tp, 2d/rh2m, cc, sf)
+- Aggiunta area `ita_small`
+- Verifica formato `recipes_filter` per i flavour (#116)
+
 * Fri May  6 2022 Daniele Branchini <dbranchini@arpae.it> - 0.9-3
 - included standalone and tiles recipes subdir
 
