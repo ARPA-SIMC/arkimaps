@@ -58,6 +58,8 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `cape` `capecin` | Convective Available Potential Energy, Convective Inhibition (CIN) | [capecin.png](capecin.png) | [capecin.md](../recipes/standalone/capecin.md) |
 | `capeshear` | Convective Available Potential Energy Shear | [capeshear.png](capeshear.png) | [capeshear.md](../recipes/capeshear.md) |
 | `sst`    | Temperatura superficiale del mare              | [sst.png](sstm.png) | [sst.md](../recipes/sst.md) |
+| `tcw`    | Contenuto totale acqueo                        | [tcw.png](tcw.png)  | [tcw.md](../recipes/tcw.md) |
+| `tcwwind`  | Contenuto totale acqueo e vento a 500hPa e 850hPa | [tcwwind.png](tcwwind.png)  | [tcwwind.md](../recipes/standalone/tcwwind.md) |
 
 # Censimento prodotti attualmente pubblicati su infomet
 
@@ -97,3 +99,4 @@ Nota: L'elenco che segue riguarda una lista di prodotti di riferimento sulla pia
 |      | Temperatura media giornaliera | media temperatura a 2m | cosmo 5M, ifs (ita)  |
 | thom | Indice di disagio-bioclimatico di Thom | Indice di Thom | cosmo 5M |
 | sst  | Temperatura superficiale del mare | temperatura superificiale del mare | ifs (ita) |
+| tcw/tcw  | total column water | total column water + vento a 850 e 500 hPa | ruc (no vento), ifs (ita), ifs (atl) |

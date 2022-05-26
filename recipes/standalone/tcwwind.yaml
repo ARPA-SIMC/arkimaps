@@ -1,0 +1,59 @@
+---
+description: Total column water + wind at 500hPa and 850hPa
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: tcw
+ - step: add_contour
+   params:
+    contour: "off"
+    contour_highlight: "off"
+    contour_hilo: "off"
+    contour_label: "off"
+    contour_level_selection_type: "level_list"
+    contour_shade: "on"
+    contour_shade_colour_method: "list"
+    contour_shade_method: "area_fill"
+    contour_level_list: [ 5, 10, 15, 20, 25, 30, 35, 40, 45, 80 ]
+    contour_shade_colour_list: [ "rgb(0,0.11,0.63)", "rgb(0.08,0.25,1)", "rgb(0.24,0.38,1)",
+            "rgb(0.39,0.5,1)", "cyan", "rgb(1,0.98,0)", "rgb(1,0.85,0.26)",
+            "reddish_orange", "red" ]
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_title_text: "Total column water [mm]"
+    legend_automatic_position: right
+ - step: add_grib
+   grib: uv500
+ - step: add_wind
+   params:
+     wind_arrow_colour: blue
+     wind_arrow_thickness: 1
+     wind_field_type: arrows
+     wind_flag_cross_boundary: off
+     wind_arrow_unit_velocity: 12.5
+     wind_arrow_calm_indicator: off
+     wind_thinning_method: automatic
+     wind_thinning_factor: 1
+ - step: add_grib
+   grib: uv850
+ - step: add_wind
+   params:
+     wind_arrow_colour: red
+     wind_arrow_thickness: 1
+     wind_field_type: arrows
+     wind_flag_cross_boundary: off
+     wind_arrow_unit_velocity: 12.5
+     wind_arrow_calm_indicator: off
+     wind_thinning_method: automatic
+     wind_thinning_factor: 1
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

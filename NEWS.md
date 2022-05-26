@@ -5,6 +5,8 @@
 * Verifica formato `recipes_filter` per i flavour (#116)
 * Nuovi prodotti (vedere doc/prodotti/README.md per dettagli) :
   * sst (sea surface temperature)
+  * tcw (total column water)
+  * tcwwind (total column water + wind 850hPa 500hPa)
 
 # Novità nella versione 0.9
 
