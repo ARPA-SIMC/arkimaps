@@ -3,6 +3,8 @@
 * Aggiunti prodotti grib2 (t2m, uv10m, mslp, tp, 2d/rh2m, cc, sf)
 * Aggiunta area `ita_small`
 * Verifica formato `recipes_filter` per i flavour (#116)
+* Nuovi prodotti (vedere doc/prodotti/README.md per dettagli) :
+  * sst (sea surface temperature)
 
 # Novità nella versione 0.9
 

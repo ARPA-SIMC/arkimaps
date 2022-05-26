@@ -3,6 +3,7 @@
 | Sigla    | Descrizione         | Proiezione          | Bounding box            |
 | -------- | ------------------- | ------------------- | ----------------------- |
 | `ita`    | Italia              | cylindrical         | 50.0N 35.0N 20.0E  2.5E |
+| `ita_small` | Italia (ridotta) | cylindrical         | 48.0N 35.0N 20.0E  5.0E |
 | `emro`   | Emilia-Romagna      | polar_stereographic | 45.2N 43.4N 13.2E  9.0E |
 | `nord`   | Nord Italia         | mercator            | 47.5N 43.0N 15.0E  5.1E |
 | `centro` | Centro Italia       | polar_stereographic | 44.0N 38.5N 19.8E  7.8E |
@@ -56,7 +57,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `thetaePV` `thetae850`  | Temperatura equivalente potenziale | [thetaePV.png](thetaePV.png) | [thetaePV.md](../recipes/standalone/thetaePV.md) |
 | `cape` `capecin` | Convective Available Potential Energy, Convective Inhibition (CIN) | [capecin.png](capecin.png) | [capecin.md](../recipes/standalone/capecin.md) |
 | `capeshear` | Convective Available Potential Energy Shear | [capeshear.png](capeshear.png) | [capeshear.md](../recipes/capeshear.md) |
-
+| `sst`    | Temperatura superficiale del mare              | [sst.png](sstm.png) | [sst.md](../recipes/sst.md) |
 
 # Censimento prodotti attualmente pubblicati su infomet
 
@@ -95,3 +96,4 @@ Nota: L'elenco che segue riguarda una lista di prodotti di riferimento sulla pia
 | cape | Cape Italia          | C.A.P.E. (j/Kg)                     | cosmo 5M, cosmo1 CH (area: nord italia), ifs (ita), ifs (atl) |
 |      | Temperatura media giornaliera | media temperatura a 2m | cosmo 5M, ifs (ita)  |
 | thom | Indice di disagio-bioclimatico di Thom | Indice di Thom | cosmo 5M |
+| sst  | Temperatura superficiale del mare | temperatura superificiale del mare | ifs (ita) |
