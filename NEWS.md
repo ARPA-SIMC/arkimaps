@@ -7,6 +7,7 @@
   * sst (sea surface temperature)
   * tcw (total column water)
   * tcwwind (total column water + wind 850hPa 500hPa)
+  * frzrain (freezing rain)
 
 # Novità nella versione 0.9
 
