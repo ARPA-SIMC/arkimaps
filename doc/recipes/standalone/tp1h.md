@@ -1,4 +1,4 @@
-# standalone/tp1h: Total precipitation 1h
+# standalone/tp1h: Total precipitation 1h + snow fraction + wind 10m
 
 Mixer: **default**
 
@@ -51,6 +51,40 @@ Mixer: **default**
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,001,056,015,001`
         * **grib_filter matcher**: `shortName is "snow_gsp" and editionNumber == 2`
+* **uv10m**:
+    * Model **cosmo**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **ifs**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+    * Model **erg5**:
+        * **Preprocessing**: cat
+        * **Inputs**: ws10m, wdir10m
+        * **mgrib {k}**: `sd`
+    * Model **icon**:
+        * **Preprocessing**: cat
+        * **Inputs**: u10m, v10m
+* **u10m**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber == 1`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,165`
+        * **grib_filter matcher**: `centre == 98 and shortName is "10u"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,00080,000,002,002,015,001;level:GRIB2S,103,000,0000000010`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber == 2`
+* **v10m**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,105,10`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 1`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,166`
+        * **grib_filter matcher**: `centre == 98 and shortName is "10v"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,00080,000,002,003,015,001;level:GRIB2S,103,000,0000000010`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 2`
 
 ## Steps
 
@@ -174,6 +208,37 @@ With arguments:
     "contour_min_level": 25.0,
     "contour_max_level": 100.0,
     "contour_interval": 25.0
+  }
+}
+```
+
+### add_grib
+
+Add a grib file
+
+With arguments:
+```
+{
+  "grib": "uv10m"
+}
+```
+
+### add_wind
+
+Add wind flag rendering of the previous data
+
+With arguments:
+```
+{
+  "params": {
+    "wind_arrow_colour": "black",
+    "wind_arrow_thickness": 1,
+    "wind_field_type": "arrows",
+    "wind_flag_cross_boundary": false,
+    "wind_arrow_unit_velocity": 12.5,
+    "wind_arrow_calm_indicator": false,
+    "wind_thinning_method": "automatic",
+    "wind_thinning_factor": 1
   }
 }
 ```

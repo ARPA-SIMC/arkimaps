@@ -1,4 +1,4 @@
-# standalone/tp12h: Total precipitation 12h
+# standalone/tp12h: Total precipitation 12h + snow fraction
 
 Mixer: **default**
 

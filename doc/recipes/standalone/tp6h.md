@@ -1,4 +1,4 @@
-# standalone/tp6h: Total precipitation 6h
+# standalone/tp6h: Total precipitation 6h + snow fraction
 
 Mixer: **default**
 

@@ -1,5 +1,5 @@
 ---
-description: Total precipitation 24h
+description: Total precipitation 24h + snow fraction
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

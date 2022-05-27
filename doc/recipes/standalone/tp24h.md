@@ -1,4 +1,4 @@
-# standalone/tp24h: Total precipitation 24h
+# standalone/tp24h: Total precipitation 24h + snow fraction
 
 Mixer: **default**
 

@@ -1,5 +1,5 @@
 ---
-description: Total precipitation 1h
+description: Total precipitation 1h + snow fraction + wind 10m
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
@@ -49,6 +49,18 @@ recipe:
     contour_min_level: 25.0
     contour_max_level: 100.0
     contour_interval: 25.
+ - step: add_grib
+   grib: uv10m
+ - step: add_wind
+   params:
+     wind_arrow_colour: black
+     wind_arrow_thickness: 1
+     wind_field_type: arrows
+     wind_flag_cross_boundary: off
+     wind_arrow_unit_velocity: 12.5
+     wind_arrow_calm_indicator: off
+     wind_thinning_method: automatic
+     wind_thinning_factor: 1    
  - step: add_coastlines_fg
  - step: add_grid
  - step: add_boundaries
