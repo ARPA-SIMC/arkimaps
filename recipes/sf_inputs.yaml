@@ -24,51 +24,26 @@ inputs:
    - type: vg6d_transform
      args: ["--output-variable-list=B13205"]
      inputs: [snowcon, snowgsp]
- snowcosmo:
+ snow:
    - type: or
-     inputs: [snowsum, snowgsp]
+     inputs: [sf, snowsum, snowgsp]
  snowdec1h:
-   - model: cosmo
-     type: decumulate
+   - type: decumulate
      step: 1
-     inputs: snowcosmo
-   - model: ifs
-     type: decumulate
-     step: 1
-     inputs: sf
+     inputs: snow
  snowdec3h:
-   - model: cosmo
-     type: decumulate
+   - type: decumulate
      step: 3
-     inputs: snowcosmo
-   - model: ifs
-     type: decumulate
-     step: 3
-     inputs: sf
+     inputs: snow
  snowdec6h:
-   - model: cosmo
-     type: decumulate
+   - type: decumulate
      step: 6
-     inputs: snowcosmo
-   - model: ifs
-     type: decumulate
-     step: 6
-     inputs: sf
+     inputs: snow
  snowdec12h:
-   - model: cosmo
-     type: decumulate
+   - type: decumulate
      step: 12
-     inputs: snowcosmo
-   - model: ifs
-     type: decumulate
-     step: 12
-     inputs: sf
+     inputs: snow
  snowdec24h:
-   - model: cosmo
-     type: decumulate
+   - type: decumulate
      step: 24
-     inputs: snowcosmo
-   - model: ifs
-     type: decumulate
-     step: 24
-     inputs: sf
+     inputs: snow

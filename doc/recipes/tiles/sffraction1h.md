@@ -22,17 +22,15 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB2,,000,001,052,015,001`
         * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2`
 * **snowdec1h**:
-    * Model **cosmo**:
-        * **Decumulation step**: 1
-        * **Preprocessing**: decumulate
-        * **Inputs**: snowcosmo
-    * Model **ifs**:
-        * **Decumulation step**: 1
-        * **Preprocessing**: decumulate
-        * **Inputs**: sf
-* **snowcosmo**:
+    * **Decumulation step**: 1
+    * **Preprocessing**: decumulate
+    * **Inputs**: snow
+* **snow**:
     * **Preprocessing**: or
-    * **Inputs**: snowsum, snowgsp
+    * **Inputs**: sf, snowsum, snowgsp
+* **sf**:
+    * **Arkimet matcher**: `product:GRIB1,98,128,144`
+    * **grib_filter matcher**: `shortName is "sf"`
 * **snowsum**:
     * **vg6d_transform arguments**: --output-variable-list=B13205
     * **Preprocessing**: vg6d_transform
