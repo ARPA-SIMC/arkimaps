@@ -26,8 +26,6 @@ Mixer: **default**
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,6; level:GRIB1,100,250`
         * **grib_filter matcher**: `shortName is "z" and indicatorOfTypeOfLevel == 100 and level == 250 and centre != 98`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.01`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,156; level:GRIB1,100,250`
         * **grib_filter matcher**: `shortName is "gh" and indicatorOfTypeOfLevel == 100 and level == 250 and centre == 98`

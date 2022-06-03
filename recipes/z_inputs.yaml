@@ -1,73 +1,56 @@
 ---
-description: Geopotential input definitions
+description: Geopotential height input definitions
+notes: >
+ for geopotential values Magics applies a default grib_scaling_factor of about 0.0101971621
+ converting the variable to geopotential height
 inputs:
  z250:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,250
     eccodes: shortName is "z" and indicatorOfTypeOfLevel == 100 and level == 250 and centre != 98
-    mgrib:
-       grib_automatic_scaling: off
-       grib_scaling_factor: 0.01
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,250
     eccodes: shortName is "gh" and indicatorOfTypeOfLevel == 100 and level == 250 and centre == 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
-       #grib_scaling_factor: 0.098066
  z500:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,500
     eccodes: shortName is "z" and indicatorOfTypeOfLevel == 100 and level == 500 and centre != 98
-    mgrib:
-       grib_automatic_scaling: off
-       grib_scaling_factor: 0.01
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,500
     eccodes: shortName is "gh" and indicatorOfTypeOfLevel == 100 and level == 500 and centre == 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
-       #grib_scaling_factor: 0.098066
  z700:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,700
     eccodes: shortName is "z" and indicatorOfTypeOfLevel == 100 and level == 700 and centre != 98
-    mgrib:
-       grib_automatic_scaling: off
-       grib_scaling_factor: 0.01
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,700
     eccodes: shortName is "gh" and indicatorOfTypeOfLevel == 100 and level == 700 and centre == 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
-       #grib_scaling_factor: 0.098066
  z850:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,850
     eccodes: shortName is "z" and indicatorOfTypeOfLevel == 100 and level == 850 and centre != 98
-    mgrib:
-       grib_automatic_scaling: off
-       grib_scaling_factor: 0.01
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,850
     eccodes: shortName is "gh" and indicatorOfTypeOfLevel == 100 and level == 850 and centre == 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
-       #grib_scaling_factor: 0.098066
  z925:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,925
     eccodes: shortName is "z" and indicatorOfTypeOfLevel == 100 and level == 925 and centre != 98
-    mgrib:
-       grib_automatic_scaling: off
-       grib_scaling_factor: 0.01
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,925
     eccodes: shortName is "gh" and indicatorOfTypeOfLevel == 100 and level == 925 and centre == 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
-       #grib_scaling_factor: 0.098066
