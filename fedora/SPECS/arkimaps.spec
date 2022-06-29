@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        0.10
+Version:        0.11
 Release:        %{releaseno}%{dist}
 Summary:        Meteo plot generator from grib data
 
@@ -32,7 +32,8 @@ Requires:       python3-eccodes
 %{?fedora:Requires: python3-yapf}
 
 %description
-Meteo plot generator from grib data
+Automated framework to render GRIB1/2 data with ECMWF's Magics,
+using a repository of simple YAML recipes.
 
 %global debug_package %{nil}
 
@@ -81,13 +82,19 @@ Requires: arkimet
 Requires: %{name}
 
 %description -n arkimet-postprocess-%{name}
-Meteo plot generator from grib data postprocessor for arkimet
+Automated framework to render GRIB1/2 data with ECMWF's Magics,
+using a repository of simple YAML recipes.
+Postprocessor for arkimet.
 
 %files -n arkimet-postprocess-%{name}
 %defattr(-,root,root,-)
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed Jun 29 2022 Daniele Branchini <dbranchini@arpae.it> - 0.11-1
+- Added wmax grib2
+- Switching language (and README.md) in English
+
 * Wed May 25 2022 Daniele Branchini <dbranchini@arpae.it> - 0.10-1
 - Aggiunti prodotti grib2 (t2m, uv10m, mslp, tp, 2d/rh2m, cc, sf)
 - Aggiunta area `ita_small`

@@ -1,3 +1,8 @@
+# New in version 0.11
+
+* Added wmax grib2
+* Switching language (and README.md) in English
+
 # Novità nella versione 0.10
 
 * Aggiunti prodotti grib2 (t2m, uv10m, mslp, tp, 2d/rh2m, cc, sf)
