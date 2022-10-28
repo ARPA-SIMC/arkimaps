@@ -1,0 +1,27 @@
+---
+description: Wind speed at 10 metres
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: wspeed10m
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: ["green", "yellow", "orange", "red"]
+    contour_level_list: [13.9, 17.1, 20.6, 24.2, 70.0]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_text_colour: black
+    legend_title: on
+    legend_title_text: 'Wind speed [m/s]'
+    legend_display_type: continuous
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries

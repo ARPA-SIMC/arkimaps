@@ -1,26 +1,13 @@
-# standalone/wmaxw10m: Maximum wind gust speed
+# tiles/w10mbeaufort: Wind at 10 metres Beaufort scale
 
 Mixer: **default**
 
 ## Inputs
 
-* **wmax**:
-    * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187 or GRIB2,00080,000,002,022,015,001`
-    * **grib_filter matcher**: `shortName is "10fg3" or shortName is "vmax_10m"`
-* **uv10m**:
-    * Model **cosmo**:
-        * **Preprocessing**: cat
-        * **Inputs**: u10m, v10m
-    * Model **ifs**:
-        * **Preprocessing**: cat
-        * **Inputs**: u10m, v10m
-    * Model **erg5**:
-        * **Preprocessing**: cat
-        * **Inputs**: ws10m, wdir10m
-        * **mgrib {k}**: `sd`
-    * Model **icon**:
-        * **Preprocessing**: cat
-        * **Inputs**: u10m, v10m
+* **wspeed10m**:
+    * **vg6d_transform arguments**: --output-variable-list=B11002
+    * **Preprocessing**: vg6d_transform
+    * **Inputs**: u10m, v10m
 * **u10m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
@@ -70,7 +57,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "wmax"
+  "grib": "wspeed10m"
 }
 ```
 
@@ -88,56 +75,62 @@ With arguments:
     "contour_shade_colour_method": "list",
     "contour_shade_method": "area_fill",
     "contour_shade_colour_list": [
+      "white",
+      "cyan",
+      "turquoise",
       "green",
+      "avocado",
+      "kelly_green",
       "yellow",
       "orange",
-      "red"
+      "red",
+      "gold",
+      "magenta",
+      "violet",
+      "black"
     ],
     "contour_level_list": [
+      0.0,
+      0.3,
+      1.6,
+      3.4,
+      5.5,
+      8.0,
+      10.8,
       13.9,
-      17.1,
-      20.6,
-      24.2,
-      70.0
+      17.2,
+      20.8,
+      24.5,
+      28.5,
+      32.7,
+      100.0
     ],
     "contour_highlight": false,
     "contour_hilo": false,
     "legend": true,
-    "legend_title": true,
-    "legend_title_text": "Maximum wind gust speed [m/s]",
-    "legend_display_type": "continuous",
-    "legend_automatic_position": "right"
-  }
-}
-```
-
-### add_grib
-
-Add a grib file
-
-With arguments:
-```
-{
-  "grib": "uv10m"
-}
-```
-
-### add_wind
-
-Add wind flag rendering of the previous data
-
-With arguments:
-```
-{
-  "params": {
-    "wind_arrow_colour": "black",
-    "wind_arrow_thickness": 1,
-    "wind_field_type": "arrows",
-    "wind_flag_cross_boundary": false,
-    "wind_arrow_unit_velocity": 12.5,
-    "wind_arrow_calm_indicator": false,
-    "wind_thinning_method": "automatic",
-    "wind_thinning_factor": 1
+    "legend_text_colour": "black",
+    "legend_title": false,
+    "legend_text_composition": "user_text_only",
+    "legend_user_lines": [
+      "0 calma",
+      "1 bava di  vento",
+      "2 brezza leggera",
+      "3 brezza tesa",
+      "4 vento moderato",
+      "5 vento teso",
+      "6 vento fresco",
+      "7 vento forte",
+      "8 burrasca",
+      "9 burrasca forte",
+      "10 tempesta",
+      "11 tempesta violenta",
+      "12 uragano"
+    ],
+    "legend_display_type": "disjoint",
+    "legend_automatic_position": "right",
+    "legend_entry_plot_orientation": "top_bottom",
+    "legend_text_font_size": 0.4,
+    "legend_text_orientation": 0
   }
 }
 ```
@@ -189,6 +182,33 @@ With arguments:
     "map_administrative_boundaries_colour": "#504040",
     "map_administrative_boundaries_style": "solid",
     "map_administrative_boundaries": "on"
+  }
+}
+```
+
+### add_user_boundaries
+
+Add user-defined boundaries from a shapefile
+
+
+### add_geopoints
+
+Add geopoints
+
+
+### add_symbols
+
+Add symbols settings
+
+With arguments:
+```
+{
+  "params": {
+    "symbol_type": "marker",
+    "symbol_marker_index": 15,
+    "legend": "off",
+    "symbol_colour": "black",
+    "symbol_height": 0.28
   }
 }
 ```

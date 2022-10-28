@@ -21,3 +21,45 @@ flavours:
        skip: yes
      add_symbols:
        skip: yes
+ - name: ita_tiles
+   tile:
+     zoom_min: 5
+     zoom_max: 7
+     lat_min: 35.0
+     lat_max: 50.0
+     lon_min: 2.5
+     lon_max: 20.0
+   steps:
+     add_coastlines_bg:
+       skip: yes
+     add_coastlines_fg:
+       skip: yes
+     add_boundaries:
+       skip: yes
+     add_user_boundaries:
+       skip: yes
+     add_geopoints:
+       skip: yes
+     add_symbols:
+       skip: yes
+ - name: ita_small_tiles
+   tile:
+     zoom_min: 5
+     zoom_max: 7
+     lat_min: 35.0
+     lat_max: 48.0
+     lon_min: 5.0
+     lon_max: 20.0
+   steps:
+     add_coastlines_bg:
+       skip: yes
+     add_coastlines_fg:
+       skip: yes
+     add_boundaries:
+       skip: yes
+     add_user_boundaries:
+       skip: yes
+     add_geopoints:
+       skip: yes
+     add_symbols:
+       skip: yes

@@ -1,0 +1,40 @@
+---
+description: Wind at 10 metres Beaufort scale
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: wspeed10m
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: ["white", "cyan", "turquoise", "green", "avocado", "kelly_green",
+                               "yellow", "orange", "red", "gold", "magenta", "violet", "black"]
+    contour_level_list: [0.0, 0.3, 1.6, 3.4, 5.5, 8.0, 10.8, 13.9,
+                        17.2, 20.8, 24.5, 28.5, 32.7, 100.0]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_text_colour: black
+    legend_title: off
+    legend_text_composition: "user_text_only"
+    legend_user_lines: ["0 calma", "1 bava di  vento", "2 brezza leggera", "3 brezza tesa",
+                       "4 vento moderato", "5 vento teso", "6 vento fresco",
+                       "7 vento forte", "8 burrasca", "9 burrasca forte", "10 tempesta",
+                       "11 tempesta violenta", "12 uragano"]
+    #legend_title_text: 'Scala Beaufort'
+    legend_display_type: disjoint
+    legend_automatic_position: right
+    legend_entry_plot_orientation: top_bottom
+    legend_text_font_size: 0.4
+    legend_text_orientation: 0
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

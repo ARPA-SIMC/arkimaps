@@ -1,12 +1,33 @@
-# tiles/wmax: Maximum wind gust speed
+# tiles/wspeed10m: Wind speed at 10 metres
 
 Mixer: **default**
 
 ## Inputs
 
-* **wmax**:
-    * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187 or GRIB2,00080,000,002,022,015,001`
-    * **grib_filter matcher**: `shortName is "10fg3" or shortName is "vmax_10m"`
+* **wspeed10m**:
+    * **vg6d_transform arguments**: --output-variable-list=B11002
+    * **Preprocessing**: vg6d_transform
+    * **Inputs**: u10m, v10m
+* **u10m**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber == 1`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,165`
+        * **grib_filter matcher**: `centre == 98 and shortName is "10u"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,00080,000,002,002,015,001;level:GRIB2S,103,000,0000000010`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber == 2`
+* **v10m**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,105,10`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 1`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,166`
+        * **grib_filter matcher**: `centre == 98 and shortName is "10v"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,00080,000,002,003,015,001;level:GRIB2S,103,000,0000000010`
+        * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 2`
 
 ## Steps
 
@@ -36,7 +57,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "wmax"
+  "grib": "wspeed10m"
 }
 ```
 
@@ -69,8 +90,9 @@ With arguments:
     "contour_highlight": false,
     "contour_hilo": false,
     "legend": true,
+    "legend_text_colour": "black",
     "legend_title": true,
-    "legend_title_text": "Maximum wind gust speed [m/s]",
+    "legend_title_text": "Wind speed [m/s]",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right"
   }

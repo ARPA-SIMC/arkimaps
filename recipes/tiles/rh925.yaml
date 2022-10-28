@@ -1,0 +1,34 @@
+---
+description: Relative humidity at 925hPa
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: rh925
+ - step: add_contour
+   params:
+    contour_shade: on
+    contour_shade_method: area_fill
+    contour_level_selection_type: level_list
+    contour_shade_colour_method: list
+    contour_level_list: [65.0, 80.0, 95.0, 100.0]
+    contour_interpolation_ceiling: 99.9
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_text: "Relative Humidity at 925hPa [%]"
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+    contour_highlight: off
+    contour_label: off
+    contour_hilo: off
+    contour: on
+    contour_shade_colour_list: [green, cyan, blue]
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

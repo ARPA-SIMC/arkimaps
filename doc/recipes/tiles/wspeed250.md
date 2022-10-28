@@ -1,12 +1,27 @@
-# tiles/wmax: Maximum wind gust speed
+# tiles/wspeed250: Wind speed at 250hPa
 
 Mixer: **default**
 
 ## Inputs
 
-* **wmax**:
-    * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187 or GRIB2,00080,000,002,022,015,001`
-    * **grib_filter matcher**: `shortName is "10fg3" or shortName is "vmax_10m"`
+* **wspeed250**:
+    * **vg6d_transform arguments**: --output-variable-list=B11002
+    * **Preprocessing**: vg6d_transform
+    * **Inputs**: u250, v250
+* **u250**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,100,250`
+        * **grib_filter matcher**: `centre != 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 250`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,131;level:GRIB1,100,250`
+        * **grib_filter matcher**: `centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 250`
+* **v250**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,100,250`
+        * **grib_filter matcher**: `centre != 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 250`
+    * Model **ifs**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,132;level:GRIB1,100,250`
+        * **grib_filter matcher**: `centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 250`
 
 ## Steps
 
@@ -36,7 +51,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "wmax"
+  "grib": "wspeed250"
 }
 ```
 
@@ -54,17 +69,17 @@ With arguments:
     "contour_shade_colour_method": "list",
     "contour_shade_method": "area_fill",
     "contour_shade_colour_list": [
-      "green",
       "yellow",
-      "orange",
-      "red"
+      "beige",
+      "gold",
+      "khaki"
     ],
     "contour_level_list": [
-      13.9,
-      17.1,
-      20.6,
-      24.2,
-      70.0
+      35.0,
+      45.0,
+      55.0,
+      65.0,
+      150.0
     ],
     "contour_highlight": false,
     "contour_hilo": false,
@@ -124,6 +139,33 @@ With arguments:
     "map_administrative_boundaries_colour": "#504040",
     "map_administrative_boundaries_style": "solid",
     "map_administrative_boundaries": "on"
+  }
+}
+```
+
+### add_user_boundaries
+
+Add user-defined boundaries from a shapefile
+
+
+### add_geopoints
+
+Add geopoints
+
+
+### add_symbols
+
+Add symbols settings
+
+With arguments:
+```
+{
+  "params": {
+    "symbol_type": "marker",
+    "symbol_marker_index": 15,
+    "legend": "off",
+    "symbol_colour": "black",
+    "symbol_height": 0.28
   }
 }
 ```
