@@ -175,7 +175,7 @@ class TestFlavour(unittest.TestCase):
                           ]}) as kitchen:
             self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
             orders = kitchen.make_orders("test", recipe="test")
-            self.assertEqual(len(orders), 12)
+            self.assertEqual(len(orders), 13)
 
             basemap = self.get_step(orders[0], "add_basemap")
             params = basemap.params["params"]
@@ -232,6 +232,25 @@ class TestFlavour(unittest.TestCase):
             self.assertEqual(params["subpage_y_position"], 0)
             self.assertEqual(params["output_width"], 256)
 
+            # print([s.name for s in orders[12].order_steps])
+            # basemap = self.get_step(orders[12], "add_contour")
+            # params = basemap.params["params"]
+            # print(params)
+            # self.assertTrue(params["test"], 256)
+            # self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
+            # self.assertAlmostEqual(params["subpage_lower_left_longitude"], 11.25)
+            # self.assertAlmostEqual(params["subpage_upper_right_latitude"], 31.9521622)
+            # self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
+            # self.assertAlmostEqual(params["page_x_length"], 6.4)
+            # self.assertAlmostEqual(params["page_y_length"], 6.4)
+            # self.assertAlmostEqual(params["subpage_x_length"], 6.4)
+            # self.assertAlmostEqual(params["subpage_y_length"], 6.4)
+            # self.assertAlmostEqual(params["super_page_x_length"], 6.4)
+            # self.assertAlmostEqual(params["super_page_y_length"], 6.4)
+            # self.assertEqual(params["subpage_x_position"], 0)
+            # self.assertEqual(params["subpage_y_position"], 0)
+            # self.assertEqual(params["output_width"], 256)
+
     def test_tiled1(self):
         with self.kitchen(flavours=[flavour("test", tile={
                                                 "zoom_min": 3, "zoom_max": 5,
@@ -244,7 +263,7 @@ class TestFlavour(unittest.TestCase):
                           ]}) as kitchen:
             self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
             orders = kitchen.make_orders("test", recipe="test")
-            self.assertEqual(len(orders), 4)
+            self.assertEqual(len(orders), 5)
 
             basemap = self.get_step(orders[0], "add_basemap")
             params = basemap.params["params"]
@@ -314,3 +333,25 @@ class TestFlavour(unittest.TestCase):
             self.assertEqual(params["subpage_x_position"], 0)
             self.assertEqual(params["subpage_y_position"], 0)
             self.assertEqual(params["output_width"], 256)
+
+            contour = self.get_step(orders[3], "add_contour")
+            params = contour.params["params"]
+            self.assertNotIn("contour_legend_only", params)
+
+            contour = self.get_step(orders[4], "add_contour")
+            params = contour.params["params"]
+            self.assertEqual(params["contour_legend_only"], "on")
+            # self.assertTrue(params["test"], 256)
+            # self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
+            # self.assertAlmostEqual(params["subpage_lower_left_longitude"], 11.25)
+            # self.assertAlmostEqual(params["subpage_upper_right_latitude"], 31.9521622)
+            # self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
+            # self.assertAlmostEqual(params["page_x_length"], 6.4)
+            # self.assertAlmostEqual(params["page_y_length"], 6.4)
+            # self.assertAlmostEqual(params["subpage_x_length"], 6.4)
+            # self.assertAlmostEqual(params["subpage_y_length"], 6.4)
+            # self.assertAlmostEqual(params["super_page_x_length"], 6.4)
+            # self.assertAlmostEqual(params["super_page_y_length"], 6.4)
+            # self.assertEqual(params["subpage_x_position"], 0)
+            # self.assertEqual(params["subpage_y_position"], 0)
+            # self.assertEqual(params["output_width"], 256)
