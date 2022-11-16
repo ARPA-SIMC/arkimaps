@@ -1,5 +1,5 @@
 ---
-description: Snow fraction 1h
+description: Snow fraction 01h
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

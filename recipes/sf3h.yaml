@@ -1,5 +1,5 @@
 ---
-description: Total snow fall 3h
+description: Total snow fall 03h
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

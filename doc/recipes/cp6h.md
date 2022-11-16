@@ -1,4 +1,4 @@
-# cp6h: Convective precipitation 6h
+# cp6h: Convective precipitation 06h
 
 Mixer: **default**
 

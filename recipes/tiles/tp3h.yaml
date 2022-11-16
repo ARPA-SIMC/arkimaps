@@ -1,5 +1,5 @@
 ---
-description: Total precipitation 3h
+description: Total precipitation 03h
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

@@ -1,4 +1,4 @@
-# tiles/tp1h: Total precipitation 1h
+# tiles/tp1h: Total precipitation 01h
 
 Mixer: **default**
 

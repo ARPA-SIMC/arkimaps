@@ -1,4 +1,4 @@
-# tiles/lcc: Low Cloud Cover
+# tiles/lcc: Cloud cover, low level
 
 Mixer: **default**
 

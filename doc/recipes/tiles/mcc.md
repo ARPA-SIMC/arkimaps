@@ -1,4 +1,4 @@
-# tiles/mcc: Medium Cloud Cover
+# tiles/mcc: Cloud cover, medium level
 
 Mixer: **default**
 

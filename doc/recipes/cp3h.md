@@ -1,4 +1,4 @@
-# cp3h: Convective precipitation 3h
+# cp3h: Convective precipitation 03h
 
 Mixer: **default**
 

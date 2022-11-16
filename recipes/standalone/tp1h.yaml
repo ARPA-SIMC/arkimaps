@@ -1,5 +1,5 @@
 ---
-description: Total precipitation 1h + snow fraction + wind 10m
+description: Total precipitation 01h + snow fraction + wind 10m
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

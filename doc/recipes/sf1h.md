@@ -1,4 +1,4 @@
-# sf1h: Total snow fall 1h
+# sf1h: Total snow fall 01h
 
 Mixer: **default**
 
