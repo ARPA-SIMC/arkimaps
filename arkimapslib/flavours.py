@@ -7,7 +7,7 @@ import os
 import re
 from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set, Tuple
 
-from .steps import StepConfig, Step, StepSkipped
+from .steps import StepConfig, Step, StepSkipped, AddBasemap
 from . import recipes
 from . import orders
 from . import inputs
@@ -338,8 +338,31 @@ class TiledFlavour(Flavour):
                 f"arkimaps.render.{self.name}.{recipe.name}"
                 f"{output_instant.product_suffix()}.legend")
 
+        width_cm = 3
+        height_cm = 21
+
         # Instantiate order steps from recipe steps
         order_steps: List[Step] = []
+
+        # Configure the basemap to be just a canvas for the legend
+        basemap_config = StepConfig("add_basemap", options={
+            "params": {
+                "subpage_frame": "off",
+                "page_x_length": width_cm,
+                "page_y_length": height_cm,
+                "super_page_x_length": width_cm,
+                "super_page_y_length": height_cm,
+                "subpage_x_length": width_cm,
+                "subpage_y_length": height_cm,
+                "subpage_x_position": 0.0,
+                "subpage_y_position": 0.0,
+                "subpage_gutter_percentage": 20.,
+                "page_frame": "off",
+                "page_id_line": "off"
+            },
+        })
+        order_steps.append(AddBasemap("add_basemap", basemap_config, {}, input_files))
+
         for recipe_step in recipe.steps:
             if recipe_step.name not in ("add_grib", "add_contour"):
                 continue
@@ -352,7 +375,17 @@ class TiledFlavour(Flavour):
                         params = {}
                         s.params["params"] = params
                     params["legend"] = "on"
-                    params["contour_legend_only"] = "on"
+                    params["legend_text_font_size"] = '25%'
+                    params["legend_border_thickness"] = 4
+                    params["legend_only"] = "on"
+                    params["legend_box_mode"] = "positional"
+                    params["legend_box_x_position"] = 0.00
+                    params["legend_box_y_position"] = 0.00
+                    params["legend_box_x_length"] = width_cm
+                    params["legend_box_y_length"] = height_cm
+                    params["legend_box_blanking"] = False
+                    params.pop("legeld_title_font_size", None)
+                    params.pop("legeld_automatic_position", None)
             except StepSkipped:
                 logger.debug("%s (skipped)", s.name)
                 continue

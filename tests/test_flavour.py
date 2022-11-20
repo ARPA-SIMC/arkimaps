@@ -338,9 +338,17 @@ class TestFlavour(unittest.TestCase):
             params = contour.params["params"]
             self.assertNotIn("contour_legend_only", params)
 
+            # Legend for tiles
+
+            contour = self.get_step(orders[4], "add_basemap")
+            params = contour.params["params"]
+            self.assertEqual(params["subpage_frame"], "off")
+            self.assertEqual(params["page_frame"], "off")
+            self.assertEqual(params["page_id_line"], "off")
+
             contour = self.get_step(orders[4], "add_contour")
             params = contour.params["params"]
-            self.assertEqual(params["contour_legend_only"], "on")
+            self.assertEqual(params["legend_only"], "on")
             # self.assertTrue(params["test"], 256)
             # self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
             # self.assertAlmostEqual(params["subpage_lower_left_longitude"], 11.25)
