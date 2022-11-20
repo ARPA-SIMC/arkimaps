@@ -384,8 +384,8 @@ class TiledFlavour(Flavour):
                     params["legend_box_x_length"] = width_cm
                     params["legend_box_y_length"] = height_cm
                     params["legend_box_blanking"] = False
-                    params.pop("legeld_title_font_size", None)
-                    params.pop("legeld_automatic_position", None)
+                    params.pop("legend_title_font_size", None)
+                    params.pop("legend_automatic_position", None)
             except StepSkipped:
                 logger.debug("%s (skipped)", s.name)
                 continue
