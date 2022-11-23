@@ -386,11 +386,13 @@ class Derived(Input):
 
 
 class VG6DStatProcMixin:
-    # Arguments to pass to vg6d_transform. {step} will be expanded with string
-    # formatting
-    args: List[str]
-
-    def __init__(self, *, step: int = None, **kw):
+    def __init__(
+            self, *,
+            step: int = None,
+            comp_stat_proc: str,
+            comp_frac_valid: float = 0,
+            comp_full_steps: Optional[bool] = None,
+            **kw):
         if step is None:
             raise RuntimeError("step must be present for 'decumulate' inputs")
         super().__init__(**kw)
@@ -398,6 +400,13 @@ class VG6DStatProcMixin:
         if len(self.inputs) != 1:
             raise RuntimeError(
                     f"input {self.name}: {self.NAME} has inputs {', '.join(self.inputs)} and should have only one")
+        self.comp_stat_proc = comp_stat_proc
+        self.comp_frac_valid = comp_frac_valid
+        self.comp_full_steps: bool
+        if comp_full_steps is not None:
+            self.comp_full_steps = bool(comp_full_steps)
+        else:
+            self.comp_full_steps = (self.step != 24)
 
     def to_dict(self):
         res = super().to_dict()
@@ -434,10 +443,10 @@ class VG6DStatProcMixin:
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 
-        cmd = ["vg6d_transform", f"--comp-step=0 {self.step:02d}"]
-        for a in self.args:
-            cmd.append(a.format(step=self.step))
-        if self.step != 24:
+        cmd = ["vg6d_transform", f"--comp-step=0 {self.step:02d}",
+               f"--comp-stat-proc={self.comp_stat_proc}",
+               f"--comp-frac-valid={self.comp_frac_valid}"]
+        if self.comp_full_steps:
             cmd.append("--comp-full-steps")
         cmd += ["-", decumulated_data]
         v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
@@ -483,7 +492,10 @@ class Decumulate(VG6DStatProcMixin, Derived):
     Decumulate inputs
     """
     NAME = "decumulate"
-    args = ["--comp-stat-proc=1", "--comp-frac-valid=0"]
+
+    def __init__(self, **kw):
+        kw.setdefault("comp_stat_proc", "1")
+        super().__init__(**kw)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -497,7 +509,10 @@ class Average(VG6DStatProcMixin, Derived):
     Average inputs
     """
     NAME = "average"
-    args = ["--comp-stat-proc=254:0", "--comp-frac-valid=0"]
+
+    def __init__(self, **kw):
+        kw.setdefault("comp_stat_proc", "254:0")
+        super().__init__(**kw)
 
     def document(self, file, indent=4):
         ind = " " * indent
