@@ -1,3 +1,9 @@
+# New in version UNRELEASED
+
+* Allow to override `comp_stat_proc`, `comp_frac_valid`, and `comp_full_steps`,
+  in `decumulate` and `average` derived inputs (#112, #122)
+* Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
+
 # New in version 0.11
 
 * Added wmax grib2

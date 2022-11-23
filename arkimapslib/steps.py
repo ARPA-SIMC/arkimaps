@@ -59,6 +59,27 @@ class Step:
         worktop.parts.append(getattr(worktop.macro, macro_name)(**macro_args))
 
     @classmethod
+    def apply_change(cls, data: Dict[str, Any], change: Dict[str, Any]):
+        """
+        Apply the given changeset to data.
+
+        This is using when instantiating derived recipes
+        """
+        for name, value in change.items():
+            if name == "params":
+                old_params = data.get("params")
+                if old_params is None:
+                    old_params = {}
+                    data["params"] = {}
+                for k, v in value.items():
+                    if v is None:
+                        old_params.pop(k, None)
+                    else:
+                        old_params[k] = v
+            else:
+                data[name] = value
+
+    @classmethod
     def compile_args(cls, step_config: StepConfig, args: Kwargs) -> Kwargs:
         """
         Compute the set of arguments for this step, based on flavour

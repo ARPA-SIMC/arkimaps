@@ -43,12 +43,15 @@ class Kitchen:
         for path in paths:
             self.load_recipe_dir(path)
 
+        self.recipes.resolve_derived()
+
     def load_recipe_dir(self, path: str):
         """
         Load recipes from the given directory
         """
         from .inputs import Input
         from .recipes import Recipe
+
         for dirpath, dirnames, fnames in os.walk(path):
             relpath = os.path.relpath(dirpath, start=path)
             for fn in fnames:
@@ -61,7 +64,7 @@ class Kitchen:
                 else:
                     relfn = os.path.join(relpath, fn)
 
-                inputs = recipe.get("inputs")
+                inputs = recipe.pop("inputs", None)
                 if inputs is not None:
                     for name, input_contents in inputs.items():
                         if "_" in name:
@@ -72,7 +75,7 @@ class Kitchen:
                         else:
                             self.pantry.add_input(Input.create(name=name, defined_in=relfn, **input_contents))
 
-                flavours = recipe.get("flavours")
+                flavours = recipe.pop("flavours", None)
                 if flavours is not None:
                     for flavour in flavours:
                         name = flavour.pop("name", None)
@@ -86,13 +89,16 @@ class Kitchen:
                 if "recipe" in recipe:
                     self.recipes.add(Recipe(relfn[:-5], defined_in=relfn, data=recipe))
 
+                if "extends" in recipe:
+                    self.recipes.add_derived(name=relfn[:-5], defined_in=relfn, data=recipe)
+
     def document_recipes(self, path: str):
         """
         Generate markdown documentation for all the recipes found.
 
         Write documentation to the given path
         """
-        for recipe in self.recipes.recipes:
+        for recipe in self.recipes:
             dest = os.path.join(path, recipe.name) + '.md'
             recipe.document(self.pantry, dest)
 
@@ -122,7 +128,7 @@ class WorkingKitchen(Kitchen):
             flavour = self.flavours.get(flavour)
 
         if recipe is None:
-            recipes = self.recipes.recipes
+            recipes = self.recipes
         else:
             recipes = [self.recipes.get(recipe)]
 
@@ -170,7 +176,7 @@ if arkimet is not None:
             empty_flavour = Flavour("default", defined_in=__file__)
             merged = None
             input_names = set()
-            for recipe in self.recipes.recipes:
+            for recipe in self.recipes:
                 input_names.update(empty_flavour.list_inputs_recursive(recipe, self.pantry))
             for input_name in input_names:
                 for inp in self.pantry.inputs[input_name]:
