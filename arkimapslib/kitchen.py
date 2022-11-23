@@ -92,7 +92,7 @@ class Kitchen:
 
         Write documentation to the given path
         """
-        for recipe in self.recipes.recipes:
+        for recipe in self.recipes:
             dest = os.path.join(path, recipe.name) + '.md'
             recipe.document(self.pantry, dest)
 
@@ -122,7 +122,7 @@ class WorkingKitchen(Kitchen):
             flavour = self.flavours.get(flavour)
 
         if recipe is None:
-            recipes = self.recipes.recipes
+            recipes = self.recipes
         else:
             recipes = [self.recipes.get(recipe)]
 
@@ -170,7 +170,7 @@ if arkimet is not None:
             empty_flavour = Flavour("default", defined_in=__file__)
             merged = None
             input_names = set()
-            for recipe in self.recipes.recipes:
+            for recipe in self.recipes:
                 input_names.update(empty_flavour.list_inputs_recursive(recipe, self.pantry))
             for input_name in input_names:
                 for inp in self.pantry.inputs[input_name]:

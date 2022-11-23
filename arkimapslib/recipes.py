@@ -24,6 +24,9 @@ class Recipes:
     def __init__(self):
         self.recipes = []
 
+    def __iter__(self):
+        return self.recipes.__iter__()
+
     def add(self, recipe: "Recipe"):
         """
         Add a recipe to this recipes collection
@@ -110,14 +113,20 @@ class Recipe:
         """
         Create a recipe derived from an existing one
         """
+        # Get list of steps to change
         changes = data.pop("change", {})
+
+        # If elements aren't specified, use those from the parent recipe
         data.setdefault("notes", parent.notes)
         data.setdefault("description", parent.description)
         data.setdefault("mixer", parent.mixer)
+
+        # Build the new list of steps, based on the parent list
         steps: List[Dict[str, Any]] = []
         for recipe_step in parent.steps:
             step = {"step": recipe_step.name, "id": recipe_step.id}
             step.update(recipe_step.args)
+            # Apply changes in step parameters
             if recipe_step.id in changes:
                 step.update(changes[recipe_step.id])
             steps.append(step)
