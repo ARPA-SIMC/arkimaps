@@ -241,11 +241,11 @@ class SimpleFlavour(Flavour):
                     order_steps.append(s)
 
                 res.append(orders.Order(
-                    mixer=recipe.mixer,
+                    flavour=self,
+                    recipe=recipe,
                     input_files=input_files,
                     relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
                     basename=f"{os.path.basename(recipe.name)}+{output_instant.step:03d}",
-                    recipe_name=recipe.name,
                     instant=output_instant,
                     order_steps=order_steps,
                     output_options={},
@@ -392,14 +392,14 @@ class TiledFlavour(Flavour):
             order_steps.append(s)
 
         return orders.Order(
-            mixer=recipe.mixer,
+            flavour=self,
+            recipe=recipe,
             input_files=input_files,
             relpath=(
                 f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
                 f"{recipe.name}_{self.name}+{output_instant.step:03d}/"
             ),
             basename="legend",
-            recipe_name=recipe.name,
             instant=output_instant,
             order_steps=order_steps,
             output_options={
@@ -450,7 +450,8 @@ class TiledFlavour(Flavour):
                             order_steps.append(s)
 
                         res.append(orders.Order(
-                            mixer=recipe.mixer,
+                            flavour=self,
+                            recipe=recipe,
                             input_files=input_files,
                             relpath=(
                                 f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
@@ -458,7 +459,6 @@ class TiledFlavour(Flavour):
                                 f"{z}/{x}/"
                             ),
                             basename=f"{y}",
-                            recipe_name=recipe.name,
                             instant=output_instant,
                             order_steps=order_steps,
                             output_options={

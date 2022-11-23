@@ -1,10 +1,12 @@
 # from __future__ import annotations
-from typing import Dict, List, Optional, Any
+from typing import TYPE_CHECKING, Dict, List, Optional, Any
 import logging
 
-# if TYPE_CHECKING:
-from . import inputs
-from . import steps
+if TYPE_CHECKING:
+    from .flavours import Flavour
+    from .recipes import Recipe
+    from . import inputs
+    from . import steps
 
 
 class Order:
@@ -14,18 +16,18 @@ class Order:
     """
     def __init__(
             self, *,
-            mixer: str,
-            input_files: Dict[str, inputs.InputFile],
+            flavour: "Flavour",
+            recipe: "Recipe",
+            input_files: Dict[str, "inputs.InputFile"],
             relpath: str,
             basename: str,
-            recipe_name: str,
             instant: "inputs.Instant",
-            order_steps: List[steps.Step],
+            order_steps: List["steps.Step"],
             output_options: Dict[str, Any],
             log: logging.Logger,
             ):
         # Name of the Mixer to use
-        self.mixer = mixer
+        self.mixer = recipe.mixer
         # Dict mapping source names to pathnames of GRIB files
         self.input_files = input_files
         # Destination directory inside the output
@@ -33,7 +35,7 @@ class Order:
         # Destination file name (without path or .png extension)
         self.basename = basename
         # Recipe name
-        self.recipe_name = recipe_name
+        self.recipe_name = recipe.name
         # Product instant
         self.instant = instant
         # Output file name, set after the product has been rendered
