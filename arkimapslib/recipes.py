@@ -22,25 +22,28 @@ class Recipes:
     Repository of all known recipes
     """
     def __init__(self):
-        self.recipes = []
+        self.recipes: Dict[str, "Recipe"] = {}
 
     def __iter__(self):
-        return self.recipes.__iter__()
+        return self.recipes.values().__iter__()
 
     def add(self, recipe: "Recipe"):
         """
         Add a recipe to this recipes collection
         """
-        self.recipes.append(recipe)
+        old = self.recipes.get(recipe.name)
+        if old is not None:
+            raise RuntimeError(f"{recipe.name} is defined both in {old.defined_in!r} and in {recipe.defined_in!r}")
+        self.recipes[recipe.name] = recipe
 
     def get(self, name: str):
         """
         Return a recipe by name
         """
-        for r in self.recipes:
-            if r.name == name:
-                return r
-        raise KeyError(f"Recipe `{name}` does not exist")
+        res = self.recipes.get(name)
+        if res is None:
+            raise KeyError(f"Recipe `{name}` does not exist")
+        return res
 
 
 class RecipeStep:
