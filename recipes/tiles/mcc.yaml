@@ -1,5 +1,5 @@
 ---
-description: Medium Cloud Cover
+description: Cloud cover, medium level
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

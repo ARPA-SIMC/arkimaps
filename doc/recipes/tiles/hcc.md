@@ -1,4 +1,4 @@
-# tiles/hcc: High Cloud Cover
+# tiles/hcc: Cloud cover, high level
 
 Mixer: **default**
 

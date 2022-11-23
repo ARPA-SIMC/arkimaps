@@ -1,4 +1,4 @@
-# standalone/tp1h: Total precipitation 1h + snow fraction + wind 10m
+# standalone/tp1h: Total precipitation 01h + snow fraction + wind 10m
 
 Mixer: **default**
 

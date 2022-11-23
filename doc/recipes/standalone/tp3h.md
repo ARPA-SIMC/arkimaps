@@ -1,4 +1,4 @@
-# standalone/tp3h: Total precipitation 3h + snow fraction
+# standalone/tp3h: Total precipitation 03h + snow fraction
 
 Mixer: **default**
 

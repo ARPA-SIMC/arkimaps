@@ -1,5 +1,5 @@
 ---
-description: Convective precipitation 6h
+description: Convective precipitation 06h
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

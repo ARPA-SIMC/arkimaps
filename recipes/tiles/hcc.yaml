@@ -1,5 +1,5 @@
 ---
-description: High Cloud Cover
+description: Cloud cover, high level
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
