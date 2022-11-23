@@ -59,6 +59,26 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r2.steps[0].args, {"grib": "t2mavg"})
         self.assertEqual(r2.steps[1].name, "add_user_boundaries")
 
+    def test_inherit_change_params(self):
+        r1 = Recipe("test", defined_in="test.yaml", data={
+            "recipe": [
+                {"step": "add_basemap", "params": {"a": 1, "b": 2, "c": 3}, "id": "basemap"}
+            ],
+        })
+
+        r2 = Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1, data={
+            "change": {
+                "basemap": {"params": {"b": 3, "c": None}},
+            }
+        })
+
+        self.assertEqual(r2.name, "test1")
+        self.assertEqual(r2.defined_in, "test1.yaml")
+        self.assertEqual(len(r2.steps), 1)
+        self.assertEqual(r2.steps[0].name, "add_basemap")
+        self.assertEqual(r2.steps[0].id, "basemap")
+        self.assertEqual(r2.steps[0].args, {"params": {"a": 1, "b": 3}})
+
 
 class TestRecipes(unittest.TestCase):
     def test_inherit(self):

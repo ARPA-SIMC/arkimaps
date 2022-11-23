@@ -114,6 +114,28 @@ class RecipeStep:
         """
         return self.step.get_input_names(step_config, self.args)
 
+    def derive(self) -> Dict[str, Any]:
+        """
+        Create a raw recipe step definition based on this step
+        """
+        res = dict(self.args)
+        res["step"] = self.name
+        if self.id is not None:
+            res["id"] = self.id
+        return res
+
+    def change(self, change: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Create a raw recipe step definition based on this step, plus the given
+        changeset
+        """
+        res = dict(self.args)
+        self.step.apply_change(res, change)
+        res["step"] = self.name
+        if self.id is not None:
+            res["id"] = self.id
+        return res
+
     def document(self, file: TextIO):
         """
         Document this recipe step
@@ -179,11 +201,10 @@ class Recipe:
         # Build the new list of steps, based on the parent list
         steps: List[Dict[str, Any]] = []
         for recipe_step in parent.steps:
-            step = {"step": recipe_step.name, "id": recipe_step.id}
-            step.update(recipe_step.args)
-            # Apply changes in step parameters
             if recipe_step.id in changes:
-                step.update(changes[recipe_step.id])
+                step = recipe_step.change(changes[recipe_step.id])
+            else:
+                step = recipe_step.derive()
             steps.append(step)
         data["recipe"] = steps
         return Recipe(name, defined_in, data)
