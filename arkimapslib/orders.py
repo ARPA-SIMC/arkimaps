@@ -60,3 +60,12 @@ class Order:
 
     def __repr__(self):
         return self.basename
+
+    @classmethod
+    def summarize_orders(cls, orders: List["Order"]) -> Dict[str, Any]:
+        """
+        Summarize a list of orders into a json-able structure
+        """
+        # TODO: group by flavour and recipe
+        # TODO: group instants by reftime
+        return {}
