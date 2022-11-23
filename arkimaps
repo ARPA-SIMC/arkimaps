@@ -17,6 +17,7 @@ from arkimapslib.render import Renderer
 
 # if TYPE_CHECKING:
 from arkimapslib.flavours import Flavour
+from arkimapslib.orders import Order
 
 VERSION = "0.10"
 SYSTEM_RECIPE_DIR = "/usr/share/arkimaps/recipes"
@@ -127,29 +128,33 @@ class RenderMixin:
         """
         flavours = self.parse_flavours()
 
+        orders: List[Order] = []
+        for flavour in flavours:
+            # List of products that should be rendered
+            orders += self.kitchen.make_orders(flavour=flavour)
+
+        # TODO: summarize orders
+
+        renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
+
         with self.open_output() as tarout:
-            for flavour in flavours:
-                # List of products that should be rendered
-                orders = self.kitchen.make_orders(flavour=flavour)
+            for order in renderer.render(orders):
+                log.info("Rendered %s to %s", order.recipe_name, order.basename)
 
-                renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
-                for order in renderer.render(orders):
-                    log.info("Rendered %s to %s", order.recipe_name, order.basename)
+                # Move the generated image to the output tar
+                tarout.add(
+                    order.output,
+                    os.path.join(os.path.join(order.relpath, order.basename) + ".png"))
+                os.unlink(order.output)
 
-                    # Move the generated image to the output tar
-                    tarout.add(
-                        order.output,
-                        os.path.join(os.path.join(order.relpath, order.basename) + ".png"))
-                    os.unlink(order.output)
+            if self.log_collector.entries:
+                with io.BytesIO(json.dumps(self.log_collector.entries, indent=1).encode()) as buf:
+                    info = tarfile.TarInfo(name="log.json")
+                    info.size = len(buf.getvalue())
+                    tarout.addfile(tarinfo=info, fileobj=buf)
 
-                if self.log_collector.entries:
-                    with io.BytesIO(json.dumps(self.log_collector.entries, indent=1).encode()) as buf:
-                        info = tarfile.TarInfo(name="log.json")
-                        info.size = len(buf.getvalue())
-                        tarout.addfile(tarinfo=info, fileobj=buf)
-
-                # Let the Pantry store processing artifacts if it has any
-                self.kitchen.pantry.store_processing_artifacts(tarout)
+            # Let the Pantry store processing artifacts if it has any
+            self.kitchen.pantry.store_processing_artifacts(tarout)
 
     def print_render_plan(self):
         """
