@@ -43,12 +43,15 @@ class Kitchen:
         for path in paths:
             self.load_recipe_dir(path)
 
+        self.recipes.resolve_derived()
+
     def load_recipe_dir(self, path: str):
         """
         Load recipes from the given directory
         """
         from .inputs import Input
         from .recipes import Recipe
+
         for dirpath, dirnames, fnames in os.walk(path):
             relpath = os.path.relpath(dirpath, start=path)
             for fn in fnames:
@@ -61,7 +64,7 @@ class Kitchen:
                 else:
                     relfn = os.path.join(relpath, fn)
 
-                inputs = recipe.get("inputs")
+                inputs = recipe.pop("inputs", None)
                 if inputs is not None:
                     for name, input_contents in inputs.items():
                         if "_" in name:
@@ -72,7 +75,7 @@ class Kitchen:
                         else:
                             self.pantry.add_input(Input.create(name=name, defined_in=relfn, **input_contents))
 
-                flavours = recipe.get("flavours")
+                flavours = recipe.pop("flavours", None)
                 if flavours is not None:
                     for flavour in flavours:
                         name = flavour.pop("name", None)
@@ -85,6 +88,9 @@ class Kitchen:
 
                 if "recipe" in recipe:
                     self.recipes.add(Recipe(relfn[:-5], defined_in=relfn, data=recipe))
+
+                if "extends" in recipe:
+                    self.recipes.add_derived(name=relfn[:-5], defined_in=relfn, data=recipe)
 
     def document_recipes(self, path: str):
         """

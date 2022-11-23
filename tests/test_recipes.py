@@ -2,10 +2,10 @@
 
 import unittest
 
-from arkimapslib.recipes import Recipe
+from arkimapslib.recipes import Recipe, Recipes
 
 
-class TestRecipes(unittest.TestCase):
+class TestRecipe(unittest.TestCase):
     def test_simple(self):
         r = Recipe("test", defined_in="test.yaml", data={
             "recipe": [
@@ -58,3 +58,44 @@ class TestRecipes(unittest.TestCase):
         self.assertEqual(r2.steps[0].id, "input")
         self.assertEqual(r2.steps[0].args, {"grib": "t2mavg"})
         self.assertEqual(r2.steps[1].name, "add_user_boundaries")
+
+
+class TestRecipes(unittest.TestCase):
+    def test_inherit(self):
+        recipes = Recipes()
+        recipes.add(Recipe("test", defined_in="test.yaml", data={
+            "recipe": [
+                {"step": "add_grib", "grib": "t2m", "id": "input"},
+                {"step": "add_user_boundaries"}
+            ],
+        }))
+
+        recipes.add_derived("test1", defined_in="test1.yaml", data={
+            "extends": "test",
+            "change": {
+                "input": {"grib": "t2mavg"},
+            }
+        })
+
+        recipes.resolve_derived()
+
+        r2 = recipes.get("test1")
+        self.assertEqual(r2.name, "test1")
+        self.assertEqual(r2.defined_in, "test1.yaml")
+        self.assertEqual(len(r2.steps), 2)
+        self.assertEqual(r2.steps[0].name, "add_grib")
+        self.assertEqual(r2.steps[0].id, "input")
+        self.assertEqual(r2.steps[0].args, {"grib": "t2mavg"})
+        self.assertEqual(r2.steps[1].name, "add_user_boundaries")
+
+    def test_loop(self):
+        recipes = Recipes()
+        recipes.add_derived("test1", defined_in="test1.yaml", data={
+            "extends": "test2",
+        })
+        recipes.add_derived("test2", defined_in="test2.yaml", data={
+            "extends": "test1",
+        })
+
+        with self.assertRaises(Exception):
+            recipes.resolve_derived()

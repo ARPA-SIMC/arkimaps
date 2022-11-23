@@ -6,6 +6,7 @@ import os
 from typing import TYPE_CHECKING, Any, Dict, List, Set, TextIO, Type, Optional
 
 from . import steps
+from . import toposort
 
 if TYPE_CHECKING:
     from . import pantry
@@ -23,6 +24,8 @@ class Recipes:
     """
     def __init__(self):
         self.recipes: Dict[str, "Recipe"] = {}
+        # Temporary storage for derived recipes not yet instantiated
+        self.new_derived: Dict[str, Dict[str, Any]] = {}
 
     def __iter__(self):
         return self.recipes.values().__iter__()
@@ -35,6 +38,55 @@ class Recipes:
         if old is not None:
             raise RuntimeError(f"{recipe.name} is defined both in {old.defined_in!r} and in {recipe.defined_in!r}")
         self.recipes[recipe.name] = recipe
+
+    def add_derived(self, name: str, defined_in: str, data: Dict[str, Any]):
+        """
+        Add the definition of a derived recipe to be instantiated later
+        """
+        extends = data.pop("extends", None)
+        if extends is None:
+            raise RuntimeError(f"{name} in {defined_in!r} does not contain an 'extends' entry")
+
+        old = self.recipes.get(name)
+        if old is not None:
+            raise RuntimeError(f"{name} is defined both in {old.defined_in!r} and in {defined_in!r}")
+
+        old_derived = self.new_derived.get(name)
+        if old_derived is not None:
+            raise RuntimeError(f"{name} is defined both in {old_derived['defined_in']!r} and in {defined_in!r}")
+
+        self.new_derived[name] = {
+            "defined_in": defined_in,
+            "extends": extends,
+            "data": data,
+        }
+
+    def resolve_derived(self):
+        """
+        Instantiate all recipes in new_derived
+        """
+        if not self.new_derived:
+            return
+
+        # Sort the postponed recipes topologically, so we can instantiate them
+        # in dependency order
+
+        # Start with the existing recipes, that have no dependencies
+        deps = {name: {} for name in self.recipes.keys()}
+
+        # Add the derived recipes in the queue
+        for name, info in self.new_derived.items():
+            deps[name] = (info["extends"],)
+
+        # Instantiate recipes topologically sorted by dependencies
+        for name in toposort.sort(deps):
+            if name in self.recipes:
+                continue
+
+            info = self.new_derived.pop(name)
+            parent = self.recipes[info["extends"]]
+            recipe = Recipe.inherit(name=name, defined_in=info["defined_in"], parent=parent, data=info["data"])
+            self.recipes[name] = recipe
 
     def get(self, name: str):
         """
