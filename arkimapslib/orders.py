@@ -13,7 +13,7 @@ class Order:
     input files
     """
     def __init__(
-            self,
+            self, *,
             mixer: str,
             input_files: Dict[str, inputs.InputFile],
             relpath: str,
