@@ -3,7 +3,7 @@ import inspect
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Set, TextIO, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Set, TextIO, Type, Optional
 
 from . import steps
 
@@ -44,10 +44,11 @@ class RecipeStep:
     """
     A step of a recipe
     """
-    def __init__(self, name: str, step: Type[steps.Step], args: Kwargs):
+    def __init__(self, name: str, step: Type[steps.Step], args: Kwargs, id: Optional[str] = None):
         self.name = name
         self.step = step
         self.args = args
+        self.id = id
 
     def get_input_names(self, step_config: steps.StepConfig) -> Set[str]:
         """
@@ -101,20 +102,24 @@ class Recipe:
             step_cls = step_collection.get(step)
             if step_cls is None:
                 raise RuntimeError(f"step {step} not found in mixer {self.mixer}")
-            self.steps.append(RecipeStep(step, step_cls, s))
+            id = s.pop("id", None)
+            self.steps.append(RecipeStep(name=step, step=step_cls, args=s, id=id))
 
     @classmethod
     def inherit(self, name: str, defined_in: str, parent: "Recipe", data: 'Kwargs') -> "Recipe":
         """
         Create a recipe derived from an existing one
         """
+        changes = data.pop("change", {})
         data.setdefault("notes", parent.notes)
         data.setdefault("description", parent.description)
         data.setdefault("mixer", parent.mixer)
         steps: List[Dict[str, Any]] = []
         for recipe_step in parent.steps:
-            step = {"step": recipe_step.name}
+            step = {"step": recipe_step.name, "id": recipe_step.id}
             step.update(recipe_step.args)
+            if recipe_step.id in changes:
+                step.update(changes[recipe_step.id])
             steps.append(step)
         data["recipe"] = steps
         return Recipe(name, defined_in, data)

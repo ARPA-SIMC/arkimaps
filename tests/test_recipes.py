@@ -34,4 +34,27 @@ class TestRecipes(unittest.TestCase):
         self.assertEqual(r2.defined_in, "test1.yaml")
         self.assertEqual(len(r2.steps), 2)
         self.assertEqual(r2.steps[0].name, "add_grib")
+        self.assertEqual(r2.steps[0].args, {"grib": "t2m"})
+        self.assertEqual(r2.steps[1].name, "add_user_boundaries")
+
+    def test_inherit_change_args(self):
+        r1 = Recipe("test", defined_in="test.yaml", data={
+            "recipe": [
+                {"step": "add_grib", "grib": "t2m", "id": "input"},
+                {"step": "add_user_boundaries"}
+            ],
+        })
+
+        r2 = Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1, data={
+            "change": {
+                "input": {"grib": "t2mavg"},
+            }
+        })
+
+        self.assertEqual(r2.name, "test1")
+        self.assertEqual(r2.defined_in, "test1.yaml")
+        self.assertEqual(len(r2.steps), 2)
+        self.assertEqual(r2.steps[0].name, "add_grib")
+        self.assertEqual(r2.steps[0].id, "input")
+        self.assertEqual(r2.steps[0].args, {"grib": "t2mavg"})
         self.assertEqual(r2.steps[1].name, "add_user_boundaries")
