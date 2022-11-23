@@ -103,6 +103,22 @@ class Recipe:
                 raise RuntimeError(f"step {step} not found in mixer {self.mixer}")
             self.steps.append(RecipeStep(step, step_cls, s))
 
+    @classmethod
+    def inherit(self, name: str, defined_in: str, parent: "Recipe", data: 'Kwargs') -> "Recipe":
+        """
+        Create a recipe derived from an existing one
+        """
+        data.setdefault("notes", parent.notes)
+        data.setdefault("description", parent.description)
+        data.setdefault("mixer", parent.mixer)
+        steps: List[Dict[str, Any]] = []
+        for recipe_step in parent.steps:
+            step = {"step": recipe_step.name}
+            step.update(recipe_step.args)
+            steps.append(step)
+        data["recipe"] = steps
+        return Recipe(name, defined_in, data)
+
     def __str__(self):
         return self.name
 
