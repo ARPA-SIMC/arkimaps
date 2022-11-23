@@ -68,6 +68,16 @@ class Flavour:
     def __str__(self):
         return self.name
 
+    def summarize(self) -> Dict[str, Any]:
+        """
+        Return a structure describing this Flavour, to use for the render order
+        summary
+        """
+        return {
+            "name": self.name,
+            "defined_in": self.defined_in,
+        }
+
     @classmethod
     def create(cls,
                name: str,
@@ -241,11 +251,11 @@ class SimpleFlavour(Flavour):
                     order_steps.append(s)
 
                 res.append(orders.Order(
-                    mixer=recipe.mixer,
+                    flavour=self,
+                    recipe=recipe,
                     input_files=input_files,
                     relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
                     basename=f"{os.path.basename(recipe.name)}+{output_instant.step:03d}",
-                    recipe_name=recipe.name,
                     instant=output_instant,
                     order_steps=order_steps,
                     output_options={},
@@ -280,6 +290,13 @@ class TiledFlavour(Flavour):
         self.height = 256
         self.width_cm = self.width / 40.
         self.height_cm = self.height / 40.
+
+    def summarize(self) -> Dict[str, Any]:
+        res = super().summarize()
+        for name in ("zoom", "lat", "lon"):
+            res[f"{name}_min"] = getattr(self, f"{name}_min")
+            res[f"{name}_max"] = getattr(self, f"{name}_max")
+        return res
 
     def instantiate_order_step(
             self,
@@ -392,14 +409,14 @@ class TiledFlavour(Flavour):
             order_steps.append(s)
 
         return orders.Order(
-            mixer=recipe.mixer,
+            flavour=self,
+            recipe=recipe,
             input_files=input_files,
             relpath=(
                 f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
                 f"{recipe.name}_{self.name}+{output_instant.step:03d}/"
             ),
             basename="legend",
-            recipe_name=recipe.name,
             instant=output_instant,
             order_steps=order_steps,
             output_options={
@@ -450,7 +467,8 @@ class TiledFlavour(Flavour):
                             order_steps.append(s)
 
                         res.append(orders.Order(
-                            mixer=recipe.mixer,
+                            flavour=self,
+                            recipe=recipe,
                             input_files=input_files,
                             relpath=(
                                 f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
@@ -458,7 +476,6 @@ class TiledFlavour(Flavour):
                                 f"{z}/{x}/"
                             ),
                             basename=f"{y}",
-                            recipe_name=recipe.name,
                             instant=output_instant,
                             order_steps=order_steps,
                             output_options={
