@@ -431,7 +431,7 @@ class VG6DStatProcMixin:
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 
-        cmd = ["vg6d_transform", "--comp-frac-valid=0", f"--comp-step=0 {self.step:02d}"]
+        cmd = ["vg6d_transform", f"--comp-step=0 {self.step:02d}"]
         for a in self.args:
             cmd.append(a.format(step=self.step))
         if self.step != 24:
@@ -480,8 +480,7 @@ class Decumulate(VG6DStatProcMixin, Derived):
     Decumulate inputs
     """
     NAME = "decumulate"
-    comp_stat_proc = "1"
-    args = ["--comp-stat-proc=1"]
+    args = ["--comp-stat-proc=1", "--comp-frac-valid=0"]
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -495,7 +494,7 @@ class Average(VG6DStatProcMixin, Derived):
     Average inputs
     """
     NAME = "average"
-    args = ["--comp-stat-proc=254:0"]
+    args = ["--comp-stat-proc=254:0", "--comp-frac-valid=0"]
 
     def document(self, file, indent=4):
         ind = " " * indent
