@@ -14,7 +14,7 @@ class SFFRACTION3HMixin:
 
         self.assertProcessLogEqual(
             # Precipitation decumulation
-            ["tpdec3h:Decumulate:vg6d_transform --comp-frac-valid=0 '--comp-step=0 03' --comp-stat-proc=1"
+            ["tpdec3h:Decumulate:vg6d_transform '--comp-step=0 03' --comp-stat-proc=1 --comp-frac-valid=0"
              " --comp-full-steps - tpdec3h-decumulated.grib",
              "sffraction3h:SFFraction:sffraction tpdec3h_2021_1_10_0_0_0+3.grib,snowdec3h_2021_1_10_0_0_0+3.grib"
              " sffraction3h_2021_1_10_0_0_0+3.grib"] +
@@ -23,8 +23,8 @@ class SFFRACTION3HMixin:
             self.get_snow_preprocessing_log() +
 
             # Snow decumulation
-            ["snowdec3h:Decumulate:vg6d_transform --comp-frac-valid=0 '--comp-step=0 03'"
-             " --comp-stat-proc=1 --comp-full-steps - snowdec3h-decumulated.grib"]
+            ["snowdec3h:Decumulate:vg6d_transform '--comp-step=0 03'"
+             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib"]
         )
 
         self.assertRenders(orders[0], step=3)
