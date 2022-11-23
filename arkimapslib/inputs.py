@@ -82,12 +82,15 @@ class InputTypes:
 
 class Input:
     """
-    An input element to a recipe
+    An input element to a recipe.
+
+    All arguments to the constructor besides `name` and `defined_in` are taken
+    from the YAML input definition
     """
     NAME: str
 
     def __init__(
-            self,
+            self, *,
             name: str,
             defined_in: str,
             model: Optional[str] = None,
@@ -205,7 +208,7 @@ class Static(Input):
 
     static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
 
-    def __init__(self, path: str, **kw):
+    def __init__(self, *, path: str, **kw):
         super().__init__(**kw)
         abspath, path = self.clean_path(path)
         self.abspath = abspath
@@ -273,7 +276,7 @@ class Source(Input):
     """
     NAME = "default"
 
-    def __init__(self, arkimet: str, eccodes: str, **kw):
+    def __init__(self, *, arkimet: str, eccodes: str, **kw):
         super().__init__(**kw)
         # arkimet matcher filter
         self.arkimet = arkimet
@@ -332,7 +335,7 @@ class Derived(Input):
     """
     Base class for inputs derives from other inputs
     """
-    def __init__(self, inputs: Union[str, List[str]] = None, **kw):
+    def __init__(self, *, inputs: Union[str, List[str]] = None, **kw):
         if inputs is None:
             raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
@@ -387,7 +390,7 @@ class VG6DStatProcMixin:
     # formatting
     args: List[str]
 
-    def __init__(self, step: int = None, **kw):
+    def __init__(self, *, step: int = None, **kw):
         if step is None:
             raise RuntimeError("step must be present for 'decumulate' inputs")
         super().__init__(**kw)
@@ -538,7 +541,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
     """
     NAME = "vg6d_transform"
 
-    def __init__(self, args: Union[str, List[str]] = None, **kw):
+    def __init__(self, *, args: Union[str, List[str]] = None, **kw):
         if args is None:
             raise RuntimeError(f"args must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
@@ -648,8 +651,8 @@ class GribSetMixin:
     """
     Mixin used for inputs that take a `grib_set` argument
     """
-    def __init__(self, *args, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, *, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kw):
+        super().__init__(**kw)
         self.grib_set = grib_set if grib_set is not None else {}
         self.clip = clip
         self.clip_fn = compile(clip, filename=self.defined_in, mode='exec') if clip is not None else None
@@ -753,8 +756,8 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
     """
     NAME = "expr"
 
-    def __init__(self, *args, expr: str, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, *, expr: str, **kw):
+        super().__init__(**kw)
         self.expr = expr
         self.expr_fn = compile(expr, filename=self.defined_in, mode='exec')
 
