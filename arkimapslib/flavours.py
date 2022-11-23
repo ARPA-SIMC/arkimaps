@@ -7,7 +7,7 @@ import os
 import re
 from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set, Tuple
 
-from .steps import StepConfig, Step, StepSkipped
+from .steps import StepConfig, Step, StepSkipped, AddBasemap
 from . import recipes
 from . import orders
 from . import inputs
@@ -326,6 +326,89 @@ class TiledFlavour(Flavour):
                 compiled_step.params["params"] = {k: v for k, v in params.items() if not k.startswith("legend")}
         return compiled_step
 
+    def make_order_for_legend(
+            self,
+            recipe: "recipes.Recipe",
+            input_files: Dict[str, "inputs.InputFile"],
+            output_instant: "inputs.Instant"):
+        """
+        Create an order to generate the legend for a tileset
+        """
+        logger = logging.getLogger(
+                f"arkimaps.render.{self.name}.{recipe.name}"
+                f"{output_instant.product_suffix()}.legend")
+
+        width_cm = 3
+        height_cm = 21
+
+        # Instantiate order steps from recipe steps
+        order_steps: List[Step] = []
+
+        # Configure the basemap to be just a canvas for the legend
+        basemap_config = StepConfig("add_basemap", options={
+            "params": {
+                "subpage_frame": "off",
+                "page_x_length": width_cm,
+                "page_y_length": height_cm,
+                "super_page_x_length": width_cm,
+                "super_page_y_length": height_cm,
+                "subpage_x_length": width_cm,
+                "subpage_y_length": height_cm,
+                "subpage_x_position": 0.0,
+                "subpage_y_position": 0.0,
+                "subpage_gutter_percentage": 20.,
+                "page_frame": "off",
+                "page_id_line": "off"
+            },
+        })
+        order_steps.append(AddBasemap("add_basemap", basemap_config, {}, input_files))
+
+        for recipe_step in recipe.steps:
+            if recipe_step.name not in ("add_grib", "add_contour"):
+                continue
+            try:
+                step_config = self.step_config(recipe_step.name)
+                s = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                if recipe_step.name == "add_contour":
+                    params = s.params.get("params")
+                    if params is None:
+                        params = {}
+                        s.params["params"] = params
+                    params["legend"] = "on"
+                    params["legend_text_font_size"] = '25%'
+                    params["legend_border_thickness"] = 4
+                    params["legend_only"] = "on"
+                    params["legend_box_mode"] = "positional"
+                    params["legend_box_x_position"] = 0.00
+                    params["legend_box_y_position"] = 0.00
+                    params["legend_box_x_length"] = width_cm
+                    params["legend_box_y_length"] = height_cm
+                    params["legend_box_blanking"] = False
+                    params.pop("legend_title_font_size", None)
+                    params.pop("legend_automatic_position", None)
+            except StepSkipped:
+                logger.debug("%s (skipped)", s.name)
+                continue
+            order_steps.append(s)
+
+        return orders.Order(
+            mixer=recipe.mixer,
+            input_files=input_files,
+            relpath=(
+                f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
+                f"{recipe.name}_{self.name}+{output_instant.step:03d}/"
+            ),
+            basename="legend",
+            recipe_name=recipe.name,
+            instant=output_instant,
+            order_steps=order_steps,
+            output_options={
+                # "output_cairo_transparent_background": True,
+                # "output_width": self.width,
+            },
+            log=logger,
+        )
+
     def inputs_to_orders(
             self,
             recipe: "recipes.Recipe",
@@ -384,5 +467,7 @@ class TiledFlavour(Flavour):
                             },
                             log=logger,
                         ))
+
+                res.append(self.make_order_for_legend(recipe, input_files, output_instant))
 
         return res
