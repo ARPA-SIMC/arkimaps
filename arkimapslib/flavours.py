@@ -68,6 +68,16 @@ class Flavour:
     def __str__(self):
         return self.name
 
+    def summarize(self) -> Dict[str, Any]:
+        """
+        Return a structure describing this Flavour, to use for the render order
+        summary
+        """
+        return {
+            "name": self.name,
+            "defined_in": self.defined_in,
+        }
+
     @classmethod
     def create(cls,
                name: str,
@@ -280,6 +290,13 @@ class TiledFlavour(Flavour):
         self.height = 256
         self.width_cm = self.width / 40.
         self.height_cm = self.height / 40.
+
+    def summarize(self) -> Dict[str, Any]:
+        res = super().summarize()
+        for name in ("zoom", "lat", "lon"):
+            res[f"{name}_min"] = getattr(self, f"{name}_min")
+            res[f"{name}_max"] = getattr(self, f"{name}_max")
+        return res
 
     def instantiate_order_step(
             self,

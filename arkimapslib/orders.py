@@ -1,8 +1,10 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List, Optional, Any
+from collections import defaultdict
+from typing import TYPE_CHECKING, Dict, List, Optional, Any, Set
 import logging
 
 if TYPE_CHECKING:
+    import datetime
     from .flavours import Flavour
     from .recipes import Recipe
     from . import inputs
@@ -75,10 +77,42 @@ class Order:
         return self.basename
 
     @classmethod
-    def summarize_orders(cls, orders: List["Order"]) -> Dict[str, Any]:
+    def summarize_orders(cls, orders: List["Order"]) -> List[Dict[str, Any]]:
         """
         Summarize a list of orders into a json-able structure
         """
-        # TODO: group by flavour and recipe
-        # TODO: group instants by reftime
-        return {}
+        result: List[Dict[str, Any]] = []
+
+        by_fr: Dict[str, List[Order]] = defaultdict(list)
+
+        # Group by flavour and recipe
+        for order in orders:
+            by_fr[(order.flavour, order.recipe)].append(order)
+
+        for (flavour, recipe), orders_fr in by_fr.items():
+            record = {
+                "flavour": flavour.summarize(),
+                "recipe": recipe.summarize(),
+                "reftimes": {},
+            }
+
+            # Group orders by reftime
+            by_rt: Dict[datetime.datetime, List[Order]] = defaultdict(list)
+            for order in orders_fr:
+                by_rt[order.instant.reftime].append(order)
+
+            for reftime, orders in by_rt.items():
+                inputs: Set[str] = set()
+                steps: Set[int] = set()
+                for order in orders:
+                    inputs.update(order.input_files.keys())
+                    steps.add(order.instant.step)
+                record_rt = {
+                    "inputs": sorted(inputs),
+                    "steps": sorted(steps),
+                }
+                record["reftimes"][reftime.strftime("%Y-%m-%d %H:%M-%S")] = record_rt
+
+            result.append(record)
+
+        return result

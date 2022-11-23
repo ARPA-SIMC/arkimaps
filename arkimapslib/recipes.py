@@ -109,6 +109,17 @@ class Recipe:
     def __repr__(self):
         return self.name
 
+    def summarize(self) -> Dict[str, Any]:
+        """
+        Return a structure describing this Recipe, to use for the render order
+        summary
+        """
+        return {
+            "name": self.name,
+            "defined_in": self.defined_in,
+            "description": self.description,
+        }
+
     def document(self, pantry: "pantry.Pantry", dest: str):
         from .flavours import Flavour
         empty_flavour = Flavour("default", defined_in=__file__)
