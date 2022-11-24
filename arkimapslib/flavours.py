@@ -94,6 +94,8 @@ class Flavour:
         """
         Check if a recipe should be generated for this flavour
         """
+        if not recipe.render:
+            return False
         if not self.recipes_filter:
             return True
         for regex in self.recipes_filter:

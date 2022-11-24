@@ -122,7 +122,7 @@ class WorkingKitchen(Kitchen):
 
     def make_orders(self, flavour: Union[Flavour, str], recipe: Optional[str] = None) -> List[orders.Order]:
         """
-        Generate all possible orders for all available recipes
+        Generate all possible orders for this recipe, or all available recipes
         """
         if isinstance(flavour, str):
             flavour = self.flavours.get(flavour)
@@ -146,7 +146,8 @@ class WorkingKitchen(Kitchen):
             step: Optional[int],
             reftime: Optional[datetime.datetime]) -> orders.Order:
         """
-        Generate all possible orders for all available recipes
+        Generate one sample order for this recipe, taking the one at the first
+        instant matching the given reftime/step values (if any)
         """
         selected = []
         for o in flavour.make_orders(recipe, self.pantry):
