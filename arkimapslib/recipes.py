@@ -170,6 +170,11 @@ class Recipe:
         # Name of the mixer to use
         self.mixer: str = data.get("mixer", "default")
 
+        # False if this recipe should not be rendered
+        #
+        # This is useful to have recipes only intended as bases for derivation
+        self.render: bool = data.pop("render", True)
+
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []
         step_collection = mixers.get_steps(self.mixer)
@@ -197,6 +202,8 @@ class Recipe:
         data.setdefault("notes", parent.notes)
         data.setdefault("description", parent.description)
         data.setdefault("mixer", parent.mixer)
+        # Do not inherit 'render', returning to a default of True unless
+        # overridden
 
         # Build the new list of steps, based on the parent list
         steps: List[Dict[str, Any]] = []

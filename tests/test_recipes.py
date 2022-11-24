@@ -25,11 +25,15 @@ class TestRecipe(unittest.TestCase):
                 {"step": "add_grib", "grib": "t2m"},
                 {"step": "add_user_boundaries"}
             ],
+            "render": False,
         })
 
         r2 = Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1, data={
         })
 
+        # Also check that render = False does not get propagated
+        self.assertFalse(r1.render)
+        self.assertTrue(r2.render)
         self.assertEqual(r2.name, "test1")
         self.assertEqual(r2.defined_in, "test1.yaml")
         self.assertEqual(len(r2.steps), 2)
