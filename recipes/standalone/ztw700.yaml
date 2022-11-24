@@ -1,23 +1,18 @@
 ---
 description: Temperature and Geopotential at 700hPa
-recipe:
- - step: add_basemap
- - step: add_coastlines_bg
- - step: add_grib
+extends: standalone/ztw
+change:
+ add_grib_t:
    grib: t700
- - step: add_contour
+ add_grib_z:
+   grib: z700
+ add_grib_uv:
+   grib: uv700
+ add_contour:
    params:
-    contour: off
-    contour_label_height: 0.4
-    contour_label_colour: navy
-    contour_label_frequency: 1
-    contour_label_blanking: off
-    contour_line_thickness: 3
-    contour_shade: on
     contour_level_list: [-50.0,-48.0,-46.0,-44.0,-42.0,-40.0,-38.0,-36.0,-34.0,-32.0,
        -30.0,-28.0,-26.0,-24.0,-22.0,-20.0,-18.0,-16.0,-14.0,-12.0,-10.0,-8.0,-6.0,
        -4.0,-2.0,0.0,2.0,4.0,6.0,8.0,10.0,12.0,14.0,16.0,18.0,20.0,22.0,30.0]
-    contour_level_selection_type: list
     contour_shade_colour_list: ["rgb(0.5,0.8,0.0)","rgb(0.8,0.9,0.0)","rgb(1.,1.,0)",
        "rgb(1,0.8,0)","rgb(1,0.6,0)","rgb(1,0.4,0)","rgb(1,0,0)",
        "rgb(0.8,0,0)","rgb(0.6,0,0)","rgb(0.4,0,0)","rgb(0.4,0,0.4)",
@@ -28,47 +23,4 @@ recipe:
        "rgb(1.,1.,0)","rgb(1.,0.8,0)","rgb(1,0.6,0)" ,"rgb(1,0.4,0)",
        "rgb(1,0,0)","rgb(0.8,0,0)","rgb(0.6,0,0)","rgb(0.4,0,0)",
        "rgb(0.4,0,0.4)","rgb(0.6,0,0.6)","rgb(0.8,0,0.8)"]
-    contour_shade_colour_method: list
-    contour_shade_method: area_fill
-    legend: on
-    legend_display_type: continuous
-    legend_title: on
     legend_title_text: "Temperature at 700hPa [°C]"
-    legend_text_colour: black
-    legend_text_font_size: 0.4
-    legend_title_font_size: 0.5
-    legend_automatic_position: right
- - step: add_grib
-   grib: z700
- - step: add_contour
-   params:
-    contour_shade: off
-    contour: on
-    contour_level_selection_type: interval
-    contour_interval: 4
-    contour_line_colour: black
-    contour_line_thickness: 3
-    contour_highlight: off
-    contour_label: on
-    contour_label_height: 0.6
-    contour_label_frequency: 2
-    contour_label_blanking: on
-    contour_label_colour: navy
-    legend: off
- - step: add_grib
-   grib: uv700
- - step: add_wind
-   params:
-     wind_field_type: flags
-     wind_flag_colour: black
-     #wind_flag_length: 0.8
-     wind_flag_origin_marker: off
-     wind_flag_cross_boundary: on
-     wind_thinning_method: automatic
-     wind_thinning_factor: 1
- - step: add_coastlines_fg
- - step: add_grid
- - step: add_boundaries
- - step: add_user_boundaries
- - step: add_geopoints
- - step: add_symbols
