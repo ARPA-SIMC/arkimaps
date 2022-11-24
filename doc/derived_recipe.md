@@ -98,3 +98,10 @@ This is applied twice:
 
 * In the original set of keys, except for `params`
 * In the value of `params`
+
+
+# "Abstract" recipes
+
+You can add "render: no" to a recipe to avoid products to be generated for it.
+You can do this to create template recipes that are only used as bases for
+derivation.
