@@ -80,6 +80,10 @@ change:
 Currently only 'change' is supported, but more extension methods can be added
 if needed.
 
+Note that the ID defaults to the step name (like `add_contour` in this case),
+which can be enough if there is only one step with the given name. If there are
+multiple ones, changes only apply to the first one.
+
 
 # How 'change' works
 

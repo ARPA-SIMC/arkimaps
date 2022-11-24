@@ -106,7 +106,7 @@ class RecipeStep:
         self.name = name
         self.step = step
         self.args = args
-        self.id = id
+        self.id = id if id is not None else name
 
     def get_input_names(self, step_config: steps.StepConfig) -> Set[str]:
         """
