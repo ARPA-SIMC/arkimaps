@@ -1,14 +1,15 @@
 # from __future__ import annotations
-from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Any, Set
 import logging
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 if TYPE_CHECKING:
     import datetime
+
+    from . import inputs, steps
     from .flavours import Flavour
+    from .kitchen import Kitchen
     from .recipes import Recipe
-    from . import inputs
-    from . import steps
 
 
 class Order:
@@ -42,6 +43,8 @@ class Order:
         self.relpath = relpath
         # Destination file name (without path or .png extension)
         self.basename = basename
+        # Flavour name
+        self.flavour_name = flavour.name
         # Recipe name
         self.recipe_name = recipe.name
         # Product instant
@@ -57,6 +60,8 @@ class Order:
         # If this order generates a legend, this is information about the
         # legend to be forwarded to the summary
         self.legend_info: Optional[Dict[str, Any]] = None
+        # Summary stats about the rendering
+        self.render_time_ns: int = 0
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -80,7 +85,7 @@ class Order:
         return self.basename
 
     @classmethod
-    def summarize_orders(cls, orders: List["Order"]) -> List[Dict[str, Any]]:
+    def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
         """
         Summarize a list of orders into a json-able structure
         """
@@ -90,12 +95,12 @@ class Order:
 
         # Group by flavour and recipe
         for order in orders:
-            by_fr[(order.flavour, order.recipe)].append(order)
+            by_fr[(order.flavour_name, order.recipe_name)].append(order)
 
-        for (flavour, recipe), orders_fr in by_fr.items():
+        for (flavour_name, recipe_name), orders_fr in by_fr.items():
             record = {
-                "flavour": flavour.summarize(),
-                "recipe": recipe.summarize(),
+                "flavour": kitchen.flavours[flavour_name].summarize(),
+                "recipe": kitchen.recipes.get(recipe_name).summarize(),
                 "reftimes": {},
             }
 
@@ -108,15 +113,20 @@ class Order:
                 inputs: Set[str] = set()
                 steps: Set[int] = set()
                 legend_info: Optional[Dict[str, Any]] = None
+                render_time_ns: int = 0
                 for order in orders:
                     inputs.update(order.input_files.keys())
                     steps.add(order.instant.step)
                     if order.legend_info:
                         legend_info = order.legend_info
+                    render_time_ns += order.render_time_ns
                 record_rt = {
                     "inputs": sorted(inputs),
                     "steps": sorted(steps),
                     "legend_info": legend_info,
+                    "render_stats": {
+                        "time_ns": render_time_ns,
+                    },
                 }
                 record["reftimes"][reftime.strftime("%Y-%m-%d %H:%M-%S")] = record_rt
 

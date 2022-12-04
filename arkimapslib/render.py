@@ -1,12 +1,20 @@
 # from __future__ import annotations
-from typing import Iterable, Generator, Optional
 import contextlib
-import os
 import multiprocessing
 import multiprocessing.pool
+import os
+import time
+from typing import Generator, Iterable, Optional
 
 # if TYPE_CHECKING:
 from .orders import Order
+
+if hasattr(time, "perf_counter_ns"):
+    perf_counter_ns = time.perf_counter_ns
+else:
+    # Polyfill for Python < 3.7
+    def perf_counter_ns() -> int:
+        return int(time.perf_counter() * 1000000000)
 
 
 @contextlib.contextmanager
@@ -121,8 +129,10 @@ class Renderer:
         rendering, where worker processes render multiple orders with the same
         Magics settings, and more of an issue in unit testing.
         """
+        start = perf_counter_ns()
         try:
             from .worktops import Worktop
+
             # TODO: Magics also has macro.silent(), though I cannot easily find
             #       its documentation
 
@@ -157,6 +167,8 @@ class Renderer:
             )
 
             order.output = output_pathname + ".png"
+
+            order.render_time_ns = perf_counter_ns() - start
 
             return order
         except Exception as e:

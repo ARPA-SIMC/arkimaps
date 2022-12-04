@@ -133,10 +133,9 @@ class RenderMixin:
             # List of products that should be rendered
             orders += self.kitchen.make_orders(flavour=flavour)
 
-        order_summary = Order.summarize_orders(orders)
-
         renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
 
+        rendered: List[Order] = []
         with self.open_output() as tarout:
             for order in renderer.render(orders):
                 log.info("Rendered %s to %s", order.recipe_name, order.basename)
@@ -146,6 +145,7 @@ class RenderMixin:
                     order.output,
                     os.path.join(os.path.join(order.relpath, order.basename) + ".png"))
                 os.unlink(order.output)
+                rendered.append(order)
 
             if self.log_collector.entries:
                 # Add processing log
@@ -155,6 +155,7 @@ class RenderMixin:
                     tarout.addfile(tarinfo=info, fileobj=buf)
 
             # Add products summary
+            order_summary = Order.summarize_orders(self.kitchen, rendered)
             with io.BytesIO(json.dumps(order_summary, indent=1).encode()) as buf:
                 info = tarfile.TarInfo(name="products.json")
                 info.size = len(buf.getvalue())
