@@ -54,6 +54,9 @@ class Order:
         self.log = log
         # List of recipe steps instantiated for this order
         self.order_steps = order_steps
+        # If this order generates a legend, this is information about the
+        # legend to be forwarded to the summary
+        self.legend_info: Optional[Dict[str, Any]] = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -104,12 +107,16 @@ class Order:
             for reftime, orders in by_rt.items():
                 inputs: Set[str] = set()
                 steps: Set[int] = set()
+                legend_info: Optional[Dict[str, Any]] = None
                 for order in orders:
                     inputs.update(order.input_files.keys())
                     steps.add(order.instant.step)
+                    if order.legend_info:
+                        legend_info = order.legend_info
                 record_rt = {
                     "inputs": sorted(inputs),
                     "steps": sorted(steps),
+                    "legend_info": legend_info,
                 }
                 record["reftimes"][reftime.strftime("%Y-%m-%d %H:%M-%S")] = record_rt
 
