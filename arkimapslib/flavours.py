@@ -352,8 +352,7 @@ class TiledFlavour(Flavour):
         Create an order to generate the legend for a tileset
         """
         logger = logging.getLogger(
-                f"arkimaps.render.{self.name}.{recipe.name}"
-                f"{output_instant.product_suffix()}.legend")
+                f"arkimaps.render.{self.name}.{recipe.name}.legend")
 
         width_cm = 3
         height_cm = 21
@@ -414,9 +413,8 @@ class TiledFlavour(Flavour):
             input_files=input_files,
             relpath=(
                 f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
-                f"{recipe.name}_{self.name}+{output_instant.step:03d}/"
             ),
-            basename="legend",
+            basename=f"{recipe.name}_{self.name}+legend",
             instant=output_instant,
             order_steps=order_steps,
             output_options={
@@ -434,7 +432,7 @@ class TiledFlavour(Flavour):
         res: List["orders.Order"] = []
         if inputs is not None:
             # For each instant we found, build an order
-            for output_instant, input_files in inputs.items():
+            for idx, (output_instant, input_files) in enumerate(inputs.items()):
                 if inputs_for_all_instants:
                     input_files.update(inputs_for_all_instants)
 
@@ -485,6 +483,7 @@ class TiledFlavour(Flavour):
                             log=logger,
                         ))
 
-                res.append(self.make_order_for_legend(recipe, input_files, output_instant))
+                if idx == 0:
+                    res.append(self.make_order_for_legend(recipe, input_files, output_instant))
 
         return res
