@@ -170,6 +170,9 @@ class Recipe:
         # Name of the mixer to use
         self.mixer: str = data.get("mixer", "default")
 
+        # Informational fields about the recipe
+        self.info: Dict[str, Any] = data.get("info") or {}
+
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []
         step_collection = mixers.get_steps(self.mixer)
@@ -224,6 +227,7 @@ class Recipe:
             "name": self.name,
             "defined_in": self.defined_in,
             "description": self.description,
+            "info": self.info,
         }
 
     def document(self, pantry: "pantry.Pantry", dest: str):
