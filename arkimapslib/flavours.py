@@ -386,7 +386,7 @@ class TiledFlavour(Flavour):
             try:
                 step_config = self.step_config(recipe_step.name)
                 s = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
-                if recipe_step.name == "add_contour":
+                if not has_legend and recipe_step.name == "add_contour":
                     params = s.params.get("params")
                     if params is None:
                         params = {}
