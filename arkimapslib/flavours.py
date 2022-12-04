@@ -379,6 +379,7 @@ class TiledFlavour(Flavour):
         })
         order_steps.append(AddBasemap("add_basemap", basemap_config, {}, input_files))
 
+        has_legend = False
         for recipe_step in recipe.steps:
             if recipe_step.name not in ("add_grib", "add_contour"):
                 continue
@@ -390,6 +391,9 @@ class TiledFlavour(Flavour):
                     if params is None:
                         params = {}
                         s.params["params"] = params
+                    # Skip add_contour levels with `legend: off`
+                    if params.get("legend") == "off":
+                        continue
                     params["legend"] = "on"
                     params["legend_text_font_size"] = '25%'
                     params["legend_border_thickness"] = 4
@@ -402,10 +406,14 @@ class TiledFlavour(Flavour):
                     params["legend_box_blanking"] = False
                     params.pop("legend_title_font_size", None)
                     params.pop("legend_automatic_position", None)
+                    has_legend = True
             except StepSkipped:
                 logger.debug("%s (skipped)", s.name)
                 continue
             order_steps.append(s)
+
+        if not has_legend:
+            return None
 
         return orders.Order(
             flavour=self,
@@ -484,6 +492,8 @@ class TiledFlavour(Flavour):
                         ))
 
                 if idx == 0:
-                    res.append(self.make_order_for_legend(recipe, input_files, output_instant))
+                    order = self.make_order_for_legend(recipe, input_files, output_instant)
+                    if order is not None:
+                        res.append(order)
 
         return res
