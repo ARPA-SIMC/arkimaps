@@ -63,7 +63,7 @@ With arguments:
 {
   "params": {
     "wind_field_type": "flags",
-    "wind_flag_colour": "black",
+    "wind_flag_colour": "navy",
     "wind_flag_length": 0.8,
     "wind_flag_origin_marker": false,
     "wind_flag_cross_boundary": true,

@@ -1,4 +1,4 @@
-# tiles/tp12h: Total precipitation 12h
+# tiles/tp12h: Total precipitation 12h (steps)
 
 Mixer: **default**
 

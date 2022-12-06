@@ -1,4 +1,4 @@
-# tiles/tp3h: Total precipitation 03h
+# tiles/tp3h: Total precipitation 03h (steps)
 
 Mixer: **default**
 

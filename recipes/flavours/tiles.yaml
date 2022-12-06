@@ -25,7 +25,7 @@ flavours:
        skip: yes
  - name: ita_tiles
    tile:
-     zoom_min: 5
+     zoom_min: 6
      zoom_max: 7
      lat_min: 35.0
      lat_max: 50.0
@@ -48,7 +48,7 @@ flavours:
        skip: yes
  - name: ita_small_tiles
    tile:
-     zoom_min: 5
+     zoom_min: 6
      zoom_max: 7
      lat_min: 35.0
      lat_max: 48.0

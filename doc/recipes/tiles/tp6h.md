@@ -1,4 +1,4 @@
-# tiles/tp6h: Total precipitation 06h
+# tiles/tp6h: Total precipitation 06h (steps)
 
 Mixer: **default**
 

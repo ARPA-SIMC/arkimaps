@@ -1,4 +1,4 @@
-# tiles/tp24h: Total precipitation 24h
+# tiles/tp24h: Total precipitation 24h (continuous)
 
 Mixer: **default**
 
