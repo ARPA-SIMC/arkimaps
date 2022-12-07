@@ -1,4 +1,4 @@
-from __future__ import annotations
+# from __future__ import annotations
 from typing import Dict, Iterable, Any, List
 
 __all__ = ["CycleError", "sort"]
