@@ -175,7 +175,7 @@ class TestFlavour(unittest.TestCase):
                           ]}) as kitchen:
             self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
             orders = kitchen.make_orders("test", recipe="test")
-            self.assertEqual(len(orders), 13)
+            self.assertEqual(len(orders), 12)
 
             basemap = self.get_step(orders[0], "add_basemap")
             params = basemap.params["params"]
