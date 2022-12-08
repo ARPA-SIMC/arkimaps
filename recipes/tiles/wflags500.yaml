@@ -1,5 +1,8 @@
 ---
 description: Wind flags 500hPa
+info:
+ opacity: 1
+ zIndex: 3
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

@@ -1,5 +1,8 @@
 ---
 description: Mean Sea Level Pressure
+info:
+ opacity: 1
+ zIndex: 2
 inputs:
  mslp:
   - model: cosmo

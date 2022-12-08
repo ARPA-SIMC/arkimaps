@@ -66,7 +66,7 @@ With arguments:
     "wind_arrow_thickness": 2,
     "wind_field_type": "arrows",
     "wind_flag_cross_boundary": false,
-    "wind_arrow_unit_velocity": 12.5,
+    "wind_arrow_unit_velocity": 25.0,
     "wind_arrow_calm_indicator": false,
     "wind_thinning_method": "automatic",
     "wind_thinning_factor": 1

@@ -1,4 +1,4 @@
-# tiles/sffraction6h: Snow fraction 06h
+# tiles/sffraction6h: Snow fraction 06h (steps)
 
 Mixer: **default**
 

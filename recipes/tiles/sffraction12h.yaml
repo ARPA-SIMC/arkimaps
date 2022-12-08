@@ -1,5 +1,8 @@
 ---
-description: Snow fraction 12h
+description: Snow fraction 12h (steps)
+info:
+ opacity: 0.9
+ zIndex: 2
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

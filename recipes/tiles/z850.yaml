@@ -1,5 +1,8 @@
 ---
 description: Geopotential 850hPa
+info:
+ opacity: 1
+ zIndex: 2
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

@@ -1,4 +1,4 @@
-# tiles/sffraction24h: Snow fraction 24h
+# tiles/sffraction24h: Snow fraction 24h (continuous)
 
 Mixer: **default**
 
