@@ -128,7 +128,7 @@ class Order:
                         "time_ns": render_time_ns,
                     },
                 }
-                record["reftimes"][reftime.strftime("%Y-%m-%d %H:%M-%S")] = record_rt
+                record["reftimes"][reftime.strftime("%Y-%m-%d %H:%M:%S")] = record_rt
 
             result.append(record)
 
