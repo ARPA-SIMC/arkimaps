@@ -392,7 +392,7 @@ class TiledFlavour(Flavour):
                         params = {}
                         s.params["params"] = params
                     # Skip add_contour levels with `legend: off`
-                    if params.get("legend") == "off":
+                    if not params.get("legend", False):
                         continue
                     params["legend"] = "on"
                     params["legend_text_font_size"] = '25%'

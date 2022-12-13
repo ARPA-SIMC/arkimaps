@@ -17,5 +17,12 @@ class MSLPMixin:
             ifs={'grib_automatic_scaling': False, 'grib_scaling_factor': 0.01},
         )
 
+    def test_legend(self):
+        # Test that mslp does not produce a legend
+        self.fill_pantry(flavour_name="ita_small_tiles")
+        orders = self.make_orders(flavour_name="ita_small_tiles")
+        self.assertEqual(orders[-1].basename, "50")
+        self.assertEqual(len(orders), 65)
+
 
 add_recipe_test_cases(__name__, "mslp")
