@@ -1,0 +1,74 @@
+#!/usr/bin/python3
+
+import argparse
+import json
+import shutil
+import sys
+
+from texttable import Texttable
+
+from arkimapslib import cmdline
+
+
+class AnalyzeRun(cmdline.Command):
+    def run(self):
+        with open(self.args.file, "rt") as fd:
+            info = json.load(fd)
+
+        # "flavour": kitchen.flavours[flavour_name].summarize(),
+        # "recipe": kitchen.recipes.get(recipe_name).summarize(),
+        # "reftimes": {},
+        #     record_rt = {
+        #         "inputs": sorted(inputs),
+        #         "steps": sorted(steps),
+        #         "legend_info": legend_info,
+        #         "render_stats": {
+        #             "time_ns": render_time_ns,
+        #         },
+        #     }
+        #     record["reftimes"][reftime.strftime("%Y-%m-%d %H:%M:%S")] = record_rt
+
+        table = Texttable(max_width=shutil.get_terminal_size()[0])
+        table.set_deco(Texttable.HEADER)
+        table.set_cols_dtype(("t", "t", "t", "i", "t"))
+        table.set_cols_align(("l", "l", "r", "r", "r"))
+        table.add_row(("Flavour", "Recipe", "Total time", "Total steps", "Time per step"))
+
+        for entry in sorted(info, key=lambda e: (e["flavour"]["name"], e["recipe"]["name"])):
+            total_time: int = 0
+            total_steps: int = 0
+            for reftime in entry["reftimes"].values():
+                total_time += reftime["render_stats"]["time_ns"]
+                total_steps += len(reftime["steps"])
+            total = total_time // 1_000_000_000
+            total_formatted = f"{total//60:02d}:{total % 60:02d}"
+            time_per_step = total_time / total_steps / 1_000_000_000
+            table.add_row((
+                entry["flavour"]["name"],
+                entry["recipe"]["name"],
+                total_formatted,
+                total_steps,
+                f"{time_per_step:.1f}"))
+
+        print(table.draw())
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Analyze a products.json from an arkimaps run.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
+    parser.add_argument("--debug", action="store_true", help="verbose output")
+    parser.add_argument("file", metavar="file.json", help="JSON file to analyze")
+
+    args = parser.parse_args()
+    cmd = AnalyzeRun(args)
+    return cmd.run()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except cmdline.Fail as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
+    except cmdline.Success:
+        pass
