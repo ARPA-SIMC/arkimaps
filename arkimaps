@@ -7,6 +7,7 @@ import datetime
 import logging
 import tarfile
 import subprocess
+import multiprocessing
 import json
 import io
 import os
@@ -23,6 +24,7 @@ VERSION = "0.10"
 SYSTEM_RECIPE_DIR = "/usr/share/arkimaps/recipes"
 
 log = logging.getLogger("arkimaps")
+multiprocessing.set_start_method("spawn")
 
 
 class LogCollector(logging.Handler):
