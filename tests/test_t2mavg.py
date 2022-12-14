@@ -12,6 +12,7 @@ class T2MAVGMixin:
         self.assertProcessLogEqual([
             "t2mavg:Average:vg6d_transform '--comp-step=0 24'"
             " --comp-stat-proc=254:0 --comp-frac-valid=0 - t2mavg-decumulated.grib",
+            "t2mavg:Average:grib_filter xxxb",
         ])
 
         self.assertRenders(orders[0], step=24)

@@ -22,7 +22,9 @@ class SF3HCosmoMixin:
             [f"snow:Or:snowsum_2021_1_10_0_0_0+{step}.grib as snow_2021_1_10_0_0_0+{step}.grib"
              for step in range(0, 13)] +
             ["snowdec3h:Decumulate:vg6d_transform '--comp-step=0 03'"
-             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib"]
+             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib",
+             "snowdec3h:Decumulate:grib_filter xxxb"]
+
         )
 
         self.assertRenders(orders[0])
@@ -49,7 +51,8 @@ class SF3HNoConvMixin:
             [f"snow:Or:cosmo_snowgsp_2021_1_10_0_0_0+{step}.grib as snow_2021_1_10_0_0_0+{step}.grib"
              for step in range(0, 13)] +
             ["snowdec3h:Decumulate:vg6d_transform '--comp-step=0 03'"
-             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib"]
+             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib",
+             "snowdec3h:Decumulate:grib_filter xxxb"]
         )
 
         self.assertRenders(orders[0])
@@ -72,7 +75,8 @@ class SF3HIFSMixin:
             [f"snow:Or:ifs_sf_2021_1_10_0_0_0+{step}.grib as snow_2021_1_10_0_0_0+{step}.grib"
              for step in range(3, 13, 3)] +
             ["snowdec3h:Decumulate:vg6d_transform '--comp-step=0 03'"
-             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib"]
+             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib",
+             "snowdec3h:Decumulate:grib_filter xxxb"]
         )
 
         self.assertRenders(orders[0])

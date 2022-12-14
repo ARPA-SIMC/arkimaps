@@ -1,5 +1,4 @@
 # from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, Any, Optional, NamedTuple, Type, List, Union, Set
 import contextlib
 import datetime
 import logging
@@ -7,14 +6,18 @@ import os
 import shlex
 import shutil
 import subprocess
+from typing import (TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple,
+                    Optional, Set, Tuple, Type, Union)
 
 import eccodes
 import numpy
 
 from .grib import GRIB
+from .utils import perf_counter_ns
 
 if TYPE_CHECKING:
     from . import pantry
+    from .recipes import Recipe
     try:
         import arkimet
     except ModuleNotFoundError:
@@ -80,6 +83,38 @@ class InputTypes:
         return cls.registry[name.lower()]
 
 
+class InputProcessingStats:
+    """
+    Statistics collected while processing inputs
+    """
+    def __init__(self, input: "Input"):
+        self.input = input
+        # List of strings describing computation steps, and the time they took
+        # in nanoseconds
+        self.computation_log: List[Tuple[int, str]] = []
+        # List of recipes that used this input to generate products
+        self.used_by: Set[Recipe] = set()
+
+    @contextlib.contextmanager
+    def collect(self, pantry: "pantry.Pantry", what: str) -> Generator[None, None, None]:
+        start = perf_counter_ns()
+        try:
+            yield
+        finally:
+            elapsed = perf_counter_ns() - start
+            self.computation_log.append((elapsed, what))
+            pantry.log_input_processing(self.input, what)
+
+    def summarize(self) -> Dict[str, Any]:
+        """
+        Produce a JSON-serializable summary about this input
+        """
+        return {
+            "used_by": sorted(recipe.name for recipe in self.used_by),
+            "computation": self.computation_log,
+        }
+
+
 class Input:
     """
     An input element to a recipe.
@@ -106,6 +141,8 @@ class Input:
         self.mgrib = mgrib
         # Optional notes for the documentation
         self.notes = notes
+        # Processing statistics
+        self.stats = InputProcessingStats(self)
 
     @classmethod
     def create(cls, type: str = "default", **kw):
@@ -449,38 +486,40 @@ class VG6DStatProcMixin:
         if self.comp_full_steps:
             cmd.append("--comp-full-steps")
         cmd += ["-", decumulated_data]
-        v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
-        for input_file in source_instants.values():
-            with open(input_file.pathname, "rb") as src:
-                shutil.copyfileobj(src, v6t.stdin)
-        v6t.stdin.close()
-        v6t.wait()
+        with self.stats.collect(pantry, " ".join(shlex.quote(c) for c in cmd)):
+            v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
+            for input_file in source_instants.values():
+                with open(input_file.pathname, "rb") as src:
+                    shutil.copyfileobj(src, v6t.stdin)
+            v6t.stdin.close()
+            v6t.wait()
+
         try:
             if v6t.returncode != 0:
                 raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
 
-            if not os.path.exists(decumulated_data) or os.path.getsize(decumulated_data) == 0:
+            size = os.path.getsize(decumulated_data)
+            if not os.path.exists(decumulated_data) or size == 0:
                 log.warning("%s: vg6d_transform generated empty output", self.name)
                 return
 
-            pantry.log_input_processing(self, " ".join(shlex.quote(c) for c in cmd))
-
-            res = subprocess.run(
-                    ["grib_filter", grib_filter_rules, decumulated_data],
-                    stdout=subprocess.PIPE,
-                    check=True)
-            for line in res.stdout.splitlines():
-                if not line.startswith(b"s:"):
-                    return
-                ye, mo, da, ho, mi, se, step = line[2:].split(b",")
-                instant = Instant(
-                    datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se)),
-                    int(step))
-                if instant in self.instants:
-                    log.warning(
-                        "%s: vg6d_transform generated multiple GRIB data for instant %s. Note that truncation"
-                        " to only the first data produced is not supported yet!", self.name, instant)
-                self.add_instant(instant)
+            with self.stats.collect(pantry, f"grib_filter {size}b"):
+                res = subprocess.run(
+                        ["grib_filter", grib_filter_rules, decumulated_data],
+                        stdout=subprocess.PIPE,
+                        check=True)
+                for line in res.stdout.splitlines():
+                    if not line.startswith(b"s:"):
+                        return
+                    ye, mo, da, ho, mi, se, step = line[2:].split(b",")
+                    instant = Instant(
+                        datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se)),
+                        int(step))
+                    if instant in self.instants:
+                        log.warning(
+                            "%s: vg6d_transform generated multiple GRIB data for instant %s. Note that truncation"
+                            " to only the first data produced is not supported yet!", self.name, instant)
+                    self.add_instant(instant)
         finally:
             if os.path.exists(decumulated_data):
                 os.unlink(decumulated_data)
@@ -584,16 +623,15 @@ class VG6DTransform(AlignInstantsMixin, Derived):
             cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
             log.debug("running %s", ' '.join(shlex.quote(x) for x in cmd))
 
-            v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
-            for input_file in input_files:
-                with open(input_file.pathname, "rb") as fd:
-                    shutil.copyfileobj(fd, v6t.stdin)
-            v6t.stdin.close()
-            v6t.wait()
-            if v6t.returncode != 0:
-                raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
-
-            pantry.log_input_processing(self, " ".join(shlex.quote(c) for c in cmd))
+            with self.stats.collect(pantry, " ".join(shlex.quote(c) for c in cmd)):
+                v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
+                for input_file in input_files:
+                    with open(input_file.pathname, "rb") as fd:
+                        shutil.copyfileobj(fd, v6t.stdin)
+                v6t.stdin.close()
+                v6t.wait()
+                if v6t.returncode != 0:
+                    raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
 
             if not os.path.exists(output_pathname):
                 log.warning("input %s: %s not found after running vg6d_transform", self.name, output_name)
@@ -628,12 +666,13 @@ class Cat(AlignInstantsMixin, Derived):
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
-            with open(output_pathname, "wb") as out:
-                for input_file in input_files:
-                    with open(input_file.pathname, "rb") as fd:
-                        shutil.copyfileobj(fd, out)
-            pantry.log_input_processing(
-                    self, "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name)
+            with self.stats.collect(
+                    pantry,
+                    "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name):
+                with open(output_pathname, "wb") as out:
+                    for input_file in input_files:
+                        with open(input_file.pathname, "rb") as fd:
+                            shutil.copyfileobj(fd, out)
 
             self.add_instant(instant)
 
@@ -656,9 +695,8 @@ class Or(Derived):
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: using %s for instant %s as %s", self.name, input_file.info.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
-            os.link(input_file.pathname, output_pathname)
-            pantry.log_input_processing(
-                    self, input_file.pathname + " as " + output_name)
+            with self.stats.collect(pantry, input_file.pathname + " as " + output_name):
+                os.link(input_file.pathname, output_pathname)
             self.add_instant(instant)
 
 
@@ -733,28 +771,29 @@ class GroundToMSL(GribSetMixin, Derived):
 
         has_output = False
         for instant, input_file in pantry.get_instants(self.inputs[1]).items():
-            with GRIB(input_file.pathname) as val_grib:
-                # Add z
-                vals = val_grib.values
-                vals += z
-                vals = self.apply_clip({self.name: vals, "z": z})
-                self.apply_grib_set(val_grib)
-                val_grib.values = vals
-
-                # Write output
-                output_name = pantry.get_basename(self, instant)
-                log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
-                output_pathname = os.path.join(pantry.data_root, output_name)
-                with open(output_pathname, "wb") as out:
-                    out.write(val_grib.dumps())
-                pantry.log_input_processing(
-                        self, " ".join((
+            output_name = pantry.get_basename(self, instant)
+            with self.stats.collect(
+                        pantry,
+                        " ".join((
                             "groundtomsl",
                             shlex.quote(z_input.pathname),
                             shlex.quote(input_file.pathname),
-                            output_name)))
-                self.add_instant(instant)
-                has_output = True
+                            output_name))):
+                with GRIB(input_file.pathname) as val_grib:
+                    # Add z
+                    vals = val_grib.values
+                    vals += z
+                    vals = self.apply_clip({self.name: vals, "z": z})
+                    self.apply_grib_set(val_grib)
+                    val_grib.values = vals
+
+                    # Write output
+                    log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
+                    output_pathname = os.path.join(pantry.data_root, output_name)
+                    with open(output_pathname, "wb") as out:
+                        out.write(val_grib.dumps())
+                    self.add_instant(instant)
+                    has_output = True
 
         if not has_output:
             log.info("input %s: missing source data", self.name)
@@ -788,45 +827,46 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
 
         # For each instant, run the expression
         for instant, input_files in available_instants.items():
-            with contextlib.ExitStack() as stack:
-                # Open all input GRIBs
-                gribs: Dict[str, GRIB] = {}
-                template: Optional[GRIB] = None
-                for f in input_files:
-                    grib = stack.enter_context(GRIB(f.pathname))
-                    gribs[f.info.name] = grib
-                    if template is None:
-                        template = grib
+            output_name = pantry.get_basename(self, instant)
+            with self.stats.collect(
+                    pantry,
+                    "expr " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name):
+                with contextlib.ExitStack() as stack:
+                    # Open all input GRIBs
+                    gribs: Dict[str, GRIB] = {}
+                    template: Optional[GRIB] = None
+                    for f in input_files:
+                        grib = stack.enter_context(GRIB(f.pathname))
+                        gribs[f.info.name] = grib
+                        if template is None:
+                            template = grib
 
-                # Build the variable dict to use to evaluate self.expr_fn
-                values = {name: grib.values for name, grib in gribs.items()}
+                    # Build the variable dict to use to evaluate self.expr_fn
+                    values = {name: grib.values for name, grib in gribs.items()}
 
-                # Evaluate the expression
-                eval(self.expr_fn, values)
+                    # Evaluate the expression
+                    eval(self.expr_fn, values)
 
-                # Extract the result
-                result = values.get(self.name)
-                if result is None:
-                    log.warning("input %s: the expression did not set %s: skipping step", self.name, self.name)
-                    continue
+                    # Extract the result
+                    result = values.get(self.name)
+                    if result is None:
+                        log.warning("input %s: the expression did not set %s: skipping step", self.name, self.name)
+                        continue
 
-                # Apply clip
-                result = self.apply_clip(values)
+                    # Apply clip
+                    result = self.apply_clip(values)
 
-                # Fill the template
-                self.apply_grib_set(template)
-                template.values = result
+                    # Fill the template
+                    self.apply_grib_set(template)
+                    template.values = result
 
-                # Write output
-                output_name = pantry.get_basename(self, instant)
-                log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
-                output_pathname = os.path.join(pantry.data_root, output_name)
-                with open(output_pathname, "wb") as out:
-                    out.write(template.dumps())
-                pantry.log_input_processing(
-                        self, "expr " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name)
+                    # Write output
+                    log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
+                    output_pathname = os.path.join(pantry.data_root, output_name)
+                    with open(output_pathname, "wb") as out:
+                        out.write(template.dumps())
 
-                self.add_instant(instant)
+                    self.add_instant(instant)
 
 
 @InputTypes.register
@@ -849,44 +889,44 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
 
         # For each instant, run the expression
         for instant, input_files in available_instants.items():
-            with GRIB(input_files[0].pathname) as grib_tp:
-                template = grib_tp
-                with GRIB(input_files[1].pathname) as grib_snow:
-                    snow = grib_snow.values
-                    tp = grib_tp.values
+            output_name = pantry.get_basename(self, instant)
+            with self.stats.collect(
+                    pantry,
+                    "sffraction " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name):
+                with GRIB(input_files[0].pathname) as grib_tp:
+                    template = grib_tp
+                    with GRIB(input_files[1].pathname) as grib_snow:
+                        snow = grib_snow.values
+                        tp = grib_tp.values
 
-                    units = grib_tp.get_string("units")
-                    if units == "m":
-                        threshold = 0.0005
-                    elif units == "kg m**-2":
-                        threshold = 0.5
-                    else:
-                        log.warning("Unsupported unit %s for tp input in sffraction processing", units)
-                        threshold = 0.5
+                        units = grib_tp.get_string("units")
+                        if units == "m":
+                            threshold = 0.0005
+                        elif units == "kg m**-2":
+                            threshold = 0.5
+                        else:
+                            log.warning("Unsupported unit %s for tp input in sffraction processing", units)
+                            threshold = 0.5
 
-                    snow[tp <= threshold] = 0
-                    tp[tp == 0] = 1
-                    sffraction = snow * 100 / tp
-                    sffraction.clip(0, 100, out=sffraction)
+                        snow[tp <= threshold] = 0
+                        tp[tp == 0] = 1
+                        sffraction = snow * 100 / tp
+                        sffraction.clip(0, 100, out=sffraction)
 
-                # Apply clip
-                sffraction = self.apply_clip({self.name: sffraction})
+                    # Apply clip
+                    sffraction = self.apply_clip({self.name: sffraction})
 
-                # Fill the template
-                self.apply_grib_set(template)
-                template.values = sffraction
+                    # Fill the template
+                    self.apply_grib_set(template)
+                    template.values = sffraction
 
-                # Write output
-                output_name = pantry.get_basename(self, instant)
-                log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
-                output_pathname = os.path.join(pantry.data_root, output_name)
-                with open(output_pathname, "wb") as out:
-                    out.write(template.dumps())
-                pantry.log_input_processing(
-                        self,
-                        "sffraction " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name)
+                    # Write output
+                    log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
+                    output_pathname = os.path.join(pantry.data_root, output_name)
+                    with open(output_pathname, "wb") as out:
+                        out.write(template.dumps())
 
-                self.add_instant(instant)
+                    self.add_instant(instant)
 
 
 class InputFile(NamedTuple):

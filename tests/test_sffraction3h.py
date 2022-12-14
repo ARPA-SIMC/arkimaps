@@ -16,6 +16,7 @@ class SFFRACTION3HMixin:
             # Precipitation decumulation
             ["tpdec3h:Decumulate:vg6d_transform '--comp-step=0 03' --comp-stat-proc=1 --comp-frac-valid=0"
              " --comp-full-steps - tpdec3h-decumulated.grib",
+             "tpdec3h:Decumulate:grib_filter xxxb",
              "sffraction3h:SFFraction:sffraction tpdec3h_2021_1_10_0_0_0+3.grib,snowdec3h_2021_1_10_0_0_0+3.grib"
              " sffraction3h_2021_1_10_0_0_0+3.grib"] +
 
@@ -24,7 +25,8 @@ class SFFRACTION3HMixin:
 
             # Snow decumulation
             ["snowdec3h:Decumulate:vg6d_transform '--comp-step=0 03'"
-             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib"]
+             " --comp-stat-proc=1 --comp-frac-valid=0 --comp-full-steps - snowdec3h-decumulated.grib",
+             "snowdec3h:Decumulate:grib_filter xxxb"]
         )
 
         self.assertRenders(orders[0], step=3)

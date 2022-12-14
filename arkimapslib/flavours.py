@@ -230,38 +230,39 @@ class SimpleFlavour(Flavour):
             inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
             inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
         res: List["orders.Order"] = []
-        if inputs is not None:
-            # For each instant we found, build an order
-            for output_instant, input_files in inputs.items():
-                if inputs_for_all_instants:
-                    input_files.update(inputs_for_all_instants)
+        if inputs is None:
+            return res
 
-                logger = logging.getLogger(
-                        f"arkimaps.render.{self.name}.{recipe.name}{output_instant.product_suffix()}")
+        # For each instant we found, build an order
+        for output_instant, input_files in inputs.items():
+            if inputs_for_all_instants:
+                input_files.update(inputs_for_all_instants)
 
-                # Instantiate order steps from recipe steps
-                order_steps: List[Step] = []
-                for recipe_step in recipe.steps:
-                    try:
-                        s = self.instantiate_order_step(recipe_step, input_files)
-                    except StepSkipped:
-                        logger.debug("%s (skipped)", s.name)
-                        continue
-                    # self.log.debug("%s %r", step.name, step.get_params(mixer))
-                    order_steps.append(s)
+            logger = logging.getLogger(
+                    f"arkimaps.render.{self.name}.{recipe.name}{output_instant.product_suffix()}")
 
-                res.append(orders.Order(
-                    flavour=self,
-                    recipe=recipe,
-                    input_files=input_files,
-                    relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
-                    basename=f"{os.path.basename(recipe.name)}+{output_instant.step:03d}",
-                    instant=output_instant,
-                    order_steps=order_steps,
-                    output_options={},
-                    log=logger,
-                ))
+            # Instantiate order steps from recipe steps
+            order_steps: List[Step] = []
+            for recipe_step in recipe.steps:
+                try:
+                    s = self.instantiate_order_step(recipe_step, input_files)
+                except StepSkipped:
+                    logger.debug("%s (skipped)", s.name)
+                    continue
+                # self.log.debug("%s %r", step.name, step.get_params(mixer))
+                order_steps.append(s)
 
+            res.append(orders.Order(
+                flavour=self,
+                recipe=recipe,
+                input_files=input_files,
+                relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
+                basename=f"{os.path.basename(recipe.name)}+{output_instant.step:03d}",
+                instant=output_instant,
+                order_steps=order_steps,
+                output_options={},
+                log=logger,
+            ))
         return res
 
 

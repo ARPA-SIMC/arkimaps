@@ -1,5 +1,4 @@
 # from __future__ import annotations
-from typing import Optional, BinaryIO, List, Tuple, Any, Dict, NamedTuple
 import contextlib
 import datetime
 import logging
@@ -8,6 +7,8 @@ import re
 import subprocess
 import sys
 import tempfile
+from typing import (TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple,
+                    Optional, Tuple)
 
 try:
     import arkimet
@@ -15,6 +16,9 @@ except ModuleNotFoundError:
     arkimet = None
 
 from . import inputs
+
+if TYPE_CHECKING:
+    from . import orders
 
 log = logging.getLogger("arkimaps.pantry")
 
@@ -36,6 +40,22 @@ class Pantry:
         self.inputs: Dict[str, List[inputs.Input]] = {}
         # Log of input processing operations performed
         self.process_log: List[ProcessLogEntry] = []
+
+    def summarize_inputs(self, orders: List["orders.Order"]) -> Dict[str, Any]:
+        """
+        Return a JSON-serializable summary about input processing
+        """
+        # Collect which inputs have been used by which recipes
+        for order in orders:
+            for input_file in order.input_files.values():
+                input_file.info.stats.used_by.add(order.recipe)
+
+        res: Dict[str, Dict[str, Any]] = {}
+        for name, inps in self.inputs.items():
+            for input in inps:
+                if input.stats.used_by or input.stats.computation_log:
+                    res[name] = input.stats.summarize()
+        return res
 
     def log_input_processing(self, input: inputs.Input, message: str):
         """

@@ -3,18 +3,11 @@ import contextlib
 import multiprocessing
 import multiprocessing.pool
 import os
-import time
 from typing import Generator, Iterable, Optional
 
 # if TYPE_CHECKING:
 from .orders import Order
-
-if hasattr(time, "perf_counter_ns"):
-    perf_counter_ns = time.perf_counter_ns
-else:
-    # Polyfill for Python < 3.7
-    def perf_counter_ns() -> int:
-        return int(time.perf_counter() * 1000000000)
+from .utils import perf_counter_ns
 
 
 @contextlib.contextmanager
