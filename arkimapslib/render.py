@@ -1,11 +1,12 @@
 # from __future__ import annotations
 import contextlib
 import io
+import json
 import os
 import subprocess
 import sys
 import time
-from typing import Iterable, Optional, TextIO
+from typing import Iterable, Optional, Sequence, TextIO
 
 # if TYPE_CHECKING:
 from .orders import Order
@@ -61,6 +62,8 @@ class Renderer:
         """
         Print the preamble of the Python rendering script
         """
+        print("import contextlib", file=file)
+        print("import io", file=file)
         if timings:
             print("import json", file=file)
             print("import time", file=file)
@@ -104,15 +107,18 @@ class Renderer:
                 py_parms.append(f"{k}={v!r}")
             print(f"    parts.append(macro.{name}({', '.join(py_parms)}))", file=file)
 
-        print("    macro.plot(*parts)", file=file)
+        print("    res = {'output': output_name}", file=file)
+
+        print("    with contextlib.redirect_stdout(io.StringIO()) as out:", file=file)
+        print("        macro.plot(*parts)", file=file)
+        print("        res['magics_output'] = out.getvalue()", file=file)
 
         # Return result
-        print("    res = {'output': output_name}", file=file)
         if timings:
             print("    res['time'] = perf_counter_ns() - start", file=file)
         print("    return res", file=file)
 
-    def render_one_to_python(self, order: 'Order', testing=False, timings=False) -> str:
+    def make_python_renderer(self, orders: Sequence['Order'], testing=False, timings=False) -> str:
         """
         Render one order to a Python trace file.
 
@@ -120,9 +126,11 @@ class Renderer:
         """
         with io.StringIO() as code:
             self.print_python_preamble(testing, timings, file=code)
-            self.print_python_order("order", order, timings=timings, file=code)
             print("result = {'magics_imported': magics_imported, 'products': []}", file=code)
-            print("result['products'].append(order())", file=code)
+            for idx, order in enumerate(orders):
+                name = f"order{idx}"
+                self.print_python_order(name, order, timings=timings, file=code)
+                print(f"result['products'].append({name}())", file=code)
             print("print(json.dumps(result))", file=code)
             unformatted = code.getvalue()
 
@@ -147,36 +155,57 @@ class Renderer:
         #     for order in pool.imap_unordered(self.prepare_order, orders):
         #         if order is not None:
         #             yield order
-        for order in orders:
-            rendered = self.run_render_script(order)
+        def groups(orders, count):
+            group = []
+            for order in orders:
+                group.append(order)
+                if len(group) == count:
+                    yield group
+                    group = []
+            if group:
+                yield group
+
+        for group in groups(orders, 16):
+            rendered = self.run_render_script(group)
             if rendered is not None:
                 yield rendered
 
     def render_one(self, order: 'Order') -> Optional['Order']:
         # with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
         #     return pool.apply(self.prepare_order, (order,))
-        return self.run_render_script(order)
+        return self.run_render_script([order])
 
-    def run_render_script(self, order: 'Order'):
-        start = perf_counter_ns()
-
-        path = os.path.join(self.workdir, order.relpath)
-        os.makedirs(path, exist_ok=True)
-        output_pathname = os.path.join(path, order.basename)
+    def run_render_script(self, orders: Sequence['Order']):
+        python_code = self.make_python_renderer(orders, timings=True)
 
         # Write the python code, so that if we trigger a bug in Magics, we
         # have a Python reproducer available
-        python_code = self.render_one_to_python(order, timings=True)
-        with open(output_pathname + ".py", "wt") as fd:
-            fd.write(python_code)
-        order.render_script = output_pathname + ".py"
+        script_file: Optional[str] = None
+        for order in orders:
+            path = os.path.join(self.workdir, order.relpath)
+            os.makedirs(path, exist_ok=True)
+            output_pathname = os.path.join(path, order.basename) + ".py"
+            order.render_script = output_pathname
+
+            if script_file is None:
+                script_file = output_pathname
+                with open(script_file, "wt") as fd:
+                    fd.write(python_code)
+            else:
+                try:
+                    os.link(script_file, output_pathname)
+                except FileExistsError:
+                    os.unlink(output_pathname)
+                    os.link(script_file, output_pathname)
 
         # Run the render script
-        subprocess.run([sys.executable, order.render_script], check=True)
-
-        # Set render information in the order
-        order.output = output_pathname + ".png"
-        order.render_time_ns = perf_counter_ns() - start
+        res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
+        print(res.stdout)
+        render_info = json.loads(res.stdout)
+        for product_info in render_info["products"]:
+            # Set render information in the order
+            order.output = product_info["output"] + ".png"
+            order.render_time_ns = product_info["time"]
 
         return order
 
@@ -204,7 +233,7 @@ class Renderer:
 
             # Write the python code, so that if we trigger a bug in Magics, we
             # have a Python reproducer available
-            python_code = self.render_one_to_python(order)
+            python_code = self.make_python_renderer([order])
             with open(output_pathname + ".py", "wt") as fd:
                 fd.write(python_code)
             order.render_script = output_pathname + ".py"

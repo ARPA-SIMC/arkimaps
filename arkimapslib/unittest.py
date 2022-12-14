@@ -219,7 +219,7 @@ class RecipeTestMixin:
         self.assertEqual(add_basemap.params.get("params", {}), self.expected_basemap_args)
 
         # Test rendering to Python
-        res.python_code = renderer.render_one_to_python(order)
+        res.python_code = renderer.make_python_renderer([order])
 
         # Test rendering with Magics
         rendered = renderer.render_one(order)
