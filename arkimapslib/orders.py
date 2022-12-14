@@ -1,6 +1,6 @@
 # from __future__ import annotations
 import logging
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
 if TYPE_CHECKING:
@@ -111,18 +111,18 @@ class Order:
 
             for reftime, orders in by_rt.items():
                 inputs: Set[str] = set()
-                steps: Set[int] = set()
+                steps: dict[int, int] = Counter()
                 legend_info: Optional[Dict[str, Any]] = None
                 render_time_ns: int = 0
                 for order in orders:
                     inputs.update(order.input_files.keys())
-                    steps.add(order.instant.step)
+                    steps[order.instant.step] += 1
                     if order.legend_info:
                         legend_info = order.legend_info
                     render_time_ns += order.render_time_ns
                 record_rt = {
                     "inputs": sorted(inputs),
-                    "steps": sorted(steps),
+                    "steps": steps,
                     "legend_info": legend_info,
                     "render_stats": {
                         "time_ns": render_time_ns,
