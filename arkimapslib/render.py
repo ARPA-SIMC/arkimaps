@@ -1,9 +1,11 @@
 # from __future__ import annotations
 import contextlib
+import io
 import os
 import subprocess
 import sys
-from typing import Iterable, Optional
+import time
+from typing import Iterable, Optional, TextIO
 
 # if TYPE_CHECKING:
 from .orders import Order
@@ -55,44 +57,82 @@ class Renderer:
     #     with multiprocessing.pool.Pool(initializer=self.worker_init, maxtasksperchild=16) as pool:
     #         yield pool
 
-    def render_one_to_python(self, order: 'Order', testing=False) -> str:
+    def print_python_preamble(self, testing=False, timings=False, file: Optional[TextIO] = None):
         """
-        Render one order to a Python trace file.
+        Print the preamble of the Python rendering script
+        """
+        if timings:
+            print("import json", file=file)
+            print("import time", file=file)
+            if hasattr(time, "perf_counter_ns"):
+                print("perf_counter_ns = time.perf_counter_ns", file=file)
+            else:
+                # Polyfill for Python < 3.7"
+                print("def perf_counter_ns() -> int:", file=file)
+                print("   return int(time.perf_counter() * 1000000000)", file=file)
+            print("start = perf_counter_ns()", file=file)
 
-        Return the name of the file written
-        """
         if testing:
-            py_lines = ["from arkimapslib.unittest import mock_macro as macro"]
+            print("from arkimapslib.unittest import mock_macro as macro", file=file)
         else:
-            py_lines = ["import os"]
+            print("import os", file=file)
             for k, v in self.env_overrides.items():
-                py_lines.append(f"os.environ[{k!r}] = {v!r}")
-            py_lines.append("from Magics import macro")
+                print(f"os.environ[{k!r}] = {v!r}", file=file)
+            print("from Magics import macro", file=file)
+
+        if timings:
+            print("magics_imported = perf_counter_ns() - start", file=file)
+
+    def print_python_order(self, name: str, order: 'Order', timings=False, file: Optional[TextIO] = None):
+        """
+        Print a function that renders this order
+        """
+        print(f"def {name}():", file=file)
+        if timings:
+            print("    start = perf_counter_ns()", file=file)
 
         output_pathname = os.path.join(self.workdir, order.relpath, order.basename)
         order_args = "".join([f", {k}={v!r}" for k, v in order.output_options.items()])
-        py_lines.append(
-            f"parts = [macro.output(output_formats=['png'], output_name={output_pathname!r},"
-            f" output_name_first_page_number='off'{order_args})]",
-            )
+        print(f"    output_name={output_pathname!r}", file=file)
+        print(f"    parts = [macro.output(output_formats=['png'], output_name=output_name,"
+              f" output_name_first_page_number='off'{order_args})]", file=file)
 
         for step in order.order_steps:
             name, parms = step.as_magics_macro()
             py_parms = []
             for k, v in parms.items():
                 py_parms.append(f"{k}={v!r}")
-            py_lines.append(f"parts.append(macro.{name}({', '.join(py_parms)}))")
+            print(f"    parts.append(macro.{name}({', '.join(py_parms)}))", file=file)
 
-        py_lines.append("macro.plot(*parts)")
+        print("    macro.plot(*parts)", file=file)
 
-        code = "\n".join(py_lines)
+        # Return result
+        print("    res = {'output': output_name}", file=file)
+        if timings:
+            print("    res['time'] = perf_counter_ns() - start", file=file)
+        print("    return res", file=file)
+
+    def render_one_to_python(self, order: 'Order', testing=False, timings=False) -> str:
+        """
+        Render one order to a Python trace file.
+
+        Return the name of the file written
+        """
+        with io.StringIO() as code:
+            self.print_python_preamble(testing, timings, file=code)
+            self.print_python_order("order", order, timings=timings, file=code)
+            print("result = {'magics_imported': magics_imported, 'products': []}", file=code)
+            print("result['products'].append(order())", file=code)
+            print("print(json.dumps(result))", file=code)
+            unformatted = code.getvalue()
+
         try:
             from yapf.yapflib import yapf_api
-            code, changed = yapf_api.FormatCode(code)
+            formatted, changed = yapf_api.FormatCode(unformatted)
         except ModuleNotFoundError:
             pass
 
-        return code
+        return formatted
 
         # if fname is None:
         #     fname = self.output_pathname + ".py"
@@ -126,7 +166,7 @@ class Renderer:
 
         # Write the python code, so that if we trigger a bug in Magics, we
         # have a Python reproducer available
-        python_code = self.render_one_to_python(order)
+        python_code = self.render_one_to_python(order, timings=True)
         with open(output_pathname + ".py", "wt") as fd:
             fd.write(python_code)
         order.render_script = output_pathname + ".py"
