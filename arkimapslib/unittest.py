@@ -1,6 +1,5 @@
 # from __future__ import annotations
 import datetime
-import multiprocessing
 import fnmatch
 import os
 import re
@@ -14,8 +13,6 @@ from .render import Renderer
 
 if TYPE_CHECKING:
     from .orders import Order
-
-multiprocessing.set_start_method("spawn")
 
 
 class OrderResult:

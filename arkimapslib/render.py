@@ -1,9 +1,9 @@
 # from __future__ import annotations
 import contextlib
-import multiprocessing
-import multiprocessing.pool
 import os
-from typing import Generator, Iterable, Optional
+import subprocess
+import sys
+from typing import Iterable, Optional
 
 # if TYPE_CHECKING:
 from .orders import Order
@@ -48,12 +48,12 @@ class Renderer:
         for k, v in self.env_overrides.items():
             os.environ[k] = v
 
-    @contextlib.contextmanager
-    def magics_worker_pool(self) -> Generator[multiprocessing.pool.Pool, None, None]:
-        # Using maxtasksperchild to regularly restart the workers, to mitigate
-        # possible Magics memory leaks
-        with multiprocessing.pool.Pool(initializer=self.worker_init, maxtasksperchild=16) as pool:
-            yield pool
+    # @contextlib.contextmanager
+    # def magics_worker_pool(self) -> Generator[multiprocessing.pool.Pool, None, None]:
+    #     # Using maxtasksperchild to regularly restart the workers, to mitigate
+    #     # possible Magics memory leaks
+    #     with multiprocessing.pool.Pool(initializer=self.worker_init, maxtasksperchild=16) as pool:
+    #         yield pool
 
     def render_one_to_python(self, order: 'Order', testing=False) -> str:
         """
@@ -103,14 +103,42 @@ class Renderer:
         # return fname
 
     def render(self, orders: Iterable['Order']):
-        with self.magics_worker_pool() as pool:
-            for order in pool.imap_unordered(self.prepare_order, orders):
-                if order is not None:
-                    yield order
+        # with self.magics_worker_pool() as pool:
+        #     for order in pool.imap_unordered(self.prepare_order, orders):
+        #         if order is not None:
+        #             yield order
+        for order in orders:
+            rendered = self.run_render_script(order)
+            if rendered is not None:
+                yield rendered
 
     def render_one(self, order: 'Order') -> Optional['Order']:
-        with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
-            return pool.apply(self.prepare_order, (order,))
+        # with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
+        #     return pool.apply(self.prepare_order, (order,))
+        return self.run_render_script(order)
+
+    def run_render_script(self, order: 'Order'):
+        start = perf_counter_ns()
+
+        path = os.path.join(self.workdir, order.relpath)
+        os.makedirs(path, exist_ok=True)
+        output_pathname = os.path.join(path, order.basename)
+
+        # Write the python code, so that if we trigger a bug in Magics, we
+        # have a Python reproducer available
+        python_code = self.render_one_to_python(order)
+        with open(output_pathname + ".py", "wt") as fd:
+            fd.write(python_code)
+        order.render_script = output_pathname + ".py"
+
+        # Run the render script
+        subprocess.run([sys.executable, order.render_script], check=True)
+
+        # Set render information in the order
+        order.output = output_pathname + ".png"
+        order.render_time_ns = perf_counter_ns() - start
+
+        return order
 
     def prepare_order(self, order: 'Order') -> Optional['Order']:
         """
@@ -139,6 +167,7 @@ class Renderer:
             python_code = self.render_one_to_python(order)
             with open(output_pathname + ".py", "wt") as fd:
                 fd.write(python_code)
+            order.render_script = output_pathname + ".py"
 
             # Render with Magics (Worktop's constructor is where Magics get imported)
             worktop = Worktop(input_files=order.input_files)
