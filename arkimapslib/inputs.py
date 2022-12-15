@@ -493,13 +493,15 @@ class VG6DStatProcMixin:
                     shutil.copyfileobj(src, v6t.stdin)
             v6t.stdin.close()
             v6t.wait()
-
-        try:
             if v6t.returncode != 0:
                 raise RuntimeError(f"vg6d_transform exited with code {v6t.returncode}")
 
-            size = os.path.getsize(decumulated_data)
-            if not os.path.exists(decumulated_data) or size == 0:
+        try:
+            if os.path.exists(decumulated_data):
+                size = os.path.getsize(decumulated_data)
+            else:
+                size = None
+            if size is None or size == 0:
                 log.warning("%s: vg6d_transform generated empty output", self.name)
                 return
 
