@@ -166,16 +166,16 @@ class Renderer:
                 yield group
 
         for group in groups(orders, 16):
-            rendered = self.run_render_script(group)
-            if rendered is not None:
-                yield rendered
+            self.run_render_script(group)
+            yield from group
 
     def render_one(self, order: 'Order') -> Optional['Order']:
         # with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
         #     return pool.apply(self.prepare_order, (order,))
-        return self.run_render_script([order])
+        self.run_render_script([order])
+        return order
 
-    def run_render_script(self, orders: Sequence['Order']):
+    def write_render_script(self, orders: Sequence['Order']) -> str:
         python_code = self.make_python_renderer(orders, timings=True)
 
         # Write the python code, so that if we trigger a bug in Magics, we
@@ -198,16 +198,18 @@ class Renderer:
                     os.unlink(output_pathname)
                     os.link(script_file, output_pathname)
 
+        return script_file
+
+    def run_render_script(self, orders: Sequence['Order']):
+        script_file = self.write_render_script(orders)
+
         # Run the render script
         res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
-        print(res.stdout)
         render_info = json.loads(res.stdout)
-        for product_info in render_info["products"]:
+        for order, product_info in zip(orders, render_info["products"]):
             # Set render information in the order
             order.output = product_info["output"] + ".png"
             order.render_time_ns = product_info["time"]
-
-        return order
 
     def prepare_order(self, order: 'Order') -> Optional['Order']:
         """
