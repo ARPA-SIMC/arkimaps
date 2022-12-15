@@ -198,10 +198,17 @@ class Renderer:
 
         rendered: List["Order"] = []
         while queue or pending:
+            # Polyfill for Python 3.6
+            if hasattr(asyncio, "create_task"):
+                create_task = asyncio.create_task
+            else:
+                loop = asyncio.get_event_loop()
+                create_task = loop.create_task
+
             # Refill the queue
             while queue and len(pending) < max_tasks:
                 script_file, orders = queue.popitem()
-                pending.add(asyncio.create_task(self.run_render_script(script_file, orders), name=script_file))
+                pending.add(create_task(self.run_render_script(script_file, orders), name=script_file))
 
             # Execute the queue
             log.debug("Waiting for %d tasks", len(pending))
