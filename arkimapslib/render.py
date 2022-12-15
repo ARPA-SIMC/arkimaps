@@ -181,7 +181,14 @@ class Renderer:
             script_file = self.write_render_script(group, formatted=False)
             queue[script_file] = group
 
-        return asyncio.run(self.render_asyncio(queue, tarout))
+        if hasattr(asyncio, "run"):
+            return asyncio.run(self.render_asyncio(queue, tarout))
+        else:
+            # Python 3.6
+            loop = asyncio.get_event_loop()
+            res = loop.run_until_complete(self.render_asyncio(queue, tarout))
+            loop.close()
+            return res
 
     async def render_asyncio(self, queue: Dict[str, List["Order"]], tarout: "tarfile.TarFile") -> List["Order"]:
         # TODO: hardcoded default to os.cpu_count, can be configurable
