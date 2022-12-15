@@ -58,12 +58,17 @@ class Renderer:
     #     with multiprocessing.pool.Pool(initializer=self.worker_init, maxtasksperchild=16) as pool:
     #         yield pool
 
-    def print_python_preamble(self, testing=False, timings=False, file: Optional[TextIO] = None):
+    def print_python_preamble(self, timings=False, file: Optional[TextIO] = None):
         """
         Print the preamble of the Python rendering script
         """
         print("import contextlib", file=file)
         print("import io", file=file)
+        print("import os", file=file)
+
+        for k, v in self.env_overrides.items():
+            print(f"os.environ[{k!r}] = {v!r}", file=file)
+
         if timings:
             print("import json", file=file)
             print("import time", file=file)
@@ -75,13 +80,7 @@ class Renderer:
                 print("   return int(time.perf_counter() * 1000000000)", file=file)
             print("start = perf_counter_ns()", file=file)
 
-        if testing:
-            print("from arkimapslib.unittest import mock_macro as macro", file=file)
-        else:
-            print("import os", file=file)
-            for k, v in self.env_overrides.items():
-                print(f"os.environ[{k!r}] = {v!r}", file=file)
-            print("from Magics import macro", file=file)
+        print("from Magics import macro", file=file)
 
         if timings:
             print("magics_imported = perf_counter_ns() - start", file=file)
@@ -118,18 +117,20 @@ class Renderer:
             print("    res['time'] = perf_counter_ns() - start", file=file)
         print("    return res", file=file)
 
-    def make_python_renderer(self, orders: Sequence['Order'], testing=False, timings=False) -> str:
+    def make_python_renderer(self, orders: Sequence['Order'], timings=False) -> str:
         """
         Render one order to a Python trace file.
 
         Return the name of the file written
         """
         with io.StringIO() as code:
-            self.print_python_preamble(testing, timings, file=code)
+            self.print_python_preamble(timings, file=code)
             print("result = {'magics_imported': magics_imported, 'products': []}", file=code)
             for idx, order in enumerate(orders):
                 name = f"order{idx}"
                 self.print_python_order(name, order, timings=timings, file=code)
+            for idx, order in enumerate(orders):
+                name = f"order{idx}"
                 print(f"result['products'].append({name}())", file=code)
             print("print(json.dumps(result))", file=code)
             unformatted = code.getvalue()
@@ -172,7 +173,15 @@ class Renderer:
     def render_one(self, order: 'Order') -> Optional['Order']:
         # with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
         #     return pool.apply(self.prepare_order, (order,))
-        self.run_render_script([order])
+        script_file = self.write_render_script([order])
+
+        # Run the render script
+        res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
+        render_info = json.loads(res.stdout)
+        product_info = render_info["products"][0]
+        # Set render information in the order
+        order.output = product_info["output"] + ".png"
+        order.render_time_ns = product_info["time"]
         return order
 
     def write_render_script(self, orders: Sequence['Order']) -> str:
@@ -199,17 +208,6 @@ class Renderer:
                     os.link(script_file, output_pathname)
 
         return script_file
-
-    def run_render_script(self, orders: Sequence['Order']):
-        script_file = self.write_render_script(orders)
-
-        # Run the render script
-        res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
-        render_info = json.loads(res.stdout)
-        for order, product_info in zip(orders, render_info["products"]):
-            # Set render information in the order
-            order.output = product_info["output"] + ".png"
-            order.render_time_ns = product_info["time"]
 
     def prepare_order(self, order: 'Order') -> Optional['Order']:
         """
