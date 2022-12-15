@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 import time
-from typing import Iterable, Optional, Sequence, TextIO
+from typing import Dict, Generator, Iterable, List, Optional, Sequence, TextIO
 
 # if TYPE_CHECKING:
 from .orders import Order
@@ -151,7 +151,7 @@ class Renderer:
 
         # return fname
 
-    def render(self, orders: Iterable['Order']):
+    def render(self, orders: Iterable['Order']) -> Generator["Order", None, None]:
         # with self.magics_worker_pool() as pool:
         #     for order in pool.imap_unordered(self.prepare_order, orders):
         #         if order is not None:
@@ -166,9 +166,26 @@ class Renderer:
             if group:
                 yield group
 
+        queue: Dict[str, List["Order"]] = {}
         for group in groups(orders, 16):
-            self.run_render_script(group)
-            yield from group
+            script_file = self.write_render_script(group)
+            queue[script_file] = group
+
+        yield from self.run_render_queue(queue)
+
+    def run_render_queue(self, queue: Dict[str, List["Order"]]) -> Generator["Order", None, None]:
+        while queue:
+            script_file, orders = queue.popitem()
+
+            # TODO: parallelize
+            res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
+            render_info = json.loads(res.stdout)
+            for order, product_info in zip(orders, render_info["products"]):
+                # Set render information in the order
+                order.output = product_info["output"] + ".png"
+                order.render_time_ns = product_info["time"]
+
+            yield from orders
 
     def render_one(self, order: 'Order') -> Optional['Order']:
         # with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
