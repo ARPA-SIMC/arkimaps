@@ -219,7 +219,9 @@ class Renderer:
 
             # Notify results
             for task in done:
-                log.debug("%s: task done", task.get_name())
+                # Python 3.6 compat
+                if hasattr(task, "get_name"):
+                    log.debug("%s: task done", task.get_name())
                 try:
                     orders = task.result()
                 except Exception as e:
