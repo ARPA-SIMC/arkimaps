@@ -262,16 +262,19 @@ class Renderer:
             output_pathname = os.path.join(path, order.basename) + ".py"
             order.render_script = output_pathname
 
+            # Remove the destination file to break possibly existing links from
+            # an old workdir
+            try:
+                os.unlink(output_pathname)
+            except FileNotFoundError:
+                pass
+
             if script_file is None:
                 script_file = output_pathname
                 with open(script_file, "wt") as fd:
                     fd.write(python_code)
             else:
-                try:
-                    os.link(script_file, output_pathname)
-                except FileExistsError:
-                    os.unlink(output_pathname)
-                    os.link(script_file, output_pathname)
+                os.link(script_file, output_pathname)
 
         return script_file
 
