@@ -203,7 +203,9 @@ class Renderer:
                 create_task = asyncio.create_task
             else:
                 loop = asyncio.get_event_loop()
-                create_task = loop.create_task
+
+                def create_task(*args, **kw):
+                    return loop.create_task(*args)
 
             # Refill the queue
             while queue and len(pending) < max_tasks:
