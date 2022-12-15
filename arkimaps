@@ -147,15 +147,7 @@ class RenderMixin:
                 tarout.addfile(tarinfo=info, fileobj=buf)
 
             # Perform rendering
-            for order in renderer.render(orders):
-                log.info("Rendered %s to %s", order.recipe_name, order.basename)
-
-                # Move the generated image to the output tar
-                tarout.add(
-                    order.output,
-                    os.path.join(os.path.join(order.relpath, order.basename) + ".png"))
-                os.unlink(order.output)
-                rendered.append(order)
+            rendered = renderer.render(orders, tarout)
 
             if self.log_collector.entries:
                 # Add processing log

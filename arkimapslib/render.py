@@ -1,16 +1,24 @@
 # from __future__ import annotations
+import asyncio
 import contextlib
 import io
 import json
+import logging
 import os
 import subprocess
 import sys
 import time
-from typing import Dict, Generator, Iterable, List, Optional, Sequence, TextIO
+from typing import (TYPE_CHECKING, Dict, Generator, Iterable, List, Optional,
+                    Sequence, TextIO)
 
 # if TYPE_CHECKING:
 from .orders import Order
 from .utils import perf_counter_ns
+
+if TYPE_CHECKING:
+    import tarfile
+
+log = logging.getLogger("render")
 
 
 @contextlib.contextmanager
@@ -27,6 +35,20 @@ def override_env(**kw):
                 del os.environ[k]
             else:
                 os.environ[k] = v
+
+
+def groups(orders: Iterable["Order"], count: int) -> Generator[List["Order"], None, None]:
+    """
+    Given an iterable of orders, generate groups of maximum count items
+    """
+    group = []
+    for order in orders:
+        group.append(order)
+        if len(group) == count:
+            yield group
+            group = []
+    if group:
+        yield group
 
 
 class Renderer:
@@ -117,7 +139,7 @@ class Renderer:
             print("    res['time'] = perf_counter_ns() - start", file=file)
         print("    return res", file=file)
 
-    def make_python_renderer(self, orders: Sequence['Order'], timings=False) -> str:
+    def make_python_renderer(self, orders: Sequence['Order'], timings=False, formatted=False) -> str:
         """
         Render one order to a Python trace file.
 
@@ -125,72 +147,99 @@ class Renderer:
         """
         with io.StringIO() as code:
             self.print_python_preamble(timings, file=code)
-            print("result = {'magics_imported': magics_imported, 'products': []}", file=code)
             for idx, order in enumerate(orders):
                 name = f"order{idx}"
                 self.print_python_order(name, order, timings=timings, file=code)
+            print("result = {'magics_imported': magics_imported, 'products': []}", file=code)
             for idx, order in enumerate(orders):
                 name = f"order{idx}"
                 print(f"result['products'].append({name}())", file=code)
             print("print(json.dumps(result))", file=code)
             unformatted = code.getvalue()
 
-        try:
-            from yapf.yapflib import yapf_api
-            formatted, changed = yapf_api.FormatCode(unformatted)
-        except ModuleNotFoundError:
-            formatted = unformatted
+        if formatted:
+            try:
+                from yapf.yapflib import yapf_api
+                formatted, changed = yapf_api.FormatCode(unformatted)
+                return formatted
+            except ModuleNotFoundError:
+                return unformatted
+        else:
+            return unformatted
 
-        return formatted
+    def render(self, orders: Iterable['Order'], tarout: "tarfile.TarFile") -> List["Order"]:
+        """
+        Render the given order list, adding results to the tar file.
 
-        # if fname is None:
-        #     fname = self.output_pathname + ".py"
-
-        # with open(fname, "wt") as fd:
-        #     print(code, file=fd)
-
-        # return fname
-
-    def render(self, orders: Iterable['Order']) -> Generator["Order", None, None]:
-        # with self.magics_worker_pool() as pool:
-        #     for order in pool.imap_unordered(self.prepare_order, orders):
-        #         if order is not None:
-        #             yield order
-        def groups(orders, count):
-            group = []
-            for order in orders:
-                group.append(order)
-                if len(group) == count:
-                    yield group
-                    group = []
-            if group:
-                yield group
+        Return the list of orders that have been rendered
+        """
+        # TODO: hardcoded, make customizable
+        orders_per_script = 16
+        log.debug("%d orders to dispatch in groups of %d", len(orders), orders_per_script)
 
         queue: Dict[str, List["Order"]] = {}
-        for group in groups(orders, 16):
-            script_file = self.write_render_script(group)
+        for group in groups(orders, orders_per_script):
+            script_file = self.write_render_script(group, formatted=False)
             queue[script_file] = group
 
-        yield from self.run_render_queue(queue)
+        return asyncio.run(self.render_asyncio(queue, tarout))
 
-    def run_render_queue(self, queue: Dict[str, List["Order"]]) -> Generator["Order", None, None]:
-        while queue:
-            script_file, orders = queue.popitem()
+    async def render_asyncio(self, queue: Dict[str, List["Order"]], tarout: "tarfile.TarFile") -> List["Order"]:
+        # TODO: hardcoded default to os.cpu_count, can be configurable
+        max_tasks = os.cpu_count()
+        pending = set()
+        log.debug("%d render scripts to run on %d parallel tasks", len(queue), max_tasks)
 
-            # TODO: parallelize
-            res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
-            render_info = json.loads(res.stdout)
-            for order, product_info in zip(orders, render_info["products"]):
-                # Set render information in the order
-                order.output = product_info["output"] + ".png"
-                order.render_time_ns = product_info["time"]
+        rendered: List["Order"] = []
+        while queue or pending:
+            # Refill the queue
+            while queue and len(pending) < max_tasks:
+                script_file, orders = queue.popitem()
+                pending.add(asyncio.create_task(self.run_render_script(script_file, orders), name=script_file))
 
-            yield from orders
+            # Execute the queue
+            log.debug("Waiting for %d tasks", len(pending))
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            log.debug("%d tasks done, %d tasks pending", len(done), len(pending))
+
+            # Notify results
+            for task in done:
+                log.debug("%s: task done", task.get_name())
+                try:
+                    orders = task.result()
+                except Exception as e:
+                    log.warning("Task execution failed: %s", e, exc_info=e)
+                    continue
+
+                for order in orders:
+                    log.info("Rendered %s to %s %s: %s", order.recipe_name, order.relpath, order.basename, order.output)
+
+                    # Move the generated image to the output tar
+                    tarout.add(
+                        order.output,
+                        os.path.join(os.path.join(order.relpath, order.basename) + ".png"))
+                    os.unlink(order.output)
+                    rendered.append(order)
+
+        return rendered
+
+    async def run_render_script(self, script_file: str, orders: List["Order"]) -> List["Order"]:
+        proc = await asyncio.create_subprocess_exec(
+                sys.executable, script_file, stdout=asyncio.subprocess.PIPE)
+
+        stdout, stderr = await proc.communicate()
+        render_info = json.loads(stdout)
+        for order, product_info in zip(orders, render_info["products"]):
+            # Set render information in the order
+            order.output = product_info["output"] + ".png"
+            order.render_time_ns = product_info["time"]
+
+        return orders
 
     def render_one(self, order: 'Order') -> Optional['Order']:
         # with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
         #     return pool.apply(self.prepare_order, (order,))
-        script_file = self.write_render_script([order])
+        script_file = self.write_render_script([order], formatted=True)
 
         # Run the render script
         res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
@@ -201,8 +250,8 @@ class Renderer:
         order.render_time_ns = product_info["time"]
         return order
 
-    def write_render_script(self, orders: Sequence['Order']) -> str:
-        python_code = self.make_python_renderer(orders, timings=True)
+    def write_render_script(self, orders: Sequence['Order'], formatted: bool = False) -> str:
+        python_code = self.make_python_renderer(orders, timings=True, formatted=formatted)
 
         # Write the python code, so that if we trigger a bug in Magics, we
         # have a Python reproducer available
@@ -236,6 +285,7 @@ class Renderer:
         rendering, where worker processes render multiple orders with the same
         Magics settings, and more of an issue in unit testing.
         """
+        # TODO: this is not used anymore
         start = perf_counter_ns()
         try:
             from .worktops import Worktop
