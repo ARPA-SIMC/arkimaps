@@ -62,6 +62,8 @@ class Order:
         self.legend_info: Optional[Dict[str, Any]] = None
         # Summary stats about the rendering
         self.render_time_ns: int = 0
+        # Path to the rendering script
+        self.render_script: Optional[str] = None
 
     def __getstate__(self):
         state = self.__dict__.copy()

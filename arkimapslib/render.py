@@ -1,13 +1,23 @@
 # from __future__ import annotations
+import asyncio
 import contextlib
-import multiprocessing
-import multiprocessing.pool
+import io
+import json
+import logging
 import os
-from typing import Generator, Iterable, Optional
+import subprocess
+import sys
+import time
+from typing import (TYPE_CHECKING, Dict, Generator, Iterable, List, Optional,
+                    Sequence, TextIO)
 
-# if TYPE_CHECKING:
-from .orders import Order
-from .utils import perf_counter_ns
+if TYPE_CHECKING:
+    from .orders import Order
+
+if TYPE_CHECKING:
+    import tarfile
+
+log = logging.getLogger("render")
 
 
 @contextlib.contextmanager
@@ -24,6 +34,20 @@ def override_env(**kw):
                 del os.environ[k]
             else:
                 os.environ[k] = v
+
+
+def groups(orders: Iterable["Order"], count: int) -> Generator[List["Order"], None, None]:
+    """
+    Given an iterable of orders, generate groups of maximum count items
+    """
+    group = []
+    for order in orders:
+        group.append(order)
+        if len(group) == count:
+            yield group
+            group = []
+    if group:
+        yield group
 
 
 class Renderer:
@@ -48,122 +72,225 @@ class Renderer:
         for k, v in self.env_overrides.items():
             os.environ[k] = v
 
-    @contextlib.contextmanager
-    def magics_worker_pool(self) -> Generator[multiprocessing.pool.Pool, None, None]:
-        # Using maxtasksperchild to regularly restart the workers, to mitigate
-        # possible Magics memory leaks
-        with multiprocessing.pool.Pool(initializer=self.worker_init, maxtasksperchild=16) as pool:
-            yield pool
+    # @contextlib.contextmanager
+    # def magics_worker_pool(self) -> Generator[multiprocessing.pool.Pool, None, None]:
+    #     # Using maxtasksperchild to regularly restart the workers, to mitigate
+    #     # possible Magics memory leaks
+    #     with multiprocessing.pool.Pool(initializer=self.worker_init, maxtasksperchild=16) as pool:
+    #         yield pool
 
-    def render_one_to_python(self, order: 'Order', testing=False) -> str:
+    def print_python_preamble(self, timings=False, file: Optional[TextIO] = None):
         """
-        Render one order to a Python trace file.
+        Print the preamble of the Python rendering script
+        """
+        print("import contextlib", file=file)
+        print("import io", file=file)
+        print("import os", file=file)
 
-        Return the name of the file written
+        for k, v in self.env_overrides.items():
+            print(f"os.environ[{k!r}] = {v!r}", file=file)
+
+        if timings:
+            print("import json", file=file)
+            print("import time", file=file)
+            if hasattr(time, "perf_counter_ns"):
+                print("perf_counter_ns = time.perf_counter_ns", file=file)
+            else:
+                # Polyfill for Python < 3.7"
+                print("def perf_counter_ns() -> int:", file=file)
+                print("   return int(time.perf_counter() * 1000000000)", file=file)
+            print("start = perf_counter_ns()", file=file)
+
+        print("from Magics import macro", file=file)
+
+        if timings:
+            print("magics_imported = perf_counter_ns() - start", file=file)
+
+    def print_python_order(self, name: str, order: 'Order', timings=False, file: Optional[TextIO] = None):
         """
-        if testing:
-            py_lines = ["from arkimapslib.unittest import mock_macro as macro"]
-        else:
-            py_lines = ["import os"]
-            for k, v in self.env_overrides.items():
-                py_lines.append(f"os.environ[{k!r}] = {v!r}")
-            py_lines.append("from Magics import macro")
+        Print a function that renders this order
+        """
+        print(f"def {name}():", file=file)
+        if timings:
+            print("    start = perf_counter_ns()", file=file)
 
         output_pathname = os.path.join(self.workdir, order.relpath, order.basename)
         order_args = "".join([f", {k}={v!r}" for k, v in order.output_options.items()])
-        py_lines.append(
-            f"parts = [macro.output(output_formats=['png'], output_name={output_pathname!r},"
-            f" output_name_first_page_number='off'{order_args})]",
-            )
+        print(f"    output_name={output_pathname!r}", file=file)
+        print(f"    parts = [macro.output(output_formats=['png'], output_name=output_name,"
+              f" output_name_first_page_number='off'{order_args})]", file=file)
 
         for step in order.order_steps:
             name, parms = step.as_magics_macro()
             py_parms = []
             for k, v in parms.items():
                 py_parms.append(f"{k}={v!r}")
-            py_lines.append(f"parts.append(macro.{name}({', '.join(py_parms)}))")
+            print(f"    parts.append(macro.{name}({', '.join(py_parms)}))", file=file)
 
-        py_lines.append("macro.plot(*parts)")
+        print("    res = {'output': output_name}", file=file)
 
-        code = "\n".join(py_lines)
-        try:
-            from yapf.yapflib import yapf_api
-            code, changed = yapf_api.FormatCode(code)
-        except ModuleNotFoundError:
-            pass
+        print("    with contextlib.redirect_stdout(io.StringIO()) as out:", file=file)
+        print("        macro.plot(*parts)", file=file)
+        print("        res['magics_output'] = out.getvalue()", file=file)
 
-        return code
+        # Return result
+        if timings:
+            print("    res['time'] = perf_counter_ns() - start", file=file)
+        print("    return res", file=file)
 
-        # if fname is None:
-        #     fname = self.output_pathname + ".py"
+    def make_python_renderer(self, orders: Sequence['Order'], timings=False, formatted=False) -> str:
+        """
+        Render one order to a Python trace file.
 
-        # with open(fname, "wt") as fd:
-        #     print(code, file=fd)
+        Return the name of the file written
+        """
+        with io.StringIO() as code:
+            self.print_python_preamble(timings, file=code)
+            for idx, order in enumerate(orders):
+                name = f"order{idx}"
+                self.print_python_order(name, order, timings=timings, file=code)
+            print("result = {'magics_imported': magics_imported, 'products': []}", file=code)
+            for idx, order in enumerate(orders):
+                name = f"order{idx}"
+                print(f"result['products'].append({name}())", file=code)
+            print("print(json.dumps(result))", file=code)
+            unformatted = code.getvalue()
 
-        # return fname
+        if formatted:
+            try:
+                from yapf.yapflib import yapf_api
+                formatted, changed = yapf_api.FormatCode(unformatted)
+                return formatted
+            except ModuleNotFoundError:
+                return unformatted
+        else:
+            return unformatted
 
-    def render(self, orders: Iterable['Order']):
-        with self.magics_worker_pool() as pool:
-            for order in pool.imap_unordered(self.prepare_order, orders):
-                if order is not None:
-                    yield order
+    def render(self, orders: Iterable['Order'], tarout: "tarfile.TarFile") -> List["Order"]:
+        """
+        Render the given order list, adding results to the tar file.
+
+        Return the list of orders that have been rendered
+        """
+        # TODO: hardcoded, make customizable
+        orders_per_script = 16
+        log.debug("%d orders to dispatch in groups of %d", len(orders), orders_per_script)
+
+        queue: Dict[str, List["Order"]] = {}
+        for group in groups(orders, orders_per_script):
+            script_file = self.write_render_script(group, formatted=False)
+            queue[script_file] = group
+
+        if hasattr(asyncio, "run"):
+            return asyncio.run(self.render_asyncio(queue, tarout))
+        else:
+            # Python 3.6
+            loop = asyncio.get_event_loop()
+            res = loop.run_until_complete(self.render_asyncio(queue, tarout))
+            loop.close()
+            return res
+
+    async def render_asyncio(self, queue: Dict[str, List["Order"]], tarout: "tarfile.TarFile") -> List["Order"]:
+        # TODO: hardcoded default to os.cpu_count, can be configurable
+        max_tasks = os.cpu_count()
+        pending = set()
+        log.debug("%d render scripts to run on %d parallel tasks", len(queue), max_tasks)
+
+        rendered: List["Order"] = []
+        while queue or pending:
+            # Polyfill for Python 3.6
+            if hasattr(asyncio, "create_task"):
+                create_task = asyncio.create_task
+            else:
+                loop = asyncio.get_event_loop()
+
+                def create_task(*args, **kw):
+                    return loop.create_task(*args)
+
+            # Refill the queue
+            while queue and len(pending) < max_tasks:
+                script_file, orders = queue.popitem()
+                pending.add(create_task(self.run_render_script(script_file, orders), name=script_file))
+
+            # Execute the queue
+            log.debug("Waiting for %d tasks", len(pending))
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            log.debug("%d tasks done, %d tasks pending", len(done), len(pending))
+
+            # Notify results
+            for task in done:
+                # Python 3.6 compat
+                if hasattr(task, "get_name"):
+                    log.debug("%s: task done", task.get_name())
+                try:
+                    orders = task.result()
+                except Exception as e:
+                    log.warning("Task execution failed: %s", e, exc_info=e)
+                    continue
+
+                for order in orders:
+                    log.info("Rendered %s to %s %s: %s", order.recipe_name, order.relpath, order.basename, order.output)
+
+                    # Move the generated image to the output tar
+                    tarout.add(
+                        order.output,
+                        os.path.join(os.path.join(order.relpath, order.basename) + ".png"))
+                    os.unlink(order.output)
+                    rendered.append(order)
+
+        return rendered
+
+    async def run_render_script(self, script_file: str, orders: List["Order"]) -> List["Order"]:
+        proc = await asyncio.create_subprocess_exec(
+                sys.executable, script_file, stdout=asyncio.subprocess.PIPE)
+
+        stdout, stderr = await proc.communicate()
+        render_info = json.loads(stdout)
+        for order, product_info in zip(orders, render_info["products"]):
+            # Set render information in the order
+            order.output = product_info["output"] + ".png"
+            order.render_time_ns = product_info["time"]
+
+        return orders
 
     def render_one(self, order: 'Order') -> Optional['Order']:
-        with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
-            return pool.apply(self.prepare_order, (order,))
+        # with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
+        #     return pool.apply(self.prepare_order, (order,))
+        script_file = self.write_render_script([order], formatted=True)
 
-    def prepare_order(self, order: 'Order') -> Optional['Order']:
-        """
-        Run all the steps of the recipe and render the resulting file.
+        # Run the render script
+        res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
+        render_info = json.loads(res.stdout)
+        product_info = render_info["products"][0]
+        # Set render information in the order
+        order.output = product_info["output"] + ".png"
+        order.render_time_ns = product_info["time"]
+        return order
 
-        This method imports Magics, and is best called in a subprocess, to
-        prevent Magics global state from interfering between renderings with
-        different parameters. This is less of an issue during arkimaps
-        rendering, where worker processes render multiple orders with the same
-        Magics settings, and more of an issue in unit testing.
-        """
-        start = perf_counter_ns()
-        try:
-            from .worktops import Worktop
+    def write_render_script(self, orders: Sequence['Order'], formatted: bool = False) -> str:
+        python_code = self.make_python_renderer(orders, timings=True, formatted=formatted)
 
-            # TODO: Magics also has macro.silent(), though I cannot easily find
-            #       its documentation
-
+        # Write the python code, so that if we trigger a bug in Magics, we
+        # have a Python reproducer available
+        script_file: Optional[str] = None
+        for order in orders:
             path = os.path.join(self.workdir, order.relpath)
             os.makedirs(path, exist_ok=True)
+            output_pathname = os.path.join(path, order.basename) + ".py"
+            order.render_script = output_pathname
 
-            output_pathname = os.path.join(path, order.basename)
+            # Remove the destination file to break possibly existing links from
+            # an old workdir
+            try:
+                os.unlink(output_pathname)
+            except FileNotFoundError:
+                pass
 
-            # Write the python code, so that if we trigger a bug in Magics, we
-            # have a Python reproducer available
-            python_code = self.render_one_to_python(order)
-            with open(output_pathname + ".py", "wt") as fd:
-                fd.write(python_code)
+            if script_file is None:
+                script_file = output_pathname
+                with open(script_file, "wt") as fd:
+                    fd.write(python_code)
+            else:
+                os.link(script_file, output_pathname)
 
-            # Render with Magics (Worktop's constructor is where Magics get imported)
-            worktop = Worktop(input_files=order.input_files)
-            for step in order.order_steps:
-                step.run(worktop)
-
-            # Settings of the PNG output
-            output = worktop.macro.output(
-                output_formats=['png'],
-                output_name=output_pathname,
-                output_name_first_page_number="off",
-                **order.output_options,
-            )
-
-            # Render the file and store the output file name into the order
-            worktop.macro.plot(
-                output,
-                *worktop.parts,
-            )
-
-            order.output = output_pathname + ".png"
-
-            order.render_time_ns = perf_counter_ns() - start
-
-            return order
-        except Exception as e:
-            order.log.error("rendering failed: %s", e, exc_info=e)
-            return None
+        return script_file

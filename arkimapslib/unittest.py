@@ -1,6 +1,5 @@
 # from __future__ import annotations
 import datetime
-import multiprocessing
 import fnmatch
 import os
 import re
@@ -14,8 +13,6 @@ from .render import Renderer
 
 if TYPE_CHECKING:
     from .orders import Order
-
-multiprocessing.set_start_method("spawn")
 
 
 class OrderResult:
@@ -222,7 +219,7 @@ class RecipeTestMixin:
         self.assertEqual(add_basemap.params.get("params", {}), self.expected_basemap_args)
 
         # Test rendering to Python
-        res.python_code = renderer.render_one_to_python(order)
+        res.python_code = renderer.make_python_renderer([order])
 
         # Test rendering with Magics
         rendered = renderer.render_one(order)
@@ -370,24 +367,12 @@ def add_recipe_test_cases(
             setattr(module, cls_name, test_case)
 
 
-class MockMacro:
-    def plot(self, *args):
-        pass
-
-    def __getattr__(self, key: str):
-        def to_dict(**kw):
-            res = {"__name__": key}
-            res.update(**kw)
-            return res
-        return to_dict
-
-
-mock_macro = MockMacro()
-
-
 def scan_python_order(order: "Order") -> List[Dict[str, Any]]:
-    renderer = Renderer("/")
-    py_order = renderer.render_one_to_python(order, testing=True)
-    py_order_globals = {}
-    exec(py_order, py_order_globals)
-    return py_order_globals["parts"]
+    parts = []
+    for step in order.order_steps:
+        name, parms = step.as_magics_macro()
+        macro = {"__name__": name}
+        for k, v in parms.items():
+            macro[k] = v
+        parts.append(macro)
+    return parts
