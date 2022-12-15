@@ -138,7 +138,7 @@ class Renderer:
             from yapf.yapflib import yapf_api
             formatted, changed = yapf_api.FormatCode(unformatted)
         except ModuleNotFoundError:
-            pass
+            formatted = unformatted
 
         return formatted
 
