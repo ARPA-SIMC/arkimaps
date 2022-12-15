@@ -11,9 +11,8 @@ import time
 from typing import (TYPE_CHECKING, Dict, Generator, Iterable, List, Optional,
                     Sequence, TextIO)
 
-# if TYPE_CHECKING:
-from .orders import Order
-from .utils import perf_counter_ns
+if TYPE_CHECKING:
+    from .orders import Order
 
 if TYPE_CHECKING:
     import tarfile
@@ -277,61 +276,3 @@ class Renderer:
                 os.link(script_file, output_pathname)
 
         return script_file
-
-    def prepare_order(self, order: 'Order') -> Optional['Order']:
-        """
-        Run all the steps of the recipe and render the resulting file.
-
-        This method imports Magics, and is best called in a subprocess, to
-        prevent Magics global state from interfering between renderings with
-        different parameters. This is less of an issue during arkimaps
-        rendering, where worker processes render multiple orders with the same
-        Magics settings, and more of an issue in unit testing.
-        """
-        # TODO: this is not used anymore
-        start = perf_counter_ns()
-        try:
-            from .worktops import Worktop
-
-            # TODO: Magics also has macro.silent(), though I cannot easily find
-            #       its documentation
-
-            path = os.path.join(self.workdir, order.relpath)
-            os.makedirs(path, exist_ok=True)
-
-            output_pathname = os.path.join(path, order.basename)
-
-            # Write the python code, so that if we trigger a bug in Magics, we
-            # have a Python reproducer available
-            python_code = self.make_python_renderer([order])
-            with open(output_pathname + ".py", "wt") as fd:
-                fd.write(python_code)
-            order.render_script = output_pathname + ".py"
-
-            # Render with Magics (Worktop's constructor is where Magics get imported)
-            worktop = Worktop(input_files=order.input_files)
-            for step in order.order_steps:
-                step.run(worktop)
-
-            # Settings of the PNG output
-            output = worktop.macro.output(
-                output_formats=['png'],
-                output_name=output_pathname,
-                output_name_first_page_number="off",
-                **order.output_options,
-            )
-
-            # Render the file and store the output file name into the order
-            worktop.macro.plot(
-                output,
-                *worktop.parts,
-            )
-
-            order.output = output_pathname + ".png"
-
-            order.render_time_ns = perf_counter_ns() - start
-
-            return order
-        except Exception as e:
-            order.log.error("rendering failed: %s", e, exc_info=e)
-            return None

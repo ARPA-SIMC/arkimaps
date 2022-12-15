@@ -1,6 +1,5 @@
 # from __future__ import annotations
 from typing import Dict, Any, Optional, Set, Tuple
-from .worktops import Worktop
 
 # if TYPE_CHECKING:
 from . import inputs
@@ -48,15 +47,6 @@ class Step:
         Return the name and arguments for a Magics macro that renders this step
         """
         raise NotImplementedError(f"{self.__class__.__name__}.as_magics_macro not implemented")
-
-    def run(self, worktop: Worktop):
-        """
-        Execute this step
-        """
-        # By default, it uses as_magics_macro to instantiate the right magics
-        # macro and add it to worktop parts
-        macro_name, macro_args = self.as_magics_macro()
-        worktop.parts.append(getattr(worktop.macro, macro_name)(**macro_args))
 
     @classmethod
     def apply_change(cls, data: Dict[str, Any], change: Dict[str, Any]):
