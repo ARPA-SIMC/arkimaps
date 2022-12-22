@@ -1,8 +1,14 @@
-# New in version UNRELEASED
+# New in version 1.0
 
+* Added legend to tile output (#46)
+* Added `product.json` output with a recap of the rendered contents (#124)
+* Added the possibility to have custom field in recipes (#124)
+* Added output files and tools to analyze production times (#125)
+* Improved performance (Render using generated render scripts instead of multiprocessing.Pool) #128
 * Allow to override `comp_stat_proc`, `comp_frac_valid`, and `comp_full_steps`,
   in `decumulate` and `average` derived inputs (#112, #122)
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
+* Various cosmetic improvements to recipes
 
 # New in version 0.11
 
