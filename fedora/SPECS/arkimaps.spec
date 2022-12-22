@@ -99,7 +99,6 @@ Postprocessor for arkimet.
 - Improved performance (Render using generated render scripts instead of multiprocessing.Pool) #128
 - Allow to override `comp_stat_proc`, `comp_frac_valid`, and `comp_full_steps`,
   in `decumulate` and `average` derived inputs (#112, #122)
-- Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
 - Various cosmetic improvements to recipes
 
 * Wed Jun 29 2022 Daniele Branchini <dbranchini@arpae.it> - 0.11-1
