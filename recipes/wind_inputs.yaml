@@ -152,3 +152,19 @@ inputs:
    type: vg6d_transform
    args: ["--output-variable-list=B11002"]
    inputs: [u250, v250]
+ wspeed500:
+   type: vg6d_transform
+   args: ["--output-variable-list=B11002"]
+   inputs: [u500, v500]
+ wspeed700:
+   type: vg6d_transform
+   args: ["--output-variable-list=B11002"]
+   inputs: [u700, v700]
+ wspeed850:
+   type: vg6d_transform
+   args: ["--output-variable-list=B11002"]
+   inputs: [u850, v850]
+ wspeed925:
+   type: vg6d_transform
+   args: ["--output-variable-list=B11002"]
+   inputs: [u925, v925]

@@ -1,0 +1,31 @@
+---
+description: Wind speed at 925hPa
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: wspeed925
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_level_selection_type: list
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    contour_shade_colour_list: ["#ffff66","#d9ff00","#93ff00","#6ba531","#00724b","#005447","#004247","#003370","#0033a3"]
+    contour_level_list: [10.0, 15.0, 20.0, 25.0, 30.0, 40.0, 50.0, 60.0, 80.0, 100.0]
+    contour_highlight: off
+    contour_hilo: off
+    legend: on
+    legend_text_colour: black
+    legend_title: on
+    legend_title_text: 'Wind speed at 925hPa [m/s]'
+    legend_display_type: continuous
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
+ 
