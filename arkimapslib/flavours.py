@@ -30,14 +30,6 @@ def deg2num(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, int]:
     return (xtile, ytile)
 
 
-def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
-    n = 2.0 ** zoom
-    lon_deg = xtile / n * 360.0 - 180.0
-    lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
-    lat_deg = math.degrees(lat_rad)
-    return (lon_deg, lat_deg)
-
-
 class Flavour:
     """
     Set of default settings used for generating a product
@@ -394,31 +386,15 @@ class TiledFlavour(Flavour):
                                 range(x_min, x_max + 1),
                                 range(y_min, y_max + 1),
                             ):
-                        min_lon, max_lat = num2deg(x, y, z)
-                        max_lon, min_lat = num2deg(x + 1, y + 1, z)
-
                         logger = logging.getLogger(
                                 f"arkimaps.render.{self.name}.{recipe.name}"
                                 f"{output_instant.product_suffix()}.{z}.{x}.{y}")
-
-                        # Instantiate order steps from recipe steps
-                        order_steps: List[Step] = []
-                        for recipe_step in recipe.steps:
-                            try:
-                                s = self.instantiate_order_step(
-                                        recipe_step, input_files, min_lat, max_lat, min_lon, max_lon)
-                            except StepSkipped:
-                                logger.debug("%s (skipped)", s.name)
-                                continue
-                            # self.log.debug("%s %r", step.name, step.get_params(mixer))
-                            order_steps.append(s)
 
                         res.append(orders.TileOrder(
                             flavour=self,
                             recipe=recipe,
                             input_files=input_files,
                             instant=output_instant,
-                            order_steps=order_steps,
                             output_options={
                                 "output_cairo_transparent_background": True,
                                 "output_width": self.width,

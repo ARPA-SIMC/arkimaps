@@ -1,8 +1,9 @@
 # from __future__ import annotations
 import logging
+import math
 import os
 from collections import Counter, defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
 
 from .steps import StepSkipped, StepConfig, AddBasemap
 
@@ -149,6 +150,14 @@ class MapOrder(Order):
             self.order_steps.append(s)
 
 
+def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
+    n = 2.0 ** zoom
+    lon_deg = xtile / n * 360.0 - 180.0
+    lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
+    lat_deg = math.degrees(lat_rad)
+    return (lon_deg, lat_deg)
+
+
 class TileOrder(Order):
     def __init__(
             self, *,
@@ -156,7 +165,6 @@ class TileOrder(Order):
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            order_steps: List["steps.Step"],
             output_options: Dict[str, Any],
             log: logging.Logger,
             z: int, x: int, y: int):
@@ -170,7 +178,20 @@ class TileOrder(Order):
             f"{z}/{x}/"
         )
         self.basename = f"{y}"
-        self.order_steps.extend(order_steps)
+
+        min_lon, max_lat = num2deg(x, y, z)
+        max_lon, min_lat = num2deg(x + 1, y + 1, z)
+
+        # Instantiate order steps from recipe steps
+        for recipe_step in recipe.steps:
+            try:
+                s = flavour.instantiate_order_step(
+                        recipe_step, input_files, min_lat, max_lat, min_lon, max_lon)
+            except StepSkipped:
+                self.log.debug("%s (skipped)", s.name)
+                continue
+            # self.log.debug("%s %r", step.name, step.get_params(mixer))
+            self.order_steps.append(s)
 
 
 class LegendOrder(Order):
