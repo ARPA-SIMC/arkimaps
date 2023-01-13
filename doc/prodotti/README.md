@@ -10,9 +10,14 @@
 | `sud`    | Sud Italia          | polar_stereographic | 41.5N 36.0N 19.0E  8.0E |
 | `medit`  | Area mediterranea   | mercator            | 52.0N 30.0N 35.0E  8.0W |
 | `euratl` | Area euroatlantica  | polar_stereographic | 60.0N 25.0N 65.0E 25.0W |
-| `ita_web`| Italia (layer)      | EPSG:3857 | 50.0N 35.0N 20.0E  2.5E |
+| `ita_web`| Italia (layer)      | EPSG:3857           | 50.0N 35.0N 20.0E  2.5E |
+| `emro_tiles` | Emilia-Romagna (tiles) | EPSG:3857    | 45.2N 43.4N 13.2E  9.0E |
+| `ita_tiles` | Italia (tiles)          | EPSG:3857    | 50.0N 35.0N 20.0E  2.5E |
+| `ita_small_tiles` | Italia (ridotta) (tiles) | EPSG:3857 | 48.0N 35.0N 20.0E  5.0E |
 
-Nota: le aree `*_web` sono scontornate e prive di sfondi o riferimenti cartografici per un'eventuale
+Nota:
+ - le aree `*_tiles` sono output a tile per visualizzazioni web (vedi: https://en.wikipedia.org/wiki/Tiled_web_map)
+ - le aree `*_web` sono scontornate e prive di sfondi o riferimenti cartografici per un'eventuale
 georeferenziazione, al momento non implementata in arkimaps ma ottenibile postprocessando gli output
 ad es. via gdal:
 
@@ -62,44 +67,4 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `tcw`    | Contenuto totale acqueo                        | [tcw.png](tcw.png)  | [tcw.md](../recipes/tcw.md) |
 | `tcwwind`  | Contenuto totale acqueo e vento a 500hPa e 850hPa | [tcwwind.png](tcwwind.png)  | [tcwwind.md](../recipes/standalone/tcwwind.md) |
 | `frzrain`  | Freezing rain                                | [frzrain.png](frzrain.png)  | [frzrain.md](../recipes/frzrain.md) |
-
-# Censimento prodotti attualmente pubblicati su infomet
-
-Nota: L'elenco che segue riguarda una lista di prodotti di riferimento sulla piattaforma "infomet" di ARPAE-SIMC
-
-*modelli censiti: cosmo 5M operativo, cosmo 5I backup, cosmo 5M AM, cleps det, cosmo 2I, cosmo 2I ruc, cosmo1ch, ifs_ita010*
-
-## Prodotti infomet (già implementati)
-
-| cod.int. | Prodotto       | Variabili | Modello |
-| ----- | -------------- | --------- | ------- |
-| alt0 | Altezza zero termico | Altezza zero termico (al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
-| ztw | Z500 + T500    | Geopotenziale(500 hPa), Temperatura generica(500 hPa), Vento(500 hPa) | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, ifs (ita), ifs (atl) |
-| ztw | Z700 + T700    | Geopotenziale(700 hPa), Temperatura generica(700 hPa), Vento(700 hPa) | cosmo 5M, cleps det, ifs (ita) |
-| ztw  | Z850 + T850    | Geopotenziale(850 hPa), Temperatura generica(850 hPa), Vento(850 hPa) | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, ifs (ita), ifs (atl) |
-| ztw | Z925 + T925    | Geopotenziale(925 hPa), Temperatura generica(925 hPa), Vento(925 hPa) | cosmo 5M, ifs (ita) |
-| syn | Z500 + T850    | Geopotenziale(500 hPa), Temperatura generica(850 hPa) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, ifs (ita), ifs (atl) |
-| jet  | Jet              | Geopotenziale(250 hPa), Vento(250 hPa), Isotache(250 hPa) | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, ifs (ita), ifs (atl) |
-| u700 | U% + vento 700   | Umidità rel.(700 hPa), Vento(700 hPa) | cosmo 5M, cosmo 5I backup, ifs (ita), ifs (atl) |
-| u700 | U% + vento 850   | Umidità rel.(850 hPa), Vento(850 hPa) | ifs (ita) |
-| u700 | U% + vento 925   | Umidità rel.(925 hPa), Vento(925 hPa) | ifs (ita) |
-| mslp | MSLP + vento 10m | Pressione(slm), Vento(10m), Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita), ifs (atl) |
-| beau | Isotache scala Beaufort | Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 5M am, ifs (ita) |
-| vmax | Vento massimo | vmax(10m), Isotache(10m) | cosmo 5M, cosmo 5I backup, cosmo 2I, , ifs (ita) (triorario) |
-| rain | Precipitazione totale (passi 1,3,6,12,24h)   | Preci tot cum(al suolo), Preci nev cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 24h), cosmo1 CH (solo 3h), ifs (ita) (no 1h), ifs (atl) (no 1, 3h) |
-| neve | Precipitazione nevosa (passi 1,3,6,12,24h)   | Preci nev cum(al suolo)  | cosmo 5M, cosmo 5I backup, cosmo 5M am (solo 6,12,24h), cleps det (no 1h), cosmo 2I, cosmo 2I RUC (no 12 e 24h), cosmo1 CH (solo 3h), ifs (ita) (no 3h), ifs (atl) (solo 24h) |
-| conv | Precipitazione convettiva (passi 3,6,12,24h) | Preci conv cum(al suolo) | cosmo 5M, cosmo 5I backup, cosmo 5M am (solo 6,12h), cleps det, ifs (ita) (no 3h) |
-| nTot | Nuvolosità totale | Copertura nuovolosa totale | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, ifs (ita), ifs (atl) |
-| t2m  | Temp 2 metri      | Temperatura a 2m | cosmo 5M, cosmo 5I backup, cosmo 5M am, cleps det, cosmo 2I, cosmo 2I RUC, cosmo1 CH, ifs (ita), ifs (atl) |
-| umid | U% 2 metri        | Umidità relativa 2 metri | cosmo 5M, cosmo 5I backup, cosmo 5M am, cosmo 2I |
-| visi | Visibilità        | Visibilità(m) | cosmo 5M, cosmo 2I, , ifs (ita) |
-| nubS | Nubi strati       | Copertura nubi basse, Copertura nubi medie, Copertura nubi alte | cosmo 5M, cosmo 5I backup, cleps det, cosmo 2I, cosmo 2I RUC, ifs (ita) |
-| indK | indice K          | Indice K (n) | cosmo 5M, cosmo 5I backup, ifs (ita) |
-| 2PV  | tetaE alla 2 PV   | TetaE + Vento + Pressione | ifs (ita), ifs (atl) |
-| cape | CAPE+CIN Nord Italia | C.A.P.E. (j/Kg), energia potenziale | cosmo 5M, cosmo 5I backup, cosmo 2I, cosmo 2I RUC |
-| cape | Cape Italia          | C.A.P.E. (j/Kg)                     | cosmo 5M, cosmo1 CH (area: nord italia), ifs (ita), ifs (atl) |
-|      | Temperatura media giornaliera | media temperatura a 2m | cosmo 5M, ifs (ita)  |
-| thom | Indice di disagio-bioclimatico di Thom | Indice di Thom | cosmo 5M |
-| sst  | Temperatura superficiale del mare | temperatura superificiale del mare | ifs (ita) |
-| tcw/tcw  | total column water | total column water + vento a 850 e 500 hPa | ruc (no vento), ifs (ita), ifs (atl) |
-| fzrnEc   | freezing rain      | freezing rain | ifs (ita) |
+| `wspeed10m` `wspeed250hPa` `wspeed500hPa` `wspeed700hPa` `wspeed850hPa` `wspeed925hPa` | Velocità del vento a vari livelli di pressione | | |

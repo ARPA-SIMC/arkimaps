@@ -10,6 +10,7 @@ Automated framework to render GRIB1/2 data with ECMWF's Magics, using a reposito
 
 Supported models:
  * COSMO-LAMI
+ * ICON
  * IFS-ECMWF
  * ERG5 (https://dati.arpae.it/dataset/erg5-interpolazione-su-griglia-di-dati-meteo)
 
@@ -152,7 +153,8 @@ The configuration of a "step" may have:
 * `skip: yes`: ignore a given step
 * `params`: default `params` value if not specified in the single recipe
 
-To generate tiling output, it's possible to add a `tile` keyword containing:
+To generate [tiled web map](https://en.wikipedia.org/wiki/Tiled_web_map)
+output, it's possible to add a `tile` keyword containing:
 
 * `zoom_min: Int = 3`: minimum zoom level
 * `zoom_max: Int = 5`: maximum zoom level
@@ -163,7 +165,7 @@ To generate tiling output, it's possible to add a `tile` keyword containing:
 
 ## Contact and copyright information
 
-arkimaps is Copyright (C) 2020-2022 ARPAE-SIMC <urpsim@arpae.it>
+arkimaps is Copyright (C) 2020-2023 ARPAE-SIMC <urpsim@arpae.it>
 
 arkimaps is Free Software, licensed under the terms of the GNU General Public
 License version 2.
