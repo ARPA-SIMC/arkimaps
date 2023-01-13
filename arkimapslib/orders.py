@@ -108,7 +108,7 @@ class Order:
         # Return result
         if timings:
             print("    res['time'] = perf_counter_ns() - start", file=file)
-        print("    return res", file=file)
+        print("    return [res]", file=file)
 
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:

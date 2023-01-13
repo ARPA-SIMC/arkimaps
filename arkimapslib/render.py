@@ -113,7 +113,7 @@ class Renderer:
             print("result = {'magics_imported': magics_imported, 'products': []}", file=code)
             for idx, order in enumerate(orders):
                 name = f"order{idx}"
-                print(f"result['products'].append({name}({self.workdir!r}))", file=code)
+                print(f"result['products'].extend({name}({self.workdir!r}))", file=code)
             print("print(json.dumps(result))", file=code)
             unformatted = code.getvalue()
 
