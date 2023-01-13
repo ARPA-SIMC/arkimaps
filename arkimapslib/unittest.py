@@ -3,7 +3,6 @@ import datetime
 import fnmatch
 import os
 import re
-import pickle
 import sys
 from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence
 import unittest
@@ -120,8 +119,6 @@ class RecipeTestMixin:
         recipe = self.kitchen.recipes.get(recipe_name)
         flavour = self.kitchen.flavours.get(flavour_name)
         orders = flavour.make_orders(recipe, self.kitchen.pantry)
-        for o in orders:
-            pickle.dumps(o)
         return orders
 
     def load_recipes(self, recipe_dirs=None):

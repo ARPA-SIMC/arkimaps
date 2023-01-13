@@ -65,21 +65,6 @@ class Order:
         # Path to the rendering script
         self.render_script: Optional[str] = None
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        # logger objects don't pickle correctly on python 3.6
-        del state['log']
-        # Avoid pickling complex structures that we don't need
-        del state['flavour']
-        del state['recipe']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.log = logging.getLogger(f"arkimaps.order.{self.basename}")
-        self.flavour = None
-        self.recipe = None
-
     def __str__(self):
         return self.basename
 

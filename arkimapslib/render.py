@@ -72,13 +72,6 @@ class Renderer:
         for k, v in self.env_overrides.items():
             os.environ[k] = v
 
-    # @contextlib.contextmanager
-    # def magics_worker_pool(self) -> Generator[multiprocessing.pool.Pool, None, None]:
-    #     # Using maxtasksperchild to regularly restart the workers, to mitigate
-    #     # possible Magics memory leaks
-    #     with multiprocessing.pool.Pool(initializer=self.worker_init, maxtasksperchild=16) as pool:
-    #         yield pool
-
     def print_python_preamble(self, timings=False, file: Optional[TextIO] = None):
         """
         Print the preamble of the Python rendering script
@@ -254,8 +247,6 @@ class Renderer:
         return orders
 
     def render_one(self, order: 'Order') -> Optional['Order']:
-        # with multiprocessing.pool.Pool(initializer=self.worker_init, processes=1) as pool:
-        #     return pool.apply(self.prepare_order, (order,))
         script_file = self.write_render_script([order], formatted=True)
 
         # Run the render script
