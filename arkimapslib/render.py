@@ -78,13 +78,13 @@ class Renderer:
         """
         print("import contextlib", file=file)
         print("import io", file=file)
+        print("import json", file=file)
         print("import os", file=file)
 
         for k, v in self.env_overrides.items():
             print(f"os.environ[{k!r}] = {v!r}", file=file)
 
         if timings:
-            print("import json", file=file)
             print("import time", file=file)
             if hasattr(time, "perf_counter_ns"):
                 print("perf_counter_ns = time.perf_counter_ns", file=file)
