@@ -227,7 +227,6 @@ class SimpleFlavour(Flavour):
                 recipe=recipe,
                 input_files=input_files,
                 instant=output_instant,
-                output_options={},
                 log=logger,
             ))
         return res
@@ -254,10 +253,6 @@ class TiledFlavour(Flavour):
         self.lat_max = float(tile["lat_max"])
         self.lon_min = float(tile["lon_min"])
         self.lon_max = float(tile["lon_max"])
-        self.width = 256
-        self.height = 256
-        self.width_cm = self.width / 40.
-        self.height_cm = self.height / 40.
 
     def summarize(self) -> Dict[str, Any]:
         res = super().summarize()
@@ -265,51 +260,6 @@ class TiledFlavour(Flavour):
             res[f"{name}_min"] = getattr(self, f"{name}_min")
             res[f"{name}_max"] = getattr(self, f"{name}_max")
         return res
-
-    def instantiate_order_step(
-            self,
-            recipe_step: "recipes.RecipeStep",
-            input_files: Dict[str, inputs.InputFile],
-            min_lat: float, max_lat: float,
-            min_lon: float, max_lon: float) -> Step:
-        """
-        Instantiate the step class with the given flavour config
-        """
-        step_config = self.step_config(recipe_step.name)
-        compiled_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
-        if recipe_step.name == "add_basemap":
-            params = compiled_step.params.get("params")
-            if params is None:
-                params = {}
-            else:
-                params = params.copy()
-            compiled_step.params["params"] = params
-            params.update(
-                subpage_map_projection="EPSG:3857",
-                subpage_lower_left_latitude=min_lat,
-                subpage_lower_left_longitude=min_lon,
-                subpage_upper_right_latitude=max_lat,
-                subpage_upper_right_longitude=max_lon,
-                page_x_length=self.width_cm,
-                page_y_length=self.height_cm,
-                super_page_x_length=self.width_cm,
-                super_page_y_length=self.height_cm,
-                subpage_x_length=self.width_cm,
-                subpage_y_length=self.height_cm,
-                subpage_x_position=0.,
-                subpage_y_position=0.,
-                subpage_frame='off',
-                output_width=self.width,
-                page_frame='off',
-                skinny_mode="on",
-                page_id_line='off',
-            )
-        elif recipe_step.name == "add_contour":
-            # Strip legend from add_contour
-            params = compiled_step.params.get("params")
-            if params is not None:
-                compiled_step.params["params"] = {k: v for k, v in params.items() if not k.startswith("legend")}
-        return compiled_step
 
     def make_order_for_legend(
             self,
@@ -358,10 +308,6 @@ class TiledFlavour(Flavour):
             instant=output_instant,
             grib_step=grib_step,
             contour_step=contour_step,
-            output_options={
-                # "output_cairo_transparent_background": True,
-                # "output_width": self.width,
-            },
             log=logger,
         )
 
@@ -395,10 +341,6 @@ class TiledFlavour(Flavour):
                             recipe=recipe,
                             input_files=input_files,
                             instant=output_instant,
-                            output_options={
-                                "output_cairo_transparent_background": True,
-                                "output_width": self.width,
-                            },
                             log=logger,
                             z=z, x=x, y=y
                         ))

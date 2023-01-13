@@ -16,6 +16,14 @@ if TYPE_CHECKING:
     from .recipes import Recipe
 
 
+LEGEND_WIDTH_CM = 3
+LEGEND_HEIGHT_CM = 21
+TILE_WIDTH_CM = 256 / 40.
+TILE_HEIGHT_CM = 256 / 40.
+TILE_WIDTH_PX = 256
+TILE_HEIGHT_PX = 256
+
+
 class Order:
     """
     Serializable instructions to prepare a product, based on a recipe and its
@@ -27,7 +35,6 @@ class Order:
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            output_options: Dict[str, Any],
             log: logging.Logger,
             ):
         # Reference to the flavour to use for summaries. It will be lost for
@@ -52,7 +59,7 @@ class Order:
         # Output file name, set after the product has been rendered
         self.output: Optional[str] = None
         # Extra options to be passed to Magics' output() macro
-        self.output_options = output_options
+        self.output_options: Dict[str, Any] = {}
 
         # If this order generates a legend, this is information about the
         # legend to be forwarded to the summary
@@ -129,12 +136,11 @@ class MapOrder(Order):
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            output_options: Dict[str, Any],
             log: logging.Logger,
             ):
         super().__init__(
                 flavour=flavour, recipe=recipe, input_files=input_files,
-                instant=instant, output_options=output_options, log=log)
+                instant=instant, log=log)
         self.relpath = f"{instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{flavour.name}"
         self.basename = f"{os.path.basename(recipe.name)}+{instant.step:03d}"
 
@@ -165,13 +171,11 @@ class TileOrder(Order):
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            output_options: Dict[str, Any],
             log: logging.Logger,
             z: int, x: int, y: int):
         super().__init__(
                 flavour=flavour, recipe=recipe, input_files=input_files,
-                instant=instant,
-                output_options=output_options, log=log)
+                instant=instant, log=log)
         self.relpath = (
             f"{instant.reftime:%Y-%m-%dT%H:%M:%S}/"
             f"{recipe.name}_{flavour.name}+{instant.step:03d}/"
@@ -182,16 +186,51 @@ class TileOrder(Order):
         min_lon, max_lat = num2deg(x, y, z)
         max_lon, min_lat = num2deg(x + 1, y + 1, z)
 
+        self.output_options["output_cairo_transparent_background"] = True
+        self.output_options["output_width"] = TILE_WIDTH_PX
+
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
             try:
-                s = flavour.instantiate_order_step(
-                        recipe_step, input_files, min_lat, max_lat, min_lon, max_lon)
+                step_config = flavour.step_config(recipe_step.name)
+                compiled_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                if recipe_step.name == "add_basemap":
+                    params = compiled_step.params.get("params")
+                    if params is None:
+                        params = {}
+                    else:
+                        params = params.copy()
+                    compiled_step.params["params"] = params
+                    params.update(
+                        subpage_map_projection="EPSG:3857",
+                        subpage_lower_left_latitude=min_lat,
+                        subpage_lower_left_longitude=min_lon,
+                        subpage_upper_right_latitude=max_lat,
+                        subpage_upper_right_longitude=max_lon,
+                        page_x_length=TILE_WIDTH_CM,
+                        page_y_length=TILE_HEIGHT_CM,
+                        super_page_x_length=TILE_WIDTH_CM,
+                        super_page_y_length=TILE_HEIGHT_CM,
+                        subpage_x_length=TILE_WIDTH_CM,
+                        subpage_y_length=TILE_HEIGHT_CM,
+                        subpage_x_position=0.,
+                        subpage_y_position=0.,
+                        subpage_frame='off',
+                        output_width=TILE_WIDTH_PX,
+                        page_frame='off',
+                        skinny_mode="on",
+                        page_id_line='off',
+                    )
+                elif recipe_step.name == "add_contour":
+                    # Strip legend from add_contour
+                    params = compiled_step.params.get("params")
+                    if params is not None:
+                        compiled_step.params["params"] = {k: v for k, v in params.items() if not k.startswith("legend")}
             except StepSkipped:
-                self.log.debug("%s (skipped)", s.name)
+                self.log.debug("%s (skipped)", compiled_step.name)
                 continue
             # self.log.debug("%s %r", step.name, step.get_params(mixer))
-            self.order_steps.append(s)
+            self.order_steps.append(compiled_step)
 
 
 class LegendOrder(Order):
@@ -201,29 +240,25 @@ class LegendOrder(Order):
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            output_options: Dict[str, Any],
             log: logging.Logger,
             grib_step: Optional["steps.Step"],
             contour_step: "steps.Step"):
         super().__init__(
                 flavour=flavour, recipe=recipe, input_files=input_files,
-                instant=instant, output_options=output_options, log=log)
+                instant=instant, log=log)
         self.relpath = f"{instant.reftime:%Y-%m-%dT%H:%M:%S}/"
         self.basename = f"{recipe.name}_{flavour.name}+legend"
-
-        width_cm = 3
-        height_cm = 21
 
         # Configure the basemap to be just a canvas for the legend
         basemap_config = StepConfig("add_basemap", options={
             "params": {
                 "subpage_frame": "off",
-                "page_x_length": width_cm,
-                "page_y_length": height_cm,
-                "super_page_x_length": width_cm,
-                "super_page_y_length": height_cm,
-                "subpage_x_length": width_cm,
-                "subpage_y_length": height_cm,
+                "page_x_length": LEGEND_WIDTH_CM,
+                "page_y_length": LEGEND_HEIGHT_CM,
+                "super_page_x_length": LEGEND_WIDTH_CM,
+                "super_page_y_length": LEGEND_HEIGHT_CM,
+                "subpage_x_length": LEGEND_WIDTH_CM,
+                "subpage_y_length": LEGEND_HEIGHT_CM,
                 "subpage_x_position": 0.0,
                 "subpage_y_position": 0.0,
                 "subpage_gutter_percentage": 20.,
@@ -244,8 +279,8 @@ class LegendOrder(Order):
         params["legend_box_mode"] = "positional"
         params["legend_box_x_position"] = 0.00
         params["legend_box_y_position"] = 0.00
-        params["legend_box_x_length"] = width_cm
-        params["legend_box_y_length"] = height_cm
+        params["legend_box_x_length"] = LEGEND_WIDTH_CM
+        params["legend_box_y_length"] = LEGEND_HEIGHT_CM
         params["legend_box_blanking"] = False
         params.pop("legend_title_font_size", None)
         params.pop("legend_automatic_position", None)
