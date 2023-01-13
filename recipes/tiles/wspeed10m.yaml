@@ -19,7 +19,7 @@ recipe:
     legend: on
     legend_text_colour: black
     legend_title: on
-    legend_title_text: 'Wind speed [m/s]'
+    legend_title_text: 'Wind speed at 10 metres [m/s]'
     legend_display_type: continuous
     legend_automatic_position: right
  - step: add_coastlines_fg

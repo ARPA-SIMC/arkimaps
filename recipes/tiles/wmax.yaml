@@ -1,5 +1,5 @@
 ---
-description: Maximum wind gust speed
+description: Wind maximum gust speed at 10m
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
@@ -17,8 +17,9 @@ recipe:
     contour_highlight: off
     contour_hilo: off
     legend: on
+    legend_text_colour: black
     legend_title: on
-    legend_title_text: 'Maximum wind gust speed [m/s]'
+    legend_title_text: 'Wind maximum gust speed at 10m [m/s]'
     legend_display_type: continuous
     legend_automatic_position: right
  - step: add_coastlines_fg
