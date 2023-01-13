@@ -3,7 +3,6 @@ import fnmatch
 import itertools
 import logging
 import math
-import os
 import re
 from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set, Tuple
 
@@ -252,12 +251,10 @@ class SimpleFlavour(Flavour):
                 # self.log.debug("%s %r", step.name, step.get_params(mixer))
                 order_steps.append(s)
 
-            res.append(orders.Order(
+            res.append(orders.MapOrder(
                 flavour=self,
                 recipe=recipe,
                 input_files=input_files,
-                relpath=f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{self.name}",
-                basename=f"{os.path.basename(recipe.name)}+{output_instant.step:03d}",
                 instant=output_instant,
                 order_steps=order_steps,
                 output_options={},
@@ -416,14 +413,10 @@ class TiledFlavour(Flavour):
         if not legend_step:
             return None
 
-        order = orders.Order(
+        order = orders.LegendOrder(
             flavour=self,
             recipe=recipe,
             input_files=input_files,
-            relpath=(
-                f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
-            ),
-            basename=f"{recipe.name}_{self.name}+legend",
             instant=output_instant,
             order_steps=order_steps,
             output_options={
@@ -477,16 +470,10 @@ class TiledFlavour(Flavour):
                             # self.log.debug("%s %r", step.name, step.get_params(mixer))
                             order_steps.append(s)
 
-                        res.append(orders.Order(
+                        res.append(orders.TileOrder(
                             flavour=self,
                             recipe=recipe,
                             input_files=input_files,
-                            relpath=(
-                                f"{output_instant.reftime:%Y-%m-%dT%H:%M:%S}/"
-                                f"{recipe.name}_{self.name}+{output_instant.step:03d}/"
-                                f"{z}/{x}/"
-                            ),
-                            basename=f"{y}",
                             instant=output_instant,
                             order_steps=order_steps,
                             output_options={
@@ -494,6 +481,7 @@ class TiledFlavour(Flavour):
                                 "output_width": self.width,
                             },
                             log=logger,
+                            z=z, x=x, y=y
                         ))
 
                 if idx == 0:
