@@ -4,7 +4,7 @@ import logging
 import math
 import os
 from collections import Counter, defaultdict
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Generator, IO, List, Optional, Set, Tuple
 
 from .steps import StepSkipped, StepConfig, AddBasemap
 
@@ -77,6 +77,38 @@ class Order:
 
     def __repr__(self):
         return self.basename
+
+    def print_python_function(self, name: str, timings=False, file: Optional[IO[str]] = None):
+        """
+        Print a function that renders this order
+        """
+        print(f"def {name}(workdir: str):", file=file)
+        if timings:
+            print("    start = perf_counter_ns()", file=file)
+
+        output_pathname = os.path.join(self.relpath, self.basename)
+        order_args = "".join([f", {k}={v!r}" for k, v in self.output_options.items()])
+        print(f"    output_name=os.path.join(workdir, {output_pathname!r})", file=file)
+        print(f"    parts = [macro.output(output_formats=['png'], output_name=output_name,"
+              f" output_name_first_page_number='off'{order_args})]", file=file)
+
+        for step in self.order_steps:
+            name, parms = step.as_magics_macro()
+            py_parms = []
+            for k, v in parms.items():
+                py_parms.append(f"{k}={v!r}")
+            print(f"    parts.append(macro.{name}({', '.join(py_parms)}))", file=file)
+
+        print("    res = {'output': output_name}", file=file)
+
+        print("    with contextlib.redirect_stdout(io.StringIO()) as out:", file=file)
+        print("        macro.plot(*parts)", file=file)
+        print("        res['magics_output'] = out.getvalue()", file=file)
+
+        # Return result
+        if timings:
+            print("    res['time'] = perf_counter_ns() - start", file=file)
+        print("    return res", file=file)
 
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:

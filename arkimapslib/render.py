@@ -99,38 +99,6 @@ class Renderer:
         if timings:
             print("magics_imported = perf_counter_ns() - start", file=file)
 
-    def print_python_order(self, name: str, order: 'Order', timings=False, file: Optional[TextIO] = None):
-        """
-        Print a function that renders this order
-        """
-        print(f"def {name}():", file=file)
-        if timings:
-            print("    start = perf_counter_ns()", file=file)
-
-        output_pathname = os.path.join(self.workdir, order.relpath, order.basename)
-        order_args = "".join([f", {k}={v!r}" for k, v in order.output_options.items()])
-        print(f"    output_name={output_pathname!r}", file=file)
-        print(f"    parts = [macro.output(output_formats=['png'], output_name=output_name,"
-              f" output_name_first_page_number='off'{order_args})]", file=file)
-
-        for step in order.order_steps:
-            name, parms = step.as_magics_macro()
-            py_parms = []
-            for k, v in parms.items():
-                py_parms.append(f"{k}={v!r}")
-            print(f"    parts.append(macro.{name}({', '.join(py_parms)}))", file=file)
-
-        print("    res = {'output': output_name}", file=file)
-
-        print("    with contextlib.redirect_stdout(io.StringIO()) as out:", file=file)
-        print("        macro.plot(*parts)", file=file)
-        print("        res['magics_output'] = out.getvalue()", file=file)
-
-        # Return result
-        if timings:
-            print("    res['time'] = perf_counter_ns() - start", file=file)
-        print("    return res", file=file)
-
     def make_python_renderer(self, orders: Sequence['Order'], timings=False, formatted=False) -> str:
         """
         Render one order to a Python trace file.
@@ -141,11 +109,11 @@ class Renderer:
             self.print_python_preamble(timings, file=code)
             for idx, order in enumerate(orders):
                 name = f"order{idx}"
-                self.print_python_order(name, order, timings=timings, file=code)
+                order.print_python_function(name, timings=timings, file=code)
             print("result = {'magics_imported': magics_imported, 'products': []}", file=code)
             for idx, order in enumerate(orders):
                 name = f"order{idx}"
-                print(f"result['products'].append({name}())", file=code)
+                print(f"result['products'].append({name}({self.workdir!r}))", file=code)
             print("print(json.dumps(result))", file=code)
             unformatted = code.getvalue()
 
