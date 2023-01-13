@@ -6,7 +6,7 @@ import math
 import re
 from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set, Tuple
 
-from .steps import StepConfig, Step, StepSkipped, AddBasemap
+from .steps import StepConfig, Step, StepSkipped
 from . import recipes
 from . import orders
 from . import inputs
@@ -213,16 +213,6 @@ class Flavour:
 
 
 class SimpleFlavour(Flavour):
-    def instantiate_order_step(
-            self,
-            recipe_step: "recipes.RecipeStep",
-            input_files: Dict[str, inputs.InputFile]) -> Step:
-        """
-        Instantiate the step class with the given flavour config
-        """
-        step_config = self.step_config(recipe_step.name)
-        return recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
-
     def inputs_to_orders(
             self,
             recipe: "recipes.Recipe",
@@ -240,23 +230,11 @@ class SimpleFlavour(Flavour):
             logger = logging.getLogger(
                     f"arkimaps.render.{self.name}.{recipe.name}{output_instant.product_suffix()}")
 
-            # Instantiate order steps from recipe steps
-            order_steps: List[Step] = []
-            for recipe_step in recipe.steps:
-                try:
-                    s = self.instantiate_order_step(recipe_step, input_files)
-                except StepSkipped:
-                    logger.debug("%s (skipped)", s.name)
-                    continue
-                # self.log.debug("%s %r", step.name, step.get_params(mixer))
-                order_steps.append(s)
-
             res.append(orders.MapOrder(
                 flavour=self,
                 recipe=recipe,
                 input_files=input_files,
                 instant=output_instant,
-                order_steps=order_steps,
                 output_options={},
                 log=logger,
             ))
@@ -352,83 +330,48 @@ class TiledFlavour(Flavour):
         logger = logging.getLogger(
                 f"arkimaps.render.{self.name}.{recipe.name}.legend")
 
-        width_cm = 3
-        height_cm = 21
+        # Identify relevant steps for legend generation
+        grib_step: Optional[Step] = None
+        contour_step: Optional[Step] = None
 
-        # Instantiate order steps from recipe steps
-        order_steps: List[Step] = []
-
-        # Configure the basemap to be just a canvas for the legend
-        basemap_config = StepConfig("add_basemap", options={
-            "params": {
-                "subpage_frame": "off",
-                "page_x_length": width_cm,
-                "page_y_length": height_cm,
-                "super_page_x_length": width_cm,
-                "super_page_y_length": height_cm,
-                "subpage_x_length": width_cm,
-                "subpage_y_length": height_cm,
-                "subpage_x_position": 0.0,
-                "subpage_y_position": 0.0,
-                "subpage_gutter_percentage": 20.,
-                "page_frame": "off",
-                "page_id_line": "off"
-            },
-        })
-        order_steps.append(AddBasemap("add_basemap", basemap_config, {}, input_files))
-
-        legend_step = None
         for recipe_step in recipe.steps:
-            if recipe_step.name not in ("add_grib", "add_contour"):
-                continue
             try:
-                step_config = self.step_config(recipe_step.name)
-                s = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
-                if not legend_step and recipe_step.name == "add_contour":
-                    params = s.params.get("params")
+                if recipe_step.name == "add_grib":
+                    step_config = self.step_config(recipe_step.name)
+                    grib_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                elif recipe_step.name == "add_contour":
+                    step_config = self.step_config(recipe_step.name)
+                    step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                    params = step.params.get("params")
                     if params is None:
                         params = {}
-                        s.params["params"] = params
-                    # Skip add_contour levels with `legend: off`
-                    if not params.get("legend", False):
-                        continue
-                    params["legend"] = "on"
-                    params["legend_text_font_size"] = '25%'
-                    params["legend_border_thickness"] = 4
-                    params["legend_only"] = "on"
-                    params["legend_box_mode"] = "positional"
-                    params["legend_box_x_position"] = 0.00
-                    params["legend_box_y_position"] = 0.00
-                    params["legend_box_x_length"] = width_cm
-                    params["legend_box_y_length"] = height_cm
-                    params["legend_box_blanking"] = False
-                    params.pop("legend_title_font_size", None)
-                    params.pop("legend_automatic_position", None)
-                    legend_step = s
+                        step.params["params"] = params
+                    if params.get("legend", False):
+                        contour_step = step
+                        break
+                else:
+                    # Ignore all other steps
+                    pass
             except StepSkipped:
-                logger.debug("%s (skipped)", s.name)
+                logger.debug("%s (skipped)", recipe_step.name)
                 continue
-            order_steps.append(s)
 
-        if not legend_step:
+        if not contour_step:
             return None
 
-        order = orders.LegendOrder(
+        return orders.LegendOrder(
             flavour=self,
             recipe=recipe,
             input_files=input_files,
             instant=output_instant,
-            order_steps=order_steps,
+            grib_step=grib_step,
+            contour_step=contour_step,
             output_options={
                 # "output_cairo_transparent_background": True,
                 # "output_width": self.width,
             },
             log=logger,
         )
-        order.legend_info = {
-            "params": legend_step.params["params"],
-        }
-        return order
 
     def inputs_to_orders(
             self,
