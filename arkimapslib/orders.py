@@ -1,9 +1,10 @@
 # from __future__ import annotations
+import itertools
 import logging
 import math
 import os
 from collections import Counter, defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Set, Tuple
 
 from .steps import StepSkipped, StepConfig, AddBasemap
 
@@ -35,7 +36,6 @@ class Order:
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            log: logging.Logger,
             ):
         # Reference to the flavour to use for summaries. It will be lost for
         # rendering, to avoid pickling the complex structure
@@ -66,7 +66,7 @@ class Order:
         self.legend_info: Optional[Dict[str, Any]] = None
 
         # Logger for this output
-        self.log = log
+        self.log: logging.Logger
         # Summary stats about the rendering
         self.render_time_ns: int = 0
         # Path to the rendering script
@@ -136,13 +136,14 @@ class MapOrder(Order):
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            log: logging.Logger,
             ):
         super().__init__(
                 flavour=flavour, recipe=recipe, input_files=input_files,
-                instant=instant, log=log)
+                instant=instant)
         self.relpath = f"{instant.reftime:%Y-%m-%dT%H:%M:%S}/{recipe.name}_{flavour.name}"
         self.basename = f"{os.path.basename(recipe.name)}+{instant.step:03d}"
+        self.log = logging.getLogger(
+                f"arkimaps.render.{flavour.name}.{recipe.name}{instant.product_suffix()}")
 
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
@@ -164,6 +165,14 @@ def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
     return (lon_deg, lat_deg)
 
 
+def deg2num(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, int]:
+    lat_rad = math.radians(lat_deg)
+    n = 2.0 ** zoom
+    xtile = int((lon_deg + 180.0) / 360.0 * n)
+    ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
+    return (xtile, ytile)
+
+
 class TileOrder(Order):
     def __init__(
             self, *,
@@ -171,17 +180,19 @@ class TileOrder(Order):
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            log: logging.Logger,
             z: int, x: int, y: int):
         super().__init__(
                 flavour=flavour, recipe=recipe, input_files=input_files,
-                instant=instant, log=log)
+                instant=instant)
         self.relpath = (
             f"{instant.reftime:%Y-%m-%dT%H:%M:%S}/"
             f"{recipe.name}_{flavour.name}+{instant.step:03d}/"
             f"{z}/{x}/"
         )
         self.basename = f"{y}"
+        self.log = logging.getLogger(
+                f"arkimaps.render.{flavour.name}.{recipe.name}"
+                f"{instant.product_suffix()}.{z}.{x}.{y}")
 
         min_lon, max_lat = num2deg(x, y, z)
         max_lon, min_lat = num2deg(x + 1, y + 1, z)
@@ -232,6 +243,34 @@ class TileOrder(Order):
             # self.log.debug("%s %r", step.name, step.get_params(mixer))
             self.order_steps.append(compiled_step)
 
+    @classmethod
+    def make_orders(
+            cls, *,
+            flavour: "Flavour",
+            recipe: "Recipe",
+            input_files: Dict[str, "inputs.InputFile"],
+            instant: "inputs.Instant",
+            lat_min: float, lat_max: float,
+            lon_min: float, lon_max: float,
+            zoom_min: int, zoom_max: int) -> Generator["TileOrder", None, None]:
+
+        for z in range(zoom_min, zoom_max + 1):
+            x_min, y_min = deg2num(lon_min, lat_min, z)
+            x_max, y_max = deg2num(lon_max, lat_max, z)
+            x_min, x_max = sorted((x_min, x_max))
+            y_min, y_max = sorted((y_min, y_max))
+            for x, y in itertools.product(
+                        range(x_min, x_max + 1),
+                        range(y_min, y_max + 1),
+                    ):
+                yield cls(
+                    flavour=flavour,
+                    recipe=recipe,
+                    input_files=input_files,
+                    instant=instant,
+                    z=z, x=x, y=y
+                )
+
 
 class LegendOrder(Order):
     def __init__(
@@ -240,14 +279,15 @@ class LegendOrder(Order):
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            log: logging.Logger,
             grib_step: Optional["steps.Step"],
             contour_step: "steps.Step"):
         super().__init__(
                 flavour=flavour, recipe=recipe, input_files=input_files,
-                instant=instant, log=log)
+                instant=instant)
         self.relpath = f"{instant.reftime:%Y-%m-%dT%H:%M:%S}/"
         self.basename = f"{recipe.name}_{flavour.name}+legend"
+
+        self.log = logging.getLogger(f"arkimaps.render.{flavour.name}.{recipe.name}.legend")
 
         # Configure the basemap to be just a canvas for the legend
         basemap_config = StepConfig("add_basemap", options={

@@ -1,10 +1,8 @@
 # from __future__ import annotations
 import fnmatch
-import itertools
 import logging
-import math
 import re
-from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set, Tuple
+from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set
 
 from .steps import StepConfig, Step, StepSkipped
 from . import recipes
@@ -20,14 +18,6 @@ Kwargs = Dict[str, Any]
 
 
 log = logging.getLogger("arkimaps.flavours")
-
-
-def deg2num(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, int]:
-    lat_rad = math.radians(lat_deg)
-    n = 2.0 ** zoom
-    xtile = int((lon_deg + 180.0) / 360.0 * n)
-    ytile = int((1.0 - math.asinh(math.tan(lat_rad)) / math.pi) / 2.0 * n)
-    return (xtile, ytile)
 
 
 class Flavour:
@@ -219,15 +209,11 @@ class SimpleFlavour(Flavour):
             if inputs_for_all_instants:
                 input_files.update(inputs_for_all_instants)
 
-            logger = logging.getLogger(
-                    f"arkimaps.render.{self.name}.{recipe.name}{output_instant.product_suffix()}")
-
             res.append(orders.MapOrder(
                 flavour=self,
                 recipe=recipe,
                 input_files=input_files,
                 instant=output_instant,
-                log=logger,
             ))
         return res
 
@@ -269,9 +255,6 @@ class TiledFlavour(Flavour):
         """
         Create an order to generate the legend for a tileset
         """
-        logger = logging.getLogger(
-                f"arkimaps.render.{self.name}.{recipe.name}.legend")
-
         # Identify relevant steps for legend generation
         grib_step: Optional[Step] = None
         contour_step: Optional[Step] = None
@@ -295,7 +278,6 @@ class TiledFlavour(Flavour):
                     # Ignore all other steps
                     pass
             except StepSkipped:
-                logger.debug("%s (skipped)", recipe_step.name)
                 continue
 
         if not contour_step:
@@ -308,7 +290,6 @@ class TiledFlavour(Flavour):
             instant=output_instant,
             grib_step=grib_step,
             contour_step=contour_step,
-            log=logger,
         )
 
     def inputs_to_orders(
@@ -323,27 +304,14 @@ class TiledFlavour(Flavour):
                 if inputs_for_all_instants:
                     input_files.update(inputs_for_all_instants)
 
-                for z in range(self.zoom_min, self.zoom_max + 1):
-                    x_min, y_min = deg2num(self.lon_min, self.lat_min, z)
-                    x_max, y_max = deg2num(self.lon_max, self.lat_max, z)
-                    x_min, x_max = sorted((x_min, x_max))
-                    y_min, y_max = sorted((y_min, y_max))
-                    for x, y in itertools.product(
-                                range(x_min, x_max + 1),
-                                range(y_min, y_max + 1),
-                            ):
-                        logger = logging.getLogger(
-                                f"arkimaps.render.{self.name}.{recipe.name}"
-                                f"{output_instant.product_suffix()}.{z}.{x}.{y}")
-
-                        res.append(orders.TileOrder(
+                res.extend(orders.TileOrder.make_orders(
                             flavour=self,
                             recipe=recipe,
                             input_files=input_files,
                             instant=output_instant,
-                            log=logger,
-                            z=z, x=x, y=y
-                        ))
+                            lat_min=self.lat_min, lat_max=self.lat_max,
+                            lon_min=self.lon_min, lon_max=self.lon_max,
+                            zoom_min=self.zoom_min, zoom_max=self.zoom_max))
 
                 if idx == 0:
                     order = self.make_order_for_legend(recipe, input_files, output_instant)
