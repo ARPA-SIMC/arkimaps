@@ -1,4 +1,4 @@
-# tiles/wmax: Maximum wind gust speed
+# tiles/wmax: Wind maximum gust speed at 10m
 
 Mixer: **default**
 
@@ -69,8 +69,9 @@ With arguments:
     "contour_highlight": false,
     "contour_hilo": false,
     "legend": true,
+    "legend_text_colour": "black",
     "legend_title": true,
-    "legend_title_text": "Maximum wind gust speed [m/s]",
+    "legend_title_text": "Wind maximum gust speed at 10m [m/s]",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right"
   }

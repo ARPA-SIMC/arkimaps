@@ -97,7 +97,7 @@ With arguments:
     "contour_hilo": false,
     "legend": true,
     "legend_title": true,
-    "legend_title_text": "Maximum wind gust speed [m/s]",
+    "legend_title_text": "Wind speed at 250hPa [m/s]",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right"
   }

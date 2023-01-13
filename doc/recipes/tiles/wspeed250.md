@@ -69,23 +69,30 @@ With arguments:
     "contour_shade_colour_method": "list",
     "contour_shade_method": "area_fill",
     "contour_shade_colour_list": [
-      "yellow",
-      "beige",
-      "gold",
-      "khaki"
+      "#ffff00",
+      "#a7e700",
+      "#5dd000",
+      "#1fb800",
+      "#00a110",
+      "#008a34",
+      "#00724b"
     ],
     "contour_level_list": [
-      35.0,
-      45.0,
-      55.0,
-      65.0,
-      150.0
+      30.0,
+      40.0,
+      50.0,
+      60.0,
+      70.0,
+      80.0,
+      90.0,
+      100.0
     ],
     "contour_highlight": false,
     "contour_hilo": false,
     "legend": true,
+    "legend_text_colour": "black",
     "legend_title": true,
-    "legend_title_text": "Maximum wind gust speed [m/s]",
+    "legend_title_text": "Wind speed at 250hPa [m/s]",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right"
   }

@@ -1,33 +1,27 @@
-# tiles/wspeed10m: Wind speed at 10 metres
+# tiles/wspeed925: Wind speed at 925hPa
 
 Mixer: **default**
 
 ## Inputs
 
-* **wspeed10m**:
+* **wspeed925**:
     * **vg6d_transform arguments**: --output-variable-list=B11002
     * **Preprocessing**: vg6d_transform
-    * **Inputs**: u10m, v10m
-* **u10m**:
+    * **Inputs**: u925, v925
+* **u925**:
     * Model **cosmo**:
-        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,105,10`
-        * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber == 1`
+        * **Arkimet matcher**: `product:GRIB1,,2,33;level:GRIB1,100,925`
+        * **grib_filter matcher**: `centre != 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 925`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,98,128,165`
-        * **grib_filter matcher**: `centre == 98 and shortName is "10u"`
-    * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,00080,000,002,002,015,001;level:GRIB2S,103,000,0000000010`
-        * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber == 2`
-* **v10m**:
+        * **Arkimet matcher**: `product:GRIB1,98,128,131;level:GRIB1,100,925`
+        * **grib_filter matcher**: `centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 925`
+* **v925**:
     * Model **cosmo**:
-        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,105,10`
-        * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 1`
+        * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,100,925`
+        * **grib_filter matcher**: `centre != 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 925`
     * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,98,128,166`
-        * **grib_filter matcher**: `centre == 98 and shortName is "10v"`
-    * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,00080,000,002,003,015,001;level:GRIB2S,103,000,0000000010`
-        * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 2`
+        * **Arkimet matcher**: `product:GRIB1,98,128,132;level:GRIB1,100,925`
+        * **grib_filter matcher**: `centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 925`
 
 ## Steps
 
@@ -57,7 +51,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "wspeed10m"
+  "grib": "wspeed925"
 }
 ```
 
@@ -75,24 +69,34 @@ With arguments:
     "contour_shade_colour_method": "list",
     "contour_shade_method": "area_fill",
     "contour_shade_colour_list": [
-      "green",
-      "yellow",
-      "orange",
-      "red"
+      "#ffff66",
+      "#d9ff00",
+      "#93ff00",
+      "#6ba531",
+      "#00724b",
+      "#005447",
+      "#004247",
+      "#003370",
+      "#0033a3"
     ],
     "contour_level_list": [
-      13.9,
-      17.1,
-      20.6,
-      24.2,
-      70.0
+      10.0,
+      15.0,
+      20.0,
+      25.0,
+      30.0,
+      40.0,
+      50.0,
+      60.0,
+      80.0,
+      100.0
     ],
     "contour_highlight": false,
     "contour_hilo": false,
     "legend": true,
     "legend_text_colour": "black",
     "legend_title": true,
-    "legend_title_text": "Wind speed at 10 metres [m/s]",
+    "legend_title_text": "Wind speed at 925hPa [m/s]",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right"
   }
@@ -146,6 +150,33 @@ With arguments:
     "map_administrative_boundaries_colour": "#504040",
     "map_administrative_boundaries_style": "solid",
     "map_administrative_boundaries": "on"
+  }
+}
+```
+
+### add_user_boundaries
+
+Add user-defined boundaries from a shapefile
+
+
+### add_geopoints
+
+Add geopoints
+
+
+### add_symbols
+
+Add symbols settings
+
+With arguments:
+```
+{
+  "params": {
+    "symbol_type": "marker",
+    "symbol_marker_index": 15,
+    "legend": "off",
+    "symbol_colour": "black",
+    "symbol_height": 0.28
   }
 }
 ```
