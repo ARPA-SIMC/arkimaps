@@ -138,13 +138,13 @@ class TestFlavour(unittest.TestCase):
                           }) as kitchen:
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
             self.assertCountEqual(
-                    [o.basename for o in orders],
-                    ["t2m+012", "tcc+012"])
+                    [(o.recipe.name, o.instant.step) for o in orders],
+                    [("t2m", 12), ("tcc", 12)])
 
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
             self.assertCountEqual(
-                    [o.basename for o in orders],
-                    ["t2m+012"])
+                    [(o.recipe.name, o.instant.step) for o in orders],
+                    [("t2m", 12)])
 
     def test_recipe_filter_subdir(self):
         with self.kitchen(flavours=[
@@ -157,13 +157,13 @@ class TestFlavour(unittest.TestCase):
                           }) as kitchen:
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
             self.assertCountEqual(
-                    [o.basename for o in orders],
-                    ["t2m+012", "tcc+012"])
+                    [(o.recipe.name, o.instant.step) for o in orders],
+                    [("test/t2m", 12), ("tcc", 12)])
 
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
             self.assertCountEqual(
-                    [o.basename for o in orders],
-                    ["t2m+012"])
+                    [(o.recipe.name, o.instant.step) for o in orders],
+                    [("test/t2m", 12)])
 
     def test_tiled(self):
         with self.kitchen(flavours=[flavour("test", tile={

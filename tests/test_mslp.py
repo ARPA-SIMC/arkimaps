@@ -21,7 +21,7 @@ class MSLPMixin:
         # Test that mslp does not produce a legend
         self.fill_pantry(flavour_name="ita_small_tiles")
         orders = self.make_orders(flavour_name="ita_small_tiles")
-        self.assertEqual(orders[-1].basename, "50")
+        self.assertEqual(orders[-1].render_script, "2021-01-10T00:00:00/mslp_ita_small_tiles+012/7/71/50.py")
         self.assertEqual(len(orders), 65)
 
 

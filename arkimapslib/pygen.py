@@ -1,5 +1,6 @@
 # from __future__ import annotations
 import contextlib
+import os
 import time
 from typing import TYPE_CHECKING, IO, Generator
 
@@ -89,14 +90,14 @@ class PyGen:
             with sub1.timed(name) as sub2:
                 yield sub2
 
-    def magics_renderer(self, function_name: str, order: "Order", output_relpath: str):
+    def magics_renderer(self, function_name: str, order: "Order", relpath: str, basename: str):
         """
         Write Python code for the Magics rendering portion for the given order
         """
-        self.line(f"output_name = os.path.join(workdir, {output_relpath!r})")
-
+        self.line(f"os.makedirs(os.path.join(workdir, {relpath!r}), exist_ok=True)")
         order_args = "".join([f", {k}={v!r}" for k, v in order.output_options.items()])
-        self.line(f"parts = [macro.output(output_formats=['png'], output_name=output_name,"
+        self.line(f"parts = [macro.output(output_formats=['png'],"
+                  f" output_name=os.path.join(workdir, {relpath!r}, {basename!r}),"
                   f" output_name_first_page_number='off'{order_args})]")
 
         for step in order.order_steps:
@@ -108,4 +109,5 @@ class PyGen:
 
         self.line("with contextlib.redirect_stdout(io.StringIO()) as out:")
         self.line("    macro.plot(*parts)")
-        self.line(f"    outputs.append(Output({function_name!r}, output_name, magics_output=out.getvalue()))")
+        full_relpath = os.path.join(relpath, basename) + ".png"
+        self.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
