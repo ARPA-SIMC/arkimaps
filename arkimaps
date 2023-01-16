@@ -177,9 +177,11 @@ class RenderMixin:
             orders = self.kitchen.make_orders(flavour=flavour)
             by_name = defaultdict(list)
             for order in orders:
-                by_name[order.recipe_name].append(order.instant)
-            for name, instants in by_name.items():
-                print(f"{flavour}: {order.recipe_name}: {len(instants)} instants")
+                by_name[order.recipe.name].append(order)
+            for name, orders in by_name.items():
+                print(f"{flavour}: {name}:")
+                for order in orders:
+                    print(f"  {order}")
 
 
 class WorkingKitchenMixin:

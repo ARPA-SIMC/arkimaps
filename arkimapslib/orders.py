@@ -76,12 +76,6 @@ class Order:
         # Path to the rendering script, relative to the working directory root
         self.render_script: str
 
-    def __str__(self):
-        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({os.path.basename(self.recipe.name)}+{self.instant.step:03d})"
-
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
         """
@@ -159,6 +153,12 @@ class MapOrder(Order):
                 f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}",
                 f"{self.recipe.name}_{self.flavour.name}",
                 f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}.py")
+
+    def __str__(self):
+        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({os.path.basename(self.recipe.name)}+{self.instant.step:03d})"
 
     def print_python_function(self, function_name: str, gen: PyGen):
         """
@@ -268,6 +268,12 @@ class TileOrder(Order):
             f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}",
             f"{z}/{x}/{y}.py"
         )
+
+    def __str__(self):
+        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/{self.z}/{self.x}/{self.y}+w{self.width}h{self.height}"
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({str(self)})"
 
     def print_python_function(self, function_name: str, gen: PyGen):
         """
@@ -420,6 +426,12 @@ class LegendOrder(Order):
             f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}",
             f"{self.recipe.name}_{self.flavour.name}+legend.py"
         )
+
+    def __str__(self):
+        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/legend"
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({str(self)})"
 
     def print_python_function(self, function_name: str, gen: PyGen):
         """

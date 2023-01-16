@@ -172,7 +172,7 @@ class Renderer:
 
                 for order in orders:
                     for output in order.outputs:
-                        log.info("Rendered %s to %s %s: %s", order, output.relpath)
+                        log.info("Rendered %s to %s", order, output.relpath)
 
                         # Move the generated image to the output tar
                         path = os.path.join(self.workdir, output.relpath)
