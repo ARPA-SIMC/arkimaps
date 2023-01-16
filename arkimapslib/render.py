@@ -227,20 +227,21 @@ class Renderer:
         # Write the python renderer code
         script_file: Optional[str] = None
         for order in orders:
-            os.makedirs(os.path.dirname(order.render_script), exist_ok=True)
+            pathname = os.path.join(self.workdir, order.render_script)
+            os.makedirs(os.path.dirname(pathname), exist_ok=True)
 
             # Remove the destination file to break possibly existing links from
             # an old workdir
             try:
-                os.unlink(order.render_script)
+                os.unlink(pathname)
             except FileNotFoundError:
                 pass
 
             if script_file is None:
-                script_file = order.render_script
+                script_file = pathname
                 with open(script_file, "wt") as fd:
                     fd.write(python_code)
             else:
-                os.link(script_file, order.render_script)
+                os.link(script_file, pathname)
 
         return script_file
