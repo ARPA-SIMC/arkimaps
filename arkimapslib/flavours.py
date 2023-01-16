@@ -8,6 +8,7 @@ from .steps import StepConfig, Step, StepSkipped
 from . import recipes
 from . import orders
 from . import inputs
+from .config import Config
 
 if TYPE_CHECKING:
     from . import pantry
@@ -25,11 +26,13 @@ class Flavour:
     Set of default settings used for generating a product
     """
     def __init__(self,
+                 config: Config,
                  name: str,
                  defined_in: str,
                  steps: Kwargs = None,
                  recipes_filter: Optional[List[str]] = None,
                  **kw):
+        self.config = config
         self.name = name
         self.defined_in = defined_in
 
@@ -61,15 +64,16 @@ class Flavour:
 
     @classmethod
     def create(cls,
+               config: Config,
                name: str,
                defined_in: str,
                steps: Kwargs = None,
                recipes_filter: Optional[List[str]] = None,
                **kw):
         if 'tile' in kw:
-            return TiledFlavour(name, defined_in, steps, recipes_filter, **kw)
+            return TiledFlavour(config, name, defined_in, steps, recipes_filter, **kw)
         else:
-            return SimpleFlavour(name, defined_in, steps, recipes_filter, **kw)
+            return SimpleFlavour(config, name, defined_in, steps, recipes_filter, **kw)
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """

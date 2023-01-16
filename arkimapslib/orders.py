@@ -1,5 +1,4 @@
 # from __future__ import annotations
-import itertools
 import logging
 import math
 import os
@@ -299,17 +298,15 @@ class TileOrder(Order):
             x_max, y_max = deg2num(lon_max, lat_max, z)
             x_min, x_max = sorted((x_min, x_max))
             y_min, y_max = sorted((y_min, y_max))
-            for x, y in itertools.product(
-                        range(x_min, x_max + 1),
-                        range(y_min, y_max + 1),
-                    ):
-                yield cls(
-                    flavour=flavour,
-                    recipe=recipe,
-                    input_files=input_files,
-                    instant=instant,
-                    z=z, x=x, y=y
-                )
+            for x in range(x_min, x_max + 1):
+                for y in range(y_min, y_max + 1):
+                    yield cls(
+                        flavour=flavour,
+                        recipe=recipe,
+                        input_files=input_files,
+                        instant=instant,
+                        z=z, x=x, y=y
+                    )
 
 
 class LegendOrder(Order):

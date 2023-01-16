@@ -89,7 +89,7 @@ class Kitchen:
                         old = self.flavours.get(name)
                         if old is not None:
                             raise RuntimeError(f"{relfn}: flavour {name} was already defined in {old.defined_in}")
-                        self.flavours[name] = Flavour.create(name=name, defined_in=relfn, **flavour)
+                        self.flavours[name] = Flavour.create(config=self.config, name=name, defined_in=relfn, **flavour)
 
                 if "recipe" in recipe:
                     self.recipes.add(Recipe(relfn[:-5], defined_in=relfn, data=recipe))
@@ -178,7 +178,7 @@ if arkimet is not None:
                     arkimet.dataset.Session(force_dir_segments=True))
 
         def get_merged_arki_query(self):
-            empty_flavour = Flavour("default", defined_in=__file__)
+            empty_flavour = Flavour(config=self.config, name="default", defined_in=__file__)
             merged = None
             input_names = set()
             for recipe in self.recipes:
