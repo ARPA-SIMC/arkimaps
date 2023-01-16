@@ -4,9 +4,10 @@ import logging
 import math
 import os
 from collections import Counter, defaultdict
-from typing import TYPE_CHECKING, Any, Dict, Generator, IO, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Set, Tuple
 
 from .steps import StepSkipped, StepConfig, AddBasemap
+from .pygen import PyGen
 
 if TYPE_CHECKING:
     import datetime
@@ -78,37 +79,26 @@ class Order:
     def __repr__(self):
         return self.basename
 
-    def print_python_function(self, name: str, timings=False, file: Optional[IO[str]] = None):
+    def print_python_function(self, function_name: str, gen: PyGen):
         """
         Print a function that renders this order
         """
-        print(f"def {name}(workdir: str):", file=file)
-        if timings:
-            print("    start = perf_counter_ns()", file=file)
-
         output_pathname = os.path.join(self.relpath, self.basename)
         order_args = "".join([f", {k}={v!r}" for k, v in self.output_options.items()])
-        print(f"    output_name=os.path.join(workdir, {output_pathname!r})", file=file)
-        print(f"    parts = [macro.output(output_formats=['png'], output_name=output_name,"
-              f" output_name_first_page_number='off'{order_args})]", file=file)
+        gen.line(f"output_name = os.path.join(workdir, {output_pathname!r})")
+        gen.line(f"parts = [macro.output(output_formats=['png'], output_name=output_name,"
+                 f" output_name_first_page_number='off'{order_args})]")
 
         for step in self.order_steps:
             name, parms = step.as_magics_macro()
             py_parms = []
             for k, v in parms.items():
                 py_parms.append(f"{k}={v!r}")
-            print(f"    parts.append(macro.{name}({', '.join(py_parms)}))", file=file)
+            gen.line(f"parts.append(macro.{name}({', '.join(py_parms)}))")
 
-        print("    res = {'output': output_name}", file=file)
-
-        print("    with contextlib.redirect_stdout(io.StringIO()) as out:", file=file)
-        print("        macro.plot(*parts)", file=file)
-        print("        res['magics_output'] = out.getvalue()", file=file)
-
-        # Return result
-        if timings:
-            print("    res['time'] = perf_counter_ns() - start", file=file)
-        print("    return [res]", file=file)
+        gen.line("with contextlib.redirect_stdout(io.StringIO()) as out:")
+        gen.line("    macro.plot(*parts)")
+        gen.line(f"    outputs.append(Output({function_name!r}, output_name, magics_output=out.getvalue()))")
 
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
@@ -212,7 +202,7 @@ class TileOrder(Order):
             recipe: "Recipe",
             input_files: Dict[str, "inputs.InputFile"],
             instant: "inputs.Instant",
-            z: int, x: int, y: int):
+            z: int, x: int, y: int, w: int = 1, h: int = 1):
         super().__init__(
                 flavour=flavour, recipe=recipe, input_files=input_files,
                 instant=instant)
@@ -225,12 +215,18 @@ class TileOrder(Order):
         self.log = logging.getLogger(
                 f"arkimaps.render.{flavour.name}.{recipe.name}"
                 f"{instant.product_suffix()}.{z}.{x}.{y}")
+        # Width, in number of tiles, of the rendering cluster
+        self.width = w
+        # Height, in number of tiles, of the rendering cluster
+        self.height = h
 
         min_lon, max_lat = num2deg(x, y, z)
-        max_lon, min_lat = num2deg(x + 1, y + 1, z)
+        max_lon, min_lat = num2deg(x + self.width, y + self.height, z)
 
         self.output_options["output_cairo_transparent_background"] = True
-        self.output_options["output_width"] = TILE_WIDTH_PX
+        # TODO: if we eventually do rectangular renderings, see
+        #       if there is also output_height
+        self.output_options["output_width"] = TILE_WIDTH_PX * self.width
 
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
@@ -250,16 +246,18 @@ class TileOrder(Order):
                         subpage_lower_left_longitude=min_lon,
                         subpage_upper_right_latitude=max_lat,
                         subpage_upper_right_longitude=max_lon,
-                        page_x_length=TILE_WIDTH_CM,
-                        page_y_length=TILE_HEIGHT_CM,
-                        super_page_x_length=TILE_WIDTH_CM,
-                        super_page_y_length=TILE_HEIGHT_CM,
-                        subpage_x_length=TILE_WIDTH_CM,
-                        subpage_y_length=TILE_HEIGHT_CM,
+                        page_x_length=TILE_WIDTH_CM * self.width,
+                        page_y_length=TILE_HEIGHT_CM * self.height,
+                        super_page_x_length=TILE_WIDTH_CM * self.width,
+                        super_page_y_length=TILE_HEIGHT_CM * self.height,
+                        subpage_x_length=TILE_WIDTH_CM * self.width,
+                        subpage_y_length=TILE_HEIGHT_CM * self.height,
                         subpage_x_position=0.,
                         subpage_y_position=0.,
                         subpage_frame='off',
-                        output_width=TILE_WIDTH_PX,
+                        # TODO: if we eventually do rectangular renderings, see
+                        #       if there is also output_height
+                        output_width=TILE_WIDTH_PX * self.width,
                         page_frame='off',
                         skinny_mode="on",
                         page_id_line='off',
