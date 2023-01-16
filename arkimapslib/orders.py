@@ -355,18 +355,24 @@ class TileOrder(Order):
             for y in range(whole_height):
                 yield x_min + x * width, y_min + y * height, width, height
 
-            # Fill exceeding rows
-            for y in range(whole_height * height, y_max - y_min):
-                yield x_min + x, y_min + y, 1, 1
+        x_excess = x_max - x_min - whole_width * width
+        y_excess = y_max - y_min - whole_height * height
+        smaller_tile_size = max(x_excess, y_excess)
 
-        for x in range(whole_width * width, x_max - x_min):
-            # Fill exceeding columns
-            for y in range(whole_height):
-                yield x_min + x, y_min + y, 1, 1
+        if x_excess:
+            yield from cls.tessellate(
+                    x_min + whole_width * width, x_max,
+                    y_min, y_min + whole_height * height,
+                    smaller_tile_size, smaller_tile_size)
 
-            # Fill the exceeding row and column block
-            for y in range(whole_height * height, y_max - y_min):
-                yield x_min + x, y_min + y, 1, 1
+        if y_excess:
+            yield from cls.tessellate(
+                    x_min, x_min + whole_width * width,
+                    y_min + whole_height * height, y_max,
+                    smaller_tile_size, smaller_tile_size)
+
+        if x_excess and y_excess:
+            yield x_min + whole_width * width, y_min + whole_height * height, smaller_tile_size, smaller_tile_size
 
 
 class LegendOrder(Order):

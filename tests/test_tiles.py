@@ -27,8 +27,15 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
         ])
 
         self.assertCountEqual(TileOrder.tessellate(0, 3, 0, 3, 2, 2), [
-            (0, 0, 2, 2), (2, 0, 1, 1),
-            (0, 2, 1, 1), (2, 2, 1, 1),
+            (0, 0, 2, 2), (2, 0, 1, 1), (2, 1, 1, 1),
+            (0, 2, 1, 1), (1, 2, 1, 1), (2, 2, 1, 1),
+        ])
+
+        self.assertCountEqual(TileOrder.tessellate(0, 10, 0, 10, 8, 8), [
+            (0, 0, 8, 8),
+            (8, 0, 2, 2), (8, 2, 2, 2), (8, 4, 2, 2), (8, 6, 2, 2),
+            (0, 8, 2, 2), (2, 8, 2, 2), (4, 8, 2, 2), (6, 8, 2, 2),
+            (8, 8, 2, 2),
         ])
 
     def test_render(self):
