@@ -169,6 +169,8 @@ class MapOrder(Order):
         # Destination file name (without path or .png extension)
         basename = f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
         gen.magics_renderer(function_name, self, relpath, basename)
+        full_relpath = os.path.join(relpath, basename) + ".png"
+        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
 
 
 def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
@@ -271,16 +273,38 @@ class TileOrder(Order):
         """
         Print a function that renders this order
         """
-        relpath = (
-            f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/"
-            f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}/"
-            f"{self.z}/{self.x}/"
-        )
-        basename = f"{self.y}"
         if self.width == 1 and self.height == 1:
+            relpath = (
+                f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/"
+                f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}/"
+                f"{self.z}/{self.x}/"
+            )
+            basename = f"{self.y}"
             gen.magics_renderer(function_name, self, relpath, basename)
+            full_relpath = os.path.join(relpath, basename) + ".png"
+            gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
         else:
-            raise NotImplementedError("slicing large tiles not yet implemented")
+            relpath = (
+                f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/"
+                f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}/"
+                f"{self.z}/"
+            )
+            basename = f"{self.x}-{self.y}-large"
+            gen.magics_renderer(function_name, self, relpath, basename)
+            gen.line("from PIL import Image")
+            gen.line(f"large = Image.open(os.path.join(workdir, {relpath!r}, {basename!r} '.png'), mode='r')")
+            for x in range(self.width):
+                slice_x = TILE_WIDTH_PX * x
+                for y in range(self.height):
+                    slice_y = TILE_HEIGHT_PX * y
+                    slice_relpath = os.path.join(relpath, str(x + self.x))
+                    gen.line(f"os.makedirs(os.path.join(workdir, {slice_relpath!r}), exist_ok=True)")
+                    gen.line(f"slice = large.crop(({slice_x}, {slice_y},"
+                             f" {slice_x + TILE_WIDTH_PX}, {slice_y + TILE_HEIGHT_PX}))")
+                    full_relpath = os.path.join(slice_relpath, f"{y + self.y}.png")
+                    gen.line(f"slice.save(os.path.join(workdir, {full_relpath!r}))")
+                    gen.line("outputs.append(Output("
+                             f"{function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
 
     @classmethod
     def make_orders(
@@ -298,15 +322,44 @@ class TileOrder(Order):
             x_max, y_max = deg2num(lon_max, lat_max, z)
             x_min, x_max = sorted((x_min, x_max))
             y_min, y_max = sorted((y_min, y_max))
-            for x in range(x_min, x_max + 1):
-                for y in range(y_min, y_max + 1):
-                    yield cls(
-                        flavour=flavour,
-                        recipe=recipe,
-                        input_files=input_files,
-                        instant=instant,
-                        z=z, x=x, y=y
-                    )
+            for x, y, w, h in cls.tessellate(
+                    x_min, x_max + 1, y_min, y_max + 1,
+                    flavour.config.tile_group_width, flavour.config.tile_group_height):
+                yield cls(
+                    flavour=flavour,
+                    recipe=recipe,
+                    input_files=input_files,
+                    instant=instant,
+                    z=z, x=x, y=y,
+                    w=w,
+                    h=h,
+                )
+
+    @classmethod
+    def tessellate(
+            cls,
+            x_min: int, x_max: int,
+            y_min: int, y_max: int,
+            width: int, height: int) -> Generator[Tuple[int, int, int, int], None, None]:
+        whole_width = (x_max - x_min) // width
+        whole_height = (y_max - y_min) // height
+        for x in range(whole_width):
+            # Fill with whole blocks
+            for y in range(whole_height):
+                yield x_min + x * width, y_min + y * height, width, height
+
+            # Fill exceeding rows
+            for y in range(whole_height * height, y_max - y_min):
+                yield x_min + x, y_min + y, 1, 1
+
+        for x in range(whole_width * width, x_max - x_min):
+            # Fill exceeding columns
+            for y in range(whole_height):
+                yield x_min + x, y_min + y, 1, 1
+
+            # Fill the exceeding row and column block
+            for y in range(whole_height * height, y_max - y_min):
+                yield x_min + x, y_min + y, 1, 1
 
 
 class LegendOrder(Order):
@@ -377,3 +430,5 @@ class LegendOrder(Order):
         # Destination file name (without path or .png extension)
         basename = f"{self.recipe.name}_{self.flavour.name}+legend"
         gen.magics_renderer(function_name, self, relpath, basename)
+        full_relpath = os.path.join(relpath, basename) + ".png"
+        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")

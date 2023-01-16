@@ -1,6 +1,5 @@
 # from __future__ import annotations
 import contextlib
-import os
 import time
 from typing import TYPE_CHECKING, IO, Generator
 
@@ -109,5 +108,3 @@ class PyGen:
 
         self.line("with contextlib.redirect_stdout(io.StringIO()) as out:")
         self.line("    macro.plot(*parts)")
-        full_relpath = os.path.join(relpath, basename) + ".png"
-        self.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
