@@ -1,7 +1,10 @@
 # from __future__ import annotations
 import contextlib
 import time
-from typing import IO, Generator
+from typing import TYPE_CHECKING, IO, Generator
+
+if TYPE_CHECKING:
+    from .orders import Order
 
 
 class PyGen:
@@ -85,3 +88,24 @@ class PyGen:
         with self.nested() as sub1:
             with sub1.timed(name) as sub2:
                 yield sub2
+
+    def magics_renderer(self, function_name: str, order: "Order", output_relpath: str):
+        """
+        Write Python code for the Magics rendering portion for the given order
+        """
+        self.line(f"output_name = os.path.join(workdir, {output_relpath!r})")
+
+        order_args = "".join([f", {k}={v!r}" for k, v in order.output_options.items()])
+        self.line(f"parts = [macro.output(output_formats=['png'], output_name=output_name,"
+                  f" output_name_first_page_number='off'{order_args})]")
+
+        for step in order.order_steps:
+            name, parms = step.as_magics_macro()
+            py_parms = []
+            for k, v in parms.items():
+                py_parms.append(f"{k}={v!r}")
+            self.line(f"parts.append(macro.{name}({', '.join(py_parms)}))")
+
+        self.line("with contextlib.redirect_stdout(io.StringIO()) as out:")
+        self.line("    macro.plot(*parts)")
+        self.line(f"    outputs.append(Output({function_name!r}, output_name, magics_output=out.getvalue()))")

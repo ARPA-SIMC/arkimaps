@@ -226,7 +226,7 @@ class Renderer:
         output = outputs[0]
         order = self.orders_by_name[output.name]
         if order.output is not None:
-            raise NotImplementedError(f"Order {order} produced multiple outputs")
+            raise NotImplementedError(f"Order {order} already rendered")
         order.output = output.relpath + ".png"
         order.render_time_ns = timings[output.name]
         return order

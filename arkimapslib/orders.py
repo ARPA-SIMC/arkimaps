@@ -83,22 +83,7 @@ class Order:
         """
         Print a function that renders this order
         """
-        output_pathname = os.path.join(self.relpath, self.basename)
-        order_args = "".join([f", {k}={v!r}" for k, v in self.output_options.items()])
-        gen.line(f"output_name = os.path.join(workdir, {output_pathname!r})")
-        gen.line(f"parts = [macro.output(output_formats=['png'], output_name=output_name,"
-                 f" output_name_first_page_number='off'{order_args})]")
-
-        for step in self.order_steps:
-            name, parms = step.as_magics_macro()
-            py_parms = []
-            for k, v in parms.items():
-                py_parms.append(f"{k}={v!r}")
-            gen.line(f"parts.append(macro.{name}({', '.join(py_parms)}))")
-
-        gen.line("with contextlib.redirect_stdout(io.StringIO()) as out:")
-        gen.line("    macro.plot(*parts)")
-        gen.line(f"    outputs.append(Output({function_name!r}, output_name, magics_output=out.getvalue()))")
+        gen.magics_renderer(function_name, self, os.path.join(self.relpath, self.basename))
 
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
