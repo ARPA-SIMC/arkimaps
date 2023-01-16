@@ -181,10 +181,9 @@ class Renderer:
                         log.info("Rendered %s to %s %s: %s", order, output.relpath)
 
                         # Move the generated image to the output tar
-                        tarout.add(
-                            os.path.join(self.workdir, output.relpath),
-                            output.relpath)
-                        os.unlink(output.relpath)
+                        path = os.path.join(self.workdir, output.relpath)
+                        tarout.add(path, output.relpath)
+                        os.unlink(path)
 
                     rendered.append(order)
 

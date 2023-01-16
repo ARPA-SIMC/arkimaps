@@ -81,7 +81,7 @@ class Order:
         return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
 
     def __repr__(self):
-        return f"Order({os.path.basename(self.recipe.name)}+{self.instant.step:03d})"
+        return f"{self.__class__.__name__}({os.path.basename(self.recipe.name)}+{self.instant.step:03d})"
 
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
