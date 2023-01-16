@@ -270,7 +270,8 @@ class TileOrder(Order):
         )
 
     def __str__(self):
-        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/{self.z}/{self.x}/{self.y}+w{self.width}h{self.height}"
+        return (f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/"
+                f"{self.z}/{self.x}/{self.y}+w{self.width}h{self.height}")
 
     def __repr__(self):
         return f"{self.__class__.__name__}({str(self)})"
