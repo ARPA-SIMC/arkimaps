@@ -40,7 +40,6 @@ setup(
     requires=["Magics", "yaml"],
     extras_require={
         "arkimet": ["arkimet"],
-        "nice_python_trace": ["yapf"],
     },
     packages=['arkimapslib'],
     scripts=['arkimaps'],

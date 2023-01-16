@@ -18,11 +18,11 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
     def test_render(self):
         self.fill_pantry()
         orders = []
-        for o in self.make_orders():
-            if isinstance(o, LegendOrder):
-                orders.append(o)
-            elif o.z == 6:
-                orders.append(o)
+        for order in self.make_orders():
+            if isinstance(order, LegendOrder):
+                orders.append(order)
+            elif order.z == 6:
+                orders.append(order)
 
         self.assertEqual(len(orders), 17)
 
@@ -31,4 +31,15 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
             with tarfile.open(mode="w|", fileobj=tf) as tarout:
                 rendered = renderer.render(orders, tarout)
 
+            with tarfile.open(tf.name, mode="r") as tar:
+                output_names = set(tar.getnames())
+
         self.assertCountEqual(orders, rendered)
+
+        self.assertIn("2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png", output_names)
+
+        self.assertEqual(len(output_names), 17)
+
+        for order in orders:
+            for output in order.outputs:
+                self.assertIn(output.relpath, output_names)

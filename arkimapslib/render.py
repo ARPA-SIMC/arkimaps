@@ -1,14 +1,13 @@
 # from __future__ import annotations
 import asyncio
 import contextlib
-import io
 import json
 import logging
 import os
 import subprocess
 import sys
 from typing import (TYPE_CHECKING, Dict, Generator, Iterable, List, Optional,
-                    Sequence)
+                    Sequence, Tuple)
 
 from .orders import Output
 from .pygen import PyGen
@@ -64,7 +63,7 @@ class Renderer:
             # Tell magics not to print noisy banners
             "MAGPLUS_QUIET": "1",
         }
-        self.orders_by_name: Dict[str, Order] = {}
+        self.orders_by_name: Dict[Tuple[str, str], Order] = {}
 
     @contextlib.contextmanager
     def override_env(self):
@@ -85,34 +84,28 @@ class Renderer:
         with gen.timed("import_magics") as sub:
             sub.line("from Magics import macro")
 
-    def make_python_renderer(self, orders: Sequence['Order'], formatted: bool = False) -> str:
+    def make_python_renderer(self, orders: Sequence['Order']) -> str:
         """
         Render one order to a Python trace file.
 
         Return the name of the file written
         """
-        with io.StringIO() as code:
+        script_file = os.path.join(self.workdir, orders[0].render_script)
+        os.makedirs(os.path.dirname(script_file), exist_ok=True)
+
+        with open(script_file, "wt") as code:
             gen = PyGen(code)
             self.print_python_preamble(gen)
             for idx, order in enumerate(orders):
                 name = f"order{idx}"
-                self.orders_by_name[name] = order
+                self.orders_by_name[(script_file, name)] = order
                 with gen.render_function(name) as sub:
                     order.print_python_function(name, sub)
             for idx, order in enumerate(orders):
                 gen.line(f"order{idx}({self.workdir!r})")
             gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
-            unformatted = code.getvalue()
 
-        if formatted:
-            try:
-                from yapf.yapflib import yapf_api
-                formatted, changed = yapf_api.FormatCode(unformatted)
-                return formatted
-            except ModuleNotFoundError:
-                return unformatted
-        else:
-            return unformatted
+        return script_file
 
     def render(self, orders: Iterable['Order'], tarout: "tarfile.TarFile") -> List["Order"]:
         """
@@ -126,7 +119,7 @@ class Renderer:
 
         queue: Dict[str, List["Order"]] = {}
         for group in groups(orders, orders_per_script):
-            script_file = self.write_render_script(group, formatted=False)
+            script_file = self.write_render_script(group)
             queue[script_file] = group
 
         if hasattr(asyncio, "run"):
@@ -199,14 +192,14 @@ class Renderer:
         outputs = [Output(*o) for o in render_info["outputs"]]
         for output in outputs:
             # Set render information in the order
-            order = self.orders_by_name[output.name]
+            order = self.orders_by_name[(script_file, output.name)]
             order.outputs.append(output)
             order.render_time_ns += timings[output.name]
 
         return orders
 
     def render_one(self, order: 'Order') -> Optional['Order']:
-        script_file = self.write_render_script([order], formatted=True)
+        script_file = self.write_render_script([order])
 
         # Run the render script
         res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
@@ -215,32 +208,25 @@ class Renderer:
         outputs = [Output(*o) for o in render_info["outputs"]]
         # Set render information in the order
         output = outputs[0]
-        order = self.orders_by_name[output.name]
+        order = self.orders_by_name[(script_file, output.name)]
         order.outputs.append(output)
         order.render_time_ns += timings[output.name]
         return order
 
-    def write_render_script(self, orders: Sequence['Order'], formatted: bool = False) -> str:
-        python_code = self.make_python_renderer(orders, formatted=formatted)
-
-        # Write the python renderer code
-        script_file: Optional[str] = None
+    def write_render_script(self, orders: Sequence['Order']) -> str:
+        script_file = self.make_python_renderer(orders)
         for order in orders:
             pathname = os.path.join(self.workdir, order.render_script)
             os.makedirs(os.path.dirname(pathname), exist_ok=True)
 
-            # Remove the destination file to break possibly existing links from
-            # an old workdir
-            try:
-                os.unlink(pathname)
-            except FileNotFoundError:
-                pass
+            if pathname != script_file:
+                # Remove the destination file to break possibly existing links from
+                # an old workdir
+                try:
+                    os.unlink(pathname)
+                except FileNotFoundError:
+                    pass
 
-            if script_file is None:
-                script_file = pathname
-                with open(script_file, "wt") as fd:
-                    fd.write(python_code)
-            else:
                 os.link(script_file, pathname)
 
         return script_file
