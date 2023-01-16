@@ -196,7 +196,7 @@ class RecipeTestMixin:
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
-        renderer = Renderer(self.kitchen.workdir)
+        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
 
         # Stop testing at this point, if we know Magics would segfault or abort
         if self.id() in self.magics_crashes_skip_tests:
@@ -234,7 +234,7 @@ class RecipeTestMixin:
 
         Returns the name of the file with the Python trace>
         """
-        renderer = Renderer(self.kitchen.workdir)
+        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         return renderer.render_one_to_python(order)
 
     def assertProcessLogEqual(self, log: List[str]):

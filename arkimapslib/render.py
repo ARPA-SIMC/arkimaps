@@ -9,6 +9,7 @@ import sys
 from typing import (TYPE_CHECKING, Dict, Generator, Iterable, List, Optional,
                     Sequence, Tuple)
 
+from .config import Config
 from .orders import Output
 from .pygen import PyGen
 
@@ -52,7 +53,8 @@ def groups(orders: Iterable["Order"], count: int) -> Generator[List["Order"], No
 
 
 class Renderer:
-    def __init__(self, workdir: str, styles_dir: str = None):
+    def __init__(self, config: Config, workdir: str, styles_dir: str = None):
+        self.config = config
         self.workdir = workdir
         if styles_dir is None:
             styles_dir = "/usr/share/magics/styles/ecmwf"
@@ -113,8 +115,7 @@ class Renderer:
 
         Return the list of orders that have been rendered
         """
-        # TODO: hardcoded, make customizable
-        orders_per_script = 16
+        orders_per_script = self.config.orders_per_script
         log.debug("%d orders to dispatch in groups of %d", len(orders), orders_per_script)
 
         queue: Dict[str, List["Order"]] = {}

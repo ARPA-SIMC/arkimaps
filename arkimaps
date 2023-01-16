@@ -136,7 +136,8 @@ class RenderMixin:
         # Prepare input summary after we're done with input processing
         input_summary = self.kitchen.pantry.summarize_inputs(orders)
 
-        renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
+        renderer = Renderer(
+                config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
 
         rendered: List[Order] = []
         with self.open_output() as tarout:
@@ -390,7 +391,8 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         order = self.kitchen.make_order(self.kitchen.recipes.get(name), flavour=flavour, step=step, reftime=reftime)
 
         # Prepare it
-        renderer = Renderer(workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
+        renderer = Renderer(
+                config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
         order = renderer.render_one(order)
         log.info("Rendered %s to %s", order.recipe_name, order.basename)
 

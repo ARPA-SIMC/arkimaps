@@ -16,6 +16,9 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
     model_name = "ifs"
 
     def test_render(self):
+        self.kitchen.config.tile_group_width = 2
+        self.kitchen.config.tile_group_height = 2
+
         self.fill_pantry()
         orders = []
         for order in self.make_orders():
@@ -26,7 +29,7 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         self.assertEqual(len(orders), 17)
 
-        renderer = Renderer(self.kitchen.workdir)
+        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         with tempfile.NamedTemporaryFile() as tf:
             with tarfile.open(mode="w|", fileobj=tf) as tarout:
                 rendered = renderer.render(orders, tarout)

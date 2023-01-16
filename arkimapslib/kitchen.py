@@ -11,6 +11,7 @@ except ModuleNotFoundError:
     arkimet = None
 from .flavours import Flavour
 from .recipes import Recipe
+from .config import Config
 from . import pantry
 from . import orders
 
@@ -23,8 +24,12 @@ class Kitchen:
     """
     Shared context for this arkimaps run
     """
-    def __init__(self):
+    def __init__(self, config: Optional[Config] = None):
         from .recipes import Recipes
+        if config is None:
+            self.config = Config()
+        else:
+            self.config = config
         self.pantry: "pantry.Pantry"
         self.recipes = Recipes()
         self.flavours: Dict[str, Flavour] = {}
