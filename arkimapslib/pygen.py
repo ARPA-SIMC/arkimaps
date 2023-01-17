@@ -44,6 +44,7 @@ class PyGen:
             sub.line("    yield")
             sub.line("finally:")
             sub.line("    timings[name] = perf_counter_ns() - start")
+        self.empty_line()
 
     def empty_line(self):
         """

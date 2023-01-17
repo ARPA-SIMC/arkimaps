@@ -38,6 +38,11 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
             (8, 8, 2, 2),
         ])
 
+        self.assertCountEqual(TileOrder.tessellate(0, 4, 0, 5, 8, 8), [
+            (0, 0, 4, 4),
+            (0, 4, 1, 1), (1, 4, 1, 1), (2, 4, 1, 1), (3, 4, 1, 1),
+        ])
+
     def test_render(self):
         self.kitchen.config.tile_group_width = 2
         self.kitchen.config.tile_group_height = 2

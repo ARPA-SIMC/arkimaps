@@ -82,9 +82,11 @@ class Renderer:
         """
         for k, v in self.env_overrides.items():
             gen.line(f"os.environ[{k!r}] = {v!r}")
+        gen.empty_line()
 
         with gen.timed("import_magics") as sub:
             sub.line("from Magics import macro")
+        gen.empty_line()
 
     def make_python_renderer(self, orders: Sequence['Order']) -> str:
         """
@@ -103,8 +105,11 @@ class Renderer:
                 self.orders_by_name[(script_file, name)] = order
                 with gen.render_function(name) as sub:
                     order.print_python_function(name, sub)
+                gen.empty_line()
+
             for idx, order in enumerate(orders):
                 gen.line(f"order{idx}({self.workdir!r})")
+            gen.empty_line()
             gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
 
         return script_file

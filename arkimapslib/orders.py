@@ -299,7 +299,7 @@ class TileOrder(Order):
             basename = f"{self.x}-{self.y}-large"
             gen.magics_renderer(function_name, self, relpath, basename)
             gen.line("from PIL import Image")
-            gen.line(f"large = Image.open(os.path.join(workdir, {relpath!r}, {basename!r} '.png'), mode='r')")
+            gen.line(f"large = Image.open(os.path.join(workdir, {relpath!r}, {basename!r} '.png'), mode='r', formats=('PNG',))")
             for x in range(self.width):
                 slice_x = TILE_WIDTH_PX * x
                 for y in range(self.height):
@@ -347,32 +347,51 @@ class TileOrder(Order):
             cls,
             x_min: int, x_max: int,
             y_min: int, y_max: int,
-            width: int, height: int) -> Generator[Tuple[int, int, int, int], None, None]:
-        whole_width = (x_max - x_min) // width
-        whole_height = (y_max - y_min) // height
-        for x in range(whole_width):
-            # Fill with whole blocks
-            for y in range(whole_height):
-                yield x_min + x * width, y_min + y * height, width, height
+            tile_width: int, tile_height: int) -> Generator[Tuple[int, int, int, int], None, None]:
+        # print("Tessellate", x_min, x_max, y_min, y_max, tile_width, tile_height)
+        width = x_max - x_min
+        height = y_max - y_min
+        if width == 0 or height == 0:
+            # print("      stop", width, height)
+            return
 
-        x_excess = x_max - x_min - whole_width * width
-        y_excess = y_max - y_min - whole_height * height
-        smaller_tile_size = max(x_excess, y_excess)
+        if tile_width > width or tile_height > height:
+            tile_side = min(width, height)
+            # print("    reduce", x_min, x_max, y_min, y_max, tile_side, tile_side)
+            yield from cls.tessellate(x_min, x_max, y_min, y_max, tile_side, tile_side)
+            return
+
+        tiles_x = width // tile_width
+        tiles_y = height // tile_height
+        for x in range(tiles_x):
+            # Fill with whole blocks
+            for y in range(tiles_y):
+                # print("       gen", x_min + x * tile_width, y_min + y * tile_height, tile_width, tile_height)
+                yield x_min + x * tile_width, y_min + y * tile_height, tile_width, tile_height
+
+        x_excess = width - tiles_x * tile_width
+        y_excess = height - tiles_y * tile_height
+        tile_side = max(x_excess, y_excess)
 
         if x_excess:
+            # print("  x excess", x_min + tiles_x * tile_width, x_max, y_min, y_min + tiles_y * tile_height,
+            #       tile_side, tile_side)
             yield from cls.tessellate(
-                    x_min + whole_width * width, x_max,
-                    y_min, y_min + whole_height * height,
-                    smaller_tile_size, smaller_tile_size)
+                    x_min + tiles_x * tile_width, x_max,
+                    y_min, y_min + tiles_y * tile_height,
+                    tile_side, tile_side)
 
         if y_excess:
+            # print("  y excess", x_min, x_min + tiles_x * tile_width, y_min + tiles_y * tile_height, y_max,
+            #       tile_side, tile_side)
             yield from cls.tessellate(
-                    x_min, x_min + whole_width * width,
-                    y_min + whole_height * height, y_max,
-                    smaller_tile_size, smaller_tile_size)
+                    x_min, x_min + tiles_x * tile_width,
+                    y_min + tiles_y * tile_height, y_max,
+                    tile_side, tile_side)
 
         if x_excess and y_excess:
-            yield x_min + whole_width * width, y_min + whole_height * height, smaller_tile_size, smaller_tile_size
+            # print(" xy excess", x_min + tiles_x * tile_width, y_min + tiles_y * tile_height, tile_side, tile_side)
+            yield x_min + tiles_x * tile_width, y_min + tiles_y * tile_height, tile_side, tile_side
 
 
 class LegendOrder(Order):
