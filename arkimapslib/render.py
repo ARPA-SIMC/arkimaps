@@ -4,10 +4,12 @@ import contextlib
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
-from typing import (TYPE_CHECKING, Dict, Generator, Iterable, List, Optional,
-                    Sequence, Tuple)
+from collections import deque
+from typing import (TYPE_CHECKING, Deque, Dict, Generator, Iterable, List,
+                    Optional, Sequence, Set, Tuple)
 
 from .config import Config
 from .orders import Output
@@ -20,6 +22,16 @@ if TYPE_CHECKING:
     import tarfile
 
 log = logging.getLogger("render")
+
+
+# Polyfill for Python 3.6
+if hasattr(asyncio, "create_task"):
+    asyncio_create_task = asyncio.create_task
+else:
+    loop = asyncio.get_event_loop()
+
+    def asyncio_create_task(*args, **kw):
+        return loop.create_task(*args)
 
 
 @contextlib.contextmanager
@@ -66,6 +78,11 @@ class Renderer:
             "MAGPLUS_QUIET": "1",
         }
         self.orders_by_name: Dict[Tuple[str, str], Order] = {}
+        self.renderer_dir = os.path.join(workdir, "renderers")
+        if os.path.exists(self.renderer_dir):
+            shutil.rmtree(self.renderer_dir)
+        os.makedirs(self.renderer_dir)
+        self.renderer_sequence = 0
 
     @contextlib.contextmanager
     def override_env(self):
@@ -88,32 +105,6 @@ class Renderer:
             sub.line("from Magics import macro")
         gen.empty_line()
 
-    def make_python_renderer(self, orders: Sequence['Order']) -> str:
-        """
-        Render one order to a Python trace file.
-
-        Return the name of the file written
-        """
-        script_file = os.path.join(self.workdir, orders[0].render_script)
-        os.makedirs(os.path.dirname(script_file), exist_ok=True)
-
-        with open(script_file, "wt") as code:
-            gen = PyGen(code)
-            self.print_python_preamble(gen)
-            for idx, order in enumerate(orders):
-                name = f"order{idx}"
-                self.orders_by_name[(script_file, name)] = order
-                with gen.render_function(name) as sub:
-                    order.print_python_function(name, sub)
-                gen.empty_line()
-
-            for idx, order in enumerate(orders):
-                gen.line(f"order{idx}({self.workdir!r})")
-            gen.empty_line()
-            gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
-
-        return script_file
-
     def render(self, orders: Iterable['Order'], tarout: "tarfile.TarFile") -> List["Order"]:
         """
         Render the given order list, adding results to the tar file.
@@ -123,10 +114,9 @@ class Renderer:
         orders_per_script = self.config.orders_per_script
         log.debug("%d orders to dispatch in groups of %d", len(orders), orders_per_script)
 
-        queue: Dict[str, List["Order"]] = {}
+        queue: Deque[str] = deque()
         for group in groups(orders, orders_per_script):
-            script_file = self.write_render_script(group)
-            queue[script_file] = group
+            queue.append(self.write_render_script(group))
 
         if hasattr(asyncio, "run"):
             return asyncio.run(self.render_asyncio(queue, tarout))
@@ -137,7 +127,7 @@ class Renderer:
             loop.close()
             return res
 
-    async def render_asyncio(self, queue: Dict[str, List["Order"]], tarout: "tarfile.TarFile") -> List["Order"]:
+    async def render_asyncio(self, queue: Deque[str], tarout: "tarfile.TarFile") -> List["Order"]:
         # TODO: hardcoded default to os.cpu_count, can be configurable
         max_tasks = os.cpu_count()
         pending = set()
@@ -145,19 +135,10 @@ class Renderer:
 
         rendered: List["Order"] = []
         while queue or pending:
-            # Polyfill for Python 3.6
-            if hasattr(asyncio, "create_task"):
-                create_task = asyncio.create_task
-            else:
-                loop = asyncio.get_event_loop()
-
-                def create_task(*args, **kw):
-                    return loop.create_task(*args)
-
             # Refill the queue
             while queue and len(pending) < max_tasks:
-                script_file, orders = queue.popitem()
-                pending.add(create_task(self.run_render_script(script_file, orders), name=script_file))
+                script_file = queue.popleft()
+                pending.add(asyncio_create_task(self.run_render_script(script_file), name=script_file))
 
             # Execute the queue
             log.debug("Waiting for %d tasks", len(pending))
@@ -181,7 +162,7 @@ class Renderer:
 
         return rendered
 
-    async def run_render_script(self, script_file: str, orders: List["Order"]) -> List["Order"]:
+    async def run_render_script(self, script_file: str) -> List["Order"]:
         proc = await asyncio.create_subprocess_exec(
                 sys.executable, script_file, stdout=asyncio.subprocess.PIPE)
 
@@ -189,12 +170,14 @@ class Renderer:
         render_info = json.loads(stdout)
         timings = render_info["timings"]
         outputs = [Output(*o) for o in render_info["outputs"]]
+        orders: Set["Order"] = set()
         for output in outputs:
             # Set render information in the order
             order = self.orders_by_name[(script_file, output.name)]
             order.add_output(output, timing=timings[output.name])
+            orders.add(order)
 
-        return orders
+        return list(orders)
 
     def render_one(self, order: 'Order') -> Optional['Order']:
         script_file = self.write_render_script([order])
@@ -211,19 +194,27 @@ class Renderer:
         return order
 
     def write_render_script(self, orders: Sequence['Order']) -> str:
-        script_file = self.make_python_renderer(orders)
-        for order in orders:
-            pathname = os.path.join(self.workdir, order.render_script)
-            os.makedirs(os.path.dirname(pathname), exist_ok=True)
+        """
+        Render one order to a Python renderer script.
 
-            if pathname != script_file:
-                # Remove the destination file to break possibly existing links from
-                # an old workdir
-                try:
-                    os.unlink(pathname)
-                except FileNotFoundError:
-                    pass
+        Return the name of the file written
+        """
+        script_file = os.path.join(self.renderer_dir, f"renderer{self.renderer_sequence:03d}.py")
+        self.renderer_sequence += 1
 
-                os.link(script_file, pathname)
+        with open(script_file, "wt") as code:
+            gen = PyGen(code)
+            self.print_python_preamble(gen)
+            for idx, order in enumerate(orders):
+                name = f"order{idx}"
+                self.orders_by_name[(script_file, name)] = order
+                with gen.render_function(name) as sub:
+                    order.print_python_function(name, sub)
+                gen.empty_line()
+
+            for idx, order in enumerate(orders):
+                gen.line(f"order{idx}({self.workdir!r})")
+            gen.empty_line()
+            gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
 
         return script_file

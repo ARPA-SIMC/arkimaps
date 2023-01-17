@@ -191,7 +191,7 @@ class TestFlavour(unittest.TestCase):
 
             basemap = self.get_step(orders[0], "add_basemap")
             params = basemap.params["params"]
-            self.assertEqual(orders[0].render_script, "2021-01-10T00:00:00/test_test+012/3/4/2.py")
+            self.assertEqual(str(orders[0]), "test+012/3/4/2+w1h1")
             self.assertAlmostEqual(params["subpage_lower_left_latitude"], 40.9798981)
             self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
             self.assertAlmostEqual(params["subpage_upper_right_latitude"], 66.5132604)
@@ -204,7 +204,7 @@ class TestFlavour(unittest.TestCase):
 
             basemap = self.get_step(orders[1], "add_basemap")
             params = basemap.params["params"]
-            self.assertEqual(orders[1].render_script, "2021-01-10T00:00:00/test_test+012/3/4/3.py")
+            self.assertEqual(str(orders[1]), "test+012/3/4/3+w1h1")
             self.assertAlmostEqual(params["subpage_lower_left_latitude"], 0)
             self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
             self.assertAlmostEqual(params["subpage_upper_right_latitude"], 40.9798981)
@@ -217,7 +217,7 @@ class TestFlavour(unittest.TestCase):
 
             basemap = self.get_step(orders[2], "add_basemap")
             params = basemap.params["params"]
-            self.assertEqual(orders[2].render_script, "2021-01-10T00:00:00/test_test+012/4/8/5.py")
+            self.assertEqual(str(orders[2]), "test+012/4/8/5+w1h1")
             self.assertAlmostEqual(params["subpage_lower_left_latitude"], 40.9798981)
             self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
             self.assertAlmostEqual(params["subpage_upper_right_latitude"], 55.7765730)
@@ -226,7 +226,7 @@ class TestFlavour(unittest.TestCase):
 
             basemap = self.get_step(orders[3], "add_basemap")
             params = basemap.params["params"]
-            self.assertEqual(orders[3].render_script, "2021-01-10T00:00:00/test_test+012/4/8/6.py")
+            self.assertEqual(str(orders[3]), "test+012/4/8/6+w1h1")
             self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
             self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
             self.assertAlmostEqual(params["subpage_upper_right_latitude"], 40.9798981)
@@ -235,7 +235,7 @@ class TestFlavour(unittest.TestCase):
 
             basemap = self.get_step(orders[4], "add_basemap")
             params = basemap.params["params"]
-            self.assertEqual(orders[4].render_script, "2021-01-10T00:00:00/test_test+012/5/16/10.py")
+            self.assertEqual(str(orders[4]), "test+012/5/16/10+w2h2")
             self.assertAlmostEqual(params["subpage_lower_left_latitude"], 40.9798981)
             self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0.0)
             self.assertAlmostEqual(params["subpage_upper_right_latitude"], 55.7765730)
@@ -244,7 +244,7 @@ class TestFlavour(unittest.TestCase):
 
             basemap = self.get_step(orders[5], "add_basemap")
             params = basemap.params["params"]
-            self.assertEqual(orders[5].render_script, "2021-01-10T00:00:00/test_test+012/5/16/12.py")
+            self.assertEqual(str(orders[5]), "test+012/5/16/12+w2h2")
             self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
             self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
             self.assertAlmostEqual(params["subpage_upper_right_latitude"], 40.9798981)

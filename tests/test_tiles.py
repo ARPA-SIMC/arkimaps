@@ -69,14 +69,96 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
                 rendered = renderer.render(orders, tarout)
 
             with tarfile.open(tf.name, mode="r") as tar:
-                output_names = set(tar.getnames())
+                output_names = tar.getnames()
 
         self.assertCountEqual(orders, rendered)
 
-        self.assertIn("2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png", output_names)
-
-        self.assertEqual(len(output_names), 17)
-
+        magics_names = []
         for order in orders:
             for output in order.outputs:
-                self.assertIn(output.relpath, output_names)
+                magics_names.append(output.relpath)
+
+        self.assertCountEqual(magics_names, [
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32-22-2-2.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32-24-2-2.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34-22-2-2.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34-24-2-2.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png',
+        ])
+
+        self.assertCountEqual(output_names, [
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/22.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/23.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/22.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/23.png',
+
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/24.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/25.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/24.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/25.png',
+
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/22.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/23.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/22.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/23.png',
+
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/24.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/25.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/24.png',
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/25.png',
+
+            '2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png'])
+
+    def test_render_twice(self):
+        self.kitchen.config.tile_group_width = 2
+        self.kitchen.config.tile_group_height = 2
+        self.fill_pantry()
+
+        # First round
+
+        orders1 = []
+        for order in self.make_orders():
+            if isinstance(order, LegendOrder):
+                orders1.append(order)
+            elif order.z == 6:
+                orders1.append(order)
+
+        self.assertEqual(len(orders1), 5)
+
+        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
+        with tempfile.NamedTemporaryFile() as tf:
+            with tarfile.open(mode="w|", fileobj=tf) as tarout:
+                renderer.render(orders1, tarout)
+
+            with tarfile.open(tf.name, mode="r") as tar:
+                output_names1 = tar.getnames()
+
+        # Second round
+
+        orders2 = []
+        for order in self.make_orders():
+            if isinstance(order, LegendOrder):
+                orders2.append(order)
+            elif order.z == 6:
+                orders2.append(order)
+
+        self.assertEqual(len(orders2), 5)
+
+        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
+        with tempfile.NamedTemporaryFile() as tf:
+            with tarfile.open(mode="w|", fileobj=tf) as tarout:
+                renderer.render(orders2, tarout)
+
+            with tarfile.open(tf.name, mode="r") as tar:
+                output_names2 = tar.getnames()
+
+        # Test that they match
+
+        self.assertCountEqual(output_names1, output_names2)
+
+        for o1, o2 in zip(orders1, orders2):
+            self.assertEqual(str(o1), str(o2))
+
+            self.assertEqual(
+                    [out.relpath for out in o1.outputs],
+                    [out.relpath for out in o2.outputs])

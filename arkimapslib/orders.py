@@ -1,16 +1,19 @@
 # from __future__ import annotations
+import io
 import logging
 import math
 import os
+import tarfile
 from collections import Counter, defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple
+
+from PIL import Image
 
 from .steps import StepSkipped, StepConfig, AddBasemap
 from .pygen import PyGen
 
 if TYPE_CHECKING:
     import datetime
-    import tarfile
 
     from . import inputs, steps
     from .flavours import Flavour
@@ -74,8 +77,6 @@ class Order:
 
         # Summary stats about the rendering
         self.render_time_ns: int = 0
-        # Path to the rendering script, relative to the working directory root
-        self.render_script: str
 
     def add_output(self, output: Output, timing: int = 0):
         """
@@ -168,11 +169,6 @@ class MapOrder(Order):
                 log.debug("%s: %s (skipped)", self, s.name)
                 continue
             self.order_steps.append(s)
-
-        self.render_script = os.path.join(
-                f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}",
-                f"{self.recipe.name}_{self.flavour.name}",
-                f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}.py")
 
     def __str__(self):
         return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
@@ -283,12 +279,6 @@ class TileOrder(Order):
                 continue
             self.order_steps.append(compiled_step)
 
-        self.render_script = os.path.join(
-            f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}",
-            f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}",
-            f"{z}/{x}/{y}.py"
-        )
-
     def __str__(self):
         return (f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/"
                 f"{self.z}/{self.x}/{self.y}+w{self.width}h{self.height}")
@@ -300,39 +290,41 @@ class TileOrder(Order):
         """
         Print a function that renders this order
         """
-        if self.width == 1 and self.height == 1:
-            relpath = (
-                f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/"
-                f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}/"
-                f"{self.z}/{self.x}/"
-            )
-            basename = f"{self.y}"
-            gen.magics_renderer(function_name, self, relpath, basename)
-            full_relpath = os.path.join(relpath, basename) + ".png"
-            gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
-        else:
-            relpath = (
-                f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/"
-                f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}/"
-                f"{self.z}/"
-            )
-            basename = f"{self.x}-{self.y}-large"
-            gen.magics_renderer(function_name, self, relpath, basename)
-            gen.line("from PIL import Image")
-            gen.line(f"large = Image.open(os.path.join(workdir, {relpath!r}, {basename!r} '.png'),")
-            gen.line(" mode='r', formats=('PNG',))")
-            gen.line(f"for x in range({self.width}):")
-            with gen.nested() as sub1:
-                sub1.line(f"for y in range({self.height}):")
-                with sub1.nested() as sub2:
-                    sub2.line(f"slice_relpath = os.path.join({relpath!r}, str(x + {self.x}))")
-                    sub2.line("os.makedirs(os.path.join(workdir, slice_relpath), exist_ok=True)")
-                    sub2.line(f"slice = large.crop((x * {TILE_WIDTH_PX}, y * {TILE_HEIGHT_PX},"
-                              f" (x + 1) * {TILE_WIDTH_PX}, (y + 1) * {TILE_HEIGHT_PX}))")
-                    sub2.line(f"full_relpath = os.path.join(slice_relpath, str(y + {self.y}) + '.png')")
-                    sub2.line("slice.save(os.path.join(workdir, full_relpath))")
-                    sub2.line("outputs.append(Output("
-                              f"{function_name!r}, full_relpath, magics_output=out.getvalue()))")
+        relpath = (
+            f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/"
+            f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}/"
+            f"{self.z}"
+        )
+        basename = f"{self.x}-{self.y}-{self.width}-{self.height}"
+        gen.magics_renderer(function_name, self, relpath, basename)
+        full_relpath = os.path.join(relpath, basename) + ".png"
+        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
+
+    def add_to_tarball(self, workdir: str, tarout: "tarfile.TarFile"):
+        """
+        Add render results to a tarball
+        """
+        for output in self.outputs:
+            relpath, basename = os.path.split(output.relpath)
+
+            start_x, start_y, width, height = (int(x) for x in basename[:-4].split('-'))
+
+            rendered = Image.open(os.path.join(workdir, output.relpath), mode='r', formats=('PNG',))
+
+            # Slice the tile and add it to the tar file
+            for x in range(width):
+                for y in range(height):
+                    tile = rendered.crop(
+                            (x * TILE_WIDTH_PX, y * TILE_HEIGHT_PX,
+                             (x + 1) * TILE_WIDTH_PX, (y + 1) * TILE_HEIGHT_PX))
+                    with io.BytesIO() as buf:
+                        tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+                        info = tarfile.TarInfo(tar_path)
+                        tile.save(buf, "PNG")
+                        info.size = buf.tell()
+                        buf.seek(0)
+                        log.info("Rendered %s to %s", self, tar_path)
+                        tarout.addfile(info, buf)
 
     @classmethod
     def make_orders(
@@ -468,11 +460,6 @@ class LegendOrder(Order):
         self.legend_info = {
             "params": params,
         }
-
-        self.render_script = os.path.join(
-            f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}",
-            f"{self.recipe.name}_{self.flavour.name}+legend.py"
-        )
 
     def __str__(self):
         return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/legend"
