@@ -10,6 +10,7 @@ from .pygen import PyGen
 
 if TYPE_CHECKING:
     import datetime
+    import tarfile
 
     from . import inputs, steps
     from .flavours import Flavour
@@ -75,6 +76,25 @@ class Order:
         self.render_time_ns: int = 0
         # Path to the rendering script, relative to the working directory root
         self.render_script: str
+
+    def add_output(self, output: Output, timing: int = 0):
+        """
+        Add a rendered output to this order
+        """
+        self.outputs.append(output)
+        self.render_time_ns += timing
+
+    def add_to_tarball(self, workdir: str, tarout: "tarfile.TarFile"):
+        """
+        Add render results to a tarball
+        """
+        for output in self.outputs:
+            log.info("Rendered %s to %s", self, output.relpath)
+
+            # Move the generated image to the output tar
+            path = os.path.join(workdir, output.relpath)
+            tarout.add(path, output.relpath)
+            os.unlink(path)
 
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
@@ -299,7 +319,8 @@ class TileOrder(Order):
             basename = f"{self.x}-{self.y}-large"
             gen.magics_renderer(function_name, self, relpath, basename)
             gen.line("from PIL import Image")
-            gen.line(f"large = Image.open(os.path.join(workdir, {relpath!r}, {basename!r} '.png'), mode='r', formats=('PNG',))")
+            gen.line(f"large = Image.open(os.path.join(workdir, {relpath!r}, {basename!r} '.png'),")
+            gen.line(" mode='r', formats=('PNG',))")
             gen.line(f"for x in range({self.width}):")
             with gen.nested() as sub1:
                 sub1.line(f"for y in range({self.height}):")

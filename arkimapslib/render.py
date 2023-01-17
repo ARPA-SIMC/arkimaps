@@ -176,14 +176,7 @@ class Renderer:
                     continue
 
                 for order in orders:
-                    for output in order.outputs:
-                        log.info("Rendered %s to %s", order, output.relpath)
-
-                        # Move the generated image to the output tar
-                        path = os.path.join(self.workdir, output.relpath)
-                        tarout.add(path, output.relpath)
-                        os.unlink(path)
-
+                    order.add_to_tarball(self.workdir, tarout)
                     rendered.append(order)
 
         return rendered
@@ -199,8 +192,7 @@ class Renderer:
         for output in outputs:
             # Set render information in the order
             order = self.orders_by_name[(script_file, output.name)]
-            order.outputs.append(output)
-            order.render_time_ns += timings[output.name]
+            order.add_output(output, timing=timings[output.name])
 
         return orders
 
@@ -215,8 +207,7 @@ class Renderer:
         # Set render information in the order
         output = outputs[0]
         order = self.orders_by_name[(script_file, output.name)]
-        order.outputs.append(output)
-        order.render_time_ns += timings[output.name]
+        order.add_output(output, timing=timings[output.name])
         return order
 
     def write_render_script(self, orders: Sequence['Order']) -> str:
