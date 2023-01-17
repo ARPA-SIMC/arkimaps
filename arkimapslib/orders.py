@@ -300,18 +300,18 @@ class TileOrder(Order):
             gen.magics_renderer(function_name, self, relpath, basename)
             gen.line("from PIL import Image")
             gen.line(f"large = Image.open(os.path.join(workdir, {relpath!r}, {basename!r} '.png'), mode='r', formats=('PNG',))")
-            for x in range(self.width):
-                slice_x = TILE_WIDTH_PX * x
-                for y in range(self.height):
-                    slice_y = TILE_HEIGHT_PX * y
-                    slice_relpath = os.path.join(relpath, str(x + self.x))
-                    gen.line(f"os.makedirs(os.path.join(workdir, {slice_relpath!r}), exist_ok=True)")
-                    gen.line(f"slice = large.crop(({slice_x}, {slice_y},"
-                             f" {slice_x + TILE_WIDTH_PX}, {slice_y + TILE_HEIGHT_PX}))")
-                    full_relpath = os.path.join(slice_relpath, f"{y + self.y}.png")
-                    gen.line(f"slice.save(os.path.join(workdir, {full_relpath!r}))")
-                    gen.line("outputs.append(Output("
-                             f"{function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
+            gen.line(f"for x in range({self.width}):")
+            with gen.nested() as sub1:
+                sub1.line(f"for y in range({self.height}):")
+                with sub1.nested() as sub2:
+                    sub2.line(f"slice_relpath = os.path.join({relpath!r}, str(x + {self.x}))")
+                    sub2.line("os.makedirs(os.path.join(workdir, slice_relpath), exist_ok=True)")
+                    sub2.line(f"slice = large.crop((x * {TILE_WIDTH_PX}, y * {TILE_HEIGHT_PX},"
+                              f" (x + 1) * {TILE_WIDTH_PX}, (y + 1) * {TILE_HEIGHT_PX}))")
+                    sub2.line(f"full_relpath = os.path.join(slice_relpath, str(y + {self.y}) + '.png')")
+                    sub2.line("slice.save(os.path.join(workdir, full_relpath))")
+                    sub2.line("outputs.append(Output("
+                              f"{function_name!r}, full_relpath, magics_output=out.getvalue()))")
 
     @classmethod
     def make_orders(

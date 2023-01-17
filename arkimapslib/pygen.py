@@ -14,7 +14,7 @@ class PyGen:
     def __init__(self, file: IO[str], indent: int = 0):
         self.file = file
         self.indent = " " * indent
-        self.line("from typing import Dict, Generator, List, NamedTuple, Tuple")
+        self.line("from typing import Dict, Generator, List, NamedTuple")
         self.line("import contextlib")
         self.line("import io")
         self.line("import json")
@@ -95,6 +95,10 @@ class PyGen:
         Write Python code for the Magics rendering portion for the given order
         """
         self.line(f"os.makedirs(os.path.join(workdir, {relpath!r}), exist_ok=True)")
+        self.line("try:")
+        self.line(f"    os.unlink(os.path.join(workdir, {relpath!r}, {basename!r} '.png'))")
+        self.line("except FileNotFoundError:")
+        self.line("    pass")
         order_args = "".join([f", {k}={v!r}" for k, v in order.output_options.items()])
         self.line(f"parts = [macro.output(output_formats=['png'],"
                   f" output_name=os.path.join(workdir, {relpath!r}, {basename!r}),"
