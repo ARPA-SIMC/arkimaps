@@ -3,7 +3,6 @@ import datetime
 import fnmatch
 import os
 import re
-import pickle
 import sys
 from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence
 import unittest
@@ -120,8 +119,6 @@ class RecipeTestMixin:
         recipe = self.kitchen.recipes.get(recipe_name)
         flavour = self.kitchen.flavours.get(flavour_name)
         orders = flavour.make_orders(recipe, self.kitchen.pantry)
-        for o in orders:
-            pickle.dumps(o)
         return orders
 
     def load_recipes(self, recipe_dirs=None):
@@ -199,9 +196,7 @@ class RecipeTestMixin:
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
-        self.assertEqual(order.relpath, f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}")
-        self.assertEqual(order.basename, f"{os.path.basename(self.recipe_name)}+{step:03d}")
-        renderer = Renderer(self.kitchen.workdir)
+        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
 
         # Stop testing at this point, if we know Magics would segfault or abort
         if self.id() in self.magics_crashes_skip_tests:
@@ -211,9 +206,9 @@ class RecipeTestMixin:
 
         # Generate magics parts for testing
         res.magics = []
-        for step in order.order_steps:
-            name, parms = step.as_magics_macro()
-            res.magics.append((step.name, name, parms))
+        for order_step in order.order_steps:
+            name, parms = order_step.as_magics_macro()
+            res.magics.append((order_step.name, name, parms))
 
         add_basemap = self.get_step(order, "add_basemap")
         self.assertEqual(add_basemap.params.get("params", {}), self.expected_basemap_args)
@@ -224,8 +219,12 @@ class RecipeTestMixin:
         # Test rendering with Magics
         rendered = renderer.render_one(order)
         self.assertIsNotNone(rendered)
-        self.assertIsNotNone(rendered.output)
-        self.assertEqual(os.path.basename(rendered.output), order.basename + ".png")
+        self.assertEqual(len(rendered.outputs), 1)
+        output = rendered.outputs[0]
+        self.assertEqual(
+                output.relpath,
+                f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}/"
+                f"{os.path.basename(self.recipe_name)}+{step:03d}.png")
 
     def order_to_python(self, order) -> str:
         """
@@ -235,7 +234,7 @@ class RecipeTestMixin:
 
         Returns the name of the file with the Python trace>
         """
-        renderer = Renderer(self.kitchen.workdir)
+        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         return renderer.render_one_to_python(order)
 
     def assertProcessLogEqual(self, log: List[str]):

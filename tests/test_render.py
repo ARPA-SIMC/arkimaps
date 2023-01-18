@@ -3,12 +3,13 @@ import os
 import tempfile
 import unittest
 from arkimapslib.render import Renderer
+from arkimapslib.config import Config
 
 
 class TestRender(unittest.TestCase):
     def test_issue83(self):
         with tempfile.TemporaryDirectory() as workdir:
-            renderer = Renderer(workdir)
+            renderer = Renderer(Config(), workdir)
             with renderer.override_env():
                 from Magics import macro
                 import Magics

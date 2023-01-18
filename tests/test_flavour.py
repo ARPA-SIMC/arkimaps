@@ -138,13 +138,13 @@ class TestFlavour(unittest.TestCase):
                           }) as kitchen:
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
             self.assertCountEqual(
-                    [o.basename for o in orders],
-                    ["t2m+012", "tcc+012"])
+                    [(o.recipe.name, o.instant.step) for o in orders],
+                    [("t2m", 12), ("tcc", 12)])
 
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
             self.assertCountEqual(
-                    [o.basename for o in orders],
-                    ["t2m+012"])
+                    [(o.recipe.name, o.instant.step) for o in orders],
+                    [("t2m", 12)])
 
     def test_recipe_filter_subdir(self):
         with self.kitchen(flavours=[
@@ -157,15 +157,27 @@ class TestFlavour(unittest.TestCase):
                           }) as kitchen:
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
             self.assertCountEqual(
-                    [o.basename for o in orders],
-                    ["t2m+012", "tcc+012"])
+                    [(o.recipe.name, o.instant.step) for o in orders],
+                    [("test/t2m", 12), ("tcc", 12)])
 
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
             self.assertCountEqual(
-                    [o.basename for o in orders],
-                    ["t2m+012"])
+                    [(o.recipe.name, o.instant.step) for o in orders],
+                    [("test/t2m", 12)])
 
     def test_tiled(self):
+        def assertTileSize(params, size: int):
+            self.assertTrue(params["test"])
+            self.assertAlmostEqual(params["page_x_length"], 6.4 * size)
+            self.assertAlmostEqual(params["page_y_length"], 6.4 * size)
+            self.assertAlmostEqual(params["subpage_x_length"], 6.4 * size)
+            self.assertAlmostEqual(params["subpage_y_length"], 6.4 * size)
+            self.assertAlmostEqual(params["super_page_x_length"], 6.4 * size)
+            self.assertAlmostEqual(params["super_page_y_length"], 6.4 * size)
+            self.assertEqual(params["subpage_x_position"], 0)
+            self.assertEqual(params["subpage_y_position"], 0)
+            self.assertEqual(params["output_width"], 256 * size)
+
         with self.kitchen(flavours=[flavour("test", tile={
                                                 "lat_min": 30.0, "lat_max": 50.0,
                                                 "lon_min": 0.0, "lon_max": 20.0})],
@@ -175,81 +187,69 @@ class TestFlavour(unittest.TestCase):
                           ]}) as kitchen:
             self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
             orders = kitchen.make_orders("test", recipe="test")
-            self.assertEqual(len(orders), 12)
+            self.assertEqual(len(orders), 6)
 
             basemap = self.get_step(orders[0], "add_basemap")
             params = basemap.params["params"]
-            self.assertTrue(params["test"], 256)
+            self.assertEqual(str(orders[0]), "test+012/3/4/2+w1h1")
             self.assertAlmostEqual(params["subpage_lower_left_latitude"], 40.9798981)
             self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
             self.assertAlmostEqual(params["subpage_upper_right_latitude"], 66.5132604)
             self.assertAlmostEqual(params["subpage_upper_right_longitude"], 45)
-            self.assertAlmostEqual(params["page_x_length"], 6.4)
-            self.assertAlmostEqual(params["page_y_length"], 6.4)
-            self.assertAlmostEqual(params["subpage_x_length"], 6.4)
-            self.assertAlmostEqual(params["subpage_y_length"], 6.4)
-            self.assertAlmostEqual(params["super_page_x_length"], 6.4)
-            self.assertAlmostEqual(params["super_page_y_length"], 6.4)
-            self.assertEqual(params["subpage_x_position"], 0)
-            self.assertEqual(params["subpage_y_position"], 0)
-            self.assertEqual(params["output_width"], 256)
+            assertTileSize(params, 1)
             parts = scan_python_order(orders[0])
             mmap = [p for p in parts if p["__name__"] == "mmap"][0]
             self.assertTrue(mmap["test"])
             self.assertEqual(mmap["subpage_upper_right_longitude"], 45)
 
-            basemap = self.get_step(orders[10], "add_basemap")
+            basemap = self.get_step(orders[1], "add_basemap")
             params = basemap.params["params"]
-            self.assertTrue(params["test"], 256)
-            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 31.9521622)
-            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 11.25)
+            self.assertEqual(str(orders[1]), "test+012/3/4/3+w1h1")
+            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 0)
+            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
+            self.assertAlmostEqual(params["subpage_upper_right_latitude"], 40.9798981)
+            self.assertAlmostEqual(params["subpage_upper_right_longitude"], 45)
+            assertTileSize(params, 1)
+            parts = scan_python_order(orders[0])
+            mmap = [p for p in parts if p["__name__"] == "mmap"][0]
+            self.assertTrue(mmap["test"])
+            self.assertEqual(mmap["subpage_upper_right_longitude"], 45)
+
+            basemap = self.get_step(orders[2], "add_basemap")
+            params = basemap.params["params"]
+            self.assertEqual(str(orders[2]), "test+012/4/8/5+w1h1")
+            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 40.9798981)
+            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
+            self.assertAlmostEqual(params["subpage_upper_right_latitude"], 55.7765730)
+            self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
+            assertTileSize(params, 1)
+
+            basemap = self.get_step(orders[3], "add_basemap")
+            params = basemap.params["params"]
+            self.assertEqual(str(orders[3]), "test+012/4/8/6+w1h1")
+            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
+            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
             self.assertAlmostEqual(params["subpage_upper_right_latitude"], 40.9798981)
             self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
-            self.assertAlmostEqual(params["page_x_length"], 6.4)
-            self.assertAlmostEqual(params["page_y_length"], 6.4)
-            self.assertAlmostEqual(params["subpage_x_length"], 6.4)
-            self.assertAlmostEqual(params["subpage_y_length"], 6.4)
-            self.assertAlmostEqual(params["super_page_x_length"], 6.4)
-            self.assertAlmostEqual(params["super_page_y_length"], 6.4)
-            self.assertEqual(params["subpage_x_position"], 0)
-            self.assertEqual(params["subpage_y_position"], 0)
-            self.assertEqual(params["output_width"], 256)
+            assertTileSize(params, 1)
 
-            basemap = self.get_step(orders[11], "add_basemap")
+            basemap = self.get_step(orders[4], "add_basemap")
             params = basemap.params["params"]
-            self.assertTrue(params["test"], 256)
-            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
-            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 11.25)
-            self.assertAlmostEqual(params["subpage_upper_right_latitude"], 31.9521622)
+            self.assertEqual(str(orders[4]), "test+012/5/16/10+w2h2")
+            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 40.9798981)
+            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0.0)
+            self.assertAlmostEqual(params["subpage_upper_right_latitude"], 55.7765730)
             self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
-            self.assertAlmostEqual(params["page_x_length"], 6.4)
-            self.assertAlmostEqual(params["page_y_length"], 6.4)
-            self.assertAlmostEqual(params["subpage_x_length"], 6.4)
-            self.assertAlmostEqual(params["subpage_y_length"], 6.4)
-            self.assertAlmostEqual(params["super_page_x_length"], 6.4)
-            self.assertAlmostEqual(params["super_page_y_length"], 6.4)
-            self.assertEqual(params["subpage_x_position"], 0)
-            self.assertEqual(params["subpage_y_position"], 0)
-            self.assertEqual(params["output_width"], 256)
+            assertTileSize(params, 2)
 
-            # print([s.name for s in orders[12].order_steps])
-            # basemap = self.get_step(orders[12], "add_contour")
-            # params = basemap.params["params"]
-            # print(params)
-            # self.assertTrue(params["test"], 256)
-            # self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
-            # self.assertAlmostEqual(params["subpage_lower_left_longitude"], 11.25)
-            # self.assertAlmostEqual(params["subpage_upper_right_latitude"], 31.9521622)
-            # self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
-            # self.assertAlmostEqual(params["page_x_length"], 6.4)
-            # self.assertAlmostEqual(params["page_y_length"], 6.4)
-            # self.assertAlmostEqual(params["subpage_x_length"], 6.4)
-            # self.assertAlmostEqual(params["subpage_y_length"], 6.4)
-            # self.assertAlmostEqual(params["super_page_x_length"], 6.4)
-            # self.assertAlmostEqual(params["super_page_y_length"], 6.4)
-            # self.assertEqual(params["subpage_x_position"], 0)
-            # self.assertEqual(params["subpage_y_position"], 0)
-            # self.assertEqual(params["output_width"], 256)
+            basemap = self.get_step(orders[5], "add_basemap")
+            params = basemap.params["params"]
+            self.assertEqual(str(orders[5]), "test+012/5/16/12+w2h2")
+            self.assertAlmostEqual(params["subpage_lower_left_latitude"], 21.9430455)
+            self.assertAlmostEqual(params["subpage_lower_left_longitude"], 0)
+            self.assertAlmostEqual(params["subpage_upper_right_latitude"], 40.9798981)
+            self.assertAlmostEqual(params["subpage_upper_right_longitude"], 22.5)
+            assertTileSize(params, 2)
 
     def test_tiled1(self):
         with self.kitchen(flavours=[flavour("test", tile={

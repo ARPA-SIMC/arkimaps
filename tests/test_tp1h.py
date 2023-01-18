@@ -33,7 +33,7 @@ class TP1HMixin:
             return
         else:
             self.assertGreaterEqual(len(orders), 12)
-        orders = [o for o in orders if o.basename == "tp1h+012"]
+        orders = [o for o in orders if o.recipe.name == "tiles/tp1h" and o.instant.step == 12]
         self.assertEqual(len(orders), 1)
 
         self.assertRenders(orders[0])

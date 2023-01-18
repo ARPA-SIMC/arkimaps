@@ -13,7 +13,7 @@ class SF3HCosmoMixin:
 
         orders = self.make_orders()
         self.assertGreaterEqual(len(orders), 4)
-        orders = [o for o in orders if o.basename == "sf3h+012"]
+        orders = [o for o in orders if o.recipe.name == "sf3h" and o.instant.step == 12]
         self.assertEqual(len(orders), 1)
 
         self.assertProcessLogEqual(
@@ -44,7 +44,7 @@ class SF3HNoConvMixin:
 
         orders = self.make_orders()
         self.assertGreaterEqual(len(orders), 4)
-        orders = [o for o in orders if o.basename == "sf3h+012"]
+        orders = [o for o in orders if o.recipe.name == "sf3h" and o.instant.step == 12]
         self.assertEqual(len(orders), 1)
 
         self.assertProcessLogEqual(
@@ -68,7 +68,7 @@ class SF3HIFSMixin:
 
         orders = self.make_orders()
         self.assertGreaterEqual(len(orders), 4)
-        orders = [o for o in orders if o.basename == "sf3h+012"]
+        orders = [o for o in orders if o.recipe.name == "sf3h" and o.instant.step == 12]
         self.assertEqual(len(orders), 1)
 
         self.assertProcessLogEqual(

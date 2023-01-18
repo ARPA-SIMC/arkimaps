@@ -21,8 +21,9 @@ class MSLPMixin:
         # Test that mslp does not produce a legend
         self.fill_pantry(flavour_name="ita_small_tiles")
         orders = self.make_orders(flavour_name="ita_small_tiles")
-        self.assertEqual(orders[-1].basename, "50")
-        self.assertEqual(len(orders), 65)
+        self.assertEqual(len(orders), 2)
+        self.assertEqual(str(orders[0]), "mslp+012/6/32/22+w4h4")
+        self.assertEqual(str(orders[1]), "mslp+012/7/65/44+w7h7")
 
 
 add_recipe_test_cases(__name__, "mslp")

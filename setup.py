@@ -37,10 +37,9 @@ setup(
     author_email='enrico@enricozini.org',
     url='https://github.com/ARPA-SIMC/arkimaps/',
     license="http://www.gnu.org/licenses/gpl-3.0.html",
-    requires=["Magics", "yaml"],
+    requires=["Magics", "yaml", "PIL"],
     extras_require={
         "arkimet": ["arkimet"],
-        "nice_python_trace": ["yapf"],
     },
     packages=['arkimapslib'],
     scripts=['arkimaps'],

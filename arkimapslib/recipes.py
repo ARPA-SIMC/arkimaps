@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Set, TextIO, Type, Optional
 
 from . import steps
 from . import toposort
+from .config import Config
 
 if TYPE_CHECKING:
     from . import pantry
@@ -232,7 +233,7 @@ class Recipe:
 
     def document(self, pantry: "pantry.Pantry", dest: str):
         from .flavours import Flavour
-        empty_flavour = Flavour("default", defined_in=__file__)
+        empty_flavour = Flavour(Config(), "default", defined_in=__file__)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)
