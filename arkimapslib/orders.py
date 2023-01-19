@@ -309,7 +309,9 @@ class TileOrder(Order):
 
             start_x, start_y, width, height = (int(x) for x in basename[:-4].split('-'))
 
-            rendered = Image.open(os.path.join(workdir, output.relpath), mode='r', formats=('PNG',))
+            rendered = Image.open(os.path.join(workdir, output.relpath), mode='r')
+            # Requires PIL >= 8.0.0
+            # rendered = Image.open(os.path.join(workdir, output.relpath), mode='r', formats=('PNG',))
 
             # Slice the tile and add it to the tar file
             for x in range(width):
