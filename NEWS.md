@@ -2,6 +2,12 @@
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
 
+# New in version 1.1
+
+* Implemented macrotiles processing (8x8) (#126)
+* Added products (wind speed for various hPa levels)
+* Minor fixes in descriptions and palettes
+
 # New in version 1.0
 
 * Added legend to tile output (#46)

@@ -19,7 +19,7 @@ from arkimapslib.render import Renderer
 from arkimapslib.flavours import Flavour
 from arkimapslib.orders import Order
 
-VERSION = "1.0"
+VERSION = "1.1"
 SYSTEM_RECIPE_DIR = "/usr/share/arkimaps/recipes"
 
 log = logging.getLogger("arkimaps")
