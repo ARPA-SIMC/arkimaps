@@ -124,7 +124,6 @@ class Renderer:
             # Python 3.6
             loop = asyncio.get_event_loop()
             res = loop.run_until_complete(self.render_asyncio(queue, tarout))
-            loop.close()
             return res
 
     async def render_asyncio(self, queue: Deque[str], tarout: "tarfile.TarFile") -> List["Order"]:
