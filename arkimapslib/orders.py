@@ -224,9 +224,6 @@ class TileOrder(Order):
         # Height, in number of tiles, of the rendering cluster
         self.height = h
 
-        if w != h:
-            raise NotImplementedError("rectangular (and not square) groups of tiles not yet implemented")
-
         min_lon, max_lat = num2deg(x, y, z)
         max_lon, min_lat = num2deg(x + self.width, y + self.height, z)
 
@@ -262,8 +259,6 @@ class TileOrder(Order):
                         subpage_x_position=0.,
                         subpage_y_position=0.,
                         subpage_frame='off',
-                        # TODO: if we eventually do rectangular renderings, see
-                        #       if there is also output_height
                         output_width=TILE_WIDTH_PX * self.width,
                         page_frame='off',
                         skinny_mode="on",
@@ -346,7 +341,7 @@ class TileOrder(Order):
             y_min, y_max = sorted((y_min, y_max))
             for x, y, w, h in cls.tessellate(
                     x_min, x_max + 1, y_min, y_max + 1,
-                    flavour.config.tile_group_width, flavour.config.tile_group_height):
+                    flavour.config.tile_group_width):
                 yield cls(
                     flavour=flavour,
                     recipe=recipe,
@@ -362,51 +357,33 @@ class TileOrder(Order):
             cls,
             x_min: int, x_max: int,
             y_min: int, y_max: int,
-            tile_width: int, tile_height: int) -> Generator[Tuple[int, int, int, int], None, None]:
-        # print("Tessellate", x_min, x_max, y_min, y_max, tile_width, tile_height)
+            max_side: int) -> Generator[Tuple[int, int, int, int], None, None]:
+        """
+        Generate a sequence of (x, y, width, height) rectangles covering the
+        given surface. Each rectangle's area will not exceed max_side**2, and
+        the tiling will try to make square tiles
+        """
+        # print("Tessellate", x_min, x_max, y_min, y_max, max_side)
         width = x_max - x_min
         height = y_max - y_min
         if width == 0 or height == 0:
             # print("      stop", width, height)
             return
 
-        if tile_width > width or tile_height > height:
-            tile_side = min(width, height)
-            # print("    reduce", x_min, x_max, y_min, y_max, tile_side, tile_side)
-            yield from cls.tessellate(x_min, x_max, y_min, y_max, tile_side, tile_side)
+        # Carve a horizontal stripe as large as we can go
+        tile_height = min(height, max_side)
+        tile_width = min(width, max_side * max_side // tile_height)
+        # print("     tw th", tile_width, tile_height, "iterate", width, "step=", tile_width)
+        for x in range(0, width, tile_width):
+            # print("       gen", x_min + x, y_min, min(tile_width, x_max - x_min - x), tile_height)
+            yield x_min + x, y_min, min(tile_width, x_max - x_min - x), tile_height
+
+        y_min += tile_height
+        if y_min == y_max:
+            # print("     done!")
             return
-
-        tiles_x = width // tile_width
-        tiles_y = height // tile_height
-        for x in range(tiles_x):
-            # Fill with whole blocks
-            for y in range(tiles_y):
-                # print("       gen", x_min + x * tile_width, y_min + y * tile_height, tile_width, tile_height)
-                yield x_min + x * tile_width, y_min + y * tile_height, tile_width, tile_height
-
-        x_excess = width - tiles_x * tile_width
-        y_excess = height - tiles_y * tile_height
-        tile_side = max(x_excess, y_excess)
-
-        if x_excess:
-            # print("  x excess", x_min + tiles_x * tile_width, x_max, y_min, y_min + tiles_y * tile_height,
-            #       tile_side, tile_side)
-            yield from cls.tessellate(
-                    x_min + tiles_x * tile_width, x_max,
-                    y_min, y_min + tiles_y * tile_height,
-                    tile_side, tile_side)
-
-        if y_excess:
-            # print("  y excess", x_min, x_min + tiles_x * tile_width, y_min + tiles_y * tile_height, y_max,
-            #       tile_side, tile_side)
-            yield from cls.tessellate(
-                    x_min, x_min + tiles_x * tile_width,
-                    y_min + tiles_y * tile_height, y_max,
-                    tile_side, tile_side)
-
-        if x_excess and y_excess:
-            # print(" xy excess", x_min + tiles_x * tile_width, y_min + tiles_y * tile_height, tile_side, tile_side)
-            yield x_min + tiles_x * tile_width, y_min + tiles_y * tile_height, tile_side, tile_side
+        # print("   recurse", x_min, x_max, y_min, y_max, max_side)
+        yield from cls.tessellate(x_min, x_max, y_min, y_max, max_side)
 
 
 class LegendOrder(Order):
