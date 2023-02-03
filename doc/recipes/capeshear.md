@@ -1,4 +1,4 @@
-# capeshear: Convective available potential energy shear (m**2 s**-2)
+# capeshear: C.A.P.E. shear
 
 Mixer: **default**
 

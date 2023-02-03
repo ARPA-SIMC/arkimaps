@@ -1,5 +1,5 @@
 ---
-description: Convective Available Potential Energy (C.A.P.E.)
+description: C.A.P.E.
 inputs:
   cape:
     - model: cosmo

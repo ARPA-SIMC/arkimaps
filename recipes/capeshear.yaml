@@ -1,5 +1,5 @@
 ---
-description: Convective available potential energy shear (m**2 s**-2)
+description: C.A.P.E. shear
 inputs:
   capeshear:
     arkimet: product:GRIB1,98,228,44

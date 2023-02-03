@@ -1,4 +1,4 @@
-# cape: Convective Available Potential Energy (C.A.P.E.)
+# cape: C.A.P.E.
 
 Mixer: **default**
 
