@@ -190,6 +190,9 @@ class MapOrder(Order):
 
 
 def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
+    """
+    Compute the geographical coordinates of the northwest point of the tile
+    """
     n = 2.0 ** zoom
     lon_deg = xtile / n * 360.0 - 180.0
     lat_rad = math.atan(math.sinh(math.pi * (1 - 2 * ytile / n)))
@@ -198,6 +201,10 @@ def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
 
 
 def deg2num(lon_deg: float, lat_deg: float, zoom: int) -> Tuple[int, int]:
+    """
+    Compute the tile coordinates of the tile that contain the given point
+    """
+    # See https://towardsdatascience.com/map-tiles-locating-areas-nested-parent-tiles-coordinates-and-bounding-boxes-e54de570d0bd  # noqa
     lat_rad = math.radians(lat_deg)
     n = 2.0 ** zoom
     xtile = int((lon_deg + 180.0) / 360.0 * n)

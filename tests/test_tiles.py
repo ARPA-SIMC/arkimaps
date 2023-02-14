@@ -2,9 +2,11 @@
 import tarfile
 import tempfile
 import unittest
+from collections import defaultdict
+from typing import Dict, Optional
 
 from arkimapslib.kitchen import EccodesKitchen
-from arkimapslib.orders import TileOrder, LegendOrder
+from arkimapslib.orders import LegendOrder, TileOrder, Order, num2deg, deg2num
 from arkimapslib.render import Renderer
 from arkimapslib.unittest import RecipeTestMixin
 
@@ -162,3 +164,65 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
             self.assertEqual(
                     [out.relpath for out in o1.outputs],
                     [out.relpath for out in o2.outputs])
+
+    def test_tile_coords(self):
+        self.assertEqual(deg2num(11.25, 41.0, 6), (34, 23))
+        self.assertEqual(deg2num(-11.25, 41.0, 6), (30, 23))
+
+        lon, lat = num2deg(34, 23, 6)
+        self.assertAlmostEqual(lat, 45.089034, 4)
+        self.assertAlmostEqual(lon, 11.25, 2)
+
+        lon, lat = num2deg(35, 24, 6)
+        self.assertAlmostEqual(lat, 40.979897, 4)
+        self.assertAlmostEqual(lon, 16.874996, 2)
+
+        lon, lat = num2deg(30, 23, 6)
+        self.assertAlmostEqual(lat, 45.089034, 4)
+        self.assertAlmostEqual(lon, -11.25, 2)
+
+    def test_bounding_box(self):
+        # see issue #139
+
+        # ita_small_tiles defines a domain of (35, 5) - (40, 20)
+
+        self.fill_pantry()
+        flavour = self.kitchen.flavours["ita_small_tiles"]
+        # print(flavour.summarize())
+
+        # Make orders and compute the area bounding box for each zoom level
+        class BBox:
+            def __init__(self):
+                self.lat_min: Optional[float] = None
+                self.lat_max: Optional[float] = None
+                self.lon_min: Optional[float] = None
+                self.lon_max: Optional[float] = None
+
+            def add(self, oder: Order):
+                lon_min, lat_max = num2deg(order.x, order.y, order.z)
+                lon_max, lat_min = num2deg(order.x + order.width + 1, order.y + order.height + 1, order.z)
+                if self.lat_min is None or self.lat_min > lat_min:
+                    self.lat_min = lat_min
+                if self.lat_max is None or self.lat_max < lat_max:
+                    self.lat_max = lat_max
+                if self.lon_min is None or self.lon_min > lon_min:
+                    self.lon_min = lon_min
+                if self.lon_max is None or self.lon_max < lon_max:
+                    self.lon_max = lon_max
+
+        # Compute tiles and check that the whole domain is contained in the
+        # tiles
+        by_zoom: Dict[int, BBox] = defaultdict(BBox)
+        for order in self.make_orders():
+            if isinstance(order, LegendOrder):
+                continue
+            by_zoom[order.z].add(order)
+
+        self.assertCountEqual(by_zoom.keys(), (6, 7))
+
+        for z in range(flavour.zoom_min, flavour.zoom_max + 1):
+            bbox = by_zoom[z]
+            self.assertLessEqual(bbox.lat_min, flavour.lat_min)
+            self.assertLessEqual(bbox.lon_min, flavour.lon_min)
+            self.assertGreaterEqual(bbox.lat_max, flavour.lat_max)
+            self.assertGreaterEqual(bbox.lon_max, flavour.lon_max)
