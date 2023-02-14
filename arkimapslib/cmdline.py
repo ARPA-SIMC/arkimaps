@@ -1,20 +1,31 @@
 # from __future__ import annotations
-from typing import Optional
-import sys
+import argparse
 import logging
+import sys
+from typing import Any, Optional, cast
 
 log = logging.getLogger("command")
 
 
-class Fail(RuntimeError):
+def _get_first_docstring_line(obj: Any) -> Optional[str]:
+    if obj.__doc__ is None:
+        raise RuntimeError(f"{obj!r} lacks a docstring")
+    try:
+        return cast(str, obj.__doc__).split("\n")[1].strip()
+    except (AttributeError, IndexError):
+        return None
+
+
+class Fail(BaseException):
     """
-    Exception raised when the program should exit with an error but without a
-    backtrace
+    Failure that causes the program to exit with an error message.
+
+    No stack trace is printed.
     """
     pass
 
 
-class Success(Exception):
+class Success(BaseException):
     """
     Exception raised when a command has been successfully handled, and no
     further processing should happen
@@ -23,45 +34,50 @@ class Success(Exception):
 
 
 class Command:
-    # Command name (as used in command line)
-    # Defaults to the lowercased class name
-    NAME: Optional[str] = None
+    """
+    Base class for actions run from command line
+    """
 
-    # Command description (as used in command line help)
-    # Defaults to the strip()ped class docstring.
-    DESC: Optional[str] = None
+    NAME: str
 
-    def __init__(self, args):
+    def __init__(self, args: argparse.Namespace):
+        self.NAME = getattr(self.__class__, "NAME", self.__class__.__name__.lower())
         self.args = args
         self.setup_logging()
 
-    def setup_logging(self):
-        # Setup logging
+    def setup_logging(self) -> None:
         FORMAT = "%(asctime)-15s %(levelname)s %(name)s %(message)s"
+        if self.args.debug:
+            level = logging.DEBUG
+        elif self.args.verbose:
+            level = logging.INFO
+        else:
+            level = logging.WARN
+
         log_handler = logging.StreamHandler(sys.stderr)
         log_handler.setFormatter(logging.Formatter(FORMAT))
-        if self.args.debug:
-            log_handler.setLevel(logging.DEBUG)
-        elif self.args.verbose:
-            log_handler.setLevel(logging.INFO)
-        else:
-            log_handler.setLevel(logging.WARN)
+        log_handler.setLevel(level)
         root_logger = logging.getLogger()
         root_logger.addHandler(log_handler)
         root_logger.setLevel(logging.DEBUG)
 
     @classmethod
-    def get_name(cls):
-        if cls.NAME is not None:
-            return cls.NAME
-        return cls.__name__.lower()
-
-    @classmethod
-    def make_subparser(cls, subparsers):
-        desc = cls.DESC
-        if desc is None:
-            desc = cls.__doc__.strip()
-
-        parser = subparsers.add_parser(cls.get_name(), help=desc)
-        parser.set_defaults(handler=cls)
+    def make_subparser(cls, subparsers: "argparse._SubParsersAction[Any]") -> argparse.ArgumentParser:
+        cls.NAME = getattr(cls, "NAME", cls.__name__.lower())
+        parser: argparse.ArgumentParser = subparsers.add_parser(
+            cls.NAME,
+            help=_get_first_docstring_line(cls),
+        )
+        parser.set_defaults(command=cls)
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            help="verbose output",
+        ),
+        parser.add_argument(
+            "--debug",
+            action="store_true",
+            help="debugging output",
+        ),
         return parser

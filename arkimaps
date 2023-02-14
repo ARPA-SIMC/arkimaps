@@ -451,7 +451,7 @@ def main():
         parser.print_help()
         return
     else:
-        handler = args.handler(args)
+        handler = args.command(args)
 
     if getattr(handler, "kitchen", None) is not None:
         with handler.kitchen:
