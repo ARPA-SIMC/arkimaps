@@ -399,7 +399,7 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
         log.info("Rendered %s to %s", order.recipe.name, order.outputs[0].relpath)
 
         # Display it
-        subprocess.run(["xdg-open", order.output], check=True)
+        subprocess.run(["xdg-open", os.path.join(self.kitchen.workdir, order.outputs[0].relpath)], check=True)
         input("Press enter when done> ")
         os.unlink(order.output)
 
