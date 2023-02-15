@@ -2,6 +2,11 @@
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
 
+# New in version 1.2
+
+* Implemented rectangular tiles (#135)
+* Fixed a bug in `arkimaps preview`
+
 # New in version 1.1
 
 * Implemented macrotiles processing (8x8) (#126)
