@@ -16,7 +16,7 @@ Mixer: **default**
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `8`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,000,006,001,015,001;level:GRIB2S,001,000,0000000000`
+        * **Arkimet matcher**: `product:GRIB2,,,006,001,,;level:GRIB2S,001,000,0000000000`
         * **grib_filter matcher**: `shortName is "clct" and editionNumber == 2`
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `0.08`

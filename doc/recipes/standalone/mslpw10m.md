@@ -16,7 +16,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,165`
         * **grib_filter matcher**: `centre == 98 and shortName is "10u"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,00080,000,002,002,015,001;level:GRIB2S,103,000,0000000010`
+        * **Arkimet matcher**: `product:GRIB2,,,002,002,,;level:GRIB2S,103,000,0000000010`
         * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber == 2`
 * **v10m**:
     * Model **cosmo**:
@@ -26,7 +26,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,166`
         * **grib_filter matcher**: `centre == 98 and shortName is "10v"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,00080,000,002,003,015,001;level:GRIB2S,103,000,0000000010`
+        * **Arkimet matcher**: `product:GRIB2,,,002,003,,;level:GRIB2S,103,000,0000000010`
         * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 2`
 * **uv10m**:
     * Model **cosmo**:
@@ -50,7 +50,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,151`
         * **grib_filter matcher**: `shortName is "msl"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,00080,000,003,001,015,001;level:GRIB2S,101,000,0000000000`
+        * **Arkimet matcher**: `product:GRIB2,,,003,001,,;level:GRIB2S,101,000,0000000000`
         * **grib_filter matcher**: `shortName is "pmsl" and editionNumber == 2`
 
 ## Steps

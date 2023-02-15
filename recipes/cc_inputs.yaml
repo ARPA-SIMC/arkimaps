@@ -9,7 +9,7 @@ inputs:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
   - model: icon
-    arkimet: product:GRIB2,,000,006,022,015,001;level:GRIB2D,100,000,0000080000,001,000,0000000000
+    arkimet: product:GRIB2,,,006,022,,;level:GRIB2D,100,000,0000080000,001,000,0000000000
     eccodes: shortName is "ccl" and scaledValueOfFirstFixedSurface == 80000 and scaledValueOfSecondFixedSurface == 0 and editionNumber == 2
     mgrib:
         grib_automatic_scaling: off
@@ -28,7 +28,7 @@ inputs:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
   - model: icon
-    arkimet: product:GRIB2,,000,006,022,015,001;level:GRIB2D,100,000,0000040000,100,000,0000080000
+    arkimet: product:GRIB2,,,006,022,,;level:GRIB2D,100,000,0000040000,100,000,0000080000
     eccodes: shortName is "ccl" and scaledValueOfFirstFixedSurface == 40000 and scaledValueOfSecondFixedSurface == 80000 and editionNumber == 2
     mgrib:
         grib_automatic_scaling: off
@@ -47,7 +47,7 @@ inputs:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
   - model: icon
-    arkimet: product:GRIB2,,000,006,022,015,001;level:GRIB2D,100,000,0000000000,100,000,0000040000
+    arkimet: product:GRIB2,,,006,022,,;level:GRIB2D,100,000,0000000000,100,000,0000040000
     eccodes: shortName is "ccl" and scaledValueOfFirstFixedSurface == 0 and scaledValueOfSecondFixedSurface == 40000 and editionNumber == 2
     mgrib:
         grib_automatic_scaling: off
@@ -72,7 +72,7 @@ inputs:
         grib_automatic_scaling: off
         grib_scaling_factor: 8
   - model: icon
-    arkimet: product:GRIB2,,000,006,001,015,001;level:GRIB2S,001,000,0000000000
+    arkimet: product:GRIB2,,,006,001,,;level:GRIB2S,001,000,0000000000
     eccodes: shortName is "clct" and editionNumber == 2
     mgrib:
         grib_automatic_scaling: off

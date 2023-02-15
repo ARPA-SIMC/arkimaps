@@ -24,7 +24,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,151`
         * **grib_filter matcher**: `shortName is "msl"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,00080,000,003,001,015,001;level:GRIB2S,101,000,0000000000`
+        * **Arkimet matcher**: `product:GRIB2,,,003,001,,;level:GRIB2S,101,000,0000000000`
         * **grib_filter matcher**: `shortName is "pmsl" and editionNumber == 2`
 
 ## Steps

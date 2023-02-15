@@ -21,6 +21,9 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,131;level:GRIB1,100,500`
         * **grib_filter matcher**: `centre == 98 and shortName is "u" and levelType == 100 and level == 500`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,002,002,,;level:GRIB2S,100,000,0000050000`
+        * **grib_filter matcher**: `centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 500`
 * **v500**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,100,500`
@@ -28,6 +31,9 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,132;level:GRIB1,100,500`
         * **grib_filter matcher**: `centre == 98 and shortName is "v" and levelType == 100 and level == 500`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,002,003,,;level:GRIB2S,100,000,0000050000`
+        * **grib_filter matcher**: `centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 500`
 * **uv850**:
     * **Preprocessing**: cat
     * **Inputs**: u850, v850
@@ -38,8 +44,8 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,131;level:GRIB1,100,850`
         * **grib_filter matcher**: `centre == 98 and shortName is "u" and levelType == 100 and level == 850`
-    * Model **wrf**:
-        * **Arkimet matcher**: `product:GRIB2,,000,002,002,002,001;level:GRIB2S,102,000,0000000010`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,002,002,,;level:GRIB2S,100,000,0000085000`
         * **grib_filter matcher**: `centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 850`
 * **v850**:
     * Model **cosmo**:
@@ -48,8 +54,8 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,132;level:GRIB1,100,850`
         * **grib_filter matcher**: `centre == 98 and shortName is "v" and levelType == 100 and level == 850`
-    * Model **wrf**:
-        * **Arkimet matcher**: `product:GRIB2,,000,002,003,002,001;level:GRIB2S,102,000,0000000010`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,002,003,,;level:GRIB2S,100,000,0000085000`
         * **grib_filter matcher**: `centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 850`
 
 ## Steps

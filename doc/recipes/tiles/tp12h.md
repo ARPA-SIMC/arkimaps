@@ -16,7 +16,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,228`
         * **grib_filter matcher**: `centre == 98 and shortName is "tp"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,000,001,052,015,001`
+        * **Arkimet matcher**: `product:GRIB2,,,001,052,,`
         * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2`
 
 ## Steps

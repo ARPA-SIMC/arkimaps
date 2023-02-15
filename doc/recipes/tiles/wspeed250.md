@@ -15,6 +15,9 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,131;level:GRIB1,100,250`
         * **grib_filter matcher**: `centre == 98 and shortName is "u" and levelType == 100 and level == 250`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,002,002,,;level:GRIB2S,100,000,0000025000`
+        * **grib_filter matcher**: `centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 250`
 * **v250**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,34;level:GRIB1,100,250`
@@ -22,6 +25,9 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,132;level:GRIB1,100,250`
         * **grib_filter matcher**: `centre == 98 and shortName is "v" and levelType == 100 and level == 250`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,002,003,,;level:GRIB2S,100,000,0000025000`
+        * **grib_filter matcher**: `centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 250`
 
 ## Steps
 

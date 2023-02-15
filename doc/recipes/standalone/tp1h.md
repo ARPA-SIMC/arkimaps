@@ -16,7 +16,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,228`
         * **grib_filter matcher**: `centre == 98 and shortName is "tp"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,000,001,052,015,001`
+        * **Arkimet matcher**: `product:GRIB2,,,001,052,,`
         * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2`
 * **sffraction1h**:
     * **Preprocessing**: sffraction
@@ -40,14 +40,14 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,,2,78`
         * **grib_filter matcher**: `( shortName is "snoc" or shortName is "snow_con" ) and editionNumber == 1`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,000,001,055,015,001`
+        * **Arkimet matcher**: `product:GRIB2,,,001,055,,`
         * **grib_filter matcher**: `shortName is "snow_con" and editionNumber == 2`
 * **snowgsp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,79`
         * **grib_filter matcher**: `( shortName is "lssf" or shortName is "snow_gsp" ) and editionNumber == 1`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,000,001,056,015,001`
+        * **Arkimet matcher**: `product:GRIB2,,,001,056,,`
         * **grib_filter matcher**: `shortName is "snow_gsp" and editionNumber == 2`
 * **uv10m**:
     * Model **cosmo**:
@@ -71,7 +71,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,165`
         * **grib_filter matcher**: `centre == 98 and shortName is "10u"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,00080,000,002,002,015,001;level:GRIB2S,103,000,0000000010`
+        * **Arkimet matcher**: `product:GRIB2,,,002,002,,;level:GRIB2S,103,000,0000000010`
         * **grib_filter matcher**: `centre != 98 and shortName is "10u" and editionNumber == 2`
 * **v10m**:
     * Model **cosmo**:
@@ -81,7 +81,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,166`
         * **grib_filter matcher**: `centre == 98 and shortName is "10v"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,00080,000,002,003,015,001;level:GRIB2S,103,000,0000000010`
+        * **Arkimet matcher**: `product:GRIB2,,,002,003,,;level:GRIB2S,103,000,0000000010`
         * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 2`
 
 ## Steps

@@ -30,7 +30,7 @@ inputs:
     arkimet: product:GRIB1,98,128,168
     eccodes: centre == 98 and shortName is "2d"
   - model: icon
-    arkimet: product:GRIB2,,000,000,006,015,001
+    arkimet: product:GRIB2,,,000,006,,
     eccodes: centre != 98 and shortName is "2d" and editionNumber == 2
  rh2m:
   - model: cosmo
