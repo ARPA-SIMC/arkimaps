@@ -11,17 +11,17 @@ Mixer: **default**
 * **t925**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,100,925`
-        * **grib_filter matcher**: `centre != 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 925`
+        * **grib_filter matcher**: `centre != 98 and shortName is "t" and levelType == 100 and level == 925`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,130;level:GRIB1,100,925`
-        * **grib_filter matcher**: `centre == 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 925`
+        * **grib_filter matcher**: `centre == 98 and shortName is "t" and levelType == 100 and level == 925`
 * **q925**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,51;level:GRIB1,100,925`
-        * **grib_filter matcher**: `centre != 98 and shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 925`
+        * **grib_filter matcher**: `centre != 98 and shortName is "q" and levelType == 100 and level == 925`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,133;level:GRIB1,100,925`
-        * **grib_filter matcher**: `centre == 98 and shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 925`
+        * **grib_filter matcher**: `centre == 98 and shortName is "q" and levelType == 100 and level == 925`
 * **p925**:
     * **vg6d_transform arguments**: --comp-var-from-lev --trans-level-type=100
     * **Preprocessing**: vg6d_transform

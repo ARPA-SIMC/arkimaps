@@ -50,71 +50,71 @@ inputs:
  u250:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,250
-     eccodes: centre != 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 250
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 250
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,250
-     eccodes: centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 250
+     eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 250
  v250:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,250
-     eccodes: centre != 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 250
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 250
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,250
-     eccodes: centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 250
+     eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 250
  uv250:
    type: cat
    inputs: [u250, v250]
  u500:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,500
-     eccodes: centre != 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 500
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 500
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,500
-     eccodes: centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 500
+     eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 500
  v500:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,500
-     eccodes: centre != 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 500
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 500
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,500
-     eccodes: centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 500
+     eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 500
  uv500:
    type: cat
    inputs: [u500, v500]
  u700:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,700
-     eccodes: centre != 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 700
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 700
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,700
-     eccodes: centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 700
+     eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 700
  v700:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,700
-     eccodes: centre != 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 700
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 700
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,700
-     eccodes: centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 700
+     eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 700
  uv700:
    type: cat
    inputs: [u700, v700]
  u850:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,850
-     eccodes: centre != 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 850
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 850
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,850
-     eccodes: centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 850
+     eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 850
    - model: wrf
      arkimet: product:GRIB2,,000,002,002,002,001;level:GRIB2S,102,000,0000000010
      eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 850
  v850:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,850
-     eccodes: centre != 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 850
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 850
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,850
-     eccodes: centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 850
+     eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 850
    - model: wrf
      arkimet: product:GRIB2,,000,002,003,002,001;level:GRIB2S,102,000,0000000010
      eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 850
@@ -124,26 +124,26 @@ inputs:
  u925:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,925
-     eccodes: centre != 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 925
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 925
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,925
-     eccodes: centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 925
+     eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 925
  v925:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,925
-     eccodes: centre != 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 925
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 925
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,925
-     eccodes: centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 925
+     eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 925
  uv925:
    type: cat
    inputs: [u925, v925]
  upv:
    arkimet: product:GRIB1,98,128,131;level:GRIB1,117,2000
-   eccodes: centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 117 and level == 2000
+   eccodes: centre == 98 and shortName is "u" and levelType == 117 and level == 2000
  vpv:
    arkimet: product:GRIB1,98,128,132;level:GRIB1,117,2000
-   eccodes: centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 117 and level == 2000
+   eccodes: centre == 98 and shortName is "v" and levelType == 117 and level == 2000
  uvpv:
    type: cat
    inputs: [upv, vpv]

@@ -10,24 +10,24 @@ Mixer: **default**
 * **t500**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,100,500`
-        * **grib_filter matcher**: `centre != 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 500`
+        * **grib_filter matcher**: `centre != 98 and shortName is "t" and levelType == 100 and level == 500`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,130;level:GRIB1,100,500`
-        * **grib_filter matcher**: `centre == 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 500`
+        * **grib_filter matcher**: `centre == 98 and shortName is "t" and levelType == 100 and level == 500`
 * **t700**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,100,700`
-        * **grib_filter matcher**: `centre != 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 700`
+        * **grib_filter matcher**: `centre != 98 and shortName is "t" and levelType == 100 and level == 700`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,130;level:GRIB1,100,700`
-        * **grib_filter matcher**: `centre == 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 700`
+        * **grib_filter matcher**: `centre == 98 and shortName is "t" and levelType == 100 and level == 700`
 * **t850**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,100,850`
-        * **grib_filter matcher**: `centre != 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 850`
+        * **grib_filter matcher**: `centre != 98 and shortName is "t" and levelType == 100 and level == 850`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,130;level:GRIB1,100,850`
-        * **grib_filter matcher**: `centre == 98 and shortName is "t" and indicatorOfTypeOfLevel == 100 and level == 850`
+        * **grib_filter matcher**: `centre == 98 and shortName is "t" and levelType == 100 and level == 850`
 * **td700**:
     * **vg6d_transform arguments**: --output-variable-list=B12103
     * **Preprocessing**: vg6d_transform
@@ -35,10 +35,10 @@ Mixer: **default**
 * **q700**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,51;level:GRIB1,100,700`
-        * **grib_filter matcher**: `centre != 98 and shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 700`
+        * **grib_filter matcher**: `centre != 98 and shortName is "q" and levelType == 100 and level == 700`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,133;level:GRIB1,100,700`
-        * **grib_filter matcher**: `centre == 98 and shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 700`
+        * **grib_filter matcher**: `centre == 98 and shortName is "q" and levelType == 100 and level == 700`
 * **p700**:
     * **vg6d_transform arguments**: --comp-var-from-lev --trans-level-type=100
     * **Preprocessing**: vg6d_transform
@@ -50,10 +50,10 @@ Mixer: **default**
 * **q850**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,51;level:GRIB1,100,850`
-        * **grib_filter matcher**: `centre != 98 and shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 850`
+        * **grib_filter matcher**: `centre != 98 and shortName is "q" and levelType == 100 and level == 850`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,133;level:GRIB1,100,850`
-        * **grib_filter matcher**: `centre == 98 and shortName is "q" and indicatorOfTypeOfLevel == 100 and level == 850`
+        * **grib_filter matcher**: `centre == 98 and shortName is "q" and levelType == 100 and level == 850`
 * **p850**:
     * **vg6d_transform arguments**: --comp-var-from-lev --trans-level-type=100
     * **Preprocessing**: vg6d_transform

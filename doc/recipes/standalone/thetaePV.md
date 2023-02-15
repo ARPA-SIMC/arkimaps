@@ -6,16 +6,16 @@ Mixer: **default**
 
 * **thetaePV**:
     * **Arkimet matcher**: `product:GRIB1,98,128,3;level:GRIB1,117,2000`
-    * **grib_filter matcher**: `centre == 98 and shortName is "pt" and indicatorOfTypeOfLevel == 117 and level == 2000`
+    * **grib_filter matcher**: `centre == 98 and shortName is "pt" and levelType == 117 and level == 2000`
 * **uvpv**:
     * **Preprocessing**: cat
     * **Inputs**: upv, vpv
 * **upv**:
     * **Arkimet matcher**: `product:GRIB1,98,128,131;level:GRIB1,117,2000`
-    * **grib_filter matcher**: `centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 117 and level == 2000`
+    * **grib_filter matcher**: `centre == 98 and shortName is "u" and levelType == 117 and level == 2000`
 * **vpv**:
     * **Arkimet matcher**: `product:GRIB1,98,128,132;level:GRIB1,117,2000`
-    * **grib_filter matcher**: `centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 117 and level == 2000`
+    * **grib_filter matcher**: `centre == 98 and shortName is "v" and levelType == 117 and level == 2000`
 * **mslp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,2`
