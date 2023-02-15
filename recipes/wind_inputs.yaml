@@ -105,6 +105,9 @@ inputs:
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,850
      eccodes: centre == 98 and shortName is "u" and indicatorOfTypeOfLevel == 100 and level == 850
+   - model: wrf
+     arkimet: product:GRIB2,,000,002,002,002,001;level:GRIB2S,102,000,0000000010
+     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 850
  v850:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,850
@@ -112,6 +115,9 @@ inputs:
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,850
      eccodes: centre == 98 and shortName is "v" and indicatorOfTypeOfLevel == 100 and level == 850
+   - model: wrf
+     arkimet: product:GRIB2,,000,002,003,002,001;level:GRIB2S,102,000,0000000010
+     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 850
  uv850:
    type: cat
    inputs: [u850, v850]

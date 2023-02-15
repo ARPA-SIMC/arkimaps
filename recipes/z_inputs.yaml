@@ -44,6 +44,12 @@ inputs:
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
+  - model: wrf
+    arkimet: product:GRIB2,,000,003,005,002,001;level:GRIB2S,100,000,0000085000
+    eccodes: centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 850
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_factor: 0.1
  z925:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,925
