@@ -73,92 +73,92 @@ inputs:
  u500:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,500
-     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 500
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 500 and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,500
      eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 500
    - model: icon
      arkimet: product:GRIB2,,,002,002,,;level:GRIB2S,100,000,0000050000
-     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 500
+     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 500 and editionNumber == 2
  v500:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,500
-     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 500
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 500 and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,500
      eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 500
    - model: icon
      arkimet: product:GRIB2,,,002,003,,;level:GRIB2S,100,000,0000050000
-     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 500
+     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 500 and editionNumber == 2
  uv500:
    type: cat
    inputs: [u500, v500]
  u700:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,700
-     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 700
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 700 and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,700
      eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 700
    - model: icon
      arkimet: product:GRIB2,,,002,002,,;level:GRIB2S,100,000,0000070000
-     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 700
+     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 700 and editionNumber == 2
  v700:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,700
-     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 700
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 700 and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,700
      eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 700
    - model: icon
      arkimet: product:GRIB2,,,002,003,,;level:GRIB2S,100,000,0000070000
-     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 700
+     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 700 and editionNumber == 2
  uv700:
    type: cat
    inputs: [u700, v700]
  u850:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,850
-     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 850
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 850 and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,850
      eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 850
    - model: icon
      arkimet: product:GRIB2,,,002,002,,;level:GRIB2S,100,000,0000085000
-     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 850
+     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 850 and editionNumber == 2
  v850:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,850
-     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 850
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 850 and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,850
      eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 850
    - model: icon
      arkimet: product:GRIB2,,,002,003,,;level:GRIB2S,100,000,0000085000
-     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 850
+     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 850 and editionNumber == 2
  uv850:
    type: cat
    inputs: [u850, v850]
  u925:
    - model: cosmo
      arkimet: product:GRIB1,,2,33;level:GRIB1,100,925
-     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 925
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 925 and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,131;level:GRIB1,100,925
      eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 925
    - model: icon
      arkimet: product:GRIB2,,,002,002,,;level:GRIB2S,100,000,0000092500
-     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 925
+     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 925 and editionNumber == 2
  v925:
    - model: cosmo
      arkimet: product:GRIB1,,2,34;level:GRIB1,100,925
-     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 925
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 925 and editionNumber == 1
    - model: ifs
      arkimet: product:GRIB1,98,128,132;level:GRIB1,100,925
      eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 925
    - model: icon
      arkimet: product:GRIB2,,,002,003,,;level:GRIB2S,100,000,0000092500
-     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 925
+     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 925 and editionNumber == 2
  uv925:
    type: cat
    inputs: [u925, v925]

@@ -41,10 +41,13 @@ Mixer: **default**
 * **t1000**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,100,1000`
-        * **grib_filter matcher**: `centre != 98 and shortName is "t" and levelType == 100 and level == 1000`
+        * **grib_filter matcher**: `centre != 98 and shortName is "t" and levelType == 100 and level == 1000 and editionNumber == 1`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,130;level:GRIB1,100,1000`
-        * **grib_filter matcher**: `centre == 98 and shortName is "t" and levelType == 100 and level == 1000`
+        * **grib_filter matcher**: `centre == 98 and shortName is "t" and levelType == 100 and level == 100`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000100000`
+        * **grib_filter matcher**: `centre != 98 and shortName is "q" and levelType == 100 and level == 1000 and editionNumber == 2`
 
 ## Steps
 

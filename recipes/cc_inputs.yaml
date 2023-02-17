@@ -67,7 +67,7 @@ inputs:
         grib_scaling_factor: 0.08
   - model: ifs
     arkimet: product:GRIB1,98,128,164
-    eccodes: shortName is "tcc"
+    eccodes: shortName is "tcc" and editionNumber == 1
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 8
@@ -77,3 +77,9 @@ inputs:
     mgrib:
         grib_automatic_scaling: off
         grib_scaling_factor: 0.08
+  - model: wrf
+    arkimet: product:GRIB2,,,006,001,,;level:GRIB2S,010,000,0000000000
+    eccodes: shortName is "tcc" and editionNumber == 2
+    mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_factor: 8

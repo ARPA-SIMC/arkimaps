@@ -17,35 +17,50 @@ inputs:
  t500:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,100,500
-    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 500
+    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 500 and editionNumber == 1
   - model: ifs 
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,500
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 500
+  - model: icon
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000050000
+    eccodes: centre != 98 and shortName is "q" and levelType == 100 and level == 500 and editionNumber == 2
  t700:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,100,700
-    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 700
+    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 700 and editionNumber == 1
   - model: ifs 
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,700
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 700
+  - model: icon
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000070000
+    eccodes: centre != 98 and shortName is "q" and levelType == 100 and level == 700 and editionNumber == 2
  t850:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,100,850
-    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 850
+    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 850 and editionNumber == 1
   - model: ifs 
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,850
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 850
+  - model: icon
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000085000
+    eccodes: centre != 98 and shortName is "q" and levelType == 100 and level == 850 and editionNumber == 2
  t925:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,100,925
-    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 925
+    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 925 and editionNumber == 1
   - model: ifs 
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,925
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 925
+  - model: icon
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000092500
+    eccodes: centre != 98 and shortName is "q" and levelType == 100 and level == 925 and editionNumber == 2
  t1000:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,100,1000
-    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 1000
+    eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 1000 and editionNumber == 1
   - model: ifs
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,1000
-    eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 1000
+    eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 100
+  - model: icon
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000100000
+    eccodes: centre != 98 and shortName is "q" and levelType == 100 and level == 1000 and editionNumber == 2

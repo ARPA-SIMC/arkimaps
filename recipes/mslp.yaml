@@ -13,7 +13,7 @@ inputs:
     eccodes: shortName is "msl"
   - model: icon
     arkimet: product:GRIB2,,,003,001,,;level:GRIB2S,101,000,0000000000
-    eccodes: shortName is "pmsl" and editionNumber == 2
+    eccodes: ( shortName is "pmsl" or shortName is "prmsl" ) and editionNumber == 2
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

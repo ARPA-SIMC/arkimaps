@@ -12,7 +12,7 @@ Mixer: **default**
         * **mgrib {k}**: `0.08`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,164`
-        * **grib_filter matcher**: `shortName is "tcc"`
+        * **grib_filter matcher**: `shortName is "tcc" and editionNumber == 1`
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `8`
     * Model **icon**:
@@ -20,6 +20,11 @@ Mixer: **default**
         * **grib_filter matcher**: `shortName is "clct" and editionNumber == 2`
         * **mgrib {k}**: `False`
         * **mgrib {k}**: `0.08`
+    * Model **wrf**:
+        * **Arkimet matcher**: `product:GRIB2,,,006,001,,;level:GRIB2S,010,000,0000000000`
+        * **grib_filter matcher**: `shortName is "tcc" and editionNumber == 2`
+        * **mgrib {k}**: `False`
+        * **mgrib {k}**: `8`
 
 ## Steps
 
