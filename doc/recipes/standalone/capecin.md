@@ -7,10 +7,13 @@ Mixer: **default**
 * **cape**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,201,145`
-        * **grib_filter matcher**: `centre != 98 and shortName is "cape_ml"`
+        * **grib_filter matcher**: `centre != 98 and shortName is "cape_ml" and editionNumber == 1`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,59`
         * **grib_filter matcher**: `centre == 98 and shortName is "cape"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,007,006,,`
+        * **grib_filter matcher**: `centre != 98 and shortName is "cape" and editionNumber == 2`
 * **cin**:
     * **Arkimet matcher**: `product:GRIB1,,201,146`
     * **grib_filter matcher**: `centre != 98 and shortName is "cin_ml"`

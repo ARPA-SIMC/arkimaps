@@ -19,8 +19,8 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,228`
         * **grib_filter matcher**: `centre == 98 and shortName is "tp"`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,001,052,,`
-        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2`
+        * **Arkimet matcher**: `product:GRIB2,,,001,052,, or GRIB2,,,001,008,,`
+        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2 and numberOfTimeRange == 1`
 * **snowdec3h**:
     * **Decumulation step**: 3
     * **Preprocessing**: decumulate
@@ -41,14 +41,14 @@ Mixer: **default**
         * **grib_filter matcher**: `( shortName is "snoc" or shortName is "snow_con" ) and editionNumber == 1`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,,001,055,,`
-        * **grib_filter matcher**: `shortName is "snow_con" and editionNumber == 2`
+        * **grib_filter matcher**: `shortName is "snow_con" and editionNumber == 2 and numberOfTimeRange == 1`
 * **snowgsp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,79`
         * **grib_filter matcher**: `( shortName is "lssf" or shortName is "snow_gsp" ) and editionNumber == 1`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,,001,056,,`
-        * **grib_filter matcher**: `shortName is "snow_gsp" and editionNumber == 2`
+        * **grib_filter matcher**: `shortName is "snow_gsp" and editionNumber == 2 and numberOfTimeRange == 1`
 
 ## Steps
 
