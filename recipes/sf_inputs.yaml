@@ -12,14 +12,14 @@ inputs:
      eccodes: ( shortName is "snoc" or shortName is "snow_con" ) and editionNumber == 1
    - model: icon
      arkimet: product:GRIB2,,,001,055,,
-     eccodes: shortName is "snow_con" and editionNumber == 2
+     eccodes: shortName is "snow_con" and editionNumber == 2 and numberOfTimeRange == 1
  snowgsp:
    - model: cosmo
      arkimet: product:GRIB1,,2,79
      eccodes: ( shortName is "lssf" or shortName is "snow_gsp" ) and editionNumber == 1
    - model: icon
      arkimet: product:GRIB2,,,001,056,,
-     eccodes: shortName is "snow_gsp" and editionNumber == 2
+     eccodes: shortName is "snow_gsp" and editionNumber == 2 and numberOfTimeRange == 1
  snowsum:
    - type: vg6d_transform
      args: ["--output-variable-list=B13205"]
