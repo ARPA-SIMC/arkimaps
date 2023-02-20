@@ -9,7 +9,7 @@ inputs:
      arkimet: product:GRIB1,98,128,228
      eccodes: centre == 98 and shortName is "tp"
    - model: icon
-     arkimet: product:GRIB2,,,001,052,,
+     arkimet: product:GRIB2,,,001,052,, or GRIB2,,,001,008,,
      eccodes: centre != 98 and shortName is "tp" and editionNumber == 2 and numberOfTimeRange == 1
  tpdec1h:
    - type: decumulate
