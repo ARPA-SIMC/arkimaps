@@ -2,6 +2,10 @@
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
 
+# New in version 1.3
+
+* Added GRIB2 products (variables at various hPa levels)
+
 # New in version 1.2
 
 * Implemented rectangular tiles (#135)

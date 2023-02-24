@@ -3,8 +3,8 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.2
-Release:        %{releaseno}%{dist}
+Version:        1.3
+Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
 License:        GPLv2+
@@ -88,6 +88,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Fri Feb 24 2023 Daniele Branchini <dbranchini@arpae.it> - 1.3-1
+- Added GRIB2 products (variables at various hPa levels)
+
 * Wed Feb 15 2023 Daniele Branchini <dbranchini@arpae.it> - 1.2-1
 - Implemented rectangular tiles (#135)
 - Fixed a bug in `arkimaps preview`
