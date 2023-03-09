@@ -1,0 +1,51 @@
+---
+description: Deviation of sea level from mean
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: dslm
+ - step: add_contour
+   params:
+    contour: off
+    contour_highlight: off
+    contour_label_height: 0.4
+    contour_label_colour: navy
+    contour_label_frequency: 1
+    contour_label_blanking: off
+    contour_shade: on
+    contour_level_list: [ -1.0,-0.8,-0.6,-0.4,-0.2,0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0 ]
+    contour_level_selection_type: list
+    contour_shade_colour_list:  [ "#6600ff","#0000ff","#0078ff","#00b4fa","#00e6fa",
+       "#00fcbe","#deff19","#ffff36","#ffe600","#ffb500","#ff7b00","#fe0000","#d70000",
+       "#b90000","#960000" ]
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_title_text: "Deviation of sea level from mean [m]"
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+ - step: add_contour
+   params:
+    contour: on
+    contour_shade: off
+    contour_level_selection_type: interval
+    contour_interval: 0.025
+    contour_line_colour: "#222222"
+    contour_line_thickness: 1
+    contour_highlight: on
+    contour_highlight_frequency: 4
+    contour_highlight_colour: "#000000"
+    contour_highlight_thickness: 2
+    contour_label: off
+    legend: off
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

@@ -35,6 +35,14 @@ inputs:
    - model: adriac
      arkimet: product:GRIB2,,,003,001,,
      eccodes: parameterCategory == 3 and parameterNumber == 1
+ seau0m:
+   - model: adriac
+     arkimet: product:GRIB2,,,001,002,,;level:GRIB2S,160,002,0000000035
+     eccodes: shortName is "ocu" and editionNumber == 2 and typeOfFirstFixedSurface == 160 and level == 0
+ seav0m:
+   - model: adriac
+     arkimet: product:GRIB2,,,001,003,,;level:GRIB2S,160,002,0000000035
+     eccodes: shortName is "ocv" and editionNumber == 2 and typeOfFirstFixedSurface == 160 and level == 0
  seau10m:
    - model: adriac
      arkimet: product:GRIB2,,,001,002,,;level:GRIB2S,160,002,0000001000
