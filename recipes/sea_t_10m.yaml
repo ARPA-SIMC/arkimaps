@@ -1,0 +1,40 @@
+---
+description: Sea temperature at -10m
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: seat10m
+ - step: add_contour
+   params:
+    contour: on
+    contour_line_colour: "#222222"
+    contour_line_thickness: 1
+    contour_highlight: off
+    contour_label_height: 0.4
+    contour_label_colour: navy
+    contour_label_frequency: 1
+    contour_label_blanking: off
+    contour_shade: on
+    contour_level_list: [5.0,6.0,7.0,8.0,9.0,10.0,11.0,12.0,13.0,14.0,15.0,16.0,17.0,
+       18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0]
+    contour_level_selection_type: list
+    contour_shade_colour_list:  [ "#660099","#3200cd","#0000ff","#004cd9","#0078c3",
+       "#00a3ae","#00cf98","#00fa82","#cce666","#eef666","#ffff0f","#ffe100","#ffb700",
+       "#ff9000","#ff6900","#fe0000","#e30000","#ca0000","#ae0000","#930000"]
+    contour_shade_colour_method: list
+    contour_shade_method: area_fill
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_title_text: "Sea Temperature at -10m [°C]"
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
