@@ -9,6 +9,13 @@ inputs:
    - model: adriac
      arkimet: product:GRIB2,,,000,004,,
      eccodes: shortName is "wvdir" and editionNumber == 2
+ seat0m:
+   - model: adriac
+     arkimet: product:GRIB2,,,004,018,,;level:GRIB2S,160,002,0000000035
+     eccodes: parameterCategory == 4 and parameterNumber == 18 and typeOfFirstFixedSurface == 160 and level == 0
+     mgrib:
+        grib_automatic_scaling: off
+        grib_scaling_offset: -273.15
  seat10m:
    - model: adriac
      arkimet: product:GRIB2,,,004,018,,;level:GRIB2S,160,002,0000001000
@@ -16,6 +23,10 @@ inputs:
      mgrib:
         grib_automatic_scaling: off
         grib_scaling_offset: -273.15
+ salinity0m:
+   - model: adriac
+     arkimet: product:GRIB2,,,004,021,,;level:GRIB2S,160,002,0000000035
+     eccodes: parameterCategory == 4 and parameterNumber == 21 and typeOfFirstFixedSurface == 160 and level == 0
  salinity10m:
    - model: adriac
      arkimet: product:GRIB2,,,004,021,,;level:GRIB2S,160,002,0000001000

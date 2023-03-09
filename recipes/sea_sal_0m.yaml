@@ -1,10 +1,10 @@
 ---
-description: Salinity at -10m
+description: Salinity at -0.5m
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
  - step: add_grib
-   grib: salinity10m
+   grib: salinity0m
  - step: add_contour
    params:
     contour: off
@@ -23,7 +23,7 @@ recipe:
     legend: on
     legend_display_type: continuous
     legend_title: on
-    legend_title_text: "Salinity at -10m [psu]"
+    legend_title_text: "Salinity at -0.5m [psu]"
     legend_text_colour: black
     legend_text_font_size: 0.4
     legend_title_font_size: 0.5
