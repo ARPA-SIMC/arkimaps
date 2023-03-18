@@ -6,7 +6,7 @@ flavours:
        params:
          # Adriatico
          page_id_line: off
-         output_width: 1280
+         output_width: 1050
          subpage_map_projection: cylindrical
          subpage_lower_left_longitude: 12.0
          subpage_lower_left_latitude: 40.0

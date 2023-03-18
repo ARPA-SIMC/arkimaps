@@ -16,11 +16,10 @@ inputs:
      arkimet: product:GRIB2,,,000,004,,
      eccodes: shortName is "wvdir" and editionNumber == 2
  seaswhdir:
-   - model: swan
-     type: cat
-     inputs: [swh,wvdir]
-     mgrib:
-       grib_wind_mode: sd
+   type: cat
+   inputs: [swh,wvdir]
+   mgrib:
+     grib_wind_mode: sd
  seat0m:
    - model: adriac
      arkimet: product:GRIB2,,,004,018,,;level:GRIB2S,160,002,0000000035
