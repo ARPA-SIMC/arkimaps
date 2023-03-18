@@ -12,29 +12,29 @@ inputs:
  seat0m:
    - model: adriac
      arkimet: product:GRIB2,,,004,018,,;level:GRIB2S,160,002,0000000035
-     eccodes: parameterCategory == 4 and parameterNumber == 18 and typeOfFirstFixedSurface == 160 and level == 0
+     eccodes: editionNumber == 2 and parameterCategory == 4 and parameterNumber == 18 and typeOfFirstFixedSurface == 160 and level == 0
      mgrib:
         grib_automatic_scaling: off
         grib_scaling_offset: -273.15
  seat10m:
    - model: adriac
      arkimet: product:GRIB2,,,004,018,,;level:GRIB2S,160,002,0000001000
-     eccodes: parameterCategory == 4 and parameterNumber == 18 and typeOfFirstFixedSurface == 160 and level == 10
+     eccodes: editionNumber == 2 and parameterCategory == 4 and parameterNumber == 18 and typeOfFirstFixedSurface == 160 and level == 10
      mgrib:
         grib_automatic_scaling: off
         grib_scaling_offset: -273.15
  salinity0m:
    - model: adriac
      arkimet: product:GRIB2,,,004,021,,;level:GRIB2S,160,002,0000000035
-     eccodes: parameterCategory == 4 and parameterNumber == 21 and typeOfFirstFixedSurface == 160 and level == 0
+     eccodes: editionNumber == 2 and parameterCategory == 4 and parameterNumber == 21 and typeOfFirstFixedSurface == 160 and level == 0
  salinity10m:
    - model: adriac
      arkimet: product:GRIB2,,,004,021,,;level:GRIB2S,160,002,0000001000
-     eccodes: parameterCategory == 4 and parameterNumber == 21 and typeOfFirstFixedSurface == 160 and level == 10
+     eccodes: editionNumber == 2 and parameterCategory == 4 and parameterNumber == 21 and typeOfFirstFixedSurface == 160 and level == 10
  dslm:
    - model: adriac
      arkimet: product:GRIB2,,,003,001,,
-     eccodes: parameterCategory == 3 and parameterNumber == 1
+     eccodes: editionNumber == 2 and parameterCategory == 3 and parameterNumber == 1
  seau0m:
    - model: adriac
      arkimet: product:GRIB2,,,001,002,,;level:GRIB2S,160,002,0000000035
@@ -51,3 +51,11 @@ inputs:
    - model: adriac
      arkimet: product:GRIB2,,,001,003,,;level:GRIB2S,160,002,0000001000
      eccodes: shortName is "ocv" and editionNumber == 2 and typeOfFirstFixedSurface == 160 and level == 10
+ seauv0m:
+   - model: adriac
+     type: cat
+     inputs: [seau0m, seav0m]
+ seauv10m:
+   - model: adriac
+     type: cat
+     inputs: [seau10m, seav10m]
