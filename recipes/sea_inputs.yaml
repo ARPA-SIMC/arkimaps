@@ -2,13 +2,25 @@
 description: Marine variables input definitions
 inputs:
  swh:
+   - model: swan
+     arkimet: product:GRIB1,,140,229
+     eccodes: shortName is "swh" and editionNumber == 1
    - model: adriac
      arkimet: product:GRIB2,,,000,003,,
      eccodes: shortName is "swh" and editionNumber == 2
  wvdir:
+   - model: swan
+     arkimet: product:GRIB1,,140,230
+     eccodes: shortName is "mwd" and editionNumber == 1
    - model: adriac
      arkimet: product:GRIB2,,,000,004,,
      eccodes: shortName is "wvdir" and editionNumber == 2
+ seaswhdir:
+   - model: swan
+     type: cat
+     inputs: [swh,wvdir]
+     mgrib:
+       grib_wind_mode: sd
  seat0m:
    - model: adriac
      arkimet: product:GRIB2,,,004,018,,;level:GRIB2S,160,002,0000000035
