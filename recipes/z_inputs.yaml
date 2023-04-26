@@ -7,37 +7,64 @@ inputs:
  z250:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,250
-    eccodes: shortName is "z" and levelType == 100 and level == 250 and centre != 98
+    eccodes: shortName is "z" and levelType == 100 and level == 250 and centre != 98 and editionNumber == 1
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,250
     eccodes: shortName is "gh" and levelType == 100 and level == 250 and centre == 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
+  - model: icon
+    arkimet: product:GRIB2,,,003,004,,;level:GRIB2S,100,000,0000025000
+    eccodes: shortName is "z" and levelType == 100 and level == 250 and centre != 98 and editionNumber == 2
+  - model: wrf
+    arkimet: product:GRIB2,,,003,005,,;level:GRIB2S,100,000,0000025000
+    eccodes: centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 250 and editionNumber == 2
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_factor: 0.1
  z500:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,500
-    eccodes: shortName is "z" and levelType == 100 and level == 500 and centre != 98
+    eccodes: shortName is "z" and levelType == 100 and level == 500 and centre != 98 and editionNumber == 1
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,500
     eccodes: shortName is "gh" and levelType == 100 and level == 500 and centre == 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
+  - model: icon
+    arkimet: product:GRIB2,,,003,004,,;level:GRIB2S,100,000,0000050000
+    eccodes: shortName is "z" and levelType == 100 and level == 500 and centre != 98 and editionNumber == 2
+  - model: wrf
+    arkimet: product:GRIB2,,,003,005,,;level:GRIB2S,100,000,0000050000
+    eccodes: centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 500 and editionNumber == 2
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_factor: 0.1
  z700:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,700
-    eccodes: shortName is "z" and levelType == 100 and level == 700 and centre != 98
+    eccodes: shortName is "z" and levelType == 100 and level == 700 and centre != 98 and editionNumber == 1
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,700
     eccodes: shortName is "gh" and levelType == 100 and level == 700 and centre == 98
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
+  - model: icon
+    arkimet: product:GRIB2,,,003,004,,;level:GRIB2S,100,000,0000070000
+    eccodes: shortName is "z" and levelType == 100 and level == 700 and centre != 98 and editionNumber == 2
+  - model: wrf
+    arkimet: product:GRIB2,,,003,005,,;level:GRIB2S,100,000,0000070000
+    eccodes: centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 700 and editionNumber == 2
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_factor: 0.1
  z850:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,850
-    eccodes: shortName is "z" and levelType == 100 and level == 850 and centre != 98
+    eccodes: shortName is "z" and levelType == 100 and level == 850 and centre != 98 and editionNumber == 1
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,850
     eccodes: shortName is "gh" and levelType == 100 and level == 850 and centre == 98
@@ -45,18 +72,30 @@ inputs:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
   - model: icon
+    arkimet: product:GRIB2,,,003,004,,;level:GRIB2S,100,000,0000085000
+    eccodes: shortName is "z" and levelType == 100 and level == 850 and centre != 98 and editionNumber == 2
+  - model: wrf
     arkimet: product:GRIB2,,,003,005,,;level:GRIB2S,100,000,0000085000
-    eccodes: centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 850
+    eccodes: centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 850 and editionNumber == 2
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
  z925:
   - model: cosmo
     arkimet: product:GRIB1,,2,6; level:GRIB1,100,925
-    eccodes: shortName is "z" and levelType == 100 and level == 925 and centre != 98
+    eccodes: shortName is "z" and levelType == 100 and level == 925 and centre != 98 and editionNumber == 1
   - model: ifs
     arkimet: product:GRIB1,98,128,156; level:GRIB1,100,925
     eccodes: shortName is "gh" and levelType == 100 and level == 925 and centre == 98
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_factor: 0.1
+  - model: icon
+    arkimet: product:GRIB2,,,003,004,,;level:GRIB2S,100,000,0000092500
+    eccodes: shortName is "z" and levelType == 100 and level == 925 and centre != 98 and editionNumber == 2
+  - model: wrf
+    arkimet: product:GRIB2,,,003,005,,;level:GRIB2S,100,000,0000092500
+    eccodes: centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 925 and editionNumber == 2
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_factor: 0.1
