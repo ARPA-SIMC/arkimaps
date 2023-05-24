@@ -15,6 +15,8 @@ Supported models:
  * ICON
  * IFS-ECMWF
  * ERG5 (https://dati.arpae.it/dataset/erg5-interpolazione-su-griglia-di-dati-meteo)
+ * PRAGA (https://github.com/ARPA-SIMC/PRAGA)
+ * ADRIAC (partially) (https://www.arpae.it/it/temi-ambientali/mare/previsioni-mare/previsioni-oceanografiche)
 
 Arkimaps works both as a standalone program and as a postprocessor for https://github.com/ARPA-SIMC/arkimet
 
@@ -116,6 +118,10 @@ For a description of each subcommand:
 Inputs defined in a recipe are common to all the recipes.
 The same input name defined in more recipes results in an error.
 It's possible to create recipes without steps just for input definition.
+
+Static files such as geopoints or shapefiles can be placed in a special path
+`$recipes/static` and referenced in recipes (recipes/flavours/flavours_inputs.yaml
+is an example)
 
 ## Debugging and troubleshooting
 

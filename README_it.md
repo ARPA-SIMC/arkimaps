@@ -4,8 +4,12 @@ Generazione mappe meteorologiche da file grib di modelli previsionali
 
 Attualmente implementati:
  * COSMO-LAMI
+ * ICON
  * IFS-ECMWF
  * ERG5 (https://dati.arpae.it/dataset/erg5-interpolazione-su-griglia-di-dati-meteo)
+ * PRAGA (https://github.com/ARPA-SIMC/PRAGA)
+ * ADRIAC (parzialmente) (https://www.arpae.it/it/temi-ambientali/mare/previsioni-mare/previsioni-oceanografiche)
+
 
 Funziona sia come programma standalone che come postprocessatore per https://github.com/ARPA-SIMC/arkimet
 
@@ -111,6 +115,10 @@ Gli input definiti nelle ricette sono comuni a tutte le ricette: un input con
 lo stesso nome definito in piú ricette dà errore. Una ricetta può usare input
 definiti in un'altra ricetta. È possibile fare ricette senza step solo per
 definire degli input comuni.
+
+File statici come geopoint o shapefile possono essere distribuiti nel path
+speciale `$recipes/static` e configurati nelle ricette (vedi ad esempio:
+recipes/flavours/flavours_inputs.yaml)
 
 ## Creazione di nuove ricette
 
