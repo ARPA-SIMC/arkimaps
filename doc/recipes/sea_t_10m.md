@@ -1,26 +1,14 @@
-# tiles/z925: Geopotential 925hPa
+# sea_t_10m: Sea temperature at -10m
 
 Mixer: **default**
 
 ## Inputs
 
-* **z925**:
-    * Model **cosmo**:
-        * **Arkimet matcher**: `product:GRIB1,,2,6; level:GRIB1,100,925`
-        * **grib_filter matcher**: `shortName is "z" and levelType == 100 and level == 925 and centre != 98 and editionNumber == 1`
-    * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,98,128,156; level:GRIB1,100,925`
-        * **grib_filter matcher**: `shortName is "gh" and levelType == 100 and level == 925 and centre == 98`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.1`
-    * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,003,004,,;level:GRIB2S,100,000,0000092500`
-        * **grib_filter matcher**: `shortName is "z" and levelType == 100 and level == 925 and centre != 98 and editionNumber == 2`
-    * Model **wrf**:
-        * **Arkimet matcher**: `product:GRIB2,,,003,005,,;level:GRIB2S,100,000,0000092500`
-        * **grib_filter matcher**: `centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 925 and editionNumber == 2`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.1`
+* **seat10m**:
+    * **Arkimet matcher**: `product:GRIB2,,,004,018,,;level:GRIB2S,160,002,0000001000`
+    * **grib_filter matcher**: `editionNumber == 2 and parameterCategory == 4 and parameterNumber == 18 and typeOfFirstFixedSurface == 160 and level == 10`
+    * **mgrib {k}**: `False`
+    * **mgrib {k}**: `-273.15`
 
 ## Steps
 
@@ -50,7 +38,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "z925"
+  "grib": "seat10m"
 }
 ```
 
@@ -62,19 +50,71 @@ With arguments:
 ```
 {
   "params": {
-    "contour_shade": false,
     "contour": true,
-    "contour_level_selection_type": "interval",
-    "contour_interval": 4,
-    "contour_line_colour": "black",
-    "contour_line_thickness": 3,
+    "contour_line_colour": "#222222",
+    "contour_line_thickness": 1,
     "contour_highlight": false,
-    "contour_label": true,
-    "contour_label_height": 0.5,
-    "contour_label_frequency": 2,
-    "contour_label_blanking": true,
+    "contour_label_height": 0.4,
     "contour_label_colour": "navy",
-    "legend": false
+    "contour_label_frequency": 1,
+    "contour_label_blanking": false,
+    "contour_shade": true,
+    "contour_level_list": [
+      5.0,
+      6.0,
+      7.0,
+      8.0,
+      9.0,
+      10.0,
+      11.0,
+      12.0,
+      13.0,
+      14.0,
+      15.0,
+      16.0,
+      17.0,
+      18.0,
+      19.0,
+      20.0,
+      21.0,
+      22.0,
+      23.0,
+      24.0,
+      25.0
+    ],
+    "contour_level_selection_type": "list",
+    "contour_shade_colour_list": [
+      "#660099",
+      "#3200cd",
+      "#0000ff",
+      "#004cd9",
+      "#0078c3",
+      "#00a3ae",
+      "#00cf98",
+      "#00fa82",
+      "#cce666",
+      "#eef666",
+      "#ffff0f",
+      "#ffe100",
+      "#ffb700",
+      "#ff9000",
+      "#ff6900",
+      "#fe0000",
+      "#e30000",
+      "#ca0000",
+      "#ae0000",
+      "#930000"
+    ],
+    "contour_shade_colour_method": "list",
+    "contour_shade_method": "area_fill",
+    "legend": true,
+    "legend_display_type": "continuous",
+    "legend_title": true,
+    "legend_title_text": "Sea Temperature at -10m [\u00b0C]",
+    "legend_text_colour": "black",
+    "legend_text_font_size": 0.4,
+    "legend_title_font_size": 0.5,
+    "legend_automatic_position": "right"
   }
 }
 ```

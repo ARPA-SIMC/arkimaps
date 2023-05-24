@@ -1,26 +1,12 @@
-# tiles/z925: Geopotential 925hPa
+# sea_sal_10m: Salinity at -10m
 
 Mixer: **default**
 
 ## Inputs
 
-* **z925**:
-    * Model **cosmo**:
-        * **Arkimet matcher**: `product:GRIB1,,2,6; level:GRIB1,100,925`
-        * **grib_filter matcher**: `shortName is "z" and levelType == 100 and level == 925 and centre != 98 and editionNumber == 1`
-    * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,98,128,156; level:GRIB1,100,925`
-        * **grib_filter matcher**: `shortName is "gh" and levelType == 100 and level == 925 and centre == 98`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.1`
-    * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,003,004,,;level:GRIB2S,100,000,0000092500`
-        * **grib_filter matcher**: `shortName is "z" and levelType == 100 and level == 925 and centre != 98 and editionNumber == 2`
-    * Model **wrf**:
-        * **Arkimet matcher**: `product:GRIB2,,,003,005,,;level:GRIB2S,100,000,0000092500`
-        * **grib_filter matcher**: `centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 925 and editionNumber == 2`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.1`
+* **salinity10m**:
+    * **Arkimet matcher**: `product:GRIB2,,,004,021,,;level:GRIB2S,160,002,0000001000`
+    * **grib_filter matcher**: `editionNumber == 2 and parameterCategory == 4 and parameterNumber == 21 and typeOfFirstFixedSurface == 160 and level == 10`
 
 ## Steps
 
@@ -50,7 +36,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "z925"
+  "grib": "salinity10m"
 }
 ```
 
@@ -62,19 +48,49 @@ With arguments:
 ```
 {
   "params": {
-    "contour_shade": false,
-    "contour": true,
-    "contour_level_selection_type": "interval",
-    "contour_interval": 4,
-    "contour_line_colour": "black",
-    "contour_line_thickness": 3,
+    "contour": false,
     "contour_highlight": false,
-    "contour_label": true,
-    "contour_label_height": 0.5,
-    "contour_label_frequency": 2,
-    "contour_label_blanking": true,
+    "contour_label_height": 0.4,
     "contour_label_colour": "navy",
-    "legend": false
+    "contour_label_frequency": 1,
+    "contour_label_blanking": false,
+    "contour_shade": true,
+    "contour_level_list": [
+      10.0,
+      15.0,
+      20.0,
+      25.0,
+      30.0,
+      35.0,
+      36.0,
+      37.0,
+      38.0,
+      39.0,
+      40.0
+    ],
+    "contour_level_selection_type": "list",
+    "contour_shade_colour_list": [
+      "#2a2f9e",
+      "#4055b9",
+      "#587cd2",
+      "#469be6",
+      "#2ec0fa",
+      "#a0e13c",
+      "#d8e219",
+      "#fdf925",
+      "#fdd525",
+      "#fd9935"
+    ],
+    "contour_shade_colour_method": "list",
+    "contour_shade_method": "area_fill",
+    "legend": true,
+    "legend_display_type": "continuous",
+    "legend_title": true,
+    "legend_title_text": "Salinity at -10m [psu]",
+    "legend_text_colour": "black",
+    "legend_text_font_size": 0.4,
+    "legend_title_font_size": 0.5,
+    "legend_automatic_position": "right"
   }
 }
 ```

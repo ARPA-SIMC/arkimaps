@@ -1,26 +1,12 @@
-# tiles/z925: Geopotential 925hPa
+# spi: Standardized Precipitation Index (SPI) (climate elaboration)
 
 Mixer: **default**
 
 ## Inputs
 
-* **z925**:
-    * Model **cosmo**:
-        * **Arkimet matcher**: `product:GRIB1,,2,6; level:GRIB1,100,925`
-        * **grib_filter matcher**: `shortName is "z" and levelType == 100 and level == 925 and centre != 98 and editionNumber == 1`
-    * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB1,98,128,156; level:GRIB1,100,925`
-        * **grib_filter matcher**: `shortName is "gh" and levelType == 100 and level == 925 and centre == 98`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.1`
-    * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,003,004,,;level:GRIB2S,100,000,0000092500`
-        * **grib_filter matcher**: `shortName is "z" and levelType == 100 and level == 925 and centre != 98 and editionNumber == 2`
-    * Model **wrf**:
-        * **Arkimet matcher**: `product:GRIB2,,,003,005,,;level:GRIB2S,100,000,0000092500`
-        * **grib_filter matcher**: `centre != 98 and shortName is "gh" and typeOfLevel is "isobaricInhPa" and level == 925 and editionNumber == 2`
-        * **mgrib {k}**: `False`
-        * **mgrib {k}**: `0.1`
+* **spi**:
+    * **Arkimet matcher**: `skip`
+    * **grib_filter matcher**: `parameterCategory == 1 and parameterNumber == 8 and discipline == 0 and typeOfStatisticalProcessing == 10`
 
 ## Steps
 
@@ -50,7 +36,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "z925"
+  "grib": "spi"
 }
 ```
 
@@ -62,19 +48,47 @@ With arguments:
 ```
 {
   "params": {
-    "contour_shade": false,
-    "contour": true,
-    "contour_level_selection_type": "interval",
-    "contour_interval": 4,
-    "contour_line_colour": "black",
-    "contour_line_thickness": 3,
-    "contour_highlight": false,
-    "contour_label": true,
-    "contour_label_height": 0.5,
-    "contour_label_frequency": 2,
-    "contour_label_blanking": true,
-    "contour_label_colour": "navy",
-    "legend": false
+    "contour": "off",
+    "contour_highlight": "off",
+    "contour_hilo": "off",
+    "contour_label": "on",
+    "contour_label_frequency": 1,
+    "contour_level_selection_type": "level_list",
+    "contour_shade": "on",
+    "contour_shade_colour_method": "list",
+    "contour_shade_method": "area_fill",
+    "contour_shade_min_level": -10.0,
+    "contour_level_list": [
+      -10.0,
+      -2.0,
+      -1.5,
+      -1.0,
+      -0.5,
+      0.5,
+      1.0,
+      1.5,
+      2.0,
+      10.0
+    ],
+    "contour_shade_colour_list": [
+      "rgb(0.6,0,0)",
+      "rgb(1,0.4,0)",
+      "rgb(1,0.8,0)",
+      "rgb(1,1,0.6)",
+      "rgb(1,1,1)",
+      "rgb(0.6,1,0)",
+      "rgb(0.2,0.8,0.2)",
+      "rgb(0,0.4,0.2)",
+      "rgb(0,0,1)"
+    ],
+    "legend": true,
+    "legend_display_type": "continuous",
+    "legend_title": true,
+    "legend_text_colour": "black",
+    "legend_text_font_size": 0.4,
+    "legend_title_font_size": 0.5,
+    "legend_title_text": "Standardized Precipitation Index (SPI) [-]",
+    "legend_automatic_position": "right"
   }
 }
 ```
