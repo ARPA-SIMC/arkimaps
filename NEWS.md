@@ -2,13 +2,13 @@
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
 
-# New in verison 1.4
+# New in version 1.4
 
 * Implemented `arkimet: skip` and `eccodes: skip` (#147)
 * Add `$recipe_dir/static` directories to static paths (#144)
 * Added json output documentation (#143)
 * Added multiple PRAGA products
-* Added some ADRIAC products
+* Added some ADRIAC products (#141)
 
 # New in version 1.3
 

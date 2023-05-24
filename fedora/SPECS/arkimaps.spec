@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.3
+Version:        1.4
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -88,6 +88,13 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed May 24 2023 Daniele Branchini <dbranchini@arpae.it> - 1.4-1
+- Implemented `arkimet: skip` and `eccodes: skip` (#147)
+- Add `$recipe_dir/static` directories to static paths (#144)
+- Added json output documentation (#143)
+- Added multiple PRAGA products
+- Added some ADRIAC products (#141)
+
 * Fri Feb 24 2023 Daniele Branchini <dbranchini@arpae.it> - 1.3-1
 - Added GRIB2 products (variables at various hPa levels)
 
