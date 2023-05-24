@@ -323,7 +323,7 @@ class Source(Input):
     """
     NAME = "default"
 
-    def __init__(self, *, arkimet: str, eccodes: str, **kw):
+    def __init__(self, *, arkimet: Optional[str] = None, eccodes: Optional[str] = None, **kw):
         super().__init__(**kw)
         # arkimet matcher filter
         self.arkimet = arkimet
@@ -369,7 +369,10 @@ class Source(Input):
         return res
 
     def compile_arkimet_matcher(self, session: 'arkimet.Session'):
-        self.arkimet_matcher = session.matcher(self.arkimet)
+        if self.arkimet is None or self.arkimet == "skip":
+            self.arkimet_matcher = None
+        else:
+            self.arkimet_matcher = session.matcher(self.arkimet)
 
     def document(self, file, indent=4):
         ind = " " * indent

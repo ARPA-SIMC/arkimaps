@@ -107,9 +107,31 @@ class TestArkimetPantry(PantryTestMixin, TestCase):
             with self.workdir(workdir) as workdir:
                 yield pantry.ArkimetPantry(root=workdir, session=session)
 
+    def test_dispatch_skip_arkimet(self):
+        with self.pantry() as pantry:
+            pantry.add_input(Input.create(
+                config=Config(),
+                name="test",
+                defined_in="memory",
+                arkimet="skip",
+                eccodes='shortName is "2t" and indicatorOfTypeOfLevel == 105'))
+            pantry.fill(self.get_test_data("cosmo", "t2m", "t2m", 12))
+            self.assertEqual(os.listdir(pantry.data_root), [])
+
 
 class TestEccodesPantry(PantryTestMixin, TestCase):
     @contextlib.contextmanager
     def pantry(self, workdir=None):
         with self.workdir(workdir) as workdir:
             yield pantry.EccodesPantry(root=workdir)
+
+    def test_dispatch_skip_eccodes(self):
+        with self.pantry() as pantry:
+            pantry.add_input(Input.create(
+                config=Config(),
+                name="test",
+                defined_in="memory",
+                arkimet="product:GRIB1,,2,11;level:GRIB1,105,2",
+                eccodes="skip"))
+            pantry.fill(self.get_test_data("cosmo", "t2m", "t2m", 12))
+            self.assertEqual(os.listdir(pantry.data_root), ["grib_filter_rules"])

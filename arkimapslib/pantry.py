@@ -218,7 +218,9 @@ class DiskPantry(Pantry):
                 r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_"
                 r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
         for fn in os.listdir(self.data_root):
-            if fn.endswith("-grib_filter_rules.txt") or fn.endswith("-processed"):
+            if ("grib_filter_rules" in fn
+                    or fn == "static"
+                    or fn.endswith("-processed")):
                 continue
 
             mo = fn_match.match(fn)
@@ -273,6 +275,8 @@ if arkimet is not None:
             todo_list: List[Tuple[Any, "inputs.Input"]] = []
             for inps in self.inputs.values():
                 for inp in inps:
+                    if getattr(inp, "arkimet", None) == "skip":
+                        continue
                     matcher = getattr(inp, "arkimet_matcher", None)
                     if matcher is None:
                         if hasattr(inp, "eccodes"):
@@ -372,6 +376,8 @@ class EccodesPantry(DiskPantry):
                     if eccodes is None:
                         if hasattr(inp, "arkimet_matcher"):
                             log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
+                        continue
+                    elif eccodes == "skip":
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
                     print(f'  print "s:{inp.model or ""},{inp.name},'
