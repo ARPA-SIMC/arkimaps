@@ -243,7 +243,7 @@ class Static(Input):
     # workdir in get_instants
     NAME = "static"
 
-    static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))
+    static_dir = [os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))]
 
     def __init__(self, *, path: str, **kw):
         super().__init__(**kw)
@@ -264,13 +264,15 @@ class Static(Input):
 
         Also perform any validation expected on this kind of static input paths
         """
-        abspath = os.path.abspath(os.path.join(self.static_dir, path))
-        cp = os.path.commonpath((abspath, self.static_dir))
-        if not os.path.samefile(cp, self.static_dir):
-            raise RuntimeError(f"{path} leads outside the static directory")
-        if not os.path.exists(abspath):
-            raise RuntimeError(f"{path} does not exist inside {self.static_dir}")
-        return abspath, os.path.relpath(abspath, self.static_dir)
+        for static_dir in self.static_dir:
+            abspath = os.path.abspath(os.path.join(static_dir, path))
+            cp = os.path.commonpath((abspath, static_dir))
+            if not os.path.samefile(cp, static_dir):
+                raise RuntimeError(f"{path} leads outside the static directory")
+            if not os.path.exists(abspath):
+                continue
+            return abspath, os.path.relpath(abspath, static_dir)
+        raise RuntimeError(f"{path} does not exist inside {self.static_dir}")
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -297,13 +299,15 @@ class Shape(Static):
 
         Also perform any validation expected on this kind of static input paths
         """
-        abspath = os.path.abspath(os.path.join(self.static_dir, path))
-        cp = os.path.commonpath((abspath, self.static_dir))
-        if not os.path.samefile(cp, self.static_dir):
-            raise RuntimeError(f"{path} leads outside the static directory")
-        if not os.path.exists(abspath + ".shp"):
-            raise RuntimeError(f"{path}.shp does not exist inside {self.static_dir}")
-        return abspath, os.path.relpath(abspath, self.static_dir)
+        for static_dir in self.static_dir:
+            abspath = os.path.abspath(os.path.join(static_dir, path))
+            cp = os.path.commonpath((abspath, static_dir))
+            if not os.path.samefile(cp, static_dir):
+                raise RuntimeError(f"{path} leads outside the static directory")
+            if not os.path.exists(abspath + ".shp"):
+                continue
+            return abspath, os.path.relpath(abspath, static_dir)
+        raise RuntimeError(f"{path}.shp does not exist inside {self.static_dir}")
 
 
 @InputTypes.register
