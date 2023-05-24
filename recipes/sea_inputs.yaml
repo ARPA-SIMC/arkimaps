@@ -44,7 +44,7 @@ inputs:
      eccodes: editionNumber == 2 and parameterCategory == 4 and parameterNumber == 21 and typeOfFirstFixedSurface == 160 and level == 10
  dslm:
    - model: adriac
-     arkimet: product:GRIB2,,,003,001,,
+     arkimet: product:GRIB2,,,003,001,,;level:GRIB2S,001,,
      eccodes: editionNumber == 2 and parameterCategory == 3 and parameterNumber == 1
  seau0m:
    - model: adriac

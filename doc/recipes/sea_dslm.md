@@ -5,7 +5,7 @@ Mixer: **default**
 ## Inputs
 
 * **dslm**:
-    * **Arkimet matcher**: `product:GRIB2,,,003,001,,`
+    * **Arkimet matcher**: `product:GRIB2,,,003,001,,;level:GRIB2S,001,,`
     * **grib_filter matcher**: `editionNumber == 2 and parameterCategory == 3 and parameterNumber == 1`
 
 ## Steps
