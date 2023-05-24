@@ -1,0 +1,46 @@
+---
+description: Standardized Precipitation Index (SPI) (climate elaboration)
+inputs:
+ spi:
+ - model: praga
+   #TODO: fix (this is generic tp)
+   #arkimet: product:GRIB2,,,001,008,,
+   arkimet: skip
+   eccodes: parameterCategory == 1 and parameterNumber == 8 and discipline == 0 and typeOfStatisticalProcessing == 10
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: spi
+ - step: add_contour
+   params:
+    contour: "off"
+    contour_highlight: "off"
+    contour_hilo: "off"
+    contour_label: "on"
+    contour_label_frequency: 1
+    contour_level_selection_type: "level_list"
+    contour_shade: "on"
+    contour_shade_colour_method: "list"
+    contour_shade_method: "area_fill"
+    contour_shade_min_level: -10.0
+    contour_level_list: [-10.0,-2.0,-1.5,-1.0,-0.5,0.5,1.0,1.5,2.0,10.0]
+    contour_shade_colour_list: ["rgb(0.6,0,0)", "rgb(1,0.4,0)",
+            "rgb(1,0.8,0)", "rgb(1,1,0.6)",
+            "rgb(1,1,1)", "rgb(0.6,1,0)",
+            "rgb(0.2,0.8,0.2)", "rgb(0,0.4,0.2)",
+            "rgb(0,0,1)"]
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_title_text: "Standardized Precipitation Index (SPI) [-]"
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

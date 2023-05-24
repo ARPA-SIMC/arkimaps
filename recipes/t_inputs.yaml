@@ -16,8 +16,29 @@ inputs:
     eccodes: centre != 98 and shortName is "2t" and level == 2 and editionNumber == 2
  tclim:
   - model: praga
-    arkimet: product:GRIB2,,,000,004,, or GRIB2,,,000,005,,;level:GRIB2S,103,000,0000000002
-    eccodes: centre != 98 and ( shortName is "tmax" or shortName is "tmin" ) and editionNumber == 2
+    arkimet: skip
+    eccodes: parameterCategory == 0 and discipline == 0 and (parameterNumber == 0 or parameterNumber == 4 or parameterNumber == 5) and typeOfStatisticalProcessing != 11
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_offset: -273.15
+ ta:
+  - model: praga
+    arkimet: skip
+    eccodes: shortName is "ta" and discipline == 0 and parameterCategory == 0 and parameterNumber == 9 and typeOfStatisticalProcessing != 10 and typeOfStatisticalProcessing != 11
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_offset: -273.15
+ ddclim:
+  - model: praga
+    arkimet: skip
+    eccodes: parameterCategory == 0 and discipline == 0 and (parameterNumber == 0 or parameterNumber == 4 or parameterNumber == 5) and typeOfStatisticalProcessing == 11
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_offset: -273.15
+ dda:
+  - model: praga
+    arkimet: skip
+    eccodes: discipline == 0 and parameterCategory == 0 and parameterNumber == 9 and typeOfStatisticalProcessing == 11
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_offset: -273.15

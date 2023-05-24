@@ -1,0 +1,44 @@
+---
+description: Deciles (climate elaboration)
+inputs:
+ deciles:
+ - model: praga
+   arkimet: product:GRIB2,,,000,194,,
+   eccodes: centre == 80 and parameterCategory == 0 and parameterNumber == 194 and discipline == 2
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: deciles
+ - step: add_contour
+   params:
+    contour: "off"
+    contour_highlight: "off"
+    contour_hilo: "off"
+    contour_label: "on"
+    contour_label_frequency: 1
+    contour_level_selection_type: "level_list"
+    contour_shade: "on"
+    contour_shade_colour_method: "list"
+    contour_shade_method: "area_fill"
+    contour_shade_min_level: 0.0
+    contour_level_list: [0,10.0,20.0,30.0,40.0,50.0,60.0,70.0,80.0,90.0,150.0]
+    contour_shade_colour_list: ["rgb(1,0,0)", "rgb(1,0.4,0)",
+            "rgb(1,0.6,0)", "rgb(0.898,0.949,0)",
+            "rgb(0.647,0.847,0)", "rgb(0,0.749,0.247)",
+            "rgb(0,0.898,0.8)", "rgb(0,0.749,1)",
+            "rgb(0,0.447,1)", "rgb(0,0,1)"]
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_title_text: "Deciles [-]"
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

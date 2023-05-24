@@ -7,39 +7,57 @@ recipe:
    grib: tclim
  - step: add_contour
    params:
-    contour: off
-    contour_highlight_frequency: 100
-    contour_highlight_thickness: 5
-    contour_interval: 2.0
-    contour_label_height: 0.4
-    contour_label_colour: navy
+    contour: "off"
+    contour_highlight: "off"
+    contour_hilo: "off"
+    contour_label: "on"
     contour_label_frequency: 1
-    contour_label_blanking: off
-    contour_level_selection_type: interval
-    contour_line_thickness: 3
-    contour_shade: on
-    contour_shade_colour_list: ["rgb(1,0.8,0)","rgb(1,0.6,0)",
-                                  "rgb(1,0.4,0)","rgb(1,0,0)",
-                                  "rgb(0.8,0,0)","rgb(0.6,0,0)",
-                                  "rgb(0.4,0,0)","rgb(0.4,0,0.4)",
-                                  "rgb(0.6,0,0.6)","rgb(0.8,0,0.8)",
-                                  "rgb(1,0,1)","rgb(0.75,0,1)",
-                                  "rgb(0.45,0,1)","rgb(0,0,1)",
-                                  "rgb(0,0.35,1)","rgb(0,0.55,1)",
-                                  "rgb(0,0.75,1)","rgb(0,1,1)",
-                                  "rgb(0,0.9,0.8)","rgb(0,0.8,0.5)",
-                                  "rgb(0,0.7,0.0)","rgb(0.5,0.8,0.0)",
-                                  "rgb(0.8,0.9,0.0)","rgb(1,1,0)",
-                                  "rgb(1,0.8,0)","rgb(1,0.6,0)",
-                                  "rgb(1,0.4,0)","rgb(1,0,0)",
-                                  "rgb(0.8,0,0)","rgb(0.6,0,0)",
-                                  "rgb(0.4,0,0)","rgb(0.4,0,0.4)",
-                                  "rgb(0.6,0,0.6)","rgb(0.8,0,0.8)",
-                                  "rgb(1,0,1)","rgb(0.75,0,1)","rgb(0.45,0,1)"]
-    contour_shade_colour_method: list
-    contour_shade_max_level: 46.0
-    contour_shade_method: area_fill
+    contour_level_selection_type: "level_list"
+    contour_shade: "on"
+    contour_shade_colour_method: "list"
+    contour_shade_method: "area_fill"
     contour_shade_min_level: -30.0
+    contour_level_list: [-30.0,-29.0,-28.0,-27.0,-26.0,-25.0,-24.0,-23.0,-22.0,-21.0,-20.0,-19.0,-18.0,-17.0,-16.0,-15.0,-14.0,
+            -13.0,-12.0,-11.0,-10.0,-9.0,-8.0,-7.0,-6.0,-5.0,-4.0,-3.0,-2.0,-1.0,0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,
+            11.0,12.0,13.0,14.0,15.0,16.0,17.0,18.0,19.0,20.0,21.0,22.0,23.0,24.0,25.0,26.0,27.0,28.0,29.0,30.0,31.0,32.0,33.0,
+            34.0,35.0,36.0,37.0,38.0,39.0,40.0,41.0,42.0,60.0]
+    contour_shade_colour_list: ["rgb(1,0.8,0)","rgb(1,0.698,0)",
+                                  "rgb(1,0.6,0)","rgb(1,0.498,0)",
+                                  "rgb(1,0.4,0)","rgb(1,0.2,0)",
+                                  "rgb(1,0,0)","rgb(0.898,0,0)",
+                                  "rgb(0.8,0,0)","rgb(0.698,0,0)",
+                                  "rgb(0.6,0,0)","rgb(0.498,0,0)",
+                                  "rgb(0.4,0,0)","rgb(0.4,0,0.2)",
+                                  "rgb(0.4,0,0.4)","rgb(0.498,0,0.498)",
+                                  "rgb(0.6,0,0.6)","rgb(0.698,0,0.698)",
+                                  "rgb(0.8,0,0.8)","rgb(0.898,0,0.898)",
+                                  "rgb(1,0,1)","rgb(0.875,0,1)",
+                                  "rgb(0.749,0,1)","rgb(0.596,0,1)",
+                                  "rgb(0.447,0,1)","rgb(0.224,0,1)",
+                                  "rgb(0,0,1)","rgb(0,0.173,1)",
+                                  "rgb(0,0.349,1)","rgb(0,0.447,1)",
+                                  "rgb(0,0.549,1)","rgb(0,0.647,1)",
+                                  "rgb(0,0.749,1)","rgb(0,0.875,1)",
+                                  "rgb(0,1,1)","rgb(0,0.949,0.898)",
+                                  "rgb(0,0.898,0.8)","rgb(0,0.847,0.647)",
+                                  "rgb(0,0.8,0.498)","rgb(0,0.749,0.247)",
+                                  "rgb(0,0.698,0)","rgb(0.247,0.749,0)",
+                                  "rgb(0.498,0.8,0)","rgb(0.647,0.847,0)",
+                                  "rgb(0.8,0.898,0)","rgb(0.898,0.949,0)",
+                                  "rgb(1,1,0)","rgb(1,0.898,0)",
+                                  "rgb(1,0.8,0)","rgb(1,0.698,0)",
+                                  "rgb(1,0.6,0)","rgb(1,0.498,0)",
+                                  "rgb(1,0.4,0)","rgb(1,0.2,0)",
+                                  "rgb(1,0,0)","rgb(0.898,0,0)",
+                                  "rgb(0.8,0,0)","rgb(0.698,0,0)",
+                                  "rgb(0.6,0,0)","rgb(0.498,0,0)",
+                                  "rgb(0.4,0,0)","rgb(0.4,0,0.2)",
+                                  "rgb(0.4,0,0.4)","rgb(0.498,0,0.498)",
+                                  "rgb(0.6,0,0.6)","rgb(0.698,0,0.698)",
+                                  "rgb(0.8,0,0.8)","rgb(0.898,0,0.898)",
+                                  "rgb(1,0,1)","rgb(0.875,0,1)",
+                                  "rgb(0.749,0,1)","rgb(0.596,0,1)",
+                                  "rgb(0.447,0,1)"]
     legend: on
     legend_display_type: continuous
     legend_title: on

@@ -1,0 +1,52 @@
+---
+description: Temperature anomaly (climate elaboration)
+inputs:
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: ta
+ - step: add_contour
+   params:
+    contour: "off"
+    contour_highlight: "off"
+    contour_hilo: "off"
+    contour_label: "on"
+    contour_label_frequency: 1
+    contour_level_selection_type: "level_list"
+    contour_shade: "on"
+    contour_shade_colour_method: "list"
+    contour_shade_method: "area_fill"
+    contour_shade_min_level: -100.0
+    contour_level_list: [-100.0, -15.0, -14.0, -13.0, -12.0, -11.0, -10.0,
+            -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0, -2.0, -1.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,100.0]
+    contour_shade_colour_list: ["rgb(1,0,1)", "rgb(0.875,0,1)",
+            "rgb(0.749,0,1)", "rgb(0.596,0,1)",
+            "rgb(0.447,0,1)", "rgb(0.224,0,1)",
+            "rgb(0,0,1)", "rgb(0,0.173,1)",
+            "rgb(0,0.349,1)", "rgb(0,0.447,1)",
+            "rgb(0,0.549,1)", "rgb(0,0.647,1)",
+            "rgb(0,0.749,1)", "rgb(0,0.875,1)",
+            "rgb(0,1,1)", "rgb(1,1,1)",
+            "rgb(1,1,0.498)", "rgb(1,1,0)",
+            "rgb(1,0.898,0)", "rgb(1,0.8,0)",
+            "rgb(1,0.698,0)", "rgb(1,0.6,0)",
+            "rgb(1,0.498,0)", "rgb(1,0.4,0)",
+            "rgb(1,0.2,0)", "rgb(1,0,0)",
+            "rgb(0.898,0,0)", "rgb(0.8,0,0)",
+            "rgb(0.698,0,0)", "rgb(0.6,0,0)",
+            "rgb(0.498,0,0)"]
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_title_text: "Temperature anomaly [°C]"
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

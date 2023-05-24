@@ -1,0 +1,44 @@
+---
+description: standardized evapotranspiration precipitation index (SPEI) (climate elaboration)
+inputs:
+ spei:
+ - model: praga
+   arkimet: product:GRIB2,,,000,193,,
+   eccodes: centre == 80 and parameterCategory == 0 and parameterNumber == 193 and discipline == 2
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: spei
+ - step: add_contour
+   params:
+    contour: "off"
+    contour_highlight: "off"
+    contour_hilo: "off"
+    contour_label: "on"
+    contour_label_frequency: 1
+    contour_level_selection_type: "level_list"
+    contour_shade: "on"
+    contour_shade_colour_method: "list"
+    contour_shade_method: "area_fill"
+    contour_shade_min_level: -10.0
+    contour_level_list: [-10.0,-2.0,-1.5,-1.0,-0.5,0.5,1.0,1.5,2.0,10.0]
+    contour_shade_colour_list: ["rgb(0.6,0,0)", "rgb(1,0.4,0)",
+            "rgb(1,0.8,0)", "rgb(1,1,0.6)",
+            "rgb(1,1,1)", "rgb(0.6,1,0)",
+            "rgb(0.2,0.8,0.2)", "rgb(0,0.4,0.2)",
+            "rgb(0,0,1)"]
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_title_text: "Standardized evapotranspiration precipitation index (SPEI) [-]"
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

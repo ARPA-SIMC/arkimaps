@@ -1,0 +1,56 @@
+---
+description: Daily hydroclimatic balance BIC (climate elaboration)
+inputs:
+ bic:
+ - model: praga
+   arkimet: product:GRIB2,,,000,192,,
+   eccodes: centre == 80 and parameterCategory == 0 and parameterNumber == 192 and discipline == 2
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: bic
+ - step: add_contour
+   params:
+    contour: "off"
+    contour_highlight: "off"
+    contour_hilo: "off"
+    contour_label: "on"
+    contour_label_frequency: 1
+    contour_level_selection_type: "level_list"
+    contour_shade: "on"
+    contour_shade_colour_method: "list"
+    contour_shade_method: "area_fill"
+    contour_shade_min_level: -1000.0
+    contour_level_list: [-1000.0, -900.0, -800.0, -700.0, -600.0, -500.0, -450.0, -400.0, -350.0, -300.0, -250.0, -200.0, -150.0, -100.0, -50.0, -25.0, 25.0,
+        50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 350.0, 400.0, 450.0, 500.0, 600.0, 700.0, 800.0, 900.0, 1000.0]
+    contour_shade_colour_list: ["rgb(0.498,0,0)", "rgb(0.6,0,0)",
+            "rgb(0.698,0,0)", "rgb(0.8,0,0)",
+            "rgb(0.898,0,0)", "rgb(1,0,0)",
+            "rgb(1,0.2,0)", "rgb(1,0.4,0)",
+            "rgb(1,0.498,0)", "rgb(1,0.6,0)",
+            "rgb(1,0.698,0)", "rgb(1,0.8,0)",
+            "rgb(1,0.898,0)", "rgb(1,1,0)",
+            "rgb(1,1,0.498)", "rgb(1,1,1)",
+            "rgb(0,1,1)", "rgb(0,0.875,1)",
+            "rgb(0,0.749,1)", "rgb(0,0.647,1)",
+            "rgb(0,0.549,1)", "rgb(0,0.447,1)",
+            "rgb(0,0.349,1)", "rgb(0,0.173,1)",
+            "rgb(0,0,1)", "rgb(0.224,0,1)",
+            "rgb(0.447,0,1)", "rgb(0.596,0,1)",
+            "rgb(0.749,0,1)", "rgb(0.875,0,1)",
+            "rgb(1,0,1)"]
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_title_text: "Daily hydroclimatic balance [mm]"
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols
