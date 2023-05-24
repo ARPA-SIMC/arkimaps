@@ -11,6 +11,7 @@ import arkimet
 import numpy
 
 import arkimapslib.inputs
+from arkimapslib.config import Config
 from arkimapslib.inputs import Instant, Input
 from arkimapslib.pantry import Pantry, DiskPantry
 
@@ -52,6 +53,7 @@ class TestInputs(unittest.TestCase):
             inp = [x for x in inp if x.model == mo.group("model")]
         if not inp:
             inp = arkimapslib.inputs.Source(
+                    config=Config(),
                     model=mo.group("model"), name=name, defined_in=__file__, arkimet="", eccodes="")
             pantry.add_input(inp)
 
@@ -69,7 +71,9 @@ class TestInputs(unittest.TestCase):
         inp.add_instant(instant)
 
     def test_trim(self):
-        test = arkimapslib.inputs.Source(name="test", defined_in=__file__, arkimet="", eccodes="")
+        test = arkimapslib.inputs.Source(
+                config=Config(),
+                name="test", defined_in=__file__, arkimet="", eccodes="")
         testsource = os.path.join("testdata", "t2m", "cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
         with open(testsource, "rb") as infd:
             mds = arkimet.Metadata.read_bundle(infd)
@@ -139,7 +143,7 @@ class TestInputs(unittest.TestCase):
                                Instant(datetime.datetime(2021, 1, 10), 12))
 
             # Derived input defined for any model
-            cat = Input.create(name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+            cat = Input.create(config=Config(), name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
             pantry.add_input(cat)
 
             # Derived input prerequisites are not satisfied
@@ -159,7 +163,8 @@ class TestInputs(unittest.TestCase):
                                Instant(datetime.datetime(2021, 1, 10), 12))
 
             # Derived input defined only for cosmo
-            cat = Input.create(model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+            cat = Input.create(
+                config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
             pantry.add_input(cat)
 
             # Derived input prerequisites are not satisfied
@@ -173,7 +178,8 @@ class TestInputs(unittest.TestCase):
                                Instant(datetime.datetime(2021, 1, 10), 12))
 
             # Derived input defined only for cosmo
-            cat = Input.create(model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+            cat = Input.create(
+                config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
             pantry.add_input(cat)
 
             # Derived input prerequisites are not satisfied
@@ -183,3 +189,23 @@ class TestInputs(unittest.TestCase):
             # Check that the output file is tagged with the model name
             input_file = list(res.values())[0]
             self.assertRegex(input_file.pathname, r"/pantry/cosmo_uv_")
+
+    def test_static(self):
+        with self.pantry() as pantry:
+            static_dir = os.path.join(pantry.data_root, "static")
+            os.makedirs(static_dir)
+            with open(os.path.join(static_dir, "testfile"), "wt") as fd:
+                print("testdata", file=fd)
+
+            config = Config()
+            config.static_dir.insert(0, static_dir)
+
+            inp = Input.create(
+                config=config,
+                name="testfile",
+                path="testfile",
+                type="static",
+                defined_in=__file__)
+
+            self.assertEqual(inp.abspath, os.path.join(static_dir, "testfile"))
+            self.assertEqual(inp.path, "testfile")

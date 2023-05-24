@@ -12,6 +12,7 @@ from typing import (TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple,
 import eccodes
 import numpy
 
+from .config import Config
 from .grib import GRIB
 from .utils import perf_counter_ns
 
@@ -126,11 +127,14 @@ class Input:
 
     def __init__(
             self, *,
+            config: Config,
             name: str,
             defined_in: str,
             model: Optional[str] = None,
             mgrib: Optional['Kwargs'] = None,
             notes: Optional[str] = None):
+        # Configuration for this run
+        self.config = config
         # Name of the input in the recipe
         self.name = name
         # model, identifying this instance among other alternatives for this input
@@ -243,8 +247,6 @@ class Static(Input):
     # workdir in get_instants
     NAME = "static"
 
-    static_dir = [os.path.abspath(os.path.join(os.path.dirname(__file__), "static"))]
-
     def __init__(self, *, path: str, **kw):
         super().__init__(**kw)
         abspath, path = self.clean_path(path)
@@ -264,7 +266,9 @@ class Static(Input):
 
         Also perform any validation expected on this kind of static input paths
         """
-        for static_dir in self.static_dir:
+        for static_dir in self.config.static_dir:
+            if not os.path.isdir(static_dir):
+                continue
             abspath = os.path.abspath(os.path.join(static_dir, path))
             cp = os.path.commonpath((abspath, static_dir))
             if not os.path.samefile(cp, static_dir):
@@ -272,7 +276,7 @@ class Static(Input):
             if not os.path.exists(abspath):
                 continue
             return abspath, os.path.relpath(abspath, static_dir)
-        raise RuntimeError(f"{path} does not exist inside {self.static_dir}")
+        raise RuntimeError(f"{path} does not exist inside {self.config.static_dir}")
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -299,7 +303,9 @@ class Shape(Static):
 
         Also perform any validation expected on this kind of static input paths
         """
-        for static_dir in self.static_dir:
+        for static_dir in self.config.static_dir:
+            if not os.path.isdir(static_dir):
+                continue
             abspath = os.path.abspath(os.path.join(static_dir, path))
             cp = os.path.commonpath((abspath, static_dir))
             if not os.path.samefile(cp, static_dir):
@@ -307,7 +313,7 @@ class Shape(Static):
             if not os.path.exists(abspath + ".shp"):
                 continue
             return abspath, os.path.relpath(abspath, static_dir)
-        raise RuntimeError(f"{path}.shp does not exist inside {self.static_dir}")
+        raise RuntimeError(f"{path}.shp does not exist inside {self.config.static_dir}")
 
 
 @InputTypes.register

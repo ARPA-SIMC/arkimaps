@@ -57,6 +57,10 @@ class Kitchen:
         from .inputs import Input
         from .recipes import Recipe
 
+        path = os.path.abspath(path)
+        if path not in self.config.static_dir:
+            self.config.static_dir.insert(0, os.path.join(path, "static"))
+
         for dirpath, dirnames, fnames in os.walk(path):
             relpath = os.path.relpath(dirpath, start=path)
             for fn in fnames:
@@ -76,9 +80,11 @@ class Kitchen:
                             raise RuntimeError(f"{relfn}: '_' not allowed in input name {name!r}")
                         if isinstance(input_contents, list):
                             for ic in input_contents:
-                                self.pantry.add_input(Input.create(name=name, defined_in=relfn, **ic))
+                                self.pantry.add_input(
+                                    Input.create(config=self.config, name=name, defined_in=relfn, **ic))
                         else:
-                            self.pantry.add_input(Input.create(name=name, defined_in=relfn, **input_contents))
+                            self.pantry.add_input(
+                                Input.create(config=self.config, name=name, defined_in=relfn, **input_contents))
 
                 flavours = recipe.pop("flavours", None)
                 if flavours is not None:

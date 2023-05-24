@@ -1,12 +1,13 @@
 # from __future__ import annotations
-from unittest import TestCase
 import contextlib
 import datetime
 import os
 import tempfile
 from typing import Optional
+from unittest import TestCase
 
 from arkimapslib import pantry
+from arkimapslib.config import Config
 from arkimapslib.inputs import Input, Instant
 
 
@@ -28,6 +29,7 @@ class PantryTestMixin:
     def test_dispatch(self):
         with self.pantry() as pantry:
             pantry.add_input(Input.create(
+                config=Config(),
                 name="test",
                 defined_in="memory",
                 arkimet="product:GRIB1,,2,11;level:GRIB1,105,2",
@@ -40,11 +42,13 @@ class PantryTestMixin:
     def test_separate_steps(self):
         def add_inputs(pantry):
             pantry.add_input(Input.create(
+                config=Config(),
                 name="test",
                 defined_in="memory",
                 arkimet="product:GRIB1,,2,11;level:GRIB1,105,2",
                 eccodes='shortName is "2t" and indicatorOfTypeOfLevel == 105'))
             pantry.add_input(Input.create(
+                config=Config(),
                 name="derived",
                 defined_in="memory",
                 type="cat",
