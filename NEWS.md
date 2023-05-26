@@ -2,6 +2,10 @@
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
 
+# New in version 1.5
+
+* Added emro_web flavour
+
 # New in version 1.4
 
 * Implemented `arkimet: skip` and `eccodes: skip` (#147)

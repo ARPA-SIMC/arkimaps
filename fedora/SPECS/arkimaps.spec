@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -88,6 +88,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Fri May 26 2023 Daniele Branchini <dbranchini@arpae.it> - 1.4-2
+- Added emro_web flavour
+
 * Wed May 24 2023 Daniele Branchini <dbranchini@arpae.it> - 1.4-1
 - Implemented `arkimet: skip` and `eccodes: skip` (#147)
 - Add `$recipe_dir/static` directories to static paths (#144)
