@@ -11,6 +11,7 @@
 | `medit`  | Area mediterranea   | mercator            | 52.0N 30.0N 35.0E  8.0W |
 | `euratl` | Area euroatlantica  | polar_stereographic | 60.0N 25.0N 65.0E 25.0W |
 | `ita_web`| Italia (layer)      | EPSG:3857           | 50.0N 35.0N 20.0E  2.5E |
+| `emro_web`| Emilia-Romagna (layer) | EPSG:3857       | 45.14N 43.71N 12.83E 9.2E |
 | `emro_tiles` | Emilia-Romagna (tiles) | EPSG:3857    | 45.2N 43.4N 13.2E  9.0E |
 | `ita_tiles` | Italia (tiles)          | EPSG:3857    | 50.0N 35.0N 20.0E  2.5E |
 | `ita_small_tiles` | Italia (ridotta) (tiles) | EPSG:3857 | 48.0N 35.0N 20.0E  5.0E |

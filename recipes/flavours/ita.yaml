@@ -97,6 +97,7 @@ flavours:
          # Italia
          # borderless and transparent for web georeferenced products
          # example to georeference this output:
+         # (order: lower left lon, upper right lat, upper right lon, lower left lat)
          # gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.841017158 2226389.8158654715 4163881.144064294 plot.png out.tiff
          page_id_line: off
          output_width: 1280

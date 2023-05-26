@@ -38,3 +38,44 @@ flavours:
          map_coastline_resolution: high
      add_geopoints:
        points: puntiCitta
+ - name: emro_web
+   steps:
+     add_basemap:
+       params:
+         # Emilia-Romagna
+         # borderless and transparent for web georeferenced products
+         # example to georeference this output:
+         # (order: lower left lon, upper right lat, upper right lon, lower left lat)
+         # gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 1023599 5643995 1428042 5421319 plot.png out.tiff
+         page_id_line: off
+         output_width: 1280
+         output_cairo_transparent_background: True
+         subpage_map_projection: EPSG:3857
+         subpage_lower_left_longitude: 9.19514626509458
+         subpage_lower_left_latitude: 43.714193665380236
+         subpage_upper_right_longitude: 12.8283195496460942
+         subpage_upper_right_latitude: 45.14257501046363
+         page_frame: off
+         subpage_frame: off
+         skinny_mode: on
+         page_x_length: 7.265
+         page_y_length: 4
+         super_page_x_length: 7.265
+         super_page_y_length: 4
+         subpage_x_length: 7.265
+         subpage_y_length: 4
+         subpage_x_position: 0
+         subpage_y_position: 0
+         map_grid: off
+     add_coastlines_bg:
+       skip: yes
+     add_coastlines_fg:
+       skip: yes
+     add_boundaries:
+       skip: yes
+     add_user_boundaries:
+       skip: yes
+     add_geopoints:
+       skip: yes
+     add_symbols:
+       skip: yes
