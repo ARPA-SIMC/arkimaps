@@ -191,6 +191,10 @@ class Recipe:
             self.steps.append(RecipeStep(name=step, step=step_cls, args=s, id=id))
 
     @classmethod
+    def lint(cls, lint: Lint, *, name: str, defined_in: str, data: Kwargs):
+        pass
+
+    @classmethod
     def inherit(self, name: str, defined_in: str, parent: "Recipe", data: 'Kwargs') -> "Recipe":
         """
         Create a recipe derived from an existing one
