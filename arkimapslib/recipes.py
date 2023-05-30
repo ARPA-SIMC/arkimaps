@@ -3,7 +3,8 @@ import inspect
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, TextIO, Type
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set,
+                    TextIO, Type)
 
 from . import steps, toposort
 from .config import Config
@@ -31,20 +32,22 @@ class Recipes:
     def __iter__(self):
         return self.recipes.values().__iter__()
 
-    def add(self, recipe: "Recipe"):
+    def add(self, *, lint: Optional[Lint] = None, **kwargs):
         """
         Add a recipe to this recipes collection
         """
+        if lint:
+            Recipe.lint(lint, **kwargs)
+        recipe = Recipe(**kwargs)
         old = self.recipes.get(recipe.name)
         if old is not None:
             raise RuntimeError(f"{recipe.name} is defined both in {old.defined_in!r} and in {recipe.defined_in!r}")
         self.recipes[recipe.name] = recipe
 
-    def add_derived(self, name: str, defined_in: str, data: Dict[str, Any]):
+    def add_derived(self, *, name: str, extends: str, defined_in: str, lint: Optional[Lint] = None, **kwargs):
         """
         Add the definition of a derived recipe to be instantiated later
         """
-        extends = data.pop("extends", None)
         if extends is None:
             raise RuntimeError(f"{name} in {defined_in!r} does not contain an 'extends' entry")
 
@@ -59,7 +62,7 @@ class Recipes:
         self.new_derived[name] = {
             "defined_in": defined_in,
             "extends": extends,
-            "data": data,
+            **kwargs,
         }
 
     def resolve_derived(self, *, lint: Optional[Lint] = None):
@@ -85,9 +88,11 @@ class Recipes:
                 continue
 
             info = self.new_derived.pop(name)
-            parent = self.recipes[info["extends"]]
-            recipe = Recipe.inherit(name=name, defined_in=info["defined_in"], parent=parent, data=info["data"])
-            self.recipes[name] = recipe
+            parent = self.recipes[info.pop("extends")]
+            kwargs = Recipe.inherit(name=name, parent=parent, **info)
+            if lint:
+                Recipe.lint(lint, **kwargs)
+            self.recipes[name] = Recipe(**kwargs)
 
     def get(self, name: str):
         """
@@ -156,7 +161,17 @@ class Recipe:
     """
     A parsed and validated recipe
     """
-    def __init__(self, name: str, defined_in: str, data: 'Kwargs'):
+    def __init__(
+            self, *,
+            name: str,
+            defined_in: str,
+            notes: Optional[str] = None,
+            description: str = "Unnamed recipe",
+            mixer: str = "default",
+            info: Optional[Dict[str, Any]] = None,
+            recipe: Sequence[Dict[str, Any]] = (),
+            **kwargs,
+            ):
         from .mixers import mixers
 
         # Name of the recipe
@@ -164,21 +179,21 @@ class Recipe:
         # File where the recipe was defined
         self.defined_in = defined_in
         # Optional notes for the documentation
-        self.notes = data.get("notes")
+        self.notes = notes
 
         # Get the recipe description
-        self.description: str = data.get("description", "Unnamed recipe")
+        self.description: str = description
 
         # Name of the mixer to use
-        self.mixer: str = data.get("mixer", "default")
+        self.mixer: str = mixer
 
         # Informational fields about the recipe
-        self.info: Dict[str, Any] = data.get("info") or {}
+        self.info: Dict[str, Any] = info if info is not None else {}
 
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []
         step_collection = mixers.get_steps(self.mixer)
-        for s in data.get("recipe", ()):
+        for s in recipe:
             if not isinstance(s, dict):
                 raise RuntimeError("recipe step is not a dict")
             step = s.pop("step", None)
@@ -191,21 +206,37 @@ class Recipe:
             self.steps.append(RecipeStep(name=step, step=step_cls, args=s, id=id))
 
     @classmethod
-    def lint(cls, lint: Lint, *, name: str, defined_in: str, data: Kwargs):
-        pass
+    def lint(
+            cls, lint: Lint, *,
+            name: str,
+            defined_in: str,
+            notes: Optional[str] = None,
+            description: str = "Unnamed recipe",
+            mixer: str = "default",
+            info: Optional[Dict[str, Any]] = None,
+            recipe: Sequence[Dict[str, Any]] = (),
+            **kwargs: Any):
+        for k, v in kwargs.items():
+            lint.warn_recipe(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
 
     @classmethod
-    def inherit(self, name: str, defined_in: str, parent: "Recipe", data: 'Kwargs') -> "Recipe":
+    def inherit(
+            cls, *,
+            name: str,
+            defined_in: str,
+            parent: "Recipe",
+            change: Optional[Dict[str, Any]] = None,
+            **kwargs: Any) -> Dict[str, Any]:
         """
-        Create a recipe derived from an existing one
+        Compute recipe arguments deriving them from an existing one
         """
         # Get list of steps to change
-        changes = data.pop("change", {})
+        changes = change if change is not None else {}
 
         # If elements aren't specified, use those from the parent recipe
-        data.setdefault("notes", parent.notes)
-        data.setdefault("description", parent.description)
-        data.setdefault("mixer", parent.mixer)
+        kwargs.setdefault("notes", parent.notes)
+        kwargs.setdefault("description", parent.description)
+        kwargs.setdefault("mixer", parent.mixer)
 
         # Build the new list of steps, based on the parent list
         steps: List[Dict[str, Any]] = []
@@ -215,8 +246,10 @@ class Recipe:
             else:
                 step = recipe_step.derive()
             steps.append(step)
-        data["recipe"] = steps
-        return Recipe(name, defined_in, data)
+        kwargs["recipe"] = steps
+        kwargs["name"] = name
+        kwargs["defined_in"] = defined_in
+        return kwargs
 
     def __str__(self):
         return self.name
@@ -238,7 +271,7 @@ class Recipe:
 
     def document(self, pantry: "pantry.Pantry", dest: str):
         from .flavours import Flavour
-        empty_flavour = Flavour(Config(), "default", defined_in=__file__)
+        empty_flavour = Flavour(config=Config(), name="default", defined_in=__file__)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.description}", file=fd)

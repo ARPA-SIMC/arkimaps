@@ -57,7 +57,6 @@ class Kitchen:
         Load recipes from the given directory
         """
         from .inputs import Input
-        from .recipes import Recipe
 
         path = os.path.abspath(path)
         if path not in self.config.static_dir:
@@ -101,11 +100,14 @@ class Kitchen:
                         self.flavours[name] = Flavour.create(
                             config=self.config, name=name, defined_in=relfn, lint=lint, **flavour)
 
+                recipe["name"] = relfn[:-5]
+                recipe["defined_in"] = relfn
+
                 if "recipe" in recipe:
-                    self.recipes.add(Recipe(relfn[:-5], defined_in=relfn, data=recipe))
+                    self.recipes.add(lint=lint, **recipe)
 
                 if "extends" in recipe:
-                    self.recipes.add_derived(name=relfn[:-5], defined_in=relfn, data=recipe)
+                    self.recipes.add_derived(lint=lint, **recipe)
 
     def document_recipes(self, path: str):
         """
