@@ -6,6 +6,7 @@ import os
 import shlex
 import shutil
 import subprocess
+import tempfile
 from typing import (TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple,
                     Optional, Set, Tuple, Type, Union)
 
@@ -366,6 +367,22 @@ class Source(Input):
         super().lint(lint, **kwargs)
         if not arkimet and not eccodes:
             lint.warn_input("neither `arkimet` nor `eccodes` were defined for the input", **kwargs)
+
+        if eccodes:
+            with tempfile.NamedTemporaryFile(mode="wt") as tf:
+                print(f"if ({eccodes}) {{", file=tf)
+                print('print "";', file=tf)
+                print("}", file=tf)
+                tf.flush()
+                cmd = ["grib_filter", tf.name, "-", "/dev/null"]
+                res = subprocess.run(cmd, input=b"GRIB7777", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                if res.stderr != b'no messages found in /dev/null\n':
+                    errors: List[str] = []
+                    header = "ECCODES ERROR   :  "
+                    for line in res.stderr.decode().splitlines():
+                        if line.startswith(header):
+                            errors.append(line[len(header):])
+                    lint.warn_input(f"eccodes match {eccodes!r} cannot be parsed: {errors}", **kwargs)
 
     def __repr__(self):
         return f"Source:{self.model}:{self.name}"
