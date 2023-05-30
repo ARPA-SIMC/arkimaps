@@ -219,6 +219,27 @@ class Recipe:
         for k, v in kwargs.items():
             lint.warn_recipe(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
 
+        from .mixers import mixers
+        if mixer not in mixers.registry:
+            lint.warn_recipe(f"Unknown mixer: {mixer!r}", defined_in=defined_in, name=name)
+        else:
+            step_collection = mixers.get_steps(mixer)
+            for s in recipe:
+                if not isinstance(s, dict):
+                    lint.warn_recipe(f"Recipe step {s!r} is not a dict", defined_in=defined_in, name=name)
+                    continue
+                s = s.copy()
+                step = s.pop("step", None)
+                if step is None:
+                    lint.warn_recipe(f"Recipe step {s!r} does not contain 'step'", defined_in=defined_in, name=name)
+                    continue
+                step_cls = step_collection.get(step)
+                if step_cls is None:
+                    lint.warn_recipe(
+                        f"Recipe step {s!r} contains invalid step={step!r}", defined_in=defined_in, name=name)
+                    continue
+                step_cls.lint(lint, defined_in=defined_in, name=name, step=step, **s)
+
     @classmethod
     def inherit(
             cls, *,

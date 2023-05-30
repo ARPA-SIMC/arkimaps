@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional, Set, Tuple
 
 # if TYPE_CHECKING:
 from . import inputs
+from .lint import Lint
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -41,6 +42,20 @@ class Step:
         self.params = self.compile_args(step_config, params if params is not None else {})
         if bool(self.params.get("skip")):
             raise StepSkipped()
+
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            defined_in: str,
+            name: str,
+            step: str,
+            **kwargs):
+        """
+        Consistency check the given input arguments
+        """
+        for k, v in kwargs.items():
+            lint.warn_recipe_step(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name, step=step)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         """
@@ -102,6 +117,14 @@ class MagicsMacro(Step):
     Run a Magics macro with optional default arguments
     """
     macro_name: str
+
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            params: Optional[Dict[str, Any]] = None,
+            **kwargs):
+        super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         return self.macro_name, self.params.get("params", {})
@@ -174,10 +197,11 @@ class AddGrid(MagicsMacro):
     }
 
 
-class AddCoastlinesFg(Step):
+class AddCoastlinesFg(MagicsMacro):
     """
     Add foreground coastlines
     """
+    macro_name = "mcoast"
     defaults = {
         "params": {
             "map_coastline_sea_shade_colour": "#f2f2f2",
@@ -189,15 +213,12 @@ class AddCoastlinesFg(Step):
         },
     }
 
-    def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        # TODO: if implementation stays like this, make this a subclass of MagicsMacro
-        return "mcoast", self.params.get("params", {})
 
-
-class AddBoundaries(Step):
+class AddBoundaries(MagicsMacro):
     """
     Add political boundaries
     """
+    macro_name = "mcoast"
     defaults = {
         "params": {
             'map_boundaries': "on",
@@ -208,10 +229,6 @@ class AddBoundaries(Step):
             'map_administrative_boundaries': "on",
         },
     }
-
-    def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        # TODO: if implementation stays like this, make this a subclass of MagicsMacro
-        return "mcoast", self.params.get("params", {})
 
 
 class AddGrib(Step):
@@ -236,6 +253,15 @@ class AddGrib(Step):
                 self.params["params"] = params = {}
             for k, v in self.grib_input.info.mgrib.items():
                 params.setdefault(k, v)
+
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            grib: str,
+            params: Optional[Dict[str, Any]] = None,
+            **kwargs):
+        super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         params = dict(self.params.get("mgrib", {}))
