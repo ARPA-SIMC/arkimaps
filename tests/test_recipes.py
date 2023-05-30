@@ -7,12 +7,10 @@ from arkimapslib.recipes import Recipe, Recipes
 
 class TestRecipe(unittest.TestCase):
     def test_simple(self):
-        r = Recipe("test", defined_in="test.yaml", data={
-            "recipe": [
+        r = Recipe(name="test", defined_in="test.yaml", recipe=[
                 {"step": "add_grib", "grib": "t2m"},
                 {"step": "add_user_boundaries"}
-            ],
-        })
+            ])
         self.assertEqual(r.name, "test")
         self.assertEqual(r.defined_in, "test.yaml")
         self.assertEqual(len(r.steps), 2)
@@ -20,15 +18,12 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r.steps[1].name, "add_user_boundaries")
 
     def test_inherit_simple(self):
-        r1 = Recipe("test", defined_in="test.yaml", data={
-            "recipe": [
+        r1 = Recipe(name="test", defined_in="test.yaml", recipe=[
                 {"step": "add_grib", "grib": "t2m"},
                 {"step": "add_user_boundaries"}
-            ],
-        })
+            ])
 
-        r2 = Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1, data={
-        })
+        r2 = Recipe(**Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1))
 
         self.assertEqual(r2.name, "test1")
         self.assertEqual(r2.defined_in, "test1.yaml")
@@ -38,18 +33,14 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r2.steps[1].name, "add_user_boundaries")
 
     def test_inherit_change_args(self):
-        r1 = Recipe("test", defined_in="test.yaml", data={
-            "recipe": [
+        r1 = Recipe(name="test", defined_in="test.yaml", recipe=[
                 {"step": "add_grib", "grib": "t2m", "id": "input"},
                 {"step": "add_user_boundaries"}
-            ],
-        })
+            ])
 
-        r2 = Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1, data={
-            "change": {
+        r2 = Recipe(**Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1, change={
                 "input": {"grib": "t2mavg"},
-            }
-        })
+            }))
 
         self.assertEqual(r2.name, "test1")
         self.assertEqual(r2.defined_in, "test1.yaml")
@@ -60,17 +51,13 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r2.steps[1].name, "add_user_boundaries")
 
     def test_inherit_change_params(self):
-        r1 = Recipe("test", defined_in="test.yaml", data={
-            "recipe": [
+        r1 = Recipe(name="test", defined_in="test.yaml", recipe=[
                 {"step": "add_basemap", "params": {"a": 1, "b": 2, "c": 3}, "id": "basemap"}
-            ],
-        })
+            ])
 
-        r2 = Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1, data={
-            "change": {
+        r2 = Recipe(**Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1, change={
                 "basemap": {"params": {"b": 3, "c": None}},
-            }
-        })
+            }))
 
         self.assertEqual(r2.name, "test1")
         self.assertEqual(r2.defined_in, "test1.yaml")
@@ -83,19 +70,14 @@ class TestRecipe(unittest.TestCase):
 class TestRecipes(unittest.TestCase):
     def test_inherit(self):
         recipes = Recipes()
-        recipes.add(Recipe("test", defined_in="test.yaml", data={
-            "recipe": [
+        recipes.add(name="test", defined_in="test.yaml", recipe=[
                 {"step": "add_grib", "grib": "t2m", "id": "input"},
                 {"step": "add_user_boundaries"}
-            ],
-        }))
+            ])
 
-        recipes.add_derived("test1", defined_in="test1.yaml", data={
-            "extends": "test",
-            "change": {
+        recipes.add_derived(name="test1", defined_in="test1.yaml", extends="test", change={
                 "input": {"grib": "t2mavg"},
-            }
-        })
+            })
 
         recipes.resolve_derived()
 
@@ -110,12 +92,8 @@ class TestRecipes(unittest.TestCase):
 
     def test_loop(self):
         recipes = Recipes()
-        recipes.add_derived("test1", defined_in="test1.yaml", data={
-            "extends": "test2",
-        })
-        recipes.add_derived("test2", defined_in="test2.yaml", data={
-            "extends": "test1",
-        })
+        recipes.add_derived(name="test1", defined_in="test1.yaml", extends="test2")
+        recipes.add_derived(name="test2", defined_in="test2.yaml", extends="test1")
 
         with self.assertRaises(Exception):
             recipes.resolve_derived()

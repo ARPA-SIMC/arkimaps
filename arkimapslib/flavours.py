@@ -2,13 +2,12 @@
 import fnmatch
 import logging
 import re
-from typing import TYPE_CHECKING, Dict, Any, Optional, List, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 
-from .steps import StepConfig, Step, StepSkipped
-from . import recipes
-from . import orders
-from . import inputs
+from . import inputs, orders, recipes
 from .config import Config
+from .lint import Lint
+from .steps import Step, StepConfig, StepSkipped
 
 if TYPE_CHECKING:
     from . import pantry
@@ -25,7 +24,7 @@ class Flavour:
     """
     Set of default settings used for generating a product
     """
-    def __init__(self,
+    def __init__(self, *,
                  config: Config,
                  name: str,
                  defined_in: str,
@@ -49,6 +48,21 @@ class Flavour:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)
 
+    @classmethod
+    def lint(
+            cls, lint: Lint, *,
+            config: Config,
+            name: str,
+            defined_in: str,
+            steps: Kwargs = None,
+            recipes_filter: Optional[List[str]] = None,
+            **kwargs):
+        """
+        Consistency check the given input arguments
+        """
+        for k, v in kwargs.items():
+            lint.warn_flavour(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
+
     def __str__(self):
         return self.name
 
@@ -63,17 +77,26 @@ class Flavour:
         }
 
     @classmethod
-    def create(cls,
+    def create(cls, *,
                config: Config,
                name: str,
                defined_in: str,
                steps: Kwargs = None,
                recipes_filter: Optional[List[str]] = None,
+               lint: Optional[Lint] = None,
                **kw):
         if 'tile' in kw:
-            return TiledFlavour(config, name, defined_in, steps, recipes_filter, **kw)
+            tile_cls = TiledFlavour
         else:
-            return SimpleFlavour(config, name, defined_in, steps, recipes_filter, **kw)
+            tile_cls = SimpleFlavour
+        if lint:
+            tile_cls.lint(
+                lint,
+                config=config, name=name, defined_in=defined_in, steps=steps,
+                recipes_filter=recipes_filter, **kw)
+        return tile_cls(
+                config=config, name=name, defined_in=defined_in,
+                steps=steps, recipes_filter=recipes_filter, **kw)
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """
@@ -235,14 +258,21 @@ class TiledFlavour(Flavour):
      * ``lon_min: Float``: minimum longitude
      * ``lon_max: Float``: maximum longitude
     """
-    def __init__(self, *args, tile: Dict[str, Any] = None, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, *, tile: Dict[str, Any] = None, **kw):
+        super().__init__(**kw)
         self.zoom_min = int(tile.get("zoom_min", 3))
         self.zoom_max = int(tile.get("zoom_max", 5))
         self.lat_min = float(tile["lat_min"])
         self.lat_max = float(tile["lat_max"])
         self.lon_min = float(tile["lon_min"])
         self.lon_max = float(tile["lon_max"])
+
+    @classmethod
+    def lint(
+            cls, lint: Lint, *,
+            tile: Dict[str, Any] = None,
+            **kwargs):
+        super().lint(lint, **kwargs)
 
     def summarize(self) -> Dict[str, Any]:
         res = super().summarize()

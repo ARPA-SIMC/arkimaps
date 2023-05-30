@@ -1,10 +1,11 @@
 # New in -unreleased version-
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
+* Added `arkimaps lint` to do consistency checking of recipes (#146)
 
 # New in version 1.5
 
-* Added emro_web flavour
+* Added `emro_web` flavour
 
 # New in version 1.4
 
