@@ -3,11 +3,11 @@ import inspect
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Set, TextIO, Type, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, TextIO, Type
 
-from . import steps
-from . import toposort
+from . import steps, toposort
 from .config import Config
+from .lint import Lint
 
 if TYPE_CHECKING:
     from . import pantry
@@ -62,7 +62,7 @@ class Recipes:
             "data": data,
         }
 
-    def resolve_derived(self):
+    def resolve_derived(self, *, lint: Optional[Lint] = None):
         """
         Instantiate all recipes in new_derived
         """
@@ -158,6 +158,7 @@ class Recipe:
     """
     def __init__(self, name: str, defined_in: str, data: 'Kwargs'):
         from .mixers import mixers
+
         # Name of the recipe
         self.name = name
         # File where the recipe was defined

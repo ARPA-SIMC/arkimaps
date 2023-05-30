@@ -14,6 +14,7 @@ import numpy
 
 from .config import Config
 from .grib import GRIB
+from .lint import Lint
 from .utils import perf_counter_ns
 
 if TYPE_CHECKING:
@@ -149,7 +150,7 @@ class Input:
         self.stats = InputProcessingStats(self)
 
     @classmethod
-    def create(cls, type: str = "default", **kw):
+    def create(cls, *, lint: Optional[Lint] = None, type: str = "default", **kw):
         """
         Instantiate an input by the ``type`` key in its recipe definition
         """
@@ -158,7 +159,26 @@ class Input:
         except KeyError as e:
             raise KeyError(
                     f"recipe requires unknown input {type}. Available: {', '.join(InputTypes.registry.keys())}") from e
+        if lint:
+            impl_cls.lint(lint, **kw)
         return impl_cls(**kw)
+
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            config: Config,
+            name: str,
+            defined_in: str,
+            model: Optional[str] = None,
+            mgrib: Optional['Kwargs'] = None,
+            notes: Optional[str] = None,
+            **kwargs):
+        """
+        Consistency check the given input arguments
+        """
+        for k, v in kwargs.items():
+            lint.warn_input(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
 
     def __getstate__(self):
         return {
@@ -253,6 +273,10 @@ class Static(Input):
         self.abspath = abspath
         self.path = path
 
+    @classmethod
+    def lint(cls, lint: Lint, *, path: str, **kwargs):
+        super().lint(lint, **kwargs)
+
     def to_dict(self):
         res = super().to_dict()
         res["abspath"] = self.abspath
@@ -337,6 +361,12 @@ class Source(Input):
         # elements and needs to be truncated
         self.instants_to_truncate: Set[Instant] = set()
 
+    @classmethod
+    def lint(cls, lint: Lint, *, arkimet: Optional[str] = None, eccodes: Optional[str] = None, **kwargs):
+        super().lint(lint, **kwargs)
+        if not arkimet and not eccodes:
+            lint.warn_input("neither `arkimet` nor `eccodes` were defined for the input", **kwargs)
+
     def __repr__(self):
         return f"Source:{self.model}:{self.name}"
 
@@ -392,6 +422,10 @@ class Derived(Input):
         self.inputs: List[str] = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
         # set of available steps
         self.instants: Set[Instant] = set()
+
+    @classmethod
+    def lint(cls, lint: Lint, *, inputs: Union[str, List[str]] = None, **kwargs):
+        super().lint(lint, **kwargs)
 
     def to_dict(self):
         res = super().to_dict()
@@ -457,6 +491,17 @@ class VG6DStatProcMixin:
             self.comp_full_steps = bool(comp_full_steps)
         else:
             self.comp_full_steps = (self.step != 24)
+
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            step: int = None,
+            comp_stat_proc: str,
+            comp_frac_valid: float = 0,
+            comp_full_steps: Optional[bool] = None,
+            **kwargs):
+        super().lint(lint, **kwargs)
 
     def to_dict(self):
         res = super().to_dict()
@@ -551,6 +596,11 @@ class Decumulate(VG6DStatProcMixin, Derived):
         kw.setdefault("comp_stat_proc", "1")
         super().__init__(**kw)
 
+    @classmethod
+    def lint(cls, lint: Lint, **kwargs):
+        kwargs.setdefault("comp_stat_proc", "1")
+        super().lint(lint, **kwargs)
+
     def document(self, file, indent=4):
         ind = " " * indent
         print(f"{ind}* **Decumulation step**: {self.step}", file=file)
@@ -567,6 +617,11 @@ class Average(VG6DStatProcMixin, Derived):
     def __init__(self, **kw):
         kw.setdefault("comp_stat_proc", "254:0")
         super().__init__(**kw)
+
+    @classmethod
+    def lint(cls, lint: Lint, **kwargs):
+        kwargs.setdefault("comp_stat_proc", "254:0")
+        super().lint(lint, **kwargs)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -615,6 +670,14 @@ class VG6DTransform(AlignInstantsMixin, Derived):
             raise RuntimeError(f"args must be present for '{self.NAME}' inputs")
         super().__init__(**kw)
         self.args = [args] if isinstance(args, str) else [str(x) for x in args]
+
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            args: Union[str, List[str]] = None,
+            **kwargs):
+        super().lint(lint, **kwargs)
 
     def to_dict(self):
         res = super().to_dict()
@@ -725,6 +788,15 @@ class GribSetMixin:
         self.clip = clip
         self.clip_fn = compile(clip, filename=self.defined_in, mode='exec') if clip is not None else None
 
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            grib_set: Optional[Dict[str, Any]] = None,
+            clip: Optional[str] = None,
+            **kwargs):
+        super().lint(lint, **kwargs)
+
     def to_dict(self):
         res = super().to_dict()
         res["grib_set"] = self.grib_set
@@ -829,6 +901,14 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
         super().__init__(**kw)
         self.expr = expr
         self.expr_fn = compile(expr, filename=self.defined_in, mode='exec')
+
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            expr: str,
+            **kwargs):
+        super().lint(lint, **kwargs)
 
     def to_dict(self):
         res = super().to_dict()

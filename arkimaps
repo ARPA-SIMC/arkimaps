@@ -1,23 +1,24 @@
 #!/usr/bin/python3
 # from __future__ import annotations
-from typing import List
 import argparse
-from collections import defaultdict
 import datetime
-import logging
-import tarfile
-import subprocess
-import json
 import io
+import json
+import logging
 import os
+import subprocess
 import sys
+import tarfile
 import time
-from arkimapslib.cmdline import Command, Fail, Success
-from arkimapslib.render import Renderer
+from collections import defaultdict
+from typing import List, Optional
 
+from arkimapslib.cmdline import Command, Fail, Success
 # if TYPE_CHECKING:
 from arkimapslib.flavours import Flavour
+from arkimapslib.lint import Lint
 from arkimapslib.orders import Order
+from arkimapslib.render import Renderer
 
 VERSION = "1.4"
 SYSTEM_RECIPE_DIR = "/usr/share/arkimaps/recipes"
@@ -60,11 +61,11 @@ class RecipesMixin:
                                  " or " + SYSTEM_RECIPE_DIR)
         return parser
 
-    def load_recipes(self):
+    def load_recipes(self, lint: Optional[Lint] = None):
         """
         Load recipes into the already created kitchen
         """
-        self.kitchen.load_recipes([self.args.recipes])
+        self.kitchen.load_recipes([self.args.recipes], lint=lint)
 
 
 class RenderMixin:
@@ -293,6 +294,23 @@ class DumpRecipes(RecipesMixin, Command):
         # TODO: self.flavours: Dict[str, Flavour] = {}
 
 
+class LintCmd(RecipesMixin, Command):
+    """
+    Validate contents of recipes
+    """
+    NAME = "lint"
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+
+        from arkimapslib.kitchen import EccodesEmptyKitchen
+        self.kitchen = EccodesEmptyKitchen()
+
+    def run(self):
+        lint = Lint()
+        self.load_recipes(lint=lint)
+
+
 class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):
     """
     do not render: dispatch into a working directory
@@ -445,6 +463,7 @@ def main():
     Render.make_subparser(subparsers)
     Preview.make_subparser(subparsers)
     DumpRecipes.make_subparser(subparsers)
+    LintCmd.make_subparser(subparsers)
 
     args = parser.parse_args()
 

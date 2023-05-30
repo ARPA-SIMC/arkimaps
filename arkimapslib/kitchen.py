@@ -3,17 +3,19 @@ import contextlib
 import datetime
 import os
 import tempfile
-from typing import Dict, Any, Optional, List, Union
+from typing import Any, Dict, List, Optional, Union
+
 import yaml
+
 try:
     import arkimet
 except ModuleNotFoundError:
     arkimet = None
-from .flavours import Flavour
-from .recipes import Recipe
+from . import orders, pantry
 from .config import Config
-from . import pantry
-from . import orders
+from .flavours import Flavour
+from .lint import Lint
+from .recipes import Recipe
 
 # if TYPE_CHECKING:
 # Used for kwargs-style dicts
@@ -41,16 +43,16 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def load_recipes(self, paths: List[str]):
+    def load_recipes(self, paths: List[str], *, lint: Optional[Lint] = None):
         """
         Load recipes from the given list of directories
         """
         for path in paths:
-            self.load_recipe_dir(path)
+            self.load_recipe_dir(path, lint=lint)
 
-        self.recipes.resolve_derived()
+        self.recipes.resolve_derived(lint=lint)
 
-    def load_recipe_dir(self, path: str):
+    def load_recipe_dir(self, path: str, *, lint: Optional[Lint] = None):
         """
         Load recipes from the given directory
         """
@@ -81,10 +83,11 @@ class Kitchen:
                         if isinstance(input_contents, list):
                             for ic in input_contents:
                                 self.pantry.add_input(
-                                    Input.create(config=self.config, name=name, defined_in=relfn, **ic))
+                                    Input.create(config=self.config, name=name, defined_in=relfn, lint=lint, **ic))
                         else:
                             self.pantry.add_input(
-                                Input.create(config=self.config, name=name, defined_in=relfn, **input_contents))
+                                Input.create(
+                                    config=self.config, name=name, defined_in=relfn, lint=lint, **input_contents))
 
                 flavours = recipe.pop("flavours", None)
                 if flavours is not None:
