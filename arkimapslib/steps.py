@@ -177,6 +177,30 @@ class AddContour(MagicsMacro):
         },
     }
 
+    @classmethod
+    def lint(
+            cls,
+            lint: Lint, *,
+            params: Optional[Dict[str, Any]] = None,
+            **kwargs):
+        super().lint(lint, params=params, **kwargs)
+        cll = params.get("contour_level_list")
+        cscl = params.get("contour_shade_colour_list")
+        if cll is not None and cscl is not None:
+            ok = True
+            if not isinstance(cll, list):
+                lint.warn_recipe_step(f"contour_level_list {cll!r} is not a list", **kwargs)
+                ok = False
+            if not isinstance(cscl, list):
+                lint.warn_recipe_step(f"contour_level_list {cll!r} is not a list", **kwargs)
+                ok = False
+            if ok:
+                if len(cll) != len(cscl) + 1:
+                    lint.warn_recipe_step(
+                        f"contour_level_list has {len(cll)} items while"
+                        f" contour_shade_colour_list has {len(cscl)} items",
+                        **kwargs)
+
 
 class AddWind(MagicsMacro):
     """
