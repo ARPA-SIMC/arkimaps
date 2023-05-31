@@ -1,13 +1,19 @@
 # from __future__ import annotations
+import contextlib
 import datetime
 import fnmatch
 import os
 import re
 import sys
-from typing import TYPE_CHECKING, Dict, List, Any, Optional, Type, Sequence
+import tempfile
 import unittest
+from pathlib import Path
+from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type,
+                    Union)
+
 import yaml
 
+from .kitchen import Kitchen
 from .render import Renderer
 
 if TYPE_CHECKING:
@@ -377,3 +383,31 @@ def scan_python_order(order: "Order") -> List[Dict[str, Any]]:
             macro[k] = v
         parts.append(macro)
     return parts
+
+
+class Workdir(contextlib.ExitStack):
+    def __init__(self, test_case: Optional[unittest.TestCase] = None):
+        super().__init__()
+        self.path = Path(self.enter_context(tempfile.TemporaryDirectory()))
+        if test_case is not None:
+            test_case.addCleanup(self.__exit__, None, None, None)
+
+    def add_yaml_file(self, relpath: str, contents: Any):
+        abspath = self.path / relpath
+        abspath.parent.mkdir(parents=True, exist_ok=True)
+        with abspath.open("wt") as fd:
+            yaml.dump(contents, fd)
+
+    def as_kitchen(self, kitchen_class: Union[str, Type[Kitchen]] = Kitchen) -> Kitchen:
+        import arkimapslib.kitchen
+        if kitchen_class == "arkimet":
+            kitchen_class = arkimapslib.kitchen.ArkimetKitchen
+        elif kitchen_class == "eccodes":
+            kitchen_class = arkimapslib.kitchen.EccodesKitchen
+
+        kitchen = kitchen_class()
+        kitchen.load_recipes([self.path])
+        return kitchen
+
+    def __str__(self):
+        return self.workdir

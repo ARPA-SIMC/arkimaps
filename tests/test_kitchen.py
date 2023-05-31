@@ -1,34 +1,18 @@
 # from __future__ import annotations
-from typing import Any
-from unittest import TestCase
-import contextlib
 import tempfile
-import os
-import yaml
-from arkimapslib.kitchen import Kitchen, ArkimetEmptyKitchen
+from unittest import TestCase
+
 from arkimapslib import pantry
-
-
-class Workdir(contextlib.ExitStack):
-    def __init__(self):
-        super().__init__()
-        self.workdir = self.enter_context(tempfile.TemporaryDirectory())
-
-    def add_file(self, relpath: str, contents: Any):
-        abspath = os.path.join(self.workdir, relpath)
-        os.makedirs(os.path.dirname(abspath), exist_ok=True)
-        with open(abspath, "wt") as fd:
-            yaml.dump(contents, fd)
+from arkimapslib.kitchen import ArkimetEmptyKitchen, Kitchen
+from arkimapslib.unittest import Workdir
 
 
 class TestEmptyKitchen(TestCase):
     def test_load_recipes(self):
         with Workdir() as workdir:
-            workdir.add_file("test.yaml", {"recipe": []})
-            workdir.add_file("test/test.yaml", {"recipe": []})
-            kitchen = Kitchen()
-            kitchen.pantry = pantry.EmptyPantry()
-            kitchen.load_recipes([workdir.workdir])
+            workdir.add_yaml_file("test.yaml", {"recipe": []})
+            workdir.add_yaml_file("test/test.yaml", {"recipe": []})
+            kitchen = workdir.as_kitchen()
 
         r = kitchen.recipes.get("test")
         self.assertEqual(r.name, "test")
