@@ -29,8 +29,8 @@ class Flavour:
                  config: Config,
                  name: str,
                  defined_in: str,
-                 steps: Kwargs = None,
-                 postprocess: Kwargs = None,
+                 steps: Optional[Kwargs] = None,
+                 postprocess: Optional[Kwargs] = None,
                  recipes_filter: Optional[List[str]] = None,
                  **kw):
         self.config = config
