@@ -50,10 +50,10 @@ class Flavour:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)
 
-        self.postprocess: List[Postprocessor] = []
+        self.postprocessors: List[Postprocessor] = []
         if postprocess is not None:
             for name, options in postprocess.items():
-                self.postprocess.append(Postprocessor.create(name, **options))
+                self.postprocessors.append(Postprocessor.create(name, **options))
 
     @classmethod
     def lint(

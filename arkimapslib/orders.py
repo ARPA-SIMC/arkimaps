@@ -300,6 +300,8 @@ class TileOrder(Order):
         basename = f"{self.x}-{self.y}-{self.width}-{self.height}"
         gen.magics_renderer(function_name, self, relpath, basename)
         full_relpath = os.path.join(relpath, basename) + ".png"
+        for postprocessor in self.flavour.postprocessors:
+            full_relpath = postprocessor.add_python(self, full_relpath, gen)
         gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
 
     def add_to_tarball(self, workdir: str, tarout: "tarfile.TarFile"):
