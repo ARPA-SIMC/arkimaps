@@ -7,21 +7,40 @@ from .utils import TypeRegistry
 if TYPE_CHECKING:
     from .orders import Order
     from .pygen import PyGen
+    from .lint import Lint
 
 
 class Postprocessors(TypeRegistry["Postprocessor"]):
     """
     Registry of available Postprocessor implementations
     """
-    pass
+    def lint(self, *, lint: "Lint", name: str, defined_in: str, **kwargs):
+        cls = self.registry.get(name)
+        if cls is None:
+            lint.warn_postprocessor(f"postprocessor {name!r} not found", defined_in=defined_in, name=name)
+            return
+        cls.lint(lint=lint, name=name, defined_in=defined_in, **kwargs)
 
 
 postprocessors = Postprocessors()
 
 
 class Postprocessor:
-    def __init__(self):
+    def __init__(self, **kwargs):
         pass
+
+    @classmethod
+    def lint(
+            cls, *,
+            lint: "Lint",
+            name: str,
+            defined_in: str,
+            **kwargs):
+        """
+        Consistency check the given input arguments
+        """
+        for k, v in kwargs.items():
+            lint.warn_input(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
 
     @classmethod
     def create(cls, name: str, **kwargs):
@@ -39,4 +58,16 @@ class Postprocessor:
 
         Return the new value for ``full_relpath`` after the postprocessing
         """
+        pass
+
+
+@postprocessors.register
+class Watermark(Postprocessor):
+    """
+    Write a string on the image
+    """
+    def __init__(self):
+        # TODO: font (load from static data)
+        # TODO: placement
+        # TODO: string
         pass

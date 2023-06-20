@@ -15,6 +15,9 @@ class Lint:
     def warn_flavour(self, msg: str, *, defined_in: str, name: str, **kwargs) -> None:
         log.warning("%s, flavour %s: %s", defined_in, name, msg)
 
+    def warn_postprocessor(self, msg: str, *, defined_in: str, name: str, **kwargs) -> None:
+        log.warning("%s, postprocessor %s: %s", defined_in, name, msg)
+
     def warn_recipe(self, msg: str, *, defined_in: str, name: str, **kwargs) -> None:
         log.warning("%s, recipe %s: %s", defined_in, name, msg)
 

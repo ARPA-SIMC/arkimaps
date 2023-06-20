@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
 from . import inputs, orders, recipes
 from .config import Config
 from .lint import Lint
-from .postprocess import Postprocessor
+from .postprocess import Postprocessor, postprocessors
 from .steps import Step, StepConfig, StepSkipped
 
 if TYPE_CHECKING:
@@ -70,6 +70,10 @@ class Flavour:
         """
         for k, v in kwargs.items():
             lint.warn_flavour(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
+
+        if postprocess is not None:
+            for name, options in postprocess.items():
+                postprocessors.lint(lint=lint, name=name, defined_in=defined_in, **options)
 
     def __str__(self):
         return self.name
