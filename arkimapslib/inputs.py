@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import tempfile
 from typing import (TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple,
-                    Optional, Set, Tuple, Type, Union)
+                    Optional, Set, Tuple, Union)
 
 import eccodes
 import numpy
@@ -16,7 +16,7 @@ import numpy
 from .config import Config
 from .grib import GRIB
 from .lint import Lint
-from .utils import perf_counter_ns
+from .utils import perf_counter_ns, TypeRegistry
 
 if TYPE_CHECKING:
     from . import pantry
@@ -64,26 +64,14 @@ class Instant(NamedTuple):
         return (f"_{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step:03d}")
 
 
-class InputTypes:
+class InputTypes(TypeRegistry["Input"]):
     """
     Registry of available Input implementations
     """
-    registry: Dict[str, Type["Input"]] = {}
+    pass
 
-    @classmethod
-    def register(cls, impl_cls: Type["Input"]):
-        """
-        Add an input class to the registry
-        """
-        name = getattr(impl_cls, "NAME", None)
-        if name is None:
-            name = impl_cls.__name__.lower()
-        cls.registry[name] = impl_cls
-        return impl_cls
 
-    @classmethod
-    def by_name(cls, name: str) -> Type["Input"]:
-        return cls.registry[name.lower()]
+input_types = InputTypes()
 
 
 class InputProcessingStats:
@@ -156,10 +144,10 @@ class Input:
         Instantiate an input by the ``type`` key in its recipe definition
         """
         try:
-            impl_cls = InputTypes.by_name(type)
+            impl_cls = input_types.by_name(type)
         except KeyError as e:
             raise KeyError(
-                    f"recipe requires unknown input {type}. Available: {', '.join(InputTypes.registry.keys())}") from e
+                    f"recipe requires unknown input {type}. Available: {', '.join(input_types.registry.keys())}") from e
         if lint:
             impl_cls.lint(lint, **kw)
         return impl_cls(**kw)
@@ -259,7 +247,7 @@ class Input:
                 print(f"{ind}* **mgrib {{k}}**: `{v}`", file=file)
 
 
-@InputTypes.register
+@input_types.register
 class Static(Input):
     """
     An input that refers to static files distributed with arkimaps
@@ -312,7 +300,7 @@ class Static(Input):
         return {None: InputFile(self.abspath, self, None)}
 
 
-@InputTypes.register
+@input_types.register
 class Shape(Static):
     """
     A special instance of static that deals with shapefiles
@@ -341,7 +329,7 @@ class Shape(Static):
         raise RuntimeError(f"{path}.shp does not exist inside {self.config.static_dir}")
 
 
-@InputTypes.register
+@input_types.register
 class Source(Input):
     """
     An input that is data straight out of a model
@@ -602,7 +590,7 @@ class VG6DStatProcMixin:
                 os.unlink(decumulated_data)
 
 
-@InputTypes.register
+@input_types.register
 class Decumulate(VG6DStatProcMixin, Derived):
     """
     Decumulate inputs
@@ -624,7 +612,7 @@ class Decumulate(VG6DStatProcMixin, Derived):
         super().document(file, indent)
 
 
-@InputTypes.register
+@input_types.register
 class Average(VG6DStatProcMixin, Derived):
     """
     Average inputs
@@ -675,7 +663,7 @@ class AlignInstantsMixin:
         return available_instants
 
 
-@InputTypes.register
+@input_types.register
 class VG6DTransform(AlignInstantsMixin, Derived):
     """
     Process inputs with vg6d_transform
@@ -743,7 +731,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
         super().document(file, indent)
 
 
-@InputTypes.register
+@input_types.register
 class Cat(AlignInstantsMixin, Derived):
     """
     Concatenate inputs
@@ -772,7 +760,7 @@ class Cat(AlignInstantsMixin, Derived):
             self.add_instant(instant)
 
 
-@InputTypes.register
+@input_types.register
 class Or(Derived):
     """
     Represents the first of the inputs listed that has data for a step
@@ -841,7 +829,7 @@ class GribSetMixin:
         return values[self.name]
 
 
-@InputTypes.register
+@input_types.register
 class GroundToMSL(GribSetMixin, Derived):
     """
     Convert heights above ground to heights above mean sea level, by adding
@@ -903,7 +891,7 @@ class GroundToMSL(GribSetMixin, Derived):
             log.info("input %s: missing source data", self.name)
 
 
-@InputTypes.register
+@input_types.register
 class Expr(AlignInstantsMixin, GribSetMixin, Derived):
     """
     Compute the result using a Python expression of the input values, as numpy
@@ -981,7 +969,7 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
                     self.add_instant(instant)
 
 
-@InputTypes.register
+@input_types.register
 class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
     """
     Compute snow fraction percentage based on formulas documented in #38
