@@ -66,8 +66,24 @@ class Watermark(Postprocessor):
     """
     Write a string on the image
     """
-    def __init__(self):
+    def __init__(self, *, message: str, font: str, x: int, y: int, **kwargs):
+        super().__init__(**kwargs)
+        self.message = message
+        self.font = font
+        self.x = x
+        self.y = y
         # TODO: font (load from static data)
         # TODO: placement
-        # TODO: string
-        pass
+
+    def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
+        gen.line("from PIL import Image, ImageDraw, ImageFont")
+        gen.line(f"with Image.open(os.path.join(workdir, {full_relpath!r})) as im:")
+        with gen.nested() as sub:
+            sub.line("draw = ImageDraw.Draw(im)")
+            # FIXME: hardcoded
+            sub.line("fnt = ImageFont.truetype(os.path.join(workdir, 'LiberationSans-Regular.ttf'))")
+            # FIXME: color hardcoded
+            # FIXME: convert negative coordinates into coordinates relative to image size
+            sub.line(f"draw.text(({self.x}, {self.y}), {self.message!r}, font=fnt, fill=(0, 0, 255, 128))")
+            sub.line(f"im.save(os.path.join(workdir, {full_relpath!r}))")
+        return full_relpath

@@ -38,6 +38,13 @@ flavours:
          map_coastline_resolution: high
      add_geopoints:
        points: puntiCitta
+   postprocess:
+     # TODO: convert to array to allow to specify the same postprocess multiple times
+     watermark:
+       message: "Test image"
+       x: 10
+       y: 10
+       font: todo.ttf
  - name: emro_web
    steps:
      add_basemap:
