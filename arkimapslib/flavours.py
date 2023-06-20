@@ -2,7 +2,7 @@
 import fnmatch
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
 
 from . import inputs, orders, recipes
 from .config import Config
@@ -12,7 +12,7 @@ from .steps import Step, StepConfig, StepSkipped
 
 if TYPE_CHECKING:
     from . import pantry
-    from .inputs import InputFile
+    from .inputs import InputFile, Instant
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -37,7 +37,7 @@ class Flavour:
         self.name = name
         self.defined_in = defined_in
 
-        self.recipes_filter: List[re.compile] = []
+        self.recipes_filter: List[re.Pattern] = []
         if recipes_filter is not None:
             if not isinstance(recipes_filter, list):
                 raise ValueError(f"{defined_in}: recipes_filter is {type(recipes_filter).__name__} instead of list")
@@ -61,7 +61,8 @@ class Flavour:
             config: Config,
             name: str,
             defined_in: str,
-            steps: Kwargs = None,
+            steps: Optional[Kwargs] = None,
+            postprocess: Optional[Kwargs] = None,
             recipes_filter: Optional[List[str]] = None,
             **kwargs):
         """
@@ -84,26 +85,15 @@ class Flavour:
         }
 
     @classmethod
-    def create(cls, *,
-               config: Config,
-               name: str,
-               defined_in: str,
-               steps: Kwargs = None,
-               recipes_filter: Optional[List[str]] = None,
-               lint: Optional[Lint] = None,
-               **kw):
-        if 'tile' in kw:
+    def create(cls, *, lint: Optional[Lint] = None, **kwargs):
+        tile_cls: Type[Flavour]
+        if 'tile' in kwargs:
             tile_cls = TiledFlavour
         else:
             tile_cls = SimpleFlavour
         if lint:
-            tile_cls.lint(
-                lint,
-                config=config, name=name, defined_in=defined_in, steps=steps,
-                recipes_filter=recipes_filter, **kw)
-        return tile_cls(
-                config=config, name=name, defined_in=defined_in,
-                steps=steps, recipes_filter=recipes_filter, **kw)
+            tile_cls.lint(lint, **kwargs)
+        return tile_cls(**kwargs)
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """
@@ -171,9 +161,9 @@ class Flavour:
         Scan a recipe and return a set with all the inputs it needs
         """
         # For each output instant, map inputs names to InputFile structures
-        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]] = None
+        inputs: Optional[Dict["Instant", Dict[str, "InputFile"]]] = None
         # Collection of input name to InputFile mappings used by all output steps
-        inputs_for_all_instants: Dict[str, "inputs.InputFile"] = {}
+        inputs_for_all_instants: Dict[str, "InputFile"] = {}
 
         input_names = self.get_inputs_for_recipe(recipe)
         log.debug("flavour %s: recipe %s uses inputs: %r", self.name, recipe.name, input_names)
@@ -181,7 +171,7 @@ class Flavour:
         # Find the intersection of all steps available for all inputs needed
         for input_name in input_names:
             # Find available steps for this input
-            output_instants: Dict[Optional["inputs.Instant"], "InputFile"]
+            output_instants: Dict[Optional["Instant"], "InputFile"]
             output_instants = pantry.get_instants(input_name)
 
             # Special handling for inputs that are not step-specific and
@@ -265,7 +255,7 @@ class TiledFlavour(Flavour):
      * ``lon_min: Float``: minimum longitude
      * ``lon_max: Float``: maximum longitude
     """
-    def __init__(self, *, tile: Dict[str, Any] = None, **kw):
+    def __init__(self, *, tile: Dict[str, Any], **kw):
         super().__init__(**kw)
         self.zoom_min = int(tile.get("zoom_min", 3))
         self.zoom_max = int(tile.get("zoom_max", 5))
@@ -277,7 +267,7 @@ class TiledFlavour(Flavour):
     @classmethod
     def lint(
             cls, lint: Lint, *,
-            tile: Dict[str, Any] = None,
+            tile: Dict[str, Any],
             **kwargs):
         super().lint(lint, **kwargs)
 
