@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
 from . import inputs, orders, recipes
 from .config import Config
 from .lint import Lint
+from .postprocess import Postprocessor
 from .steps import Step, StepConfig, StepSkipped
 
 if TYPE_CHECKING:
@@ -29,6 +30,7 @@ class Flavour:
                  name: str,
                  defined_in: str,
                  steps: Kwargs = None,
+                 postprocess: Kwargs = None,
                  recipes_filter: Optional[List[str]] = None,
                  **kw):
         self.config = config
@@ -47,6 +49,11 @@ class Flavour:
         if steps is not None:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)
+
+        self.postprocess: List[Postprocessor] = []
+        if postprocess is not None:
+            for name, options in postprocess.items():
+                self.postprocess.append(Postprocessor.create(name, **options))
 
     @classmethod
     def lint(
