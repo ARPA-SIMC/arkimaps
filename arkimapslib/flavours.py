@@ -52,8 +52,11 @@ class Flavour:
 
         self.postprocessors: List[Postprocessor] = []
         if postprocess is not None:
-            for name, options in postprocess.items():
-                self.postprocessors.append(Postprocessor.create(name, config=config, **options))
+            for desc in postprocess:
+                name = desc.pop("type", None)
+                if name is None:
+                    raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
+                self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
 
     @classmethod
     def lint(
@@ -72,8 +75,15 @@ class Flavour:
             lint.warn_flavour(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
 
         if postprocess is not None:
-            for name, options in postprocess.items():
-                postprocessors.lint(lint=lint, name=name, defined_in=defined_in, **options)
+            if not isinstance(postprocess, list):
+                lint.warn_flavour("`postprocess` is not a list", defined_in=defined_in, name=name)
+            else:
+                for desc in postprocess:
+                    name = desc.pop("type", None)
+                    if name is None:
+                        lint.warn_flavour("Postprocessor listed without 'type'", defined_in=defined_in, name=name)
+                        continue
+                    postprocessors.lint(lint=lint, name=name, defined_in=defined_in, **desc)
 
     def __str__(self):
         return self.name

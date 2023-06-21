@@ -39,8 +39,7 @@ flavours:
      add_geopoints:
        points: puntiCitta
    postprocess:
-     # TODO: convert to array to allow to specify the same postprocess multiple times
-     watermark:
+     - type: watermark
        message: "Test image"
        x: 10
        y: 10

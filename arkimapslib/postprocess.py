@@ -95,6 +95,9 @@ class Watermark(Postprocessor):
         self.x = x
         self.y = y
         log.info("%s resolved as %s", font, self.font)
+        # TODO: font size
+        # TODO: text angle?
+        # TODO: color
         # TODO: placement
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
