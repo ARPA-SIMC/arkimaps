@@ -86,7 +86,17 @@ class Postprocessor:
 @postprocessors.register
 class Watermark(Postprocessor):
     """
-    Write a string on the image
+    Write a string on the image.
+
+    Parameters:
+
+    * ``message``: text string to write
+    * ``font``: name of a .ttf file to use as a font. The .ttf file needs to be
+      found inside the static data directory
+    * ``x``: horizontal coordinates (in pixel) of the beginning of the text. A
+      negative value is the number of pixels from the right margin of the image
+    * ``y``: vertical coordinates (in pixel) of the beginning of the text. A
+      negative value is the number of pixels from the bottom margin of the image
     """
     def __init__(self, *, message: str, font: str, x: int, y: int, **kwargs):
         super().__init__(**kwargs)
@@ -107,7 +117,15 @@ class Watermark(Postprocessor):
             sub.line("draw = ImageDraw.Draw(im)")
             sub.line(f"fnt = ImageFont.truetype({self.font!r})")
             # FIXME: color hardcoded
-            # FIXME: convert negative coordinates into coordinates relative to image size
-            sub.line(f"draw.text(({self.x}, {self.y}), {self.message!r}, font=fnt, fill=(0, 0, 255, 128))")
+            # Convert negative coordinates into coordinates relative to image size
+            if self.x >= 0:
+                x = str(self.x)
+            else:
+                x = f"im.width - {-self.x}"
+            if self.y >= 0:
+                y = str(self.y)
+            else:
+                y = f"im.height - {-self.y}"
+            sub.line(f"draw.text(({x}, {y}), {self.message!r}, font=fnt, fill=(0, 0, 255, 128))")
             sub.line(f"im.save(os.path.join(workdir, {full_relpath!r}))")
         return full_relpath

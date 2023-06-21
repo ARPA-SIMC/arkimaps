@@ -41,8 +41,8 @@ flavours:
    postprocess:
      - type: watermark
        message: "Test image"
-       x: 10
-       y: 10
+       x: -100
+       y: -30
        font: LiberationSans-Regular.ttf
  - name: emro_web
    steps:
