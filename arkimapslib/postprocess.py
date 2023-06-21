@@ -97,25 +97,30 @@ class Watermark(Postprocessor):
       negative value is the number of pixels from the right margin of the image
     * ``y``: vertical coordinates (in pixel) of the beginning of the text. A
       negative value is the number of pixels from the bottom margin of the image
+    * ``size``: font size in pixels (default: 10)
     """
-    def __init__(self, *, message: str, font: str, x: int, y: int, **kwargs):
+    def __init__(self, *, message: str, font: str, x: int, y: int, size: int = 10, **kwargs):
         super().__init__(**kwargs)
         self.message = message
         self.font = self.static_path(font)
         self.x = x
         self.y = y
+        self.size = size
         log.info("%s resolved as %s", font, self.font)
-        # TODO: font size
         # TODO: text angle?
         # TODO: color
-        # TODO: placement
+
+    @classmethod
+    def lint(
+            cls, *, message: str, font: str, x: int, y: int, size: int = 10, **kwargs):
+        super().lint(**kwargs)
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         gen.line("from PIL import Image, ImageDraw, ImageFont")
         gen.line(f"with Image.open(os.path.join(workdir, {full_relpath!r})) as im:")
         with gen.nested() as sub:
             sub.line("draw = ImageDraw.Draw(im)")
-            sub.line(f"fnt = ImageFont.truetype({self.font!r})")
+            sub.line(f"fnt = ImageFont.truetype({self.font!r}, size={self.size})")
             # FIXME: color hardcoded
             # Convert negative coordinates into coordinates relative to image size
             if self.x >= 0:

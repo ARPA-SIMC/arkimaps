@@ -43,6 +43,7 @@ flavours:
        message: "Test image"
        x: -100
        y: -30
+       size: 16
        font: LiberationSans-Regular.ttf
  - name: emro_web
    steps:
