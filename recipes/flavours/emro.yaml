@@ -41,11 +41,12 @@ flavours:
    postprocess:
      - type: watermark
        message: "Test image"
-       x: -100
-       y: -30
+       x: -10
+       y: -10
        size: 16
        font: LiberationSans-Regular.ttf
        color: "#decafe99"
+       anchor: rs
  - name: emro_web
    steps:
      add_basemap:

@@ -97,6 +97,8 @@ class Watermark(Postprocessor):
       negative value is the number of pixels from the right margin of the image
     * ``y``: vertical coordinates (in pixel) of the beginning of the text. A
       negative value is the number of pixels from the bottom margin of the image
+    * ``anchor``: The text anchor alignment. See
+      https://pillow.readthedocs.io/en/stable/handbook/text-anchors.html#text-anchors
     * ``size``: font size in pixels (default: 10)
     * ``color``: color name as defined in
       https://pillow.readthedocs.io/en/stable/reference/ImageColor.html#color-names
@@ -106,7 +108,7 @@ class Watermark(Postprocessor):
             self, *,
             message: str,
             font: str, size: int = 10,
-            x: int, y: int,
+            x: int, y: int, anchor: str = "la",
             color: str = "#fff0",
             **kwargs):
         super().__init__(**kwargs)
@@ -115,6 +117,7 @@ class Watermark(Postprocessor):
         log.info("%s resolved as %s", font, self.font)
         self.x = x
         self.y = y
+        self.anchor = anchor
         self.size = size
         self.color = color
         # TODO: text angle?
@@ -124,12 +127,12 @@ class Watermark(Postprocessor):
             cls, lint: "Lint", *,
             message: str,
             font: str, size: int = 10,
-            x: int, y: int,
+            x: int, y: int, anchor: str = "la",
             color: Union[str, list[str]] = "#fff0",
             **kwargs):
         super().lint(lint, **kwargs)
         if not isinstance(message, str):
-            lint.warn_input(f"message is not a string: {color!r}", **kwargs)
+            lint.warn_input(f"message is not a string: {message!r}", **kwargs)
         if not isinstance(font, str):
             # TODO: try to resolve it?
             lint.warn_input(f"font is not a string: {font!r}", **kwargs)
@@ -139,6 +142,8 @@ class Watermark(Postprocessor):
             lint.warn_input(f"x is not an integer: {x!r}", **kwargs)
         if not isinstance(y, int):
             lint.warn_input(f"y is not an integer: {y!r}", **kwargs)
+        if not isinstance(anchor, str):
+            lint.warn_input(f"anchor is not a string: {anchor!r}", **kwargs)
         if not isinstance(color, str):
             lint.warn_input(f"color is not a string: {color!r}", **kwargs)
 
@@ -157,6 +162,6 @@ class Watermark(Postprocessor):
                 y = str(self.y)
             else:
                 y = f"im.height - {-self.y}"
-            sub.line(f"draw.text(({x}, {y}), {self.message!r}, font=fnt, fill={self.color!r})")
+            sub.line(f"draw.text(({x}, {y}), {self.message!r}, font=fnt, fill={self.color!r}, anchor={self.anchor!r})")
             sub.line(f"im.save(os.path.join(workdir, {full_relpath!r}))")
         return full_relpath
