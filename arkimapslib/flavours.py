@@ -53,7 +53,7 @@ class Flavour:
         self.postprocessors: List[Postprocessor] = []
         if postprocess is not None:
             for name, options in postprocess.items():
-                self.postprocessors.append(Postprocessor.create(name, **options))
+                self.postprocessors.append(Postprocessor.create(name, config=config, **options))
 
     @classmethod
     def lint(

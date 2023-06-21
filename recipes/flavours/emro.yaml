@@ -44,7 +44,7 @@ flavours:
        message: "Test image"
        x: 10
        y: 10
-       font: todo.ttf
+       font: LiberationSans-Regular.ttf
  - name: emro_web
    steps:
      add_basemap:

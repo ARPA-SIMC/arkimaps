@@ -1,5 +1,7 @@
 # from __future__ import annotations
 
+import logging
+import os
 from typing import TYPE_CHECKING, Dict, Type
 
 from .utils import TypeRegistry
@@ -8,6 +10,9 @@ if TYPE_CHECKING:
     from .orders import Order
     from .pygen import PyGen
     from .lint import Lint
+    from .config import Config
+
+log = logging.getLogger("postprocess")
 
 
 class Postprocessors(TypeRegistry["Postprocessor"]):
@@ -26,12 +31,13 @@ postprocessors = Postprocessors()
 
 
 class Postprocessor:
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, *, config: "Config", **kwargs):
+        self.config = config
 
     @classmethod
     def lint(
             cls, *,
+            config: "Config",
             lint: "Lint",
             name: str,
             defined_in: str,
@@ -52,6 +58,22 @@ class Postprocessor:
                     f" Available: {', '.join(postprocessors.registry.keys())}") from e
         return impl_cls(**kwargs)
 
+    def static_path(self, path: str) -> str:
+        """
+        Resolve path into an absolute path
+        """
+        for static_dir in self.config.static_dir:
+            if not os.path.isdir(static_dir):
+                continue
+            abspath = os.path.abspath(os.path.join(static_dir, path))
+            cp = os.path.commonpath((abspath, static_dir))
+            if not os.path.samefile(cp, static_dir):
+                raise RuntimeError(f"{path} leads outside the static directory")
+            if not os.path.exists(abspath):
+                continue
+            return abspath
+        raise RuntimeError(f"{path} does not exist inside {self.config.static_dir}")
+
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         """
         Add a python function to postprocess the image at ``full_relpath``.
@@ -69,10 +91,10 @@ class Watermark(Postprocessor):
     def __init__(self, *, message: str, font: str, x: int, y: int, **kwargs):
         super().__init__(**kwargs)
         self.message = message
-        self.font = font
+        self.font = self.static_path(font)
         self.x = x
         self.y = y
-        # TODO: font (load from static data)
+        log.info("%s resolved as %s", font, self.font)
         # TODO: placement
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
@@ -80,8 +102,7 @@ class Watermark(Postprocessor):
         gen.line(f"with Image.open(os.path.join(workdir, {full_relpath!r})) as im:")
         with gen.nested() as sub:
             sub.line("draw = ImageDraw.Draw(im)")
-            # FIXME: hardcoded
-            sub.line("fnt = ImageFont.truetype(os.path.join(workdir, 'LiberationSans-Regular.ttf'))")
+            sub.line(f"fnt = ImageFont.truetype({self.font!r})")
             # FIXME: color hardcoded
             # FIXME: convert negative coordinates into coordinates relative to image size
             sub.line(f"draw.text(({self.x}, {self.y}), {self.message!r}, font=fnt, fill=(0, 0, 255, 128))")
