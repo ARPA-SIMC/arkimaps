@@ -2,15 +2,15 @@
 
 import logging
 import os
-from typing import TYPE_CHECKING, Dict, Type
+from typing import TYPE_CHECKING, Dict, Type, Union
 
 from .utils import TypeRegistry
 
 if TYPE_CHECKING:
+    from .config import Config
+    from .lint import Lint
     from .orders import Order
     from .pygen import PyGen
-    from .lint import Lint
-    from .config import Config
 
 log = logging.getLogger("postprocess")
 
@@ -98,22 +98,49 @@ class Watermark(Postprocessor):
     * ``y``: vertical coordinates (in pixel) of the beginning of the text. A
       negative value is the number of pixels from the bottom margin of the image
     * ``size``: font size in pixels (default: 10)
+    * ``color``: color name as defined in
+      https://pillow.readthedocs.io/en/stable/reference/ImageColor.html#color-names
+      Default: "#fff0"
     """
-    def __init__(self, *, message: str, font: str, x: int, y: int, size: int = 10, **kwargs):
+    def __init__(
+            self, *,
+            message: str,
+            font: str, size: int = 10,
+            x: int, y: int,
+            color: str = "#fff0",
+            **kwargs):
         super().__init__(**kwargs)
         self.message = message
         self.font = self.static_path(font)
+        log.info("%s resolved as %s", font, self.font)
         self.x = x
         self.y = y
         self.size = size
-        log.info("%s resolved as %s", font, self.font)
+        self.color = color
         # TODO: text angle?
-        # TODO: color
 
     @classmethod
     def lint(
-            cls, *, message: str, font: str, x: int, y: int, size: int = 10, **kwargs):
-        super().lint(**kwargs)
+            cls, lint: "Lint", *,
+            message: str,
+            font: str, size: int = 10,
+            x: int, y: int,
+            color: Union[str, list[str]] = "#fff0",
+            **kwargs):
+        super().lint(lint, **kwargs)
+        if not isinstance(message, str):
+            lint.warn_input(f"message is not a string: {color!r}", **kwargs)
+        if not isinstance(font, str):
+            # TODO: try to resolve it?
+            lint.warn_input(f"font is not a string: {font!r}", **kwargs)
+        if not isinstance(size, int):
+            lint.warn_input(f"size is not an integer: {size!r}", **kwargs)
+        if not isinstance(x, int):
+            lint.warn_input(f"x is not an integer: {x!r}", **kwargs)
+        if not isinstance(y, int):
+            lint.warn_input(f"y is not an integer: {y!r}", **kwargs)
+        if not isinstance(color, str):
+            lint.warn_input(f"color is not a string: {color!r}", **kwargs)
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         gen.line("from PIL import Image, ImageDraw, ImageFont")
@@ -121,7 +148,6 @@ class Watermark(Postprocessor):
         with gen.nested() as sub:
             sub.line("draw = ImageDraw.Draw(im)")
             sub.line(f"fnt = ImageFont.truetype({self.font!r}, size={self.size})")
-            # FIXME: color hardcoded
             # Convert negative coordinates into coordinates relative to image size
             if self.x >= 0:
                 x = str(self.x)
@@ -131,6 +157,6 @@ class Watermark(Postprocessor):
                 y = str(self.y)
             else:
                 y = f"im.height - {-self.y}"
-            sub.line(f"draw.text(({x}, {y}), {self.message!r}, font=fnt, fill=(0, 0, 255, 128))")
+            sub.line(f"draw.text(({x}, {y}), {self.message!r}, font=fnt, fill={self.color!r})")
             sub.line(f"im.save(os.path.join(workdir, {full_relpath!r}))")
         return full_relpath

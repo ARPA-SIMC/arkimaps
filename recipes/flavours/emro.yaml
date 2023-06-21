@@ -45,6 +45,7 @@ flavours:
        y: -30
        size: 16
        font: LiberationSans-Regular.ttf
+       color: "#decafe99"
  - name: emro_web
    steps:
      add_basemap:
