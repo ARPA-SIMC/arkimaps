@@ -48,6 +48,9 @@ flavours:
        color: "#decafe99"
        anchor: rs
  - name: emro_web
+   postprocess:
+     - type: cutshape
+       shapefile: "er.geojson"
    steps:
      add_basemap:
        params:

@@ -1,5 +1,6 @@
 # from __future__ import annotations
 import contextlib
+import os
 import time
 from typing import TYPE_CHECKING, IO, Generator
 
@@ -112,4 +113,9 @@ class PyGen:
             self.line(f"parts.append(macro.{name}({', '.join(py_parms)}))")
 
         self.line("with contextlib.redirect_stdout(io.StringIO()) as out:")
-        self.line("    macro.plot(*parts)")
+        with self.nested() as sub:
+            sub.line("macro.plot(*parts)")
+            full_relpath = os.path.join(relpath, basename) + ".png"
+            for postprocessor in order.flavour.postprocessors:
+                full_relpath = postprocessor.add_python(order, full_relpath, self)
+            self.line(f"outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")

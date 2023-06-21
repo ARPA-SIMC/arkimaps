@@ -147,17 +147,6 @@ class Order:
 
         return result
 
-    def print_python_postprocessing(self, full_relpath: str, gen: PyGen) -> str:
-        """
-        Add postprocessing code to a Python function.
-
-        full_relpath is the initial image file name. Returns the final image
-        file name
-        """
-        for postprocessor in self.flavour.postprocessors:
-            full_relpath = postprocessor.add_python(self, full_relpath, gen)
-        return full_relpath
-
 
 class MapOrder(Order):
     def __init__(
@@ -196,9 +185,6 @@ class MapOrder(Order):
         # Destination file name (without path or .png extension)
         basename = f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
         gen.magics_renderer(function_name, self, relpath, basename)
-        full_relpath = os.path.join(relpath, basename) + ".png"
-        full_relpath = self.print_python_postprocessing(full_relpath, gen)
-        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
 
 
 def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
@@ -311,9 +297,6 @@ class TileOrder(Order):
         )
         basename = f"{self.x}-{self.y}-{self.width}-{self.height}"
         gen.magics_renderer(function_name, self, relpath, basename)
-        full_relpath = os.path.join(relpath, basename) + ".png"
-        full_relpath = self.print_python_postprocessing(full_relpath, gen)
-        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
 
     def add_to_tarball(self, workdir: str, tarout: "tarfile.TarFile"):
         """
@@ -475,6 +458,3 @@ class LegendOrder(Order):
         # Destination file name (without path or .png extension)
         basename = f"{self.recipe.name}_{self.flavour.name}+legend"
         gen.magics_renderer(function_name, self, relpath, basename)
-        full_relpath = os.path.join(relpath, basename) + ".png"
-        full_relpath = self.print_python_postprocessing(full_relpath, gen)
-        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
