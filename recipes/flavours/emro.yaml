@@ -50,7 +50,7 @@ flavours:
  - name: emro_web
    postprocess:
      - type: cutshape
-       shapefile: "er.geojson"
+       shapefile: "er.shp"
    steps:
      add_basemap:
        params:
