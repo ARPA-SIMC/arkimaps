@@ -93,18 +93,6 @@ class Renderer:
         for k, v in self.env_overrides.items():
             os.environ[k] = v
 
-    def print_python_preamble(self, gen: PyGen):
-        """
-        Print the preamble of the Python rendering script
-        """
-        for k, v in self.env_overrides.items():
-            gen.line(f"os.environ[{k!r}] = {v!r}")
-        gen.empty_line()
-
-        with gen.timed("import_magics") as sub:
-            sub.line("from Magics import macro")
-        gen.empty_line()
-
     def render(self, orders: Iterable['Order'], tarout: "tarfile.TarFile") -> List["Order"]:
         """
         Render the given order list, adding results to the tar file.
@@ -202,7 +190,17 @@ class Renderer:
         self.renderer_sequence += 1
 
         gen = PyGen()
-        self.print_python_preamble(gen)
+
+        # Set env overrides
+        for k, v in self.env_overrides.items():
+            gen.line(f"os.environ[{k!r}] = {v!r}")
+        gen.empty_line()
+
+        # Import Magics, timing how long it takes
+        with gen.timed("import_magics") as sub:
+            sub.line("from Magics import macro")
+        gen.empty_line()
+
         for idx, order in enumerate(orders):
             name = f"order{idx}"
             self.orders_by_name[(script_file, name)] = order

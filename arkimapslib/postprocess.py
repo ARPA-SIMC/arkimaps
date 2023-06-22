@@ -235,6 +235,15 @@ class CutShape(Postprocessor):
         gen.import_("osgeo")
         gen.import_("gdal", "osr", from_="osgeo")
 
+        # Open the shapefile in the script preamble, to open it only once
+        # FIXME: there can be ambiguity if two shapefiles are used in the same
+        # script, with the same basename and different paths. It doesn't seem
+        # relevant, and if it becomes so we can change the mangling strategy
+        shape_id = gen.to_identifier(os.path.basename(self.shapefile))
+        # NOTA: ogr.Open non va bene perché gdal.Rasterize vuole un tipo GDALDatasetShadow
+        # NOTA: Non serve riproiettare il vettoriale (che è in EPSG:32632, diversa dal raster)
+        gen.preamble(shape_id, f"{shape_id} = gdal.OpenEx({self.shapefile!r}, gdal.OF_VECTOR)")
+
         # Open the PNG file and add georeferencing
         gen.line(f"ds_png = gdal.Open(os.path.join(workdir, {full_relpath!r}))")
         gen.line("srs = osr.SpatialReference()")
@@ -255,12 +264,8 @@ class CutShape(Postprocessor):
         # deve generare un nome univoco (e.g. con threading.get_ident())
         tif_path = "/vsimem/input.tif"
         gen.line(f"ds_tif = gdal.Translate({tif_path!r}, ds_png, format='GTiff')")
-        # Apro il file vettoriale
-        # NOTA: ogr.Open non va bene perché gdal.Rasterize vuole un tipo GDALDatasetShadow
-        # NOTA: Non serve riproiettare il vettoriale (che è in EPSG:32632, diversa dal raster)
-        gen.line(f"shape = gdal.OpenEx({self.shapefile!r}, gdal.OF_VECTOR)")
         # Ritaglio il GeoTIFF, scrivendo su tutte le bande
-        gen.line("gdal.Rasterize(ds_tif, shape, inverse=True, bands=list(range(1, ds_tif.RasterCount + 1)),"
+        gen.line(f"gdal.Rasterize(ds_tif, {shape_id}, inverse=True, bands=list(range(1, ds_tif.RasterCount + 1)),"
                  " burnValues=(0,) * ds_tif.RasterCount)")
         # Salvo il GeoTiff (alla fine di tutti i postprocessing)
         gen.line(f"gdal.Translate(os.path.join(workdir, {full_relpath!r}), ds_tif)")
