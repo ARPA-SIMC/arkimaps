@@ -1,8 +1,10 @@
 # from __future__ import annotations
 import contextlib
+import io
 import os
 import time
-from typing import TYPE_CHECKING, IO, Generator
+from collections import defaultdict
+from typing import IO, TYPE_CHECKING, Generator, Optional
 
 if TYPE_CHECKING:
     from .orders import Order
@@ -12,16 +14,13 @@ class PyGen:
     """
     Helper to generate Python renderer code
     """
-    def __init__(self, file: IO[str], indent: int = 0):
-        self.file = file
-        self.indent = " " * indent
-        self.line("from typing import Dict, Generator, List, NamedTuple")
-        self.line("import contextlib")
-        self.line("import io")
-        self.line("import json")
-        self.line("import os")
-        self.line("import time")
-        self.empty_line()
+    def __init__(self):
+        self.plain_imports: list[str] = []
+        self.from_imports: dict[str, list[str]] = defaultdict(list)
+        self.body = io.StringIO()
+        self.indent = ""
+        self.import_("Dict", "Generator", "List", "NamedTuple", from_="typing")
+        self.import_("contextlib", "io", "json", "os", "time")
         self.line("class Output(NamedTuple):")
         self.line("    name: str")
         self.line("    relpath: str")
@@ -47,17 +46,41 @@ class PyGen:
             sub.line("    timings[name] = perf_counter_ns() - start")
         self.empty_line()
 
+    def import_(self, *names: str, from_: Optional[str] = None):
+        """
+        Import a name at the script's head
+        """
+        if from_ is None:
+            dest = self.plain_imports
+        else:
+            dest = self.from_imports[from_]
+        for name in names:
+            if name not in dest:
+                dest.append(name)
+
+    def write(self, file: IO[str]):
+        # Write imports
+        if self.plain_imports:
+            print("import", ", ".join(self.plain_imports), file=file)
+        for from_, names in self.from_imports.items():
+            if not names:
+                continue
+            print("from", from_, "import", ", ".join(names), file=file)
+        print(file=file)
+
+        file.write(self.body.getvalue())
+
     def empty_line(self):
         """
         Add an empty line
         """
-        print(file=self.file)
+        print(file=self.body)
 
     def line(self, line: str):
         """
         Add a line of code
         """
-        print(self.indent, line, sep="", file=self.file)
+        print(self.indent, line, sep="", file=self.body)
 
     @contextlib.contextmanager
     def nested(self) -> Generator["PyGen", None, None]:

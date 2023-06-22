@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import TYPE_CHECKING, Dict, Tuple, Type, Union
+from typing import TYPE_CHECKING, Tuple, Union
 
 import osgeo
 from osgeo import osr
@@ -151,8 +151,7 @@ class Watermark(Postprocessor):
             lint.warn_input(f"color is not a string: {color!r}", **kwargs)
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
-        # TODO: update gen to be able to add imports at the top of the file
-        gen.line("from PIL import Image, ImageDraw, ImageFont")
+        gen.import_("Image", "ImageDraw", "ImageFont", from_="PIL")
         gen.line(f"with Image.open(os.path.join(workdir, {full_relpath!r})) as im:")
         with gen.nested() as sub:
             sub.line("draw = ImageDraw.Draw(im)")
@@ -233,9 +232,8 @@ class CutShape(Postprocessor):
             max(lllon, urlon), max(lllat, urlat)]
         bbox = self.convert_magics_bbox_to_epsg(bbox, epsg)
 
-        # TODO: update gen to be able to add imports at the top of the file
-        gen.line("import osgeo")
-        gen.line("from osgeo import gdal, osr")
+        gen.import_("osgeo")
+        gen.import_("gdal", "osr", from_="osgeo")
 
         # Open the PNG file and add georeferencing
         gen.line(f"ds_png = gdal.Open(os.path.join(workdir, {full_relpath!r}))")

@@ -201,19 +201,21 @@ class Renderer:
         script_file = os.path.join(self.renderer_dir, f"renderer{self.renderer_sequence:03d}.py")
         self.renderer_sequence += 1
 
-        with open(script_file, "wt") as code:
-            gen = PyGen(code)
-            self.print_python_preamble(gen)
-            for idx, order in enumerate(orders):
-                name = f"order{idx}"
-                self.orders_by_name[(script_file, name)] = order
-                with gen.render_function(name) as sub:
-                    order.print_python_function(name, sub)
-                gen.empty_line()
-
-            for idx, order in enumerate(orders):
-                gen.line(f"order{idx}({self.workdir!r})")
+        gen = PyGen()
+        self.print_python_preamble(gen)
+        for idx, order in enumerate(orders):
+            name = f"order{idx}"
+            self.orders_by_name[(script_file, name)] = order
+            with gen.render_function(name) as sub:
+                order.print_python_function(name, sub)
             gen.empty_line()
-            gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
+
+        for idx, order in enumerate(orders):
+            gen.line(f"order{idx}({self.workdir!r})")
+        gen.empty_line()
+        gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
+
+        with open(script_file, "wt") as code:
+            gen.write(code)
 
         return script_file
