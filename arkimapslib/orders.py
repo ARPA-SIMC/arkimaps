@@ -137,6 +137,26 @@ class Order:
                 max(lllon, urlon), max(lllat, urlat)]
         }
 
+    def georeference_outputs(self) -> Optional[Dict[str, Dict[str, Any]]]:
+        """
+        Georeference not the image produced but each singoe output of this
+        order.
+
+        Return a dict mapping output relpath to georeferencing information, or
+        None if this output cannot be georeferenced
+        """
+        georef = self.georeference()
+        if georef is None:
+            return None
+
+        lonmin, latmin, lonmax, latmax = georef["bbox"]
+
+        result: Dict[str, Dict[str, Any]] = {}
+        for output in self.outputs:
+            result[output.relpath] = georef
+
+        return result
+
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
         """
@@ -164,11 +184,12 @@ class Order:
             for order in orders_fr:
                 by_rt[order.instant.reftime].append(order)
                 for output in order.outputs:
-                    georef = order.georeference()
+                    georef = order.georeference_outputs()
                     if georef is not None:
-                        by_output[output.relpath] = {
-                            "georef": georef,
-                        }
+                        for name, info in georef.items():
+                            by_output[name] = {
+                                "georef": georef,
+                            }
 
             for reftime, orders in by_rt.items():
                 inputs: Set[str] = set()
@@ -373,6 +394,44 @@ class TileOrder(Order):
                         buf.seek(0)
                         log.info("Rendered %s to %s", self, tar_path)
                         tarout.addfile(info, buf)
+
+    def georeference_outputs(self) -> Optional[Dict[str, Dict[str, Any]]]:
+        """
+        Georeference not the image produced but each singoe output of this
+        order.
+
+        Return a dict mapping output relpath to georeferencing information, or
+        None if this output cannot be georeferenced
+        """
+        georef = self.georeference()
+        if georef is None:
+            return None
+
+        lonmin, latmin, lonmax, latmax = georef["bbox"]
+
+        result: Dict[str, Dict[str, Any]] = {}
+        for output in self.outputs:
+            relpath, basename = os.path.split(output.relpath)
+
+            start_x, start_y, width, height = (int(x) for x in basename[:-4].split('-'))
+
+            lon_width = (lonmax - lonmin) / width
+            lat_height = (latmax - latmin) / height
+
+            # Slice the tile's georeferencing
+            for x in range(width):
+                for y in range(height):
+                    tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+
+                    bbox = [
+                        lonmin + x * lon_width, latmin + y * lat_height,
+                        lonmin + (x + 1) * lon_width, latmin + (y + 1) * lat_height]
+
+                    tile_georef = georef.copy()
+                    tile_georef["bbox"] = bbox
+                    result[tar_path] = tile_georef
+
+        return result
 
     @classmethod
     def make_orders(
