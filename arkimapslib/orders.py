@@ -97,6 +97,46 @@ class Order:
             tarout.add(path, output.relpath)
             os.unlink(path)
 
+    def georeference(self) -> Optional[Dict[str, Any]]:
+        """
+        Return a dict with georeferencing information for the image produced by
+        this order.
+
+        Returns None of this order produces an image that cannot be
+        georeferenced.
+
+        In the case of an order that produces a larger tile that will then get
+        cut into a grid to produce the actual requested tiles, the
+        georeferencing refers to the image with the larger tile
+        """
+        for step in self.order_steps:
+            if step.name == "add_basemap":
+                try:
+                    params = step.params["params"]
+                    projection = params["subpage_map_projection"]
+                    lllon = params["subpage_lower_left_longitude"]
+                    lllat = params["subpage_lower_left_latitude"]
+                    urlon = params["subpage_upper_right_longitude"]
+                    urlat = params["subpage_upper_right_latitude"]
+                except KeyError:
+                    continue
+                break
+        else:
+            log.info("%s: Order has no add_basemap step", self)
+            return None
+
+        if not projection.startswith("EPSG:"):
+            log.info("%s: Order has still unsupported projection %s", self, projection)
+            return None
+
+        return {
+            "projection": "EPSG",
+            "epsg": int(projection[5:]),
+            "bbox": [
+                min(lllon, urlon), min(lllat, urlat),
+                max(lllon, urlon), max(lllat, urlat)]
+        }
+
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
         """
@@ -111,16 +151,24 @@ class Order:
             by_fr[(order.flavour.name, order.recipe.name)].append(order)
 
         for (flavour_name, recipe_name), orders_fr in by_fr.items():
+            by_output = {}
             record = {
                 "flavour": kitchen.flavours[flavour_name].summarize(),
                 "recipe": kitchen.recipes.get(recipe_name).summarize(),
                 "reftimes": {},
+                "images": by_output,
             }
 
             # Group orders by reftime
             by_rt: Dict[datetime.datetime, List[Order]] = defaultdict(list)
             for order in orders_fr:
                 by_rt[order.instant.reftime].append(order)
+                for output in order.outputs:
+                    georef = order.georeference()
+                    if georef is not None:
+                        by_output[output.relpath] = {
+                            "georef": georef,
+                        }
 
             for reftime, orders in by_rt.items():
                 inputs: Set[str] = set()

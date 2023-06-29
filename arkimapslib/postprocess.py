@@ -199,38 +199,13 @@ class CutShape(Postprocessor):
             lint.warn_input(f"shapefile is not a string: {shapefile!r}", **kwargs)
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
-        for step in order.order_steps:
-            if step.name == "add_basemap":
-                params = step.params["params"]
-                projection = params["subpage_map_projection"]
-                lllon = params["subpage_lower_left_longitude"]
-                lllat = params["subpage_lower_left_latitude"]
-                urlon = params["subpage_upper_right_longitude"]
-                urlat = params["subpage_upper_right_latitude"]
-
-                # 'subpage_map_projection': 'EPSG:3857',
-                # 'subpage_lower_left_longitude': 9.19514626509458,
-                # 'subpage_lower_left_latitude': 43.714193665380236,
-                # 'subpage_upper_right_longitude': 12.828319549646094,
-                # 'subpage_upper_right_latitude': 45.14257501046363,
-
-                break
-        else:
-            log.warning("%s: Order has no add_basemap step: skipping CutShape postprocessing", order)
-            return
-
-        if projection.startswith("EPSG:"):
-            epsg = int(projection[5:])
-        else:
-            log.warning("%s: Order has still unsupported projection %s: skipping CutShape postprocessing",
-                        order, projection)
+        georef = order.georeference()
+        if georef is None:
+            log.warning("%s: Order cannot be georeferenced: skipping CutShape postprocessing", order)
             return
 
         # Convert bounding box to map coordinates
-        bbox = [
-            min(lllon, urlon), min(lllat, urlat),
-            max(lllon, urlon), max(lllat, urlat)]
-        bbox = self.convert_magics_bbox_to_epsg(bbox, epsg)
+        bbox = self.convert_magics_bbox_to_epsg(georef["bbox"], georef["epsg"])
 
         gen.import_("osgeo")
         gen.import_("gdal", "osr", from_="osgeo")
@@ -247,7 +222,7 @@ class CutShape(Postprocessor):
         # Open the PNG file and add georeferencing
         gen.line(f"ds_png = gdal.Open(os.path.join(workdir, {full_relpath!r}))")
         gen.line("srs = osr.SpatialReference()")
-        gen.line(f"srs.ImportFromEPSG({epsg})")
+        gen.line(f"srs.ImportFromEPSG({georef['epsg']})")
         gen.line("ds_png.SetProjection(srs.ExportToWkt())")
         gen.line(
             "ds_png.SetGeoTransform(["
