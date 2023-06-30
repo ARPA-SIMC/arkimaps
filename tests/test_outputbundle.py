@@ -23,9 +23,15 @@ class BundleTestsMixin:
     def test_serialize(self):
         with tempfile.NamedTemporaryFile() as tf:
             input_summary = ob.InputSummary()
+            input_summary.inputs["test"] = {"foo": 1}
+
             log = ob.Log()
-            log.append(ts=1702662773.123, level=10, msg="test message", name="test")
+            log.append(ts=1.5, level=2, msg="message", name="logname")
+
             products = ob.Products()
+            products.flavour = {"name": "test"}
+            # self.by_recipe: Dict[str, RecipeOrders] = defaultdict(RecipeOrders)
+            products.by_path["test"] = ob.ProductInfo(recipe="recipe", reftime=datetime.datetime(2023, 7, 1), step=17)
 
             with self.writer_cls(out=tf) as writer:
                 writer.add_input_summary(input_summary)
@@ -50,6 +56,8 @@ class BundleTestsMixin:
                         "a/artifact1.txt",
                     ],
                 )
+
+                self.assertEqual(reader.version(), "1")
 
     def test_add_unrendered_products(self):
         flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")

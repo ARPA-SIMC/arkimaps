@@ -86,25 +86,34 @@ class ProductInfo:
     Information about a generated product image
     """
 
-    def __init__(self) -> None:
-        self.recipe: Optional["Recipe"] = None
-        self.georef: Dict[str, Any] = {}
-        self.instant: Optional["Instant"] = None
+    def __init__(
+        self,
+        *,
+        recipe: Optional[str] = None,
+        reftime: Optional[datetime.datetime] = None,
+        step: Optional["ModelStep"] = None,
+        georef: Optional[Dict[str, Any]] = None,
+    ):
+        self.recipe: Optional[str] = recipe
+        self.reftime: Optional[datetime.datetime] = reftime
+        self.step: Optional["ModelStep"] = step
+        self.georef: Dict[str, Any] = georef if georef is not None else {}
 
     def add_recipe(self, recipe: "Recipe"):
-        self.recipe = recipe
+        self.recipe = recipe.name
 
     def add_georef(self, georef: Dict[str, Any]):
         self.georef = georef
 
     def add_instant(self, instant: "Instant"):
-        self.instant = instant
+        self.reftime = instant.reftime
+        self.step = instant.step
 
     def to_jsonable(self) -> Dict[str, Any]:
         res = {
-            "recipe": self.recipe.name,
-            "reftime": self.instant.reftime.strftime("%Y-%m-%d %H:%M:%S"),
-            "step": str(self.instant.step),
+            "recipe": self.recipe,
+            "reftime": self.reftime.strftime("%Y-%m-%d %H:%M:%S"),
+            "step": str(self.step),
         }
         if self.georef:
             res["georef"] = self.georef
@@ -117,12 +126,12 @@ class Products:
     """
 
     def __init__(self) -> None:
-        self.flavour: Optional[Flavour] = None
+        self.flavour: Optional[Dict[str, Any]] = None
         self.by_recipe: Dict[str, RecipeOrders] = defaultdict(RecipeOrders)
         self.by_path: Dict[str, ProductInfo] = defaultdict(ProductInfo)
 
     def add_flavour(self, flavour: "Flavour"):
-        self.flavour = flavour
+        self.flavour = flavour.summarize()
 
     def add_orders(self, recipe: "Recipe", orders: List["Order"]):
         self.by_recipe[recipe.name].add(orders)
@@ -132,7 +141,7 @@ class Products:
 
     def to_jsonable(self) -> Dict[str, Any]:
         return {
-            "flavour": self.flavour.summarize() if self.flavour else None,
+            "flavour": self.flavour,
             "recipes": {k: v.to_jsonable() for k, v in self.by_recipe.items()},
             "products": {k: v.to_jsonable() for k, v in self.by_path.items()},
         }
@@ -178,6 +187,16 @@ class Log:
 
 
 class Reader:
+    """
+    Read functions for output bundles
+    """
+
+    def version(self) -> str:
+        """
+        Return the bundle version information
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.version() not implemented")
+
     def find(self) -> List[str]:
         """
         List all paths in the bundle
@@ -197,6 +216,10 @@ class TarReader(Reader):
 
     def __exit__(self, *args):
         self.tarfile.close()
+
+    def version(self) -> str:
+        with self.tarfile.extractfile("version.txt") as fd:
+            return fd.read().strip().decode()
 
     def find(self) -> List[str]:
         """
@@ -218,6 +241,9 @@ class ZipReader(Reader):
     def __exit__(self, *args):
         self.zipfile.close()
 
+    def version(self) -> str:
+        return self.zipfile.read("version.txt").strip().decode()
+
     def find(self) -> List[str]:
         """
         List all paths in the bundle
@@ -226,6 +252,10 @@ class ZipReader(Reader):
 
 
 class Writer:
+    """
+    Write functions for output bundles
+    """
+
     def add_input_summary(self, input_summary: InputSummary):
         """
         Add inputs.json with a summary of inputs used
