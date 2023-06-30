@@ -11,15 +11,13 @@ from collections import deque
 from typing import (TYPE_CHECKING, Deque, Dict, Generator, Iterable, List,
                     Optional, Sequence, Set, Tuple)
 
+from . import outputbundle
 from .config import Config
 from .orders import Output
 from .pygen import PyGen
 
 if TYPE_CHECKING:
     from .orders import Order
-
-if TYPE_CHECKING:
-    import tarfile
 
 log = logging.getLogger("render")
 
@@ -93,7 +91,7 @@ class Renderer:
         for k, v in self.env_overrides.items():
             os.environ[k] = v
 
-    def render(self, orders: Iterable['Order'], tarout: "tarfile.TarFile") -> List["Order"]:
+    def render(self, orders: Iterable['Order'], bundle: outputbundle.Writer) -> List["Order"]:
         """
         Render the given order list, adding results to the tar file.
 
@@ -107,14 +105,14 @@ class Renderer:
             queue.append(self.write_render_script(group))
 
         if hasattr(asyncio, "run"):
-            return asyncio.run(self.render_asyncio(queue, tarout))
+            return asyncio.run(self.render_asyncio(queue, bundle))
         else:
             # Python 3.6
             loop = asyncio.get_event_loop()
-            res = loop.run_until_complete(self.render_asyncio(queue, tarout))
+            res = loop.run_until_complete(self.render_asyncio(queue, bundle))
             return res
 
-    async def render_asyncio(self, queue: Deque[str], tarout: "tarfile.TarFile") -> List["Order"]:
+    async def render_asyncio(self, queue: Deque[str], bundle: outputbundle.Writer) -> List["Order"]:
         # TODO: hardcoded default to os.cpu_count, can be configurable
         max_tasks = os.cpu_count()
         pending = set()
@@ -144,7 +142,7 @@ class Renderer:
                     continue
 
                 for order in orders:
-                    order.add_to_tarball(self.workdir, tarout)
+                    order.add_to_bundle(self.workdir, bundle)
                     rendered.append(order)
 
         return rendered

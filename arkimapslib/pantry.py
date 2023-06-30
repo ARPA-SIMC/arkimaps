@@ -18,7 +18,7 @@ except ModuleNotFoundError:
 from . import inputs
 
 if TYPE_CHECKING:
-    from . import orders
+    from . import orders, outputbundle
 
 log = logging.getLogger("arkimaps.pantry")
 
@@ -440,8 +440,9 @@ class EccodesPantry(DiskPantry):
             for line in outfd:
                 self._parse_filter_output(line)
 
-    def store_processing_artifacts(self, tarout):
+    def store_processing_artifacts(self, bundle: "outputbundle.Writer"):
         """
         Store relevant processing artifacts in the output tarball
         """
-        tarout.add(name=self.grib_filter_rules, arcname="grib_filter_rules")
+        with open(self.grib_filter_rules, "rb") as data:
+            bundle.add_artifact("grib_filter_rules", data)

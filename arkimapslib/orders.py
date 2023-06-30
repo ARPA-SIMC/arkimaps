@@ -3,12 +3,12 @@ import io
 import logging
 import math
 import os
-import tarfile
 from collections import Counter, defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple
 
 from PIL import Image
 
+from . import outputbundle
 from .steps import StepSkipped, StepConfig, AddBasemap
 from .pygen import PyGen
 
@@ -85,7 +85,7 @@ class Order:
         self.outputs.append(output)
         self.render_time_ns += timing
 
-    def add_to_tarball(self, workdir: str, tarout: "tarfile.TarFile"):
+    def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer):
         """
         Add render results to a tarball
         """
@@ -94,7 +94,8 @@ class Order:
 
             # Move the generated image to the output tar
             path = os.path.join(workdir, output.relpath)
-            tarout.add(path, output.relpath)
+            with open(path, "rb") as data:
+                bundle.add_product(output.relpath, data)
             os.unlink(path)
 
     def georeference(self) -> Optional[Dict[str, Any]]:
@@ -367,7 +368,7 @@ class TileOrder(Order):
         basename = f"{self.x}-{self.y}-{self.width}-{self.height}"
         gen.magics_renderer(function_name, self, relpath, basename)
 
-    def add_to_tarball(self, workdir: str, tarout: "tarfile.TarFile"):
+    def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer):
         """
         Add render results to a tarball
         """
@@ -387,13 +388,10 @@ class TileOrder(Order):
                             (x * TILE_WIDTH_PX, y * TILE_HEIGHT_PX,
                              (x + 1) * TILE_WIDTH_PX, (y + 1) * TILE_HEIGHT_PX))
                     with io.BytesIO() as buf:
-                        tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
-                        info = tarfile.TarInfo(tar_path)
                         tile.save(buf, "PNG")
-                        info.size = buf.tell()
-                        buf.seek(0)
+                        tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+                        bundle.add_product(tar_path, buf)
                         log.info("Rendered %s to %s", self, tar_path)
-                        tarout.addfile(info, buf)
 
     def georeference_outputs(self) -> Optional[Dict[str, Dict[str, Any]]]:
         """
