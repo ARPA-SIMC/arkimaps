@@ -67,10 +67,10 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         with tempfile.NamedTemporaryFile() as tf:
-            with outputbundle.Writer(out=tf) as bundle:
+            with outputbundle.ZipWriter(out=tf) as bundle:
                 rendered = renderer.render(orders, bundle)
 
-            with outputbundle.Reader(tf.name) as bundle:
+            with outputbundle.ZipReader(tf.name) as bundle:
                 output_names = bundle.find()
 
         self.assertCountEqual(orders, rendered)
@@ -134,10 +134,10 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         with tempfile.NamedTemporaryFile() as tf:
-            with outputbundle.Writer(out=tf) as bundle:
+            with outputbundle.ZipWriter(out=tf) as bundle:
                 renderer.render(orders1, bundle)
 
-            with outputbundle.Reader(tf.name) as bundle:
+            with outputbundle.ZipReader(tf.name) as bundle:
                 output_names1 = bundle.find()
 
         # Second round
@@ -153,10 +153,10 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         with tempfile.NamedTemporaryFile() as tf:
-            with outputbundle.Writer(out=tf) as bundle:
+            with outputbundle.ZipWriter(out=tf) as bundle:
                 renderer.render(orders2, bundle)
 
-            with outputbundle.Reader(tf.name) as bundle:
+            with outputbundle.ZipReader(tf.name) as bundle:
                 output_names2 = bundle.find()
 
         # Test that they match
