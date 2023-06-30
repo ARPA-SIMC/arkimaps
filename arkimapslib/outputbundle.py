@@ -31,7 +31,19 @@ class Reader:
         """
         Read an existing output bundle
         """
-        raise NotImplementedError()
+        self.tarfile = tarfile.open(path, mode="r")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.tarfile.close()
+
+    def find(self) -> List[str]:
+        """
+        List all paths in the bundle
+        """
+        return self.tarfile.getnames()
 
 
 class Writer:

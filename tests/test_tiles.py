@@ -1,5 +1,4 @@
 # from __future__ import annotations
-import tarfile
 import tempfile
 import unittest
 from collections import defaultdict
@@ -71,8 +70,8 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
             with outputbundle.Writer(out=tf) as bundle:
                 rendered = renderer.render(orders, bundle)
 
-            with tarfile.open(tf.name, mode="r") as tar:
-                output_names = tar.getnames()
+            with outputbundle.Reader(tf.name) as bundle:
+                output_names = bundle.find()
 
         self.assertCountEqual(orders, rendered)
 
@@ -138,8 +137,8 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
             with outputbundle.Writer(out=tf) as bundle:
                 renderer.render(orders1, bundle)
 
-            with tarfile.open(tf.name, mode="r") as tar:
-                output_names1 = tar.getnames()
+            with outputbundle.Reader(tf.name) as bundle:
+                output_names1 = bundle.find()
 
         # Second round
 
@@ -157,8 +156,8 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
             with outputbundle.Writer(out=tf) as bundle:
                 renderer.render(orders2, bundle)
 
-            with tarfile.open(tf.name, mode="r") as tar:
-                output_names2 = tar.getnames()
+            with outputbundle.Reader(tf.name) as bundle:
+                output_names2 = bundle.find()
 
         # Test that they match
 
