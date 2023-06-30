@@ -30,16 +30,14 @@ log = logging.getLogger("arkimaps")
 class LogCollector(logging.Handler):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.entries = []
+        self.entries = outputbundle.Log()
 
     def emit(self, record: logging.LogRecord):
-        entry = {
-            "ts": time.clock_gettime(time.CLOCK_REALTIME),
-            "level": record.levelno,
-            "msg": self.format(record),
-            "name": record.name,
-        }
-        self.entries.append(entry)
+        self.entries.append(
+            ts=time.clock_gettime(time.CLOCK_REALTIME),
+            level=record.levelno,
+            msg=self.format(record),
+            name=record.name)
 
 
 #
@@ -191,8 +189,7 @@ class RenderMixin(FlavoursMixin):
             # Perform rendering
             rendered = renderer.render(orders, bundle)
 
-            log_entries = outputbundle.Log(entries=self.log_collector.entries)
-            bundle.add_log(log_entries)
+            bundle.add_log(self.log_collector.entries)
 
             # Add products summary
             order_summary = outputbundle.Products(summary=Order.summarize_orders(self.kitchen, rendered))

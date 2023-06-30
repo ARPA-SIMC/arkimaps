@@ -5,7 +5,7 @@ import json
 import tarfile
 import zipfile
 from pathlib import Path
-from typing import IO, Any, Dict, List
+from typing import IO, Any, Dict, List, NamedTuple
 
 
 class InputSummary:
@@ -18,13 +18,36 @@ class Products:
         self.summary = summary
 
 
-class Log:
-    def __init__(self, entries: List[Dict[str, Any]]):
-        self.entries = entries
+class LogEntry(NamedTuple):
+    """
+    One serializable log entry
+    """
+    ts: float
+    level: int
+    msg: str
+    name: str
 
-    def write(self, out: IO[bytes]):
-        with io.BytesIO(json.dumps(self.entries, indent=1).encode()) as buf:
-            out.write(buf.getvalue().encode())
+
+class Log:
+    """
+    A collection of log entries
+    """
+    def __init__(self):
+        self.entries: List[LogEntry] = []
+
+    def append(self, *, ts: float, level: int, msg: str, name: str):
+        """
+        Add a log entry
+        """
+        self.entries.append(
+                LogEntry(ts=ts, level=level, msg=msg, name=name))
+
+    def serialize(self) -> bytes:
+        """
+        Serialize as a bytes object
+        """
+        serializable = [e._asdict() for e in self.entries]
+        return json.dumps(serializable, indent=1).encode()
 
 
 class Reader:
@@ -132,10 +155,11 @@ class TarWriter(Writer):
         if not entries.entries:
             return
         # Add processing log
-        with io.BytesIO(json.dumps(entries.entries, indent=1).encode()) as buf:
-            info = tarfile.TarInfo(name="log.json")
-            info.size = len(buf.getvalue())
-            self.tarfile.addfile(tarinfo=info, fileobj=buf)
+        buf = entries.entries.serialize()
+        info = tarfile.TarInfo(name="log.json")
+        info.size = len(buf)
+        with io.BytesIO(buf) as fd:
+            self.tarfile.addfile(tarinfo=info, fileobj=fd)
 
     def add_products(self, products: Products):
         # Add products summary
@@ -170,36 +194,19 @@ class ZipWriter(Writer):
         self.zipfile.close()
 
     def add_input_summary(self, input_summary: InputSummary):
-        """
-        Add inputs.json with a summary of inputs used
-        """
         self.zipfile.writestr("inputs.json", json.dumps(input_summary.summary, indent=1))
 
     def add_log(self, entries: Log):
-        """
-        Add log.json with log entries generated during processing.
-
-        If no log entries were generated, log.json is not added.
-        """
         if not entries.entries:
             return
-        self.zipfile.writestr("log.json", json.dumps(entries.entries, indent=1))
+        self.zipfile.writestr("log.json", entries.serialize())
 
     def add_products(self, products: Products):
-        """
-        Add products.json with information about generated products
-        """
         self.zipfile.writestr("products.json", json.dumps(products.summary, indent=1))
 
     def add_product(self, bundle_path: str, data: IO[bytes]):
-        """
-        Add a product
-        """
         self.zipfile.writestr(bundle_path, data.read())
 
     def add_artifact(self, bundle_path: str, data: IO[bytes]):
-        """
-        Add a processing artifact
-        """
         # Currently same as add_product
         self.add_product(bundle_path, data)
