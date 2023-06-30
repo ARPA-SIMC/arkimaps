@@ -42,7 +42,7 @@ class Pantry:
         # Log of input processing operations performed
         self.process_log: List[ProcessLogEntry] = []
 
-    def summarize_inputs(self, orders: List["orders.Order"]) -> Dict[str, Any]:
+    def summarize_inputs(self, orders: List["orders.Order"], summary: "outputbundle.InputSummary"):
         """
         Return a JSON-serializable summary about input processing
         """
@@ -51,12 +51,10 @@ class Pantry:
             for input_file in order.input_files.values():
                 input_file.info.stats.used_by.add(order.recipe)
 
-        res: Dict[str, Dict[str, Any]] = {}
         for name, inps in self.inputs.items():
             for input in inps:
                 if input.stats.used_by or input.stats.computation_log:
-                    res[name] = input.stats.summarize()
-        return res
+                    summary.add(input)
 
     def log_input_processing(self, input: inputs.Input, message: str):
         """

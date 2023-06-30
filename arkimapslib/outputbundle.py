@@ -5,12 +5,27 @@ import json
 import tarfile
 import zipfile
 from pathlib import Path
-from typing import IO, Any, Dict, List, NamedTuple
+from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple
+
+if TYPE_CHECKING:
+    from .inputs import Input
 
 
 class InputSummary:
-    def __init__(self, summary: Dict[str, Any]):
-        self.summary = summary
+    """
+    Summary about inputs useed in processing
+    """
+    def __init__(self):
+        self.inputs: Dict[str, Dict[str, Any]] = {}
+
+    def add(self, inp: "Input"):
+        self.inputs[inp.name] = inp.stats.summarize()
+
+    def serialize(self) -> bytes:
+        """
+        Serialize as a bytes object
+        """
+        return json.dumps(self.inputs, indent=1).encode()
 
 
 class Products:
@@ -146,16 +161,17 @@ class TarWriter(Writer):
         self.tarfile.close()
 
     def add_input_summary(self, input_summary: InputSummary):
-        with io.BytesIO(json.dumps(input_summary.summary, indent=1).encode()) as buf:
-            info = tarfile.TarInfo(name="inputs.json")
-            info.size = len(buf.getvalue())
-            self.tarfile.addfile(tarinfo=info, fileobj=buf)
+        buf = input_summary.serialize()
+        info = tarfile.TarInfo(name="inputs.json")
+        info.size = len(buf)
+        with io.BytesIO(buf) as fd:
+            self.tarfile.addfile(tarinfo=info, fileobj=fd)
 
     def add_log(self, entries: Log):
         if not entries.entries:
             return
         # Add processing log
-        buf = entries.entries.serialize()
+        buf = entries.serialize()
         info = tarfile.TarInfo(name="log.json")
         info.size = len(buf)
         with io.BytesIO(buf) as fd:
@@ -194,7 +210,7 @@ class ZipWriter(Writer):
         self.zipfile.close()
 
     def add_input_summary(self, input_summary: InputSummary):
-        self.zipfile.writestr("inputs.json", json.dumps(input_summary.summary, indent=1))
+        self.zipfile.writestr("inputs.json", input_summary.serialize())
 
     def add_log(self, entries: Log):
         if not entries.entries:

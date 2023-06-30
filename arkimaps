@@ -175,7 +175,8 @@ class RenderMixin(FlavoursMixin):
             orders += self.kitchen.make_orders(flavour=flavour)
 
         # Prepare input summary after we're done with input processing
-        input_summary = outputbundle.InputSummary(summary=self.kitchen.pantry.summarize_inputs(orders))
+        input_summary = outputbundle.InputSummary()
+        self.kitchen.pantry.summarize_inputs(orders, input_summary)
 
         renderer = Renderer(
             config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory()
