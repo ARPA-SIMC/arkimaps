@@ -394,6 +394,7 @@ class TileOrder(Order):
                     )
                     with io.BytesIO() as buf:
                         tile.save(buf, "PNG")
+                        buf.seek(0)
                         tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
                         bundle.add_product(tar_path, buf)
                         log.info("Rendered %s to %s", self, tar_path)
