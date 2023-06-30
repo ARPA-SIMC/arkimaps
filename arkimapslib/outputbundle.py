@@ -7,11 +7,13 @@ import tarfile
 import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set
+from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Set
+
+from .inputs import ModelStep
 
 if TYPE_CHECKING:
     from .flavours import Flavour
-    from .inputs import Input, Instant, ModelStep
+    from .inputs import Input, Instant
     from .orders import Order
     from .recipes import Recipe
 
@@ -39,11 +41,20 @@ class ReftimeOrders:
     Information and statistics for all orders for a given reftime
     """
 
-    def __init__(self) -> None:
-        self.inputs: Set[str] = set()
-        self.steps: Dict["ModelStep", int] = Counter()
-        self.legend_info: Optional[Dict[str, Any]] = None
-        self.render_time_ns: int = 0
+    def __init__(
+        self,
+        *,
+        inputs: Optional[Sequence[str]] = None,
+        steps: Optional[Dict[ModelStep, int]] = None,
+        legend_info: Optional[Dict[str, Any]] = None,
+        render_time_ns: int = 0,
+    ):
+        self.inputs: Set[str] = set(inputs) if inputs else set()
+        self.steps: Dict[ModelStep, int] = Counter()
+        if steps:
+            self.steps.update(steps)
+        self.legend_info: Optional[Dict[str, Any]] = legend_info
+        self.render_time_ns: int = render_time_ns
 
     def add(self, order: "Order"):
         self.inputs.update(order.input_files.keys())
@@ -61,6 +72,12 @@ class ReftimeOrders:
                 "time_ns": self.render_time_ns,
             },
         }
+
+    @classmethod
+    def from_jsonable(cls, **kwargs) -> "ReftimeOrders":
+        render_stats = kwargs.pop("render_stats")
+        steps = kwargs.pop("steps")
+        return cls(render_time_ns=render_stats["time_ns"], steps={ModelStep(k): v for k, v in steps.items()}, **kwargs)
 
 
 class RecipeOrders:
@@ -80,6 +97,15 @@ class RecipeOrders:
             reftime.strftime("%Y-%m-%d %H:%M:%S"): stats.to_jsonable() for reftime, stats in self.by_reftime.items()
         }
 
+    @classmethod
+    def from_jsonable(cls, data: Dict[str, Any]):
+        res = cls()
+        res.by_reftime = {
+            datetime.datetime.strptime(k, "%Y-%m-%d %H:%M:%S"): ReftimeOrders.from_jsonable(**v)
+            for k, v in data.items()
+        }
+        return res
+
 
 class ProductInfo:
     """
@@ -91,12 +117,12 @@ class ProductInfo:
         *,
         recipe: Optional[str] = None,
         reftime: Optional[datetime.datetime] = None,
-        step: Optional["ModelStep"] = None,
+        step: Optional[ModelStep] = None,
         georef: Optional[Dict[str, Any]] = None,
     ):
         self.recipe: Optional[str] = recipe
         self.reftime: Optional[datetime.datetime] = reftime
-        self.step: Optional["ModelStep"] = step
+        self.step: Optional[ModelStep] = step
         self.georef: Dict[str, Any] = georef if georef is not None else {}
 
     def add_recipe(self, recipe: "Recipe"):
@@ -118,6 +144,22 @@ class ProductInfo:
         if self.georef:
             res["georef"] = self.georef
         return res
+
+    @classmethod
+    def from_jsonable(
+        cls,
+        *,
+        recipe: Optional[str] = None,
+        reftime: Optional[str] = None,
+        step: Optional[int] = None,
+        georef: Optional[Dict[str, Any]] = None,
+    ):
+        return cls(
+            recipe=recipe,
+            reftime=datetime.datetime.strptime(reftime, "%Y-%m-%d %H:%M:%S"),
+            step=step,
+            georef=georef,
+        )
 
 
 class Products:
@@ -182,8 +224,12 @@ class Log:
         """
         Serialize as a bytes object
         """
-        serializable = [e._asdict() for e in self.entries]
-        return json.dumps(serializable, indent=1).encode()
+        return json.dumps(
+            {
+                "entries": [e._asdict() for e in self.entries],
+            },
+            indent=1,
+        ).encode()
 
 
 class Reader:
@@ -196,6 +242,40 @@ class Reader:
         Return the bundle version information
         """
         raise NotImplementedError(f"{self.__class__.__name__}.version() not implemented")
+
+    def _load_json(self, path: str) -> Dict[str, Any]:
+        """
+        Load the contents of a JSON file
+        """
+        raise NotImplementedError(f"{self.__class__.__name__}.load_json() not implemented")
+
+    def input_summary(self) -> InputSummary:
+        """
+        Return the input summary information
+        """
+        summary = InputSummary()
+        summary.inputs = self._load_json("inputs.json")
+        return summary
+
+    def log(self) -> Log:
+        """
+        Return the log information
+        """
+        data = self._load_json("log.json")
+        res = Log()
+        res.entries = [LogEntry(**e) for e in data["entries"]]
+        return res
+
+    def products(self) -> Products:
+        """
+        Return the products information
+        """
+        data = self._load_json("products.json")
+        res = Products()
+        res.flavour = data["flavour"]
+        res.by_recipe = {k: RecipeOrders.from_jsonable(v) for k, v in data["recipes"].items()}
+        res.by_path = {k: ProductInfo.from_jsonable(**v) for k, v in data["products"].items()}
+        return res
 
     def find(self) -> List[str]:
         """
@@ -216,6 +296,10 @@ class TarReader(Reader):
 
     def __exit__(self, *args):
         self.tarfile.close()
+
+    def _load_json(self, path: str) -> Dict[str, Any]:
+        with self.tarfile.extractfile(path) as fd:
+            return json.load(fd)
 
     def version(self) -> str:
         with self.tarfile.extractfile("version.txt") as fd:
@@ -240,6 +324,9 @@ class ZipReader(Reader):
 
     def __exit__(self, *args):
         self.zipfile.close()
+
+    def _load_json(self, path: str) -> Dict[str, Any]:
+        return json.loads(self.zipfile.read(path))
 
     def version(self) -> str:
         return self.zipfile.read("version.txt").strip().decode()

@@ -30,7 +30,12 @@ class BundleTestsMixin:
 
             products = ob.Products()
             products.flavour = {"name": "test"}
-            # self.by_recipe: Dict[str, RecipeOrders] = defaultdict(RecipeOrders)
+            products.by_recipe["rtest"] = recipe_orders = ob.RecipeOrders()
+            recipe_orders.by_reftime[datetime.datetime(2023, 7, 1)] = ro = ob.ReftimeOrders()
+            ro.inputs.add("test")
+            ro.steps[ModelStep(17)] = 1
+            ro.legend_info = {"bar": 2}
+            ro.render_time_ns = 12345
             products.by_path["test"] = ob.ProductInfo(recipe="recipe", reftime=datetime.datetime(2023, 7, 1), step=17)
 
             with self.writer_cls(out=tf) as writer:
@@ -58,6 +63,9 @@ class BundleTestsMixin:
                 )
 
                 self.assertEqual(reader.version(), "1")
+                self.assertEqual(reader.input_summary().inputs, input_summary.inputs)
+                self.assertEqual(reader.log().entries, log.entries)
+                self.assertEqual(reader.products().to_jsonable(), products.to_jsonable())
 
     def test_add_unrendered_products(self):
         flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
