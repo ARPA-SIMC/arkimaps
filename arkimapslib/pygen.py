@@ -1,7 +1,12 @@
 # from __future__ import annotations
 import contextlib
+import inspect
+import io
+import os
+import re
 import time
-from typing import TYPE_CHECKING, IO, Generator
+from collections import defaultdict
+from typing import IO, TYPE_CHECKING, Generator, Optional
 
 if TYPE_CHECKING:
     from .orders import Order
@@ -11,52 +16,100 @@ class PyGen:
     """
     Helper to generate Python renderer code
     """
-    def __init__(self, file: IO[str], indent: int = 0):
-        self.file = file
-        self.indent = " " * indent
-        self.line("from typing import Dict, Generator, List, NamedTuple")
-        self.line("import contextlib")
-        self.line("import io")
-        self.line("import json")
-        self.line("import os")
-        self.line("import time")
-        self.empty_line()
-        self.line("class Output(NamedTuple):")
-        self.line("    name: str")
-        self.line("    relpath: str")
-        self.line("    magics_output: str")
-        self.empty_line()
+    def __init__(self):
+        # Names to import at the beginning of the script
+        self.plain_imports: list[str] = []
+        self.from_imports: dict[str, list[str]] = defaultdict(list)
+
+        # Preamble code, indexed by the names they define
+        self.preambles: dict[str, str] = {}
+
+        # Main body of the script
+        self.body = io.StringIO()
+
+        self.indent = ""
+        self.import_("Dict", "Generator", "List", "NamedTuple", from_="typing")
+        self.import_("contextlib", "io", "json", "os", "time")
+        self.preamble("Output", """
+            class Output(NamedTuple):
+                name: str
+                relpath: str
+                magics_output: str
+        """)
+
         if hasattr(time, "perf_counter_ns"):
-            self.line("perf_counter_ns = time.perf_counter_ns")
+            self.preamble("perf_counter_ns", "perf_counter_ns = time.perf_counter_ns")
         else:
             # Polyfill for Python < 3.7"
-            self.line("def perf_counter_ns() -> int:")
-            self.line("   return int(time.perf_counter() * 1000000000)")
-        self.empty_line()
-        self.line("timings: Dict[str, int] = {}")
-        self.line("outputs: List[Output] = []")
-        self.empty_line()
-        self.line("@contextlib.contextmanager")
-        self.line("def take_time(name: str) -> Generator[None, None, None]:")
-        with self.nested() as sub:
-            sub.line("start = perf_counter_ns()")
-            sub.line("try:")
-            sub.line("    yield")
-            sub.line("finally:")
-            sub.line("    timings[name] = perf_counter_ns() - start")
-        self.empty_line()
+            self.preamble("perf_counter_ns", """
+                def perf_counter_ns() -> int:
+                   return int(time.perf_counter() * 1000000000)
+            """)
+
+        self.preamble("timings", "timings: Dict[str, int] = {}")
+        self.preamble("outputs", "outputs: List[Output] = []")
+        self.preamble("take_time", """
+            @contextlib.contextmanager
+            def take_time(name: str) -> Generator[None, None, None]:
+                start = perf_counter_ns()
+                try:
+                    yield
+                finally:
+                    timings[name] = perf_counter_ns() - start
+        """)
+
+    def import_(self, *names: str, from_: Optional[str] = None):
+        """
+        Import a name at the script's head
+        """
+        if from_ is None:
+            dest = self.plain_imports
+        else:
+            dest = self.from_imports[from_]
+        for name in names:
+            if name not in dest:
+                dest.append(name)
+
+    def preamble(self, name: str, body: str, clean: bool = True):
+        if clean:
+            body = inspect.cleandoc(body).rstrip()
+        old = self.preambles.get(name)
+        if old is not None:
+            if old != body:
+                raise ValueError(f"preamble {name} already defined as {old!r} instead of {body!r}")
+            else:
+                pass
+        else:
+            self.preambles[name] = body
+
+    def write(self, file: IO[str]):
+        # Write imports
+        if self.plain_imports:
+            print("import", ", ".join(self.plain_imports), file=file)
+        for from_, names in self.from_imports.items():
+            if not names:
+                continue
+            print("from", from_, "import", ", ".join(names), file=file)
+        print(file=file)
+
+        # Write preambles
+        for body in self.preambles.values():
+            print(body, file=file)
+            print(file=file)
+
+        file.write(self.body.getvalue())
 
     def empty_line(self):
         """
         Add an empty line
         """
-        print(file=self.file)
+        print(file=self.body)
 
     def line(self, line: str):
         """
         Add a line of code
         """
-        print(self.indent, line, sep="", file=self.file)
+        print(self.indent, line, sep="", file=self.body)
 
     @contextlib.contextmanager
     def nested(self) -> Generator["PyGen", None, None]:
@@ -112,4 +165,17 @@ class PyGen:
             self.line(f"parts.append(macro.{name}({', '.join(py_parms)}))")
 
         self.line("with contextlib.redirect_stdout(io.StringIO()) as out:")
-        self.line("    macro.plot(*parts)")
+        with self.nested() as sub:
+            sub.line("macro.plot(*parts)")
+            full_relpath = os.path.join(relpath, basename) + ".png"
+            for postprocessor in order.flavour.postprocessors:
+                full_relpath = postprocessor.add_python(order, full_relpath, self)
+            self.line(f"outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
+
+    @staticmethod
+    def to_identifier(name: str) -> str:
+        """
+        Mangle any string to a valid Python identifier name
+        """
+        # See https://stackoverflow.com/questions/3303312/how-do-i-convert-a-string-to-a-valid-variable-name-in-python
+        return re.sub(r'\W+|^(?=\d)', '_', name)

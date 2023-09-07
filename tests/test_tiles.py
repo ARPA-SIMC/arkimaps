@@ -5,8 +5,9 @@ import unittest
 from collections import defaultdict
 from typing import Dict, Optional
 
+from arkimapslib import outputbundle
 from arkimapslib.kitchen import EccodesKitchen
-from arkimapslib.orders import LegendOrder, TileOrder, Order, num2deg, deg2num
+from arkimapslib.orders import LegendOrder, Order, TileOrder, deg2num, num2deg
 from arkimapslib.render import Renderer
 from arkimapslib.unittest import RecipeTestMixin
 
@@ -67,8 +68,8 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         with tempfile.NamedTemporaryFile() as tf:
-            with tarfile.open(mode="w|", fileobj=tf) as tarout:
-                rendered = renderer.render(orders, tarout)
+            with outputbundle.Writer(out=tf) as bundle:
+                rendered = renderer.render(orders, bundle)
 
             with tarfile.open(tf.name, mode="r") as tar:
                 output_names = tar.getnames()
@@ -129,8 +130,8 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         with tempfile.NamedTemporaryFile() as tf:
-            with tarfile.open(mode="w|", fileobj=tf) as tarout:
-                renderer.render(orders1, tarout)
+            with outputbundle.Writer(out=tf) as bundle:
+                renderer.render(orders1, bundle)
 
             with tarfile.open(tf.name, mode="r") as tar:
                 output_names1 = tar.getnames()
@@ -148,8 +149,8 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         with tempfile.NamedTemporaryFile() as tf:
-            with tarfile.open(mode="w|", fileobj=tf) as tarout:
-                renderer.render(orders2, tarout)
+            with outputbundle.Writer(out=tf) as bundle:
+                renderer.render(orders2, bundle)
 
             with tarfile.open(tf.name, mode="r") as tar:
                 output_names2 = tar.getnames()

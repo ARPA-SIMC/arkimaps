@@ -3,12 +3,12 @@ import io
 import logging
 import math
 import os
-import tarfile
 from collections import Counter, defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple
 
 from PIL import Image
 
+from . import outputbundle
 from .steps import StepSkipped, StepConfig, AddBasemap
 from .pygen import PyGen
 
@@ -85,7 +85,7 @@ class Order:
         self.outputs.append(output)
         self.render_time_ns += timing
 
-    def add_to_tarball(self, workdir: str, tarout: "tarfile.TarFile"):
+    def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer):
         """
         Add render results to a tarball
         """
@@ -94,8 +94,69 @@ class Order:
 
             # Move the generated image to the output tar
             path = os.path.join(workdir, output.relpath)
-            tarout.add(path, output.relpath)
+            with open(path, "rb") as data:
+                bundle.add_product(output.relpath, data)
             os.unlink(path)
+
+    def georeference(self) -> Optional[Dict[str, Any]]:
+        """
+        Return a dict with georeferencing information for the image produced by
+        this order.
+
+        Returns None of this order produces an image that cannot be
+        georeferenced.
+
+        In the case of an order that produces a larger tile that will then get
+        cut into a grid to produce the actual requested tiles, the
+        georeferencing refers to the image with the larger tile
+        """
+        for step in self.order_steps:
+            if step.name == "add_basemap":
+                try:
+                    params = step.params["params"]
+                    projection = params["subpage_map_projection"]
+                    lllon = params["subpage_lower_left_longitude"]
+                    lllat = params["subpage_lower_left_latitude"]
+                    urlon = params["subpage_upper_right_longitude"]
+                    urlat = params["subpage_upper_right_latitude"]
+                except KeyError:
+                    continue
+                break
+        else:
+            log.info("%s: Order has no add_basemap step", self)
+            return None
+
+        if not projection.startswith("EPSG:"):
+            log.info("%s: Order has still unsupported projection %s", self, projection)
+            return None
+
+        return {
+            "projection": "EPSG",
+            "epsg": int(projection[5:]),
+            "bbox": [
+                min(lllon, urlon), min(lllat, urlat),
+                max(lllon, urlon), max(lllat, urlat)]
+        }
+
+    def georeference_outputs(self) -> Optional[Dict[str, Dict[str, Any]]]:
+        """
+        Georeference not the image produced but each singoe output of this
+        order.
+
+        Return a dict mapping output relpath to georeferencing information, or
+        None if this output cannot be georeferenced
+        """
+        georef = self.georeference()
+        if georef is None:
+            return None
+
+        lonmin, latmin, lonmax, latmax = georef["bbox"]
+
+        result: Dict[str, Dict[str, Any]] = {}
+        for output in self.outputs:
+            result[output.relpath] = georef
+
+        return result
 
     @classmethod
     def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
@@ -111,16 +172,25 @@ class Order:
             by_fr[(order.flavour.name, order.recipe.name)].append(order)
 
         for (flavour_name, recipe_name), orders_fr in by_fr.items():
+            by_output = {}
             record = {
                 "flavour": kitchen.flavours[flavour_name].summarize(),
                 "recipe": kitchen.recipes.get(recipe_name).summarize(),
                 "reftimes": {},
+                "images": by_output,
             }
 
             # Group orders by reftime
             by_rt: Dict[datetime.datetime, List[Order]] = defaultdict(list)
             for order in orders_fr:
                 by_rt[order.instant.reftime].append(order)
+                for output in order.outputs:
+                    georef = order.georeference_outputs()
+                    if georef is not None:
+                        for name, info in georef.items():
+                            by_output[name] = {
+                                "georef": georef,
+                            }
 
             for reftime, orders in by_rt.items():
                 inputs: Set[str] = set()
@@ -185,8 +255,6 @@ class MapOrder(Order):
         # Destination file name (without path or .png extension)
         basename = f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
         gen.magics_renderer(function_name, self, relpath, basename)
-        full_relpath = os.path.join(relpath, basename) + ".png"
-        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
 
 
 def num2deg(xtile: int, ytile: int, zoom: int) -> Tuple[float, float]:
@@ -299,10 +367,8 @@ class TileOrder(Order):
         )
         basename = f"{self.x}-{self.y}-{self.width}-{self.height}"
         gen.magics_renderer(function_name, self, relpath, basename)
-        full_relpath = os.path.join(relpath, basename) + ".png"
-        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")
 
-    def add_to_tarball(self, workdir: str, tarout: "tarfile.TarFile"):
+    def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer):
         """
         Add render results to a tarball
         """
@@ -322,13 +388,48 @@ class TileOrder(Order):
                             (x * TILE_WIDTH_PX, y * TILE_HEIGHT_PX,
                              (x + 1) * TILE_WIDTH_PX, (y + 1) * TILE_HEIGHT_PX))
                     with io.BytesIO() as buf:
-                        tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
-                        info = tarfile.TarInfo(tar_path)
                         tile.save(buf, "PNG")
-                        info.size = buf.tell()
-                        buf.seek(0)
+                        tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+                        bundle.add_product(tar_path, buf)
                         log.info("Rendered %s to %s", self, tar_path)
-                        tarout.addfile(info, buf)
+
+    def georeference_outputs(self) -> Optional[Dict[str, Dict[str, Any]]]:
+        """
+        Georeference not the image produced but each singoe output of this
+        order.
+
+        Return a dict mapping output relpath to georeferencing information, or
+        None if this output cannot be georeferenced
+        """
+        georef = self.georeference()
+        if georef is None:
+            return None
+
+        lonmin, latmin, lonmax, latmax = georef["bbox"]
+
+        result: Dict[str, Dict[str, Any]] = {}
+        for output in self.outputs:
+            relpath, basename = os.path.split(output.relpath)
+
+            start_x, start_y, width, height = (int(x) for x in basename[:-4].split('-'))
+
+            lon_width = (lonmax - lonmin) / width
+            lat_height = (latmax - latmin) / height
+
+            # Slice the tile's georeferencing
+            for x in range(width):
+                for y in range(height):
+                    tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+
+                    bbox = [
+                        lonmin + x * lon_width, latmin + y * lat_height,
+                        lonmin + (x + 1) * lon_width, latmin + (y + 1) * lat_height]
+
+                    tile_georef = georef.copy()
+                    tile_georef["bbox"] = bbox
+                    result[tar_path] = tile_georef
+
+        return result
 
     @classmethod
     def make_orders(
@@ -462,5 +563,3 @@ class LegendOrder(Order):
         # Destination file name (without path or .png extension)
         basename = f"{self.recipe.name}_{self.flavour.name}+legend"
         gen.magics_renderer(function_name, self, relpath, basename)
-        full_relpath = os.path.join(relpath, basename) + ".png"
-        gen.line(f"    outputs.append(Output({function_name!r}, {full_relpath!r}, magics_output=out.getvalue()))")

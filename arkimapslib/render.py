@@ -11,15 +11,13 @@ from collections import deque
 from typing import (TYPE_CHECKING, Deque, Dict, Generator, Iterable, List,
                     Optional, Sequence, Set, Tuple)
 
+from . import outputbundle
 from .config import Config
 from .orders import Output
 from .pygen import PyGen
 
 if TYPE_CHECKING:
     from .orders import Order
-
-if TYPE_CHECKING:
-    import tarfile
 
 log = logging.getLogger("render")
 
@@ -93,19 +91,7 @@ class Renderer:
         for k, v in self.env_overrides.items():
             os.environ[k] = v
 
-    def print_python_preamble(self, gen: PyGen):
-        """
-        Print the preamble of the Python rendering script
-        """
-        for k, v in self.env_overrides.items():
-            gen.line(f"os.environ[{k!r}] = {v!r}")
-        gen.empty_line()
-
-        with gen.timed("import_magics") as sub:
-            sub.line("from Magics import macro")
-        gen.empty_line()
-
-    def render(self, orders: Iterable['Order'], tarout: "tarfile.TarFile") -> List["Order"]:
+    def render(self, orders: Iterable['Order'], bundle: outputbundle.Writer) -> List["Order"]:
         """
         Render the given order list, adding results to the tar file.
 
@@ -119,14 +105,14 @@ class Renderer:
             queue.append(self.write_render_script(group))
 
         if hasattr(asyncio, "run"):
-            return asyncio.run(self.render_asyncio(queue, tarout))
+            return asyncio.run(self.render_asyncio(queue, bundle))
         else:
             # Python 3.6
             loop = asyncio.get_event_loop()
-            res = loop.run_until_complete(self.render_asyncio(queue, tarout))
+            res = loop.run_until_complete(self.render_asyncio(queue, bundle))
             return res
 
-    async def render_asyncio(self, queue: Deque[str], tarout: "tarfile.TarFile") -> List["Order"]:
+    async def render_asyncio(self, queue: Deque[str], bundle: outputbundle.Writer) -> List["Order"]:
         # TODO: hardcoded default to os.cpu_count, can be configurable
         max_tasks = os.cpu_count()
         pending = set()
@@ -156,7 +142,7 @@ class Renderer:
                     continue
 
                 for order in orders:
-                    order.add_to_tarball(self.workdir, tarout)
+                    order.add_to_bundle(self.workdir, bundle)
                     rendered.append(order)
 
         return rendered
@@ -201,19 +187,31 @@ class Renderer:
         script_file = os.path.join(self.renderer_dir, f"renderer{self.renderer_sequence:03d}.py")
         self.renderer_sequence += 1
 
-        with open(script_file, "wt") as code:
-            gen = PyGen(code)
-            self.print_python_preamble(gen)
-            for idx, order in enumerate(orders):
-                name = f"order{idx}"
-                self.orders_by_name[(script_file, name)] = order
-                with gen.render_function(name) as sub:
-                    order.print_python_function(name, sub)
-                gen.empty_line()
+        gen = PyGen()
 
-            for idx, order in enumerate(orders):
-                gen.line(f"order{idx}({self.workdir!r})")
+        # Set env overrides
+        for k, v in self.env_overrides.items():
+            gen.line(f"os.environ[{k!r}] = {v!r}")
+        gen.empty_line()
+
+        # Import Magics, timing how long it takes
+        with gen.timed("import_magics") as sub:
+            sub.line("from Magics import macro")
+        gen.empty_line()
+
+        for idx, order in enumerate(orders):
+            name = f"order{idx}"
+            self.orders_by_name[(script_file, name)] = order
+            with gen.render_function(name) as sub:
+                order.print_python_function(name, sub)
             gen.empty_line()
-            gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
+
+        for idx, order in enumerate(orders):
+            gen.line(f"order{idx}({self.workdir!r})")
+        gen.empty_line()
+        gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
+
+        with open(script_file, "wt") as code:
+            gen.write(code)
 
         return script_file

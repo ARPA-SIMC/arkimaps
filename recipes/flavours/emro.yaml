@@ -20,7 +20,7 @@ flavours:
          subpage_x_length: 34
          subpage_y_length: 22
          subpage_x_position: 2
-         subpage_y_position: 1         
+         subpage_y_position: 1
          map_grid: on
          map_grid_latitude_reference: 45.0
          map_grid_longitude_reference: 0.0
@@ -39,6 +39,9 @@ flavours:
      add_geopoints:
        points: puntiCitta
  - name: emro_web
+   postprocess:
+     - type: cutshape
+       shapefile: "emro.shp"
    steps:
      add_basemap:
        params:

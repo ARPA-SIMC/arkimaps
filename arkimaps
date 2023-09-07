@@ -1,18 +1,18 @@
 #!/usr/bin/python3
 # from __future__ import annotations
 import argparse
+import contextlib
 import datetime
-import io
 import json
 import logging
 import os
 import subprocess
 import sys
-import tarfile
 import time
 from collections import defaultdict
 from typing import List, Optional
 
+from arkimapslib import outputbundle
 from arkimapslib.cmdline import Command, Fail, Success
 # if TYPE_CHECKING:
 from arkimapslib.flavours import Flavour
@@ -105,11 +105,15 @@ class RenderMixin:
         """
         return self.args.styles
 
-    def open_output(self):
+    @contextlib.contextmanager
+    def open_output(self) -> outputbundle.Writer:
         if self.args.output:
-            return tarfile.open(self.args.output, mode="w|")
+            with open(self.args.output, "wb") as out:
+                with outputbundle.Writer(out=out) as bundle:
+                    yield bundle
         else:
-            return tarfile.open(mode="w|", fileobj=sys.stdout.buffer)
+            with outputbundle.Writer(out=sys.stdout.buffer) as bundle:
+                yield bundle
 
     def parse_flavours(self) -> List[Flavour]:
         """
@@ -135,38 +139,30 @@ class RenderMixin:
             orders += self.kitchen.make_orders(flavour=flavour)
 
         # Prepare input summary after we're done with input processing
-        input_summary = self.kitchen.pantry.summarize_inputs(orders)
+        input_summary = outputbundle.InputSummary(
+                summary=self.kitchen.pantry.summarize_inputs(orders))
 
         renderer = Renderer(
                 config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
 
         rendered: List[Order] = []
-        with self.open_output() as tarout:
+        with self.open_output() as bundle:
             # Add input summary
-            with io.BytesIO(json.dumps(input_summary, indent=1).encode()) as buf:
-                info = tarfile.TarInfo(name="inputs.json")
-                info.size = len(buf.getvalue())
-                tarout.addfile(tarinfo=info, fileobj=buf)
+            bundle.add_input_summary(input_summary)
 
             # Perform rendering
-            rendered = renderer.render(orders, tarout)
+            rendered = renderer.render(orders, bundle)
 
-            if self.log_collector.entries:
-                # Add processing log
-                with io.BytesIO(json.dumps(self.log_collector.entries, indent=1).encode()) as buf:
-                    info = tarfile.TarInfo(name="log.json")
-                    info.size = len(buf.getvalue())
-                    tarout.addfile(tarinfo=info, fileobj=buf)
+            log_entries = outputbundle.Log(entries=self.log_collector.entries)
+            bundle.add_log(log_entries)
 
             # Add products summary
-            order_summary = Order.summarize_orders(self.kitchen, rendered)
-            with io.BytesIO(json.dumps(order_summary, indent=1).encode()) as buf:
-                info = tarfile.TarInfo(name="products.json")
-                info.size = len(buf.getvalue())
-                tarout.addfile(tarinfo=info, fileobj=buf)
+            order_summary = outputbundle.Products(
+                    summary=Order.summarize_orders(self.kitchen, rendered))
+            bundle.add_products(order_summary)
 
             # Let the Pantry store processing artifacts if it has any
-            self.kitchen.pantry.store_processing_artifacts(tarout)
+            self.kitchen.pantry.store_processing_artifacts(bundle)
 
     def print_render_plan(self):
         """

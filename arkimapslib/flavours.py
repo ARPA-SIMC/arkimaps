@@ -2,16 +2,17 @@
 import fnmatch
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
 
 from . import inputs, orders, recipes
 from .config import Config
 from .lint import Lint
+from .postprocess import Postprocessor, postprocessors
 from .steps import Step, StepConfig, StepSkipped
 
 if TYPE_CHECKING:
     from . import pantry
-    from .inputs import InputFile
+    from .inputs import InputFile, Instant
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -28,14 +29,15 @@ class Flavour:
                  config: Config,
                  name: str,
                  defined_in: str,
-                 steps: Kwargs = None,
+                 steps: Optional[Kwargs] = None,
+                 postprocess: Optional[Kwargs] = None,
                  recipes_filter: Optional[List[str]] = None,
                  **kw):
         self.config = config
         self.name = name
         self.defined_in = defined_in
 
-        self.recipes_filter: List[re.compile] = []
+        self.recipes_filter: List[re.Pattern] = []
         if recipes_filter is not None:
             if not isinstance(recipes_filter, list):
                 raise ValueError(f"{defined_in}: recipes_filter is {type(recipes_filter).__name__} instead of list")
@@ -48,13 +50,22 @@ class Flavour:
             for name, options in steps.items():
                 self.steps[name] = StepConfig(name, options)
 
+        self.postprocessors: List[Postprocessor] = []
+        if postprocess is not None:
+            for desc in postprocess:
+                name = desc.pop("type", None)
+                if name is None:
+                    raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
+                self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
+
     @classmethod
     def lint(
             cls, lint: Lint, *,
             config: Config,
             name: str,
             defined_in: str,
-            steps: Kwargs = None,
+            steps: Optional[Kwargs] = None,
+            postprocess: Optional[Kwargs] = None,
             recipes_filter: Optional[List[str]] = None,
             **kwargs):
         """
@@ -62,6 +73,17 @@ class Flavour:
         """
         for k, v in kwargs.items():
             lint.warn_flavour(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
+
+        if postprocess is not None:
+            if not isinstance(postprocess, list):
+                lint.warn_flavour("`postprocess` is not a list", defined_in=defined_in, name=name)
+            else:
+                for desc in postprocess:
+                    name = desc.pop("type", None)
+                    if name is None:
+                        lint.warn_flavour("Postprocessor listed without 'type'", defined_in=defined_in, name=name)
+                        continue
+                    postprocessors.lint(lint=lint, name=name, defined_in=defined_in, **desc)
 
     def __str__(self):
         return self.name
@@ -77,26 +99,15 @@ class Flavour:
         }
 
     @classmethod
-    def create(cls, *,
-               config: Config,
-               name: str,
-               defined_in: str,
-               steps: Kwargs = None,
-               recipes_filter: Optional[List[str]] = None,
-               lint: Optional[Lint] = None,
-               **kw):
-        if 'tile' in kw:
+    def create(cls, *, lint: Optional[Lint] = None, **kwargs):
+        tile_cls: Type[Flavour]
+        if 'tile' in kwargs:
             tile_cls = TiledFlavour
         else:
             tile_cls = SimpleFlavour
         if lint:
-            tile_cls.lint(
-                lint,
-                config=config, name=name, defined_in=defined_in, steps=steps,
-                recipes_filter=recipes_filter, **kw)
-        return tile_cls(
-                config=config, name=name, defined_in=defined_in,
-                steps=steps, recipes_filter=recipes_filter, **kw)
+            tile_cls.lint(lint, **kwargs)
+        return tile_cls(**kwargs)
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """
@@ -164,9 +175,9 @@ class Flavour:
         Scan a recipe and return a set with all the inputs it needs
         """
         # For each output instant, map inputs names to InputFile structures
-        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]] = None
+        inputs: Optional[Dict["Instant", Dict[str, "InputFile"]]] = None
         # Collection of input name to InputFile mappings used by all output steps
-        inputs_for_all_instants: Dict[str, "inputs.InputFile"] = {}
+        inputs_for_all_instants: Dict[str, "InputFile"] = {}
 
         input_names = self.get_inputs_for_recipe(recipe)
         log.debug("flavour %s: recipe %s uses inputs: %r", self.name, recipe.name, input_names)
@@ -174,7 +185,7 @@ class Flavour:
         # Find the intersection of all steps available for all inputs needed
         for input_name in input_names:
             # Find available steps for this input
-            output_instants: Dict[Optional["inputs.Instant"], "InputFile"]
+            output_instants: Dict[Optional["Instant"], "InputFile"]
             output_instants = pantry.get_instants(input_name)
 
             # Special handling for inputs that are not step-specific and
@@ -258,7 +269,7 @@ class TiledFlavour(Flavour):
      * ``lon_min: Float``: minimum longitude
      * ``lon_max: Float``: maximum longitude
     """
-    def __init__(self, *, tile: Dict[str, Any] = None, **kw):
+    def __init__(self, *, tile: Dict[str, Any], **kw):
         super().__init__(**kw)
         self.zoom_min = int(tile.get("zoom_min", 3))
         self.zoom_max = int(tile.get("zoom_max", 5))
@@ -270,7 +281,7 @@ class TiledFlavour(Flavour):
     @classmethod
     def lint(
             cls, lint: Lint, *,
-            tile: Dict[str, Any] = None,
+            tile: Dict[str, Any],
             **kwargs):
         super().lint(lint, **kwargs)
 
