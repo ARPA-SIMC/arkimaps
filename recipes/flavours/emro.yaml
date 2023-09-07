@@ -48,7 +48,7 @@ flavours:
          # (order: lower left lon, upper right lat, upper right lon, lower left lat)
          # gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 1023599 5643995 1428042 5421319 plot.png out.tiff
          page_id_line: off
-         output_width: 1280
+         output_width: 2000
          output_cairo_transparent_background: True
          subpage_map_projection: EPSG:3857
          subpage_lower_left_longitude: 9.19514626509458
@@ -58,12 +58,12 @@ flavours:
          page_frame: off
          subpage_frame: off
          skinny_mode: on
-         page_x_length: 7.265
-         page_y_length: 4
-         super_page_x_length: 7.265
-         super_page_y_length: 4
-         subpage_x_length: 7.265
-         subpage_y_length: 4
+         page_x_length: 40
+         page_y_length: 22
+         super_page_x_length: 40
+         super_page_y_length: 22
+         subpage_x_length: 40
+         subpage_y_length: 22
          subpage_x_position: 0
          subpage_y_position: 0
          map_grid: off
