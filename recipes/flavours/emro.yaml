@@ -41,7 +41,7 @@ flavours:
  - name: emro_web
    postprocess:
      - type: cutshape
-       shapefile: "er.shp"
+       shapefile: "emro.shp"
    steps:
      add_basemap:
        params:
