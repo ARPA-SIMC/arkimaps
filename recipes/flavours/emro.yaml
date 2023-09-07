@@ -38,15 +38,6 @@ flavours:
          map_coastline_resolution: high
      add_geopoints:
        points: puntiCitta
-   postprocess:
-     - type: watermark
-       message: "Test image"
-       x: -10
-       y: -10
-       size: 16
-       font: LiberationSans-Regular.ttf
-       color: "#decafe99"
-       anchor: rs
  - name: emro_web
    postprocess:
      - type: cutshape
