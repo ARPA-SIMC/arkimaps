@@ -2,6 +2,8 @@
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
 * Added `arkimaps lint` to do consistency checking of recipes (#146)
+* Added postprocessors
+* Added postprocessor "cutshape" (#74)
 
 # New in version 1.5
 
