@@ -1,4 +1,4 @@
-# New in -unreleased version-
+# New in version 1.6
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
 * Added `arkimaps lint` to do consistency checking of recipes (#146)
