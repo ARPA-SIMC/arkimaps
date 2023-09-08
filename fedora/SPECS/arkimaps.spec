@@ -15,6 +15,7 @@ BuildRequires:  python3
 BuildRequires:  python3-setuptools
 BuildRequires:  python3-devel
 BuildRequires:  python3-pyyaml
+BuildRequires:  python3-gdal
 
 # for tests
 BuildRequires:  arkimet
