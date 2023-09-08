@@ -28,6 +28,8 @@ BuildRequires:  eccodes-devel
 Requires:       python3
 Requires:       python3-Magics
 Requires:       python3-eccodes
+Requires:       python3-pyyaml
+Requires:       python3-gdal
 
 %description
 Automated framework to render GRIB1/2 data with ECMWF's Magics,
