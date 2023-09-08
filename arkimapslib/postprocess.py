@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import TYPE_CHECKING, Tuple, Union
+from typing import TYPE_CHECKING, Tuple, Union, List
 
 import osgeo
 from osgeo import osr
@@ -131,7 +131,7 @@ class Watermark(Postprocessor):
             message: str,
             font: str, size: int = 10,
             x: int, y: int, anchor: str = "la",
-            color: Union[str, list[str]] = "#fff0",
+            color: Union[str, List[str]] = "#fff0",
             **kwargs):
         super().lint(lint, **kwargs)
         if not isinstance(message, str):

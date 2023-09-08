@@ -6,7 +6,7 @@ import os
 import re
 import time
 from collections import defaultdict
-from typing import IO, TYPE_CHECKING, Generator, Optional
+from typing import IO, TYPE_CHECKING, Generator, Optional, List
 
 if TYPE_CHECKING:
     from .orders import Order
@@ -18,8 +18,8 @@ class PyGen:
     """
     def __init__(self):
         # Names to import at the beginning of the script
-        self.plain_imports: list[str] = []
-        self.from_imports: dict[str, list[str]] = defaultdict(list)
+        self.plain_imports: List[str] = []
+        self.from_imports: dict[str, List[str]] = defaultdict(list)
 
         # Preamble code, indexed by the names they define
         self.preambles: dict[str, str] = {}
