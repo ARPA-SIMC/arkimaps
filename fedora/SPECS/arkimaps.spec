@@ -52,14 +52,9 @@ using a repository of simple YAML recipes.
 install -D -m0755 arkimet-postprocessor %{buildroot}%{_libdir}/arkimet/%{name}
 
 #install recipes in /usr/share/arkimaps/
-mkdir -p %{buildroot}%{_datadir}/%{name}/recipes
-install -D -m664 recipes/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/
-mkdir -p %{buildroot}%{_datadir}/%{name}/recipes/flavours
-install -D -m664 recipes/flavours/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/flavours/
-mkdir -p %{buildroot}%{_datadir}/%{name}/recipes/standalone
-install -D -m664 recipes/standalone/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/standalone/
-mkdir -p %{buildroot}%{_datadir}/%{name}/recipes/tiles
-install -D -m664 recipes/tiles/*.yaml %{buildroot}%{_datadir}/%{name}/recipes/tiles/
+install -d -m0755 %{buildroot}%{_datadir}/%{name}/
+cp -R recipes %{buildroot}%{_datadir}/%{name}/
+# chmod -R 444 %{buildroot}%{_datadir}/%{name}/recipes
 
 #generate recipes doc
 mkdir -p %{buildroot}%{_docdir}/%{name}/
