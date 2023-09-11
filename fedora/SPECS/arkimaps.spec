@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -86,6 +86,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Mon Sep 11 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.6-2
+- Fix recipes installation
+
 * Fri Sep  8 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.6-1
 - Implemented recipe inheritance (#123)
 - Added `arkimaps lint` to do consistency checking of recipes (#146)
