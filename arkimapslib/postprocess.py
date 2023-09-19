@@ -269,7 +269,8 @@ class CutShape(Postprocessor):
         # successive con il bbox risultante sono delegate a GDAL (e.g.
         # SetGeoTransform) non importa più l'ordine in quanto è consistente con
         # la versione di GDAL stessa.
-        if osgeo.gdal_version[0] < 3:
+        # Non posso usare osgeo.gdal_version perché il simbolo è stato introdotto dalla versione 3.3.0
+        if int(osgeo.__version__.split(".")[0]) < 3:
             lr = transform.TransformPoint(bbox[0], bbox[1])
             ul = transform.TransformPoint(bbox[2], bbox[3])
         else:
