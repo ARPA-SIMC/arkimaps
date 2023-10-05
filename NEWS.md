@@ -1,3 +1,7 @@
+# New in version 1.7
+
+* Support GDAL < 3.3.0 version check in Python API
+
 # New in version 1.6
 
 * Implemented [recipe inheritance](doc/derived_recipe.md) (#123)
