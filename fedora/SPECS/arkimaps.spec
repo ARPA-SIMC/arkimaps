@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -16,6 +16,7 @@ BuildRequires:  python3-setuptools
 BuildRequires:  python3-devel
 BuildRequires:  python3-pyyaml
 BuildRequires:  python3-gdal
+BuildRequires:  python3-pillow
 
 # for tests
 BuildRequires:  arkimet
@@ -30,6 +31,7 @@ Requires:       python3-Magics
 Requires:       python3-eccodes
 Requires:       python3-pyyaml
 Requires:       python3-gdal
+Requires:       python3-pillow
 
 %description
 Automated framework to render GRIB1/2 data with ECMWF's Magics,
@@ -86,6 +88,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Fri Oct 12 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.7-2
+- Add dependency to python3-pillow
+
 * Thu Oct  5 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.7-1
 - Support GDAL < 3.3.0 version check in Python API
 
