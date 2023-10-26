@@ -112,6 +112,11 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
             '2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png'])
 
+        # Test summary
+        summary = Order.summarize_orders(self.kitchen, rendered)
+        imgsummary = summary[0]["images"]["2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/24.png"]
+        self.assertIn("projection", imgsummary["georef"])
+
     def test_render_twice(self):
         self.kitchen.config.tile_group_width = 2
         self.kitchen.config.tile_group_height = 2
