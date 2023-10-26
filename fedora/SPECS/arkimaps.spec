@@ -1,9 +1,9 @@
-%global releaseno 2
+%global releaseno 1
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.7
+Version:        1.8
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -88,6 +88,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Oct 26 2023 Daniele Branchini <dbranchini@arpae.it> - 1.8-1
+- Fix redundancy in product summary (#153)
+
 * Fri Oct 12 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.7-2
 - Add dependency to python3-pillow
 
