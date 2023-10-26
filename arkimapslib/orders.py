@@ -189,7 +189,7 @@ class Order:
                     if georef is not None:
                         for name, info in georef.items():
                             by_output[name] = {
-                                "georef": georef,
+                                "georef": info,
                             }
 
             for reftime, orders in by_rt.items():
