@@ -43,15 +43,37 @@ def keep_only_first_grib(fname: str):
             eccodes.codes_release(gid)
 
 
-class Instant(NamedTuple):
+class Instant:
     """
     Identifies an instant of time for which we have data for an input.
 
     Note that different combinations of reftime+step that would map to the same
     physical instant of time are considered distinct for arkimaps purposes
     """
-    reftime: datetime.datetime
-    step: int
+    __slots__ = ("_reftime", "_step")
+
+    _reftime: datetime.datetime
+    _step: int
+
+    def __init__(self, reftime: datetime.datetime, step: int):
+        self._reftime = reftime
+        self._step = step
+
+    @property
+    def reftime(self):
+        return self._reftime
+
+    @property
+    def step(self):
+        return self._step
+
+    def __eq__(self, other):
+        if not isinstance(other, Instant):
+            return NotImplemented
+        return self._reftime == other._reftime and self._step == other._step
+
+    def __hash__(self) -> int:
+        return hash((self._reftime, self._step))
 
     def __str__(self):
         return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step}"
