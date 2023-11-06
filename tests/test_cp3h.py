@@ -14,7 +14,7 @@ class CP3HMixin:
 
         orders = self.make_orders()
         self.assertGreaterEqual(len(orders), 4)
-        orders = [o for o in orders if o.recipe.name == "cp3h" and o.instant.step == 12]
+        orders = [o for o in orders if o.recipe.name == "cp3h" and o.instant.step_is("12h")]
         self.assertEqual(len(orders), 1)
 
         self.assertRenders(orders[0])

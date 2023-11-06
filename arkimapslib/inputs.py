@@ -89,6 +89,22 @@ class Instant:
         """
         return self._step == 0
 
+    def step_is(self, val: str) -> bool:
+        """
+        Return True if the step matches the given value.
+
+        The value has a time unit suffix. Currently supported:
+
+        * ``h``: hours
+        """
+        if not isinstance(val, str):
+            raise TypeError(f"val {val!r} is not a string")
+        if len(val) < 2:
+            raise ValueError(f"val {val!r} is too short to be a number plus unit suffix")
+        if val[-1] != 'h':
+            raise ValueError(f"unsupported time unit suffx: {val[-1]!r}")
+        return self._step == int(val[:-1])
+
     def pantry_suffix(self) -> str:
         """
         Return a suffix that identifies a product for this instance in the
