@@ -60,11 +60,16 @@ class Instant:
         self._step = step
 
     @property
-    def reftime(self):
+    def reftime(self) -> datetime.datetime:
+        """
+        Access the model reference time.
+        """
         return self._reftime
 
     @property
     def step(self):
+        import warnings
+        warnings.warn("Do not access step directly", DeprecationWarning, stacklevel=2)
         return self._step
 
     def __eq__(self, other):
@@ -79,11 +84,26 @@ class Instant:
         return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step}"
 
     def pantry_suffix(self) -> str:
-        return (f"_{self.reftime.year}_{self.reftime.month}_{self.reftime.day}"
-                f"_{self.reftime.hour}_{self.reftime.minute}_{self.reftime.second}+{self.step}")
+        """
+        Return a suffix that identifies a product for this instance in the
+        pantry
+        """
+        return (f"_{self._reftime.year}_{self._reftime.month}_{self._reftime.day}"
+                f"_{self._reftime.hour}_{self._reftime.minute}_{self._reftime.second}"
+                f"+{self._step}")
 
     def product_suffix(self) -> str:
-        return (f"_{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step:03d}")
+        """
+        Return a suffix that identifies a product for this instance in the
+        output
+        """
+        return f"_{self.reftime:%Y-%m-%dT%H:%M:%S}{self.step_suffix()}"
+
+    def step_suffix(self) -> str:
+        """
+        Return a suffix that can be used in filenames to identify a step
+        """
+        return f"+{self._step:03d}"
 
 
 class InputTypes(TypeRegistry["Input"]):

@@ -253,7 +253,7 @@ class MapOrder(Order):
         # Destination directory inside the output
         relpath = f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe.name}_{self.flavour.name}"
         # Destination file name (without path or .png extension)
-        basename = f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
+        basename = f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}"
         gen.magics_renderer(function_name, self, relpath, basename)
 
 
