@@ -209,3 +209,33 @@ class TestInputs(unittest.TestCase):
 
             self.assertEqual(inp.abspath, os.path.join(static_dir, "testfile"))
             self.assertEqual(inp.path, "testfile")
+
+
+class TestInstant(unittest.TestCase):
+    def test_access(self):
+        i = Instant(datetime.datetime(2023, 1, 1), 12)
+        self.assertEqual(i.reftime, datetime.datetime(2023, 1, 1))
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(i.step, 12)
+
+        self.assertTrue(i == Instant(datetime.datetime(2023, 1, 1), 12))
+        self.assertTrue(i != Instant(datetime.datetime(2023, 1, 1), 11))
+        self.assertTrue(i != Instant(datetime.datetime(2023, 1, 2), 12))
+
+        self.assertTrue(Instant(datetime.datetime(2023, 1, 1), 0).step_is_zero())
+        self.assertFalse(Instant(datetime.datetime(2023, 1, 1), 24).step_is_zero())
+
+        self.assertTrue(Instant(datetime.datetime(2023, 1, 1), 0).step_is("0h"))
+        self.assertTrue(Instant(datetime.datetime(2023, 1, 1), 12).step_is("12h"))
+
+        i = Instant(datetime.datetime(2023, 1, 1), 12)
+        with self.assertRaises(TypeError):
+            i.step_is(12)
+        with self.assertRaises(ValueError):
+            i.step_is("720m")
+        with self.assertRaises(ValueError):
+            i.step_is("43200s")
+        with self.assertRaises(ValueError):
+            i.step_is("")
+        with self.assertRaises(ValueError):
+            i.step_is("h")
