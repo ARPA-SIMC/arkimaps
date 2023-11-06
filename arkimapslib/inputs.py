@@ -83,6 +83,12 @@ class Instant:
     def __str__(self):
         return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step}"
 
+    def step_is_zero(self) -> bool:
+        """
+        Return True if the step is zero
+        """
+        return self._step == 0
+
     def pantry_suffix(self) -> str:
         """
         Return a suffix that identifies a product for this instance in the
@@ -888,7 +894,7 @@ class GroundToMSL(GribSetMixin, Derived):
 
         z_input: InputFile
         for instant, input_file in pantry.get_instants(self.inputs[0]).items():
-            if instant.step != 0:
+            if not instant.step_is_zero():
                 log.warning("input %s: ignoring input %s with step %d instead of 0",
                             self.name, input_file.info.name, instant.step)
             z_input = input_file
