@@ -241,10 +241,10 @@ class MapOrder(Order):
             self.order_steps.append(s)
 
     def __str__(self):
-        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
+        return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}"
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({os.path.basename(self.recipe.name)}+{self.instant.step:03d})"
+        return f"{self.__class__.__name__}({os.path.basename(self.recipe.name)}{self.instant.step_suffix()})"
 
     def print_python_function(self, function_name: str, gen: PyGen):
         """
@@ -350,7 +350,7 @@ class TileOrder(Order):
             self.order_steps.append(compiled_step)
 
     def __str__(self):
-        return (f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/"
+        return (f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/"
                 f"{self.z}/{self.x}/{self.y}+w{self.width}h{self.height}")
 
     def __repr__(self):
@@ -362,7 +362,7 @@ class TileOrder(Order):
         """
         relpath = (
             f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/"
-            f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}/"
+            f"{self.recipe.name}_{self.flavour.name}{self.instant.step_suffix()}/"
             f"{self.z}"
         )
         basename = f"{self.x}-{self.y}-{self.width}-{self.height}"
@@ -549,7 +549,7 @@ class LegendOrder(Order):
         }
 
     def __str__(self):
-        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/legend"
+        return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/legend"
 
     def __repr__(self):
         return f"{self.__class__.__name__}({str(self)})"

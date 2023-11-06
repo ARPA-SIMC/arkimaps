@@ -81,7 +81,7 @@ class Instant:
         return hash((self._reftime, self._step))
 
     def __str__(self):
-        return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self.step}"
+        return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self._step}"
 
     def step_is_zero(self) -> bool:
         """
@@ -895,8 +895,8 @@ class GroundToMSL(GribSetMixin, Derived):
         z_input: InputFile
         for instant, input_file in pantry.get_instants(self.inputs[0]).items():
             if not instant.step_is_zero():
-                log.warning("input %s: ignoring input %s with step %d instead of 0",
-                            self.name, input_file.info.name, instant.step)
+                log.warning("input %s: ignoring input %s with step %s instead of 0",
+                            self.name, input_file.info.name, instant.step_suffix())
             z_input = input_file
             break
         else:
