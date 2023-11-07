@@ -128,36 +128,19 @@ class Instant:
 
     @property
     def step(self):
-        import warnings
-        warnings.warn("Do not access step directly", DeprecationWarning, stacklevel=2)
-        return self._step._value
+        return self._step
 
     def __eq__(self, other):
-        if not isinstance(other, Instant):
+        if isinstance(other, Instant):
+            return self._reftime == other._reftime and self._step == other._step
+        else:
             return NotImplemented
-        return self._reftime == other._reftime and self._step == other._step
 
     def __hash__(self) -> int:
         return hash((self._reftime, self._step))
 
     def __str__(self):
-        return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self._step._value}"
-
-    def step_is_zero(self) -> bool:
-        """
-        Return True if the step is zero
-        """
-        return self._step.is_zero()
-
-    def step_is(self, val: Union[int, str, ModelStep]) -> bool:
-        """
-        Return True if the step matches the given value.
-
-        The value has a time unit suffix. Currently supported:
-
-        * ``h``: hours
-        """
-        return self._step == val
+        return f"{self._reftime:%Y-%m-%dT%H:%M:%S}+{self._step._value}"
 
     def pantry_suffix(self) -> str:
         """
@@ -964,7 +947,7 @@ class GroundToMSL(GribSetMixin, Derived):
 
         z_input: InputFile
         for instant, input_file in pantry.get_instants(self.inputs[0]).items():
-            if not instant.step_is_zero():
+            if not instant.step.is_zero():
                 log.warning("input %s: ignoring input %s with step %s instead of 0",
                             self.name, input_file.info.name, instant.step_suffix())
             z_input = input_file

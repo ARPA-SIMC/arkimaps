@@ -226,7 +226,13 @@ class TestModelStep(unittest.TestCase):
         self.assertEqual(str(ms), "12h")
 
         with self.assertRaises(ValueError):
-            ms = ModelStep("30m")
+            ModelStep("30m")
+        with self.assertRaises(ValueError):
+            ModelStep("43200s")
+        with self.assertRaises(ValueError):
+            ModelStep("")
+        with self.assertRaises(ValueError):
+            ModelStep("h")
 
     def test_from_modelstep(self):
         ms = ModelStep(ModelStep("0h"))
@@ -247,6 +253,15 @@ class TestModelStep(unittest.TestCase):
         self.assertEqual(ms, "12h")
         self.assertEqual(ms, ModelStep("12h"))
         self.assertFalse(ms.is_zero())
+
+        with self.assertRaises(ValueError):
+            ms == "720m"
+        with self.assertRaises(ValueError):
+            ms == "43200s"
+        with self.assertRaises(ValueError):
+            ms == ""
+        with self.assertRaises(ValueError):
+            ms == "h"
 
     def test_suffix(self):
         ms = ModelStep(0)
@@ -270,26 +285,8 @@ class TestInstant(unittest.TestCase):
     def test_access(self):
         i = Instant(datetime.datetime(2023, 1, 1), 12)
         self.assertEqual(i.reftime, datetime.datetime(2023, 1, 1))
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(i.step, 12)
+        self.assertEqual(i.step, 12)
 
         self.assertTrue(i == Instant(datetime.datetime(2023, 1, 1), 12))
         self.assertTrue(i != Instant(datetime.datetime(2023, 1, 1), 11))
         self.assertTrue(i != Instant(datetime.datetime(2023, 1, 2), 12))
-
-        self.assertTrue(Instant(datetime.datetime(2023, 1, 1), 0).step_is_zero())
-        self.assertFalse(Instant(datetime.datetime(2023, 1, 1), 24).step_is_zero())
-
-        self.assertTrue(Instant(datetime.datetime(2023, 1, 1), 0).step_is("0h"))
-        self.assertTrue(Instant(datetime.datetime(2023, 1, 1), 12).step_is("12h"))
-
-        i = Instant(datetime.datetime(2023, 1, 1), 12)
-        self.assertTrue(i.step_is(12))
-        with self.assertRaises(ValueError):
-            i.step_is("720m")
-        with self.assertRaises(ValueError):
-            i.step_is("43200s")
-        with self.assertRaises(ValueError):
-            i.step_is("")
-        with self.assertRaises(ValueError):
-            i.step_is("h")
