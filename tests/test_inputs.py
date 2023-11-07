@@ -12,7 +12,7 @@ import numpy
 
 import arkimapslib.inputs
 from arkimapslib.config import Config
-from arkimapslib.inputs import Instant, Input
+from arkimapslib.inputs import Instant, Input, ModelStep
 from arkimapslib.pantry import Pantry, DiskPantry
 
 
@@ -211,6 +211,61 @@ class TestInputs(unittest.TestCase):
             self.assertEqual(inp.path, "testfile")
 
 
+class TestModelStep(unittest.TestCase):
+    def test_from_int(self):
+        ms = ModelStep(0)
+        self.assertEqual(str(ms), "0h")
+        ms = ModelStep(12)
+        self.assertEqual(str(ms), "12h")
+
+    def test_from_str(self):
+        ms = ModelStep("0h")
+        self.assertEqual(str(ms), "0h")
+
+        ms = ModelStep("12h")
+        self.assertEqual(str(ms), "12h")
+
+        with self.assertRaises(ValueError):
+            ms = ModelStep("30m")
+
+    def test_from_modelstep(self):
+        ms = ModelStep(ModelStep("0h"))
+        self.assertEqual(str(ms), "0h")
+
+        ms = ModelStep(ModelStep("12h"))
+        self.assertEqual(str(ms), "12h")
+
+    def test_equals(self):
+        ms = ModelStep(0)
+        self.assertEqual(ms, 0)
+        self.assertEqual(ms, "0h")
+        self.assertEqual(ms, ModelStep("0h"))
+        self.assertTrue(ms.is_zero())
+
+        ms = ModelStep(12)
+        self.assertEqual(ms, 12)
+        self.assertEqual(ms, "12h")
+        self.assertEqual(ms, ModelStep("12h"))
+        self.assertFalse(ms.is_zero())
+
+    def test_suffix(self):
+        ms = ModelStep(0)
+        self.assertEqual(ms.suffix(), "+000")
+        ms = ModelStep(12)
+        self.assertEqual(ms.suffix(), "+012")
+
+    def test_hashable(self):
+        steps = {
+            ModelStep(0),
+            ModelStep(12),
+        }
+        self.assertEqual(len(steps), 2)
+        self.assertEqual(steps, {
+            ModelStep(0),
+            ModelStep(12),
+        })
+
+
 class TestInstant(unittest.TestCase):
     def test_access(self):
         i = Instant(datetime.datetime(2023, 1, 1), 12)
@@ -229,8 +284,7 @@ class TestInstant(unittest.TestCase):
         self.assertTrue(Instant(datetime.datetime(2023, 1, 1), 12).step_is("12h"))
 
         i = Instant(datetime.datetime(2023, 1, 1), 12)
-        with self.assertRaises(TypeError):
-            i.step_is(12)
+        self.assertTrue(i.step_is(12))
         with self.assertRaises(ValueError):
             i.step_is("720m")
         with self.assertRaises(ValueError):

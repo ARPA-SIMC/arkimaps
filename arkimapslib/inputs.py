@@ -43,6 +43,66 @@ def keep_only_first_grib(fname: str):
             eccodes.codes_release(gid)
 
 
+class ModelStep:
+    """
+    Identifies a step of a model, as a time span value and unit
+    """
+    __slots__ = ("_value")
+
+    _value: int
+
+    def __init__(self, value: Union[int, str, "ModelStep"]):
+        v, u = self._parse_value(value)
+        if u != 'h':
+            raise ValueError(f"only 'h' currently supported as a time unit (found {u!r})")
+        self._value = v
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return self._value == other
+        elif isinstance(other, str):
+            v, u = self._parse_value(other)
+            if u != 'h':
+                raise ValueError(f"only 'h' currently supported as a time unit (found {u!r})")
+            return self._value == v
+        elif isinstance(other, ModelStep):
+            return self._value == other._value
+        else:
+            return NotImplemented
+
+    def __hash__(self) -> int:
+        return hash(self._value)
+
+    def __str__(self) -> str:
+        return f"{self._value}h"
+
+    def is_zero(self) -> bool:
+        """Test if the step is zero, regardless of unit."""
+        return self._value == 0
+
+    def suffix(self) -> str:
+        """
+        Return a suffix that can be used in filenames to identify a step
+        """
+        return f"+{self._value:03d}"
+
+    @staticmethod
+    def _parse_value(value: Union[int, str, "ModelStep"]):
+        """
+        Parse a value (optionally with suffix) into a value and a unit
+        """
+        if isinstance(value, int):
+            return value, "h"
+        elif isinstance(value, ModelStep):
+            return value._value, "h"
+        elif isinstance(value, str):
+            if len(value) < 2:
+                raise ValueError(f"value {value!r} is too short to be a number plus unit suffix")
+            return int(value[:-1]), value[-1]
+
+        raise TypeError(f"value {value!r} is neither an int nor a str nor a ModelStep")
+
+
 class Instant:
     """
     Identifies an instant of time for which we have data for an input.
@@ -53,11 +113,11 @@ class Instant:
     __slots__ = ("_reftime", "_step")
 
     _reftime: datetime.datetime
-    _step: int
+    _step: ModelStep
 
-    def __init__(self, reftime: datetime.datetime, step: int):
+    def __init__(self, reftime: datetime.datetime, step: Union[int, str, ModelStep]):
         self._reftime = reftime
-        self._step = step
+        self._step = ModelStep(step)
 
     @property
     def reftime(self) -> datetime.datetime:
@@ -70,7 +130,7 @@ class Instant:
     def step(self):
         import warnings
         warnings.warn("Do not access step directly", DeprecationWarning, stacklevel=2)
-        return self._step
+        return self._step._value
 
     def __eq__(self, other):
         if not isinstance(other, Instant):
@@ -81,15 +141,15 @@ class Instant:
         return hash((self._reftime, self._step))
 
     def __str__(self):
-        return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self._step}"
+        return f"{self.reftime:%Y-%m-%dT%H:%M:%S}+{self._step._value}"
 
     def step_is_zero(self) -> bool:
         """
         Return True if the step is zero
         """
-        return self._step == 0
+        return self._step.is_zero()
 
-    def step_is(self, val: str) -> bool:
+    def step_is(self, val: Union[int, str, ModelStep]) -> bool:
         """
         Return True if the step matches the given value.
 
@@ -97,13 +157,7 @@ class Instant:
 
         * ``h``: hours
         """
-        if not isinstance(val, str):
-            raise TypeError(f"val {val!r} is not a string")
-        if len(val) < 2:
-            raise ValueError(f"val {val!r} is too short to be a number plus unit suffix")
-        if val[-1] != 'h':
-            raise ValueError(f"unsupported time unit suffx: {val[-1]!r}")
-        return self._step == int(val[:-1])
+        return self._step == val
 
     def pantry_suffix(self) -> str:
         """
@@ -112,20 +166,20 @@ class Instant:
         """
         return (f"_{self._reftime.year}_{self._reftime.month}_{self._reftime.day}"
                 f"_{self._reftime.hour}_{self._reftime.minute}_{self._reftime.second}"
-                f"+{self._step}")
+                f"+{self._step._value}")
 
     def product_suffix(self) -> str:
         """
         Return a suffix that identifies a product for this instance in the
         output
         """
-        return f"_{self.reftime:%Y-%m-%dT%H:%M:%S}{self.step_suffix()}"
+        return f"_{self.reftime:%Y-%m-%dT%H:%M:%S}{self._step.suffix()}"
 
     def step_suffix(self) -> str:
         """
         Return a suffix that can be used in filenames to identify a step
         """
-        return f"+{self._step:03d}"
+        return self._step.suffix()
 
 
 class InputTypes(TypeRegistry["Input"]):
