@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Option
 from PIL import Image
 
 from . import outputbundle
+from .inputs import ModelStep
 from .steps import StepSkipped, StepConfig, AddBasemap
 from .pygen import PyGen
 
@@ -194,12 +195,12 @@ class Order:
 
             for reftime, orders in by_rt.items():
                 inputs: Set[str] = set()
-                steps: dict[int, int] = Counter()
+                steps: dict[str, int] = Counter()
                 legend_info: Optional[Dict[str, Any]] = None
                 render_time_ns: int = 0
                 for order in orders:
                     inputs.update(order.input_files.keys())
-                    steps[order.instant.step] += 1
+                    steps[str(order.instant.step)] += 1
                     if order.legend_info:
                         legend_info = order.legend_info
                     render_time_ns += order.render_time_ns
