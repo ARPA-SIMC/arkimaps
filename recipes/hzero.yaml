@@ -5,11 +5,11 @@ inputs:
  hzeroground:
   - model: ifs
     arkimet: product:GRIB1,98,228,24;level:GRIB1,1
-    eccodes: shortName is "deg0l"
+    eccodes: centre == 98 and shortName is "deg0l"
  z:
   - model: ifs
     arkimet: product:GRIB1,98,128,129;level:GRIB1,1
-    eccodes: shortName is "z"
+    eccodes: centre == 98 and shortName is "z"
  hzero:
   - model: cosmo
     arkimet: product:GRIB1,80,201,84;level:GRIB1,4
