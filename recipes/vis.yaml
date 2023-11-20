@@ -9,6 +9,10 @@ inputs:
     type: vg6d_transform
     args: ["--output-variable-list=B20001"]
     inputs: [t2m, 2d]
+  - model: icon
+    type: vg6d_transform
+    args: ["--output-variable-list=B20001"]
+    inputs: [t2m, 2d]
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
