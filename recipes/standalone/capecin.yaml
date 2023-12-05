@@ -2,8 +2,12 @@
 description: Convective Available Potential Energy (C.A.P.E.) and Convective Inhibition (CIN)
 inputs:
   cin:
-    arkimet: product:GRIB1,,201,146
-    eccodes: centre != 98 and shortName is "cin_ml"
+    - model: cosmo
+      arkimet: product:GRIB1,,201,146
+      eccodes: centre != 98 and shortName is "cin_ml" and editionNumber == 1
+    - model: icon
+      arkimet: product:GRIB2,,000,007,007,,
+      eccodes: centre != 98 and shortName is "cin_ml" and editionNumber == 2
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
