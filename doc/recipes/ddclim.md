@@ -54,6 +54,8 @@ With arguments:
     "contour_highlight": "off",
     "contour_hilo": "off",
     "contour_label": "on",
+    "contour_label_blanking": "off",
+    "contour_label_height": 0.8,
     "contour_label_frequency": 1,
     "contour_level_selection_type": "level_list",
     "contour_shade": "on",

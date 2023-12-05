@@ -16,7 +16,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,130;level:GRIB1,100,925`
         * **grib_filter matcher**: `centre == 98 and shortName is "t" and levelType == 100 and level == 925`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000092500`
+        * **Arkimet matcher**: `product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000092500;timerange:Timedef,,254,`
         * **grib_filter matcher**: `centre != 98 and shortName is "t" and levelType == 100 and level == 925 and editionNumber == 2`
 * **q925**:
     * Model **cosmo**:

@@ -12,6 +12,9 @@ for IFS model it needs both "deg0l" and "z" variables
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,80,201,84;level:GRIB1,4`
         * **grib_filter matcher**: `shortName is "hzerocl"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,003,006,,;level:GRIB2D,004,000,0000000000,101,000,0000000000`
+        * **grib_filter matcher**: `centre != 98 and shortName is "h" and editionNumber == 2`
     * Model **ifs**:
         * **Preprocessing**: groundtomsl
         * **Inputs**: z, hzeroground

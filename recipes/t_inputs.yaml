@@ -12,8 +12,21 @@ inputs:
     arkimet: product:GRIB2,00200,000,000,000,004,000;level:GRIB2S,103,003,0000001800
     eccodes: shortName is "t" and level == 2
   - model: icon
-    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,103,000,0000000002
+    arkimet: product:GRIB2,,000,000,000,,;level:GRIB2S,103,000,0000000002;timerange:Timedef,,254,
     eccodes: centre != 98 and shortName is "2t" and level == 2 and editionNumber == 2
+ tground:
+  - model: cosmo
+    arkimet: product:GRIB1,,2,11;level:GRIB1,1
+    eccodes: centre != 98 and shortName is "t_g" and level == 0 and editionNumber == 1  
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_offset: -273.15
+  - model: icon
+    arkimet: product:GRIB2,,000,000,000,,;level:GRIB2S,001,000,0000000000;timerange:Timedef,,254,
+    eccodes: centre != 98 and shortName is "t_g" and level == 0 and editionNumber == 2
+    mgrib:
+       grib_automatic_scaling: off
+       grib_scaling_offset: -273.15
  tclim:
   - model: praga
     arkimet: skip
@@ -50,7 +63,7 @@ inputs:
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,500
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 500
   - model: icon
-    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000050000
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000050000;timerange:Timedef,,254,
     eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 500 and editionNumber == 2
  t700:
   - model: cosmo
@@ -60,7 +73,7 @@ inputs:
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,700
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 700
   - model: icon
-    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000070000
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000070000;timerange:Timedef,,254,
     eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 700 and editionNumber == 2
  t850:
   - model: cosmo
@@ -70,7 +83,7 @@ inputs:
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,850
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 850
   - model: icon
-    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000085000
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000085000;timerange:Timedef,,254,
     eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 850 and editionNumber == 2
  t925:
   - model: cosmo
@@ -80,7 +93,7 @@ inputs:
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,925
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 925
   - model: icon
-    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000092500
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000092500;timerange:Timedef,,254,
     eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 925 and editionNumber == 2
  t1000:
   - model: cosmo
@@ -90,5 +103,5 @@ inputs:
     arkimet: product:GRIB1,98,128,130;level:GRIB1,100,1000
     eccodes: centre == 98 and shortName is "t" and levelType == 100 and level == 100
   - model: icon
-    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000100000
+    arkimet: product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000100000;timerange:Timedef,,254,
     eccodes: centre != 98 and shortName is "t" and levelType == 100 and level == 1000 and editionNumber == 2

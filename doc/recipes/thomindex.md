@@ -18,7 +18,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB2,00200,000,000,000,004,000;level:GRIB2S,103,003,0000001800`
         * **grib_filter matcher**: `shortName is "t" and level == 2`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,000,000,,;level:GRIB2S,103,000,0000000002`
+        * **Arkimet matcher**: `product:GRIB2,,000,000,000,,;level:GRIB2S,103,000,0000000002;timerange:Timedef,,254,`
         * **grib_filter matcher**: `centre != 98 and shortName is "2t" and level == 2 and editionNumber == 2`
 * **wb**:
     * **vg6d_transform arguments**: --rounding --output-variable-list=B12102
@@ -46,7 +46,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,130;level:GRIB1,100,1000`
         * **grib_filter matcher**: `centre == 98 and shortName is "t" and levelType == 100 and level == 100`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000100000`
+        * **Arkimet matcher**: `product:GRIB2,,,000,000,,;level:GRIB2S,100,000,0000100000;timerange:Timedef,,254,`
         * **grib_filter matcher**: `centre != 98 and shortName is "t" and levelType == 100 and level == 1000 and editionNumber == 2`
 
 ## Steps

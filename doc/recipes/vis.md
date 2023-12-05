@@ -12,6 +12,10 @@ Mixer: **default**
         * **vg6d_transform arguments**: --output-variable-list=B20001
         * **Preprocessing**: vg6d_transform
         * **Inputs**: t2m, 2d
+    * Model **icon**:
+        * **vg6d_transform arguments**: --output-variable-list=B20001
+        * **Preprocessing**: vg6d_transform
+        * **Inputs**: t2m, 2d
 
 ## Steps
 

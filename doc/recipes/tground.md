@@ -1,14 +1,20 @@
-# dda: Degree days summation anomaly (climate elaboration)
+# tground: Temperature at ground level
 
 Mixer: **default**
 
 ## Inputs
 
-* **dda**:
-    * **Arkimet matcher**: `skip`
-    * **grib_filter matcher**: `discipline == 0 and parameterCategory == 0 and parameterNumber == 9 and typeOfStatisticalProcessing == 11`
-    * **mgrib {k}**: `False`
-    * **mgrib {k}**: `-273.15`
+* **tground**:
+    * Model **cosmo**:
+        * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,1`
+        * **grib_filter matcher**: `centre != 98 and shortName is "t_g" and level == 0 and editionNumber == 1`
+        * **mgrib {k}**: `False`
+        * **mgrib {k}**: `-273.15`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,000,000,000,,;level:GRIB2S,001,000,0000000000;timerange:Timedef,,254,`
+        * **grib_filter matcher**: `centre != 98 and shortName is "t_g" and level == 0 and editionNumber == 2`
+        * **mgrib {k}**: `False`
+        * **mgrib {k}**: `-273.15`
 
 ## Steps
 
@@ -38,7 +44,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "dda"
+  "grib": "tground"
 }
 ```
 
@@ -50,92 +56,67 @@ With arguments:
 ```
 {
   "params": {
-    "contour": "off",
-    "contour_highlight": "off",
-    "contour_hilo": "off",
-    "contour_label": "on",
-    "contour_label_blanking": "off",
-    "contour_label_height": 0.8,
+    "contour": false,
+    "contour_highlight_frequency": 100,
+    "contour_highlight_thickness": 5,
+    "contour_interval": 2.0,
+    "contour_label_height": 0.4,
+    "contour_label_colour": "navy",
     "contour_label_frequency": 1,
-    "contour_level_selection_type": "level_list",
-    "contour_shade": "on",
-    "contour_shade_colour_method": "list",
-    "contour_shade_method": "area_fill",
-    "contour_shade_min_level": -1000.0,
-    "contour_level_list": [
-      -1000.0,
-      -500.0,
-      -450.0,
-      -400.0,
-      -350.0,
-      -300.0,
-      -250.0,
-      -200.0,
-      -150.0,
-      -100.0,
-      -75.0,
-      -50.0,
-      -40.0,
-      -30.0,
-      -20.0,
-      -10.0,
-      10.0,
-      20.0,
-      30.0,
-      40.0,
-      50.0,
-      75.0,
-      100.0,
-      150.0,
-      200.0,
-      250.0,
-      300.0,
-      350.0,
-      400.0,
-      450.0,
-      500.0,
-      700.0
-    ],
+    "contour_label_blanking": false,
+    "contour_level_selection_type": "interval",
+    "contour_line_thickness": 3,
+    "contour_shade": true,
     "contour_shade_colour_list": [
-      "rgb(1,0,1)",
-      "rgb(0.875,0,1)",
-      "rgb(0.749,0,1)",
-      "rgb(0.596,0,1)",
-      "rgb(0.447,0,1)",
-      "rgb(0.224,0,1)",
-      "rgb(0,0,1)",
-      "rgb(0,0.173,1)",
-      "rgb(0,0.349,1)",
-      "rgb(0,0.447,1)",
-      "rgb(0,0.549,1)",
-      "rgb(0,0.647,1)",
-      "rgb(0,0.479,1)",
-      "rgb(0,0.875,1)",
-      "rgb(0,1,1)",
-      "rgb(1,1,1)",
-      "rgb(1,1,0.498)",
-      "rgb(1,1,0)",
-      "rgb(1,0.898,0)",
       "rgb(1,0.8,0)",
-      "rgb(1,0.698,0)",
       "rgb(1,0.6,0)",
-      "rgb(1,0.498,0)",
       "rgb(1,0.4,0)",
-      "rgb(1,0.2,0)",
       "rgb(1,0,0)",
-      "rgb(0.898,0,0)",
       "rgb(0.8,0,0)",
-      "rgb(0.698,0,0)",
       "rgb(0.6,0,0)",
-      "rgb(0.498,0,0)"
+      "rgb(0.4,0,0)",
+      "rgb(0.4,0,0.4)",
+      "rgb(0.6,0,0.6)",
+      "rgb(0.8,0,0.8)",
+      "rgb(1,0,1)",
+      "rgb(0.75,0,1)",
+      "rgb(0.45,0,1)",
+      "rgb(0,0,1)",
+      "rgb(0,0.35,1)",
+      "rgb(0,0.55,1)",
+      "rgb(0,0.75,1)",
+      "rgb(0,1,1)",
+      "rgb(0,0.9,0.8)",
+      "rgb(0,0.8,0.5)",
+      "rgb(0,0.7,0.0)",
+      "rgb(0.5,0.8,0.0)",
+      "rgb(0.8,0.9,0.0)",
+      "rgb(1,1,0)",
+      "rgb(1,0.8,0)",
+      "rgb(1,0.6,0)",
+      "rgb(1,0.4,0)",
+      "rgb(1,0,0)",
+      "rgb(0.8,0,0)",
+      "rgb(0.6,0,0)",
+      "rgb(0.4,0,0)",
+      "rgb(0.4,0,0.4)",
+      "rgb(0.6,0,0.6)",
+      "rgb(0.8,0,0.8)",
+      "rgb(1,0,1)",
+      "rgb(0.75,0,1)",
+      "rgb(0.45,0,1)"
     ],
+    "contour_shade_colour_method": "list",
+    "contour_shade_max_level": 46.0,
+    "contour_shade_method": "area_fill",
+    "contour_shade_min_level": -30.0,
     "legend": true,
     "legend_display_type": "continuous",
     "legend_title": true,
+    "legend_title_text": "Temperature at ground level [\u00b0C]",
     "legend_text_colour": "black",
     "legend_text_font_size": 0.4,
     "legend_title_font_size": 0.5,
-    "legend_title_text": "Degree days summation anomaly [\u00b0C]",
     "legend_automatic_position": "right"
   }
 }

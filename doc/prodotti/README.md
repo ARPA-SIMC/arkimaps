@@ -53,6 +53,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/viwve.md) |
 | `wmax`   | Raffica massima vento                          | [wmax.png](wmax.png)   | [wmax.md](../recipes/tiles/wmax.md)   |
 | `t2mavg` | Media giornaliera temperatura a 2 metri dal suolo  | [t2mavg.png](t2mavg.png) | [t2mavg.md](../recipes/t2mavg.md) |
+| `tground`| Temperatura a livello del suolo                  | [tground.png](tground.png "Temperatura a livello del suolo") | [tground.md](../recipes/tground.md) |
 | `jet`    | Geopotenziale, vento, isotache a 250hPa          | [jet.png](jet.png)     | [jet.md](../recipes/standalone/jet.md)     |
 | `rhw700` | Umidità relativa e vento a 700hPa                | [rhw700.png](rhw700.png) | [rhw700.md](../recipes/standalone/rhw700.md) |
 | `rhw850` | Umidità relativa e vento a 850hPa                | [rhw850.png](rhw850.png) | [rhw850.md](../recipes/standalone/rhw850.md) |

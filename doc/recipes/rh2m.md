@@ -31,7 +31,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB2,00200,000,000,000,004,000;level:GRIB2S,103,003,0000001800`
         * **grib_filter matcher**: `shortName is "t" and level == 2`
     * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,000,000,,;level:GRIB2S,103,000,0000000002`
+        * **Arkimet matcher**: `product:GRIB2,,000,000,000,,;level:GRIB2S,103,000,0000000002;timerange:Timedef,,254,`
         * **grib_filter matcher**: `centre != 98 and shortName is "2t" and level == 2 and editionNumber == 2`
 * **2d**:
     * Model **cosmo**:
