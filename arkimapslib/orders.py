@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Option
 from PIL import Image
 
 from . import outputbundle
+from .inputs import ModelStep
 from .steps import StepSkipped, StepConfig, AddBasemap
 from .pygen import PyGen
 
@@ -194,12 +195,12 @@ class Order:
 
             for reftime, orders in by_rt.items():
                 inputs: Set[str] = set()
-                steps: dict[int, int] = Counter()
+                steps: dict[str, int] = Counter()
                 legend_info: Optional[Dict[str, Any]] = None
                 render_time_ns: int = 0
                 for order in orders:
                     inputs.update(order.input_files.keys())
-                    steps[order.instant.step] += 1
+                    steps[str(order.instant.step)] += 1
                     if order.legend_info:
                         legend_info = order.legend_info
                     render_time_ns += order.render_time_ns
@@ -241,10 +242,10 @@ class MapOrder(Order):
             self.order_steps.append(s)
 
     def __str__(self):
-        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
+        return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}"
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({os.path.basename(self.recipe.name)}+{self.instant.step:03d})"
+        return f"{self.__class__.__name__}({os.path.basename(self.recipe.name)}{self.instant.step_suffix()})"
 
     def print_python_function(self, function_name: str, gen: PyGen):
         """
@@ -253,7 +254,7 @@ class MapOrder(Order):
         # Destination directory inside the output
         relpath = f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe.name}_{self.flavour.name}"
         # Destination file name (without path or .png extension)
-        basename = f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}"
+        basename = f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}"
         gen.magics_renderer(function_name, self, relpath, basename)
 
 
@@ -350,7 +351,7 @@ class TileOrder(Order):
             self.order_steps.append(compiled_step)
 
     def __str__(self):
-        return (f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/"
+        return (f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/"
                 f"{self.z}/{self.x}/{self.y}+w{self.width}h{self.height}")
 
     def __repr__(self):
@@ -362,7 +363,7 @@ class TileOrder(Order):
         """
         relpath = (
             f"{self.instant.reftime:%Y-%m-%dT%H:%M:%S}/"
-            f"{self.recipe.name}_{self.flavour.name}+{self.instant.step:03d}/"
+            f"{self.recipe.name}_{self.flavour.name}{self.instant.step_suffix()}/"
             f"{self.z}"
         )
         basename = f"{self.x}-{self.y}-{self.width}-{self.height}"
@@ -549,7 +550,7 @@ class LegendOrder(Order):
         }
 
     def __str__(self):
-        return f"{os.path.basename(self.recipe.name)}+{self.instant.step:03d}/legend"
+        return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/legend"
 
     def __repr__(self):
         return f"{self.__class__.__name__}({str(self)})"

@@ -16,6 +16,7 @@ from .config import Config
 from .flavours import Flavour
 from .lint import Lint
 from .recipes import Recipe
+from .inputs import ModelStep
 
 # if TYPE_CHECKING:
 # Used for kwargs-style dicts
@@ -160,7 +161,7 @@ class WorkingKitchen(Kitchen):
             self,
             recipe: Recipe,
             flavour: Flavour,
-            step: Optional[int],
+            step: Union[None, int, str, ModelStep],
             reftime: Optional[datetime.datetime]) -> orders.Order:
         """
         Generate all possible orders for all available recipes
