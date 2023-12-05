@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.8
+Version:        1.9
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -88,6 +88,11 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Dec  5 2023 Daniele Branchini <dbranchini@arpae.it> - 1.9-1
+- Added `tground` product
+- Added hzero, visibility for icon
+- Fixed t2m query for grib2 data
+
 * Thu Oct 26 2023 Daniele Branchini <dbranchini@arpae.it> - 1.8-1
 - Fix redundancy in product summary (#153)
 

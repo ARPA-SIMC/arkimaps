@@ -1,3 +1,13 @@
+# New in version 1.9
+
+* Added `tground` product
+* Added hzero, visibility for icon
+* Fixed t2m query for grib2 data
+
+# New in version 1.8
+
+* Fixed redundancy in product summary (#153)
+
 # New in version 1.7
 
 * Support GDAL < 3.3.0 version check in Python API
