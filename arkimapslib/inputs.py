@@ -103,6 +103,76 @@ class ModelStep:
 
         raise TypeError(f"value {value!r} is neither an int nor a str nor a ModelStep")
 
+    @classmethod
+    def from_grib1(cls, value: int, unit: int) -> "ModelStep":
+        """
+        Instantiate a ModelStep from a value and its GRIB1 unit
+        """
+        if unit == 0:  # minutes
+            if value % 60 != 0:
+                raise NotImplementedError(f"unsupported step {value} minutes")
+            return cls(value // 60)
+        if unit == 1:  # hours
+            return cls(value)
+        if unit == 2:  # days
+            return cls(value * 24)
+        if unit == 3:  # months
+            raise NotImplementedError("unsupported step unit: months")
+        if unit == 4:  # years
+            raise NotImplementedError("unsupported step unit: years")
+        if unit == 5:  # decades
+            raise NotImplementedError("unsupported step unit: decades")
+        if unit == 6:  # normals
+            raise NotImplementedError("unsupported step unit: normals")
+        if unit == 7:  # centuries
+            raise NotImplementedError("unsupported step unit: centuries")
+        if unit == 10:  # 3-hours
+            return cls(value * 3)
+        if unit == 11:  # 6-hours
+            return cls(value * 6)
+        if unit == 12:  # 12-hours
+            return cls(value * 12)
+        if unit == 254:  # seconds
+            if value % 3600 != 0:
+                raise NotImplementedError(f"unsupported step {value} seconds")
+            return cls(value // 3600)
+        raise ValueError(f"Unsupported GRIB time unit: {unit!r}")
+
+    @classmethod
+    def from_timedef(cls, value: int, unit: int) -> "ModelStep":
+        """
+        Instantiate a ModelStep from a value and its Timedef unit
+        """
+        if unit == 0:  # minutes
+            if value % 60 != 0:
+                raise NotImplementedError(f"unsupported step {value} minutes")
+            return cls(value // 60)
+        if unit == 1:  # hours
+            return cls(value)
+        if unit == 2:  # days
+            return cls(value * 24)
+        if unit == 3:  # months
+            raise NotImplementedError("unsupported step unit: months")
+        if unit == 4:  # years
+            raise NotImplementedError("unsupported step unit: years")
+        if unit == 5:  # decades
+            raise NotImplementedError("unsupported step unit: decades")
+        if unit == 6:  # normals
+            raise NotImplementedError("unsupported step unit: normals")
+        if unit == 7:  # centuries
+            raise NotImplementedError("unsupported step unit: centuries")
+        if unit == 10:  # 3-hours
+            return cls(value * 3)
+        if unit == 11:  # 6-hours
+            return cls(value * 6)
+        if unit == 12:  # 12-hours
+            return cls(value * 12)
+        if unit == 13:  # seconds
+            if value % 3600 != 0:
+                raise NotImplementedError(f"unsupported step {value} seconds")
+            return cls(value // 3600)
+        raise ValueError(f"Unsupported GRIB time unit: {unit!r}")
+
 
 class Instant:
     """

@@ -313,29 +313,40 @@ if arkimet is not None:
                     trange = md.to_python("timerange")
                     style = trange["style"]
                     if style == "GRIB1":
-                        if trange['trange_type'] in (0, 1):
-                            output_step = trange['p1']
-                        elif trange['trange_type'] in (2, 3, 4, 5, 6, 7):
-                            output_step = trange['p2']
+                        if trange["trange_type"] in (0, 1):
+                            output_step = trange["p1"]
+                        elif trange["trange_type"] in (2, 3, 4, 5, 6, 7):
+                            output_step = trange["p2"]
                         else:
                             log.warning("unsupported timerange %s: skipping input", trange)
                             continue
+                        try:
+                            step = inputs.ModelStep.from_grib1(output_step, trange["unit"])
+                        except NotImplementedError as e:
+                            log.warning("skipping input: %s", e)
+                            continue
                     elif style == "Timedef":
                         output_step = trange["step_len"]
+                        output_step_unit = trange["step_unit"]
+                        try:
+                            step = inputs.ModelStep.from_timedef(output_step, output_step_unit)
+                        except NotImplementedError as e:
+                            log.warning("skipping input: %s", e)
+                            continue
                     else:
                         log.warning("unsupported timerange style in %s: skipping input", trange)
                         continue
 
                     reftime = md.to_python("reftime")["time"]
+                    instant = inputs.Instant(reftime, step)
+
                     source = md.to_python("source")
                     if inp.model is None:
                         pantry_basename = inp.name
                     else:
                         pantry_basename = f"{inp.model}_{inp.name}"
-                    relname = pantry_basename + (
-                            f"_{reftime.year}_{reftime.month}_{reftime.day}"
-                            f"_{reftime.hour}_{reftime.minute}_{reftime.second}"
-                            f"+{output_step}.{source['format']}")
+
+                    relname = pantry_basename + instant.pantry_suffix() + "." + source["format"]
 
                     dest = os.path.join(self.data_root, relname)
                     # TODO: implement Metadata.write_data to write directly without
@@ -344,7 +355,6 @@ if arkimet is not None:
                         out.write(md.data)
 
                     # Take note of having added one element to this file
-                    instant = inputs.Instant(reftime, output_step)
                     inp.add_instant(instant)
             return True
 
