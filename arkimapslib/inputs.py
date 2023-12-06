@@ -47,7 +47,8 @@ class ModelStep:
     """
     Identifies a step of a model, as a time span value and unit
     """
-    __slots__ = ("_value")
+
+    __slots__ = ("_value",)
 
     _value: int
 
