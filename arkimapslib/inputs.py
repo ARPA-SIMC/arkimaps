@@ -7,8 +7,7 @@ import shlex
 import shutil
 import subprocess
 import tempfile
-from typing import (TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple,
-                    Optional, Set, Tuple, Union)
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple, Union
 
 import eccodes
 import numpy
@@ -21,6 +20,7 @@ from .utils import perf_counter_ns, TypeRegistry
 if TYPE_CHECKING:
     from . import pantry
     from .recipes import Recipe
+
     try:
         import arkimet
     except ModuleNotFoundError:
@@ -53,7 +53,7 @@ class ModelStep:
 
     def __init__(self, value: Union[int, str, "ModelStep"]):
         v, u = self._parse_value(value)
-        if u != 'h':
+        if u != "h":
             raise ValueError(f"only 'h' currently supported as a time unit (found {u!r})")
         self._value = v
 
@@ -62,7 +62,7 @@ class ModelStep:
             return self._value == other
         elif isinstance(other, str):
             v, u = self._parse_value(other)
-            if u != 'h':
+            if u != "h":
                 raise ValueError(f"only 'h' currently supported as a time unit (found {u!r})")
             return self._value == v
         elif isinstance(other, ModelStep):
@@ -110,6 +110,7 @@ class Instant:
     Note that different combinations of reftime+step that would map to the same
     physical instant of time are considered distinct for arkimaps purposes
     """
+
     __slots__ = ("_reftime", "_step")
 
     _reftime: datetime.datetime
@@ -147,9 +148,11 @@ class Instant:
         Return a suffix that identifies a product for this instance in the
         pantry
         """
-        return (f"_{self._reftime.year}_{self._reftime.month}_{self._reftime.day}"
-                f"_{self._reftime.hour}_{self._reftime.minute}_{self._reftime.second}"
-                f"+{self._step._value}")
+        return (
+            f"_{self._reftime.year}_{self._reftime.month}_{self._reftime.day}"
+            f"_{self._reftime.hour}_{self._reftime.minute}_{self._reftime.second}"
+            f"+{self._step._value}"
+        )
 
     def product_suffix(self) -> str:
         """
@@ -169,6 +172,7 @@ class InputTypes(TypeRegistry["Input"]):
     """
     Registry of available Input implementations
     """
+
     pass
 
 
@@ -179,6 +183,7 @@ class InputProcessingStats:
     """
     Statistics collected while processing inputs
     """
+
     def __init__(self, input: "Input"):
         self.input = input
         # List of strings describing computation steps, and the time they took
@@ -214,16 +219,19 @@ class Input:
     All arguments to the constructor besides `name` and `defined_in` are taken
     from the YAML input definition
     """
+
     NAME: str
 
     def __init__(
-            self, *,
-            config: Config,
-            name: str,
-            defined_in: str,
-            model: Optional[str] = None,
-            mgrib: Optional['Kwargs'] = None,
-            notes: Optional[str] = None):
+        self,
+        *,
+        config: Config,
+        name: str,
+        defined_in: str,
+        model: Optional[str] = None,
+        mgrib: Optional["Kwargs"] = None,
+        notes: Optional[str] = None,
+    ):
         # Configuration for this run
         self.config = config
         # Name of the input in the recipe
@@ -248,22 +256,25 @@ class Input:
             impl_cls = input_types.by_name(type)
         except KeyError as e:
             raise KeyError(
-                    f"recipe requires unknown input {type}. Available: {', '.join(input_types.registry.keys())}") from e
+                f"recipe requires unknown input {type}. Available: {', '.join(input_types.registry.keys())}"
+            ) from e
         if lint:
             impl_cls.lint(lint, **kw)
         return impl_cls(**kw)
 
     @classmethod
     def lint(
-            cls,
-            lint: Lint, *,
-            config: Config,
-            name: str,
-            defined_in: str,
-            model: Optional[str] = None,
-            mgrib: Optional['Kwargs'] = None,
-            notes: Optional[str] = None,
-            **kwargs):
+        cls,
+        lint: Lint,
+        *,
+        config: Config,
+        name: str,
+        defined_in: str,
+        model: Optional[str] = None,
+        mgrib: Optional["Kwargs"] = None,
+        notes: Optional[str] = None,
+        **kwargs,
+    ):
         """
         Consistency check the given input arguments
         """
@@ -329,7 +340,7 @@ class Input:
         """
         return {}
 
-    def compile_arkimet_matcher(self, session: 'arkimet.Session'):
+    def compile_arkimet_matcher(self, session: "arkimet.Session"):
         """
         Hook to allow inputs to compile arkimet matchers
         """
@@ -353,6 +364,7 @@ class Static(Input):
     """
     An input that refers to static files distributed with arkimaps
     """
+
     # TODO: in newer pythons, use importlib.resources.Resource and copy to
     # workdir in get_instants
     NAME = "static"
@@ -406,6 +418,7 @@ class Shape(Static):
     """
     A special instance of static that deals with shapefiles
     """
+
     # TODO: in newer pythons, use importlib.resources.Resource and copy to
     # workdir in get_instants
     NAME = "shape"
@@ -435,6 +448,7 @@ class Source(Input):
     """
     An input that is data straight out of a model
     """
+
     NAME = "default"
 
     def __init__(self, *, arkimet: Optional[str] = None, eccodes: Optional[str] = None, **kw):
@@ -465,12 +479,12 @@ class Source(Input):
                 tf.flush()
                 cmd = ["grib_filter", tf.name, "-", "/dev/null"]
                 res = subprocess.run(cmd, input=b"GRIB7777", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                if res.stderr != b'no messages found in /dev/null\n':
+                if res.stderr != b"no messages found in /dev/null\n":
                     errors: List[str] = []
                     header = "ECCODES ERROR   :  "
                     for line in res.stderr.decode().splitlines():
                         if line.startswith(header):
-                            errors.append(line[len(header):])
+                            errors.append(line[len(header) :])
                     lint.warn_input(f"eccodes match {eccodes!r} cannot be parsed: {errors}", **kwargs)
 
     def __repr__(self):
@@ -504,7 +518,7 @@ class Source(Input):
             res[instant] = pantry.get_input_file(self, instant)
         return res
 
-    def compile_arkimet_matcher(self, session: 'arkimet.Session'):
+    def compile_arkimet_matcher(self, session: "arkimet.Session"):
         if self.arkimet is None or self.arkimet == "skip":
             self.arkimet_matcher = None
         else:
@@ -521,6 +535,7 @@ class Derived(Input):
     """
     Base class for inputs derives from other inputs
     """
+
     def __init__(self, *, inputs: Union[str, List[str]] = None, **kw):
         if inputs is None:
             raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
@@ -577,36 +592,41 @@ class Derived(Input):
 
 class VG6DStatProcMixin:
     def __init__(
-            self, *,
-            step: int = None,
-            comp_stat_proc: str,
-            comp_frac_valid: float = 0,
-            comp_full_steps: Optional[bool] = None,
-            **kw):
+        self,
+        *,
+        step: int = None,
+        comp_stat_proc: str,
+        comp_frac_valid: float = 0,
+        comp_full_steps: Optional[bool] = None,
+        **kw,
+    ):
         if step is None:
             raise RuntimeError("step must be present for 'decumulate' inputs")
         super().__init__(**kw)
         self.step = int(step)
         if len(self.inputs) != 1:
             raise RuntimeError(
-                    f"input {self.name}: {self.NAME} has inputs {', '.join(self.inputs)} and should have only one")
+                f"input {self.name}: {self.NAME} has inputs {', '.join(self.inputs)} and should have only one"
+            )
         self.comp_stat_proc = comp_stat_proc
         self.comp_frac_valid = comp_frac_valid
         self.comp_full_steps: bool
         if comp_full_steps is not None:
             self.comp_full_steps = bool(comp_full_steps)
         else:
-            self.comp_full_steps = (self.step != 24)
+            self.comp_full_steps = self.step != 24
 
     @classmethod
     def lint(
-            cls,
-            lint: Lint, *,
-            step: int = None,
-            comp_stat_proc: str,
-            comp_frac_valid: float = 0,
-            comp_full_steps: Optional[bool] = None,
-            **kwargs):
+        cls,
+        lint: Lint,
+        *,
+        step: int = None,
+        comp_stat_proc: str,
+        comp_frac_valid: float = 0,
+        comp_full_steps: Optional[bool] = None,
+        **kwargs,
+    ):
         super().lint(lint, **kwargs)
 
     def to_dict(self):
@@ -644,9 +664,12 @@ class VG6DStatProcMixin:
         if os.path.exists(decumulated_data):
             os.unlink(decumulated_data)
 
-        cmd = ["vg6d_transform", f"--comp-step=0 {self.step:02d}",
-               f"--comp-stat-proc={self.comp_stat_proc}",
-               f"--comp-frac-valid={self.comp_frac_valid}"]
+        cmd = [
+            "vg6d_transform",
+            f"--comp-step=0 {self.step:02d}",
+            f"--comp-stat-proc={self.comp_stat_proc}",
+            f"--comp-frac-valid={self.comp_frac_valid}",
+        ]
         if self.comp_full_steps:
             cmd.append("--comp-full-steps")
         cmd += ["-", decumulated_data]
@@ -671,20 +694,22 @@ class VG6DStatProcMixin:
 
             with self.stats.collect(pantry, f"grib_filter {size}b"):
                 res = subprocess.run(
-                        ["grib_filter", grib_filter_rules, decumulated_data],
-                        stdout=subprocess.PIPE,
-                        check=True)
+                    ["grib_filter", grib_filter_rules, decumulated_data], stdout=subprocess.PIPE, check=True
+                )
                 for line in res.stdout.splitlines():
                     if not line.startswith(b"s:"):
                         return
                     ye, mo, da, ho, mi, se, step = line[2:].split(b",")
                     instant = Instant(
-                        datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se)),
-                        int(step))
+                        datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se)), int(step)
+                    )
                     if instant in self.instants:
                         log.warning(
                             "%s: vg6d_transform generated multiple GRIB data for instant %s. Note that truncation"
-                            " to only the first data produced is not supported yet!", self.name, instant)
+                            " to only the first data produced is not supported yet!",
+                            self.name,
+                            instant,
+                        )
                     self.add_instant(instant)
         finally:
             if os.path.exists(decumulated_data):
@@ -696,6 +721,7 @@ class Decumulate(VG6DStatProcMixin, Derived):
     """
     Decumulate inputs
     """
+
     NAME = "decumulate"
 
     def __init__(self, **kw):
@@ -718,6 +744,7 @@ class Average(VG6DStatProcMixin, Derived):
     """
     Average inputs
     """
+
     NAME = "average"
 
     def __init__(self, **kw):
@@ -769,6 +796,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
     """
     Process inputs with vg6d_transform
     """
+
     NAME = "vg6d_transform"
 
     def __init__(self, *, args: Union[str, List[str]] = None, **kw):
@@ -778,11 +806,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
         self.args = [args] if isinstance(args, str) else [str(x) for x in args]
 
     @classmethod
-    def lint(
-            cls,
-            lint: Lint, *,
-            args: Union[str, List[str]] = None,
-            **kwargs):
+    def lint(cls, lint: Lint, *, args: Union[str, List[str]] = None, **kwargs):
         super().lint(lint, **kwargs)
 
     def to_dict(self):
@@ -805,7 +829,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
 
             output_pathname = os.path.join(pantry.data_root, output_name)
             cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
-            log.debug("running %s", ' '.join(shlex.quote(x) for x in cmd))
+            log.debug("running %s", " ".join(shlex.quote(x) for x in cmd))
 
             with self.stats.collect(pantry, " ".join(shlex.quote(c) for c in cmd)):
                 v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
@@ -837,6 +861,7 @@ class Cat(AlignInstantsMixin, Derived):
     """
     Concatenate inputs
     """
+
     NAME = "cat"
 
     def generate(self, pantry: "pantry.DiskPantry"):
@@ -851,8 +876,8 @@ class Cat(AlignInstantsMixin, Derived):
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
             with self.stats.collect(
-                    pantry,
-                    "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name):
+                pantry, "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
+            ):
                 with open(output_pathname, "wb") as out:
                     for input_file in input_files:
                         with open(input_file.pathname, "rb") as fd:
@@ -866,6 +891,7 @@ class Or(Derived):
     """
     Represents the first of the inputs listed that has data for a step
     """
+
     NAME = "or"
 
     def generate(self, pantry: "pantry.DiskPantry"):
@@ -888,19 +914,15 @@ class GribSetMixin:
     """
     Mixin used for inputs that take a `grib_set` argument
     """
+
     def __init__(self, *, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kw):
         super().__init__(**kw)
         self.grib_set = grib_set if grib_set is not None else {}
         self.clip = clip
-        self.clip_fn = compile(clip, filename=self.defined_in, mode='exec') if clip is not None else None
+        self.clip_fn = compile(clip, filename=self.defined_in, mode="exec") if clip is not None else None
 
     @classmethod
-    def lint(
-            cls,
-            lint: Lint, *,
-            grib_set: Optional[Dict[str, Any]] = None,
-            clip: Optional[str] = None,
-            **kwargs):
+    def lint(cls, lint: Lint, *, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kwargs):
         super().lint(lint, **kwargs)
 
     def to_dict(self):
@@ -939,6 +961,7 @@ class GroundToMSL(GribSetMixin, Derived):
     It takes two inputs: the ground geopotential, and the value to convert, in
     that order.
     """
+
     NAME = "groundtomsl"
 
     def generate(self, pantry: "pantry.DiskPantry"):
@@ -948,8 +971,12 @@ class GroundToMSL(GribSetMixin, Derived):
         z_input: InputFile
         for instant, input_file in pantry.get_instants(self.inputs[0]).items():
             if not instant.step.is_zero():
-                log.warning("input %s: ignoring input %s with step %s instead of 0",
-                            self.name, input_file.info.name, instant.step_suffix())
+                log.warning(
+                    "input %s: ignoring input %s with step %s instead of 0",
+                    self.name,
+                    input_file.info.name,
+                    instant.step_suffix(),
+                )
             z_input = input_file
             break
         else:
@@ -966,12 +993,9 @@ class GroundToMSL(GribSetMixin, Derived):
         for instant, input_file in pantry.get_instants(self.inputs[1]).items():
             output_name = pantry.get_basename(self, instant)
             with self.stats.collect(
-                        pantry,
-                        " ".join((
-                            "groundtomsl",
-                            shlex.quote(z_input.pathname),
-                            shlex.quote(input_file.pathname),
-                            output_name))):
+                pantry,
+                " ".join(("groundtomsl", shlex.quote(z_input.pathname), shlex.quote(input_file.pathname), output_name)),
+            ):
                 with GRIB(input_file.pathname) as val_grib:
                     # Add z
                     vals = val_grib.values
@@ -1001,19 +1025,16 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
     The first input GRIB is used as a template for the output GRIB, so all its
     metadata is copied to the output as-is, unless amended by ``grib_set``.
     """
+
     NAME = "expr"
 
     def __init__(self, *, expr: str, **kw):
         super().__init__(**kw)
         self.expr = expr
-        self.expr_fn = compile(expr, filename=self.defined_in, mode='exec')
+        self.expr_fn = compile(expr, filename=self.defined_in, mode="exec")
 
     @classmethod
-    def lint(
-            cls,
-            lint: Lint, *,
-            expr: str,
-            **kwargs):
+    def lint(cls, lint: Lint, *, expr: str, **kwargs):
         super().lint(lint, **kwargs)
 
     def to_dict(self):
@@ -1030,8 +1051,8 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
         for instant, input_files in available_instants.items():
             output_name = pantry.get_basename(self, instant)
             with self.stats.collect(
-                    pantry,
-                    "expr " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name):
+                pantry, "expr " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
+            ):
                 with contextlib.ExitStack() as stack:
                     # Open all input GRIBs
                     gribs: Dict[str, GRIB] = {}
@@ -1078,6 +1099,7 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
     It takes two inputs: the first is total precipitation, the second is total
     snow precipitation.
     """
+
     NAME = "sffraction"
 
     def generate(self, pantry: "pantry.DiskPantry"):
@@ -1092,8 +1114,8 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
         for instant, input_files in available_instants.items():
             output_name = pantry.get_basename(self, instant)
             with self.stats.collect(
-                    pantry,
-                    "sffraction " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name):
+                pantry, "sffraction " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
+            ):
                 with GRIB(input_files[0].pathname) as grib_tp:
                     template = grib_tp
                     with GRIB(input_files[1].pathname) as grib_snow:
@@ -1134,6 +1156,7 @@ class InputFile(NamedTuple):
     """
     An input file stored in the pantry
     """
+
     # Pathname to the file
     pathname: str
     # Input with information about the file

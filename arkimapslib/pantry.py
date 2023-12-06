@@ -7,8 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import (TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple,
-                    Optional, Tuple)
+from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple, Optional, Tuple
 
 try:
     import arkimet
@@ -27,6 +26,7 @@ class ProcessLogEntry(NamedTuple):
     """
     Entry used to trace input processing operations
     """
+
     input: inputs.Input
     message: str
 
@@ -35,6 +35,7 @@ class Pantry:
     """
     Storage of GRIB files used as inputs to recipes
     """
+
     def __init__(self, *args, **kw):
         # List of input definitions, indexed by name
         self.inputs: Dict[str, List[inputs.Input]] = {}
@@ -77,13 +78,15 @@ class Pantry:
             # We had an input for model=None (all models)
             # so we refuse to add more
             raise RuntimeError(
-                    f"{inp.defined_in}: input {inp.name} for (any model) already defined in {old[0].defined_in}")
+                f"{inp.defined_in}: input {inp.name} for (any model) already defined in {old[0].defined_in}"
+            )
 
         for i in old:
             if i.model == inp.model:
                 # We already had an input for this model name
                 raise RuntimeError(
-                        f"{inp.defined_in}: input {inp.name} (model {inp.model}) already defined in {i.defined_in}")
+                    f"{inp.defined_in}: input {inp.name} (model {inp.model}) already defined in {i.defined_in}"
+                )
 
         # Input for a new model: store it
         old.append(inp)
@@ -129,6 +132,7 @@ class EmptyPantry(Pantry):
     """
     Pantry with no disk-based storage, used as input registry only to generate documentation
     """
+
     pass
 
 
@@ -136,6 +140,7 @@ class DiskPantry(Pantry):
     """
     Pantry with disk-based storage
     """
+
     def __init__(self, root: str, **kw):
         super().__init__(**kw)
         self.data_root: str = os.path.join(root, "pantry")
@@ -183,9 +188,8 @@ class DiskPantry(Pantry):
         return f"{self.data_root}/{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
 
     def get_instants(
-            self,
-            input_name: str,
-            model: Optional[str] = None) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
+        self, input_name: str, model: Optional[str] = None
+    ) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
         """
         Return the instants available in the pantry for the input with the given
         name
@@ -215,12 +219,10 @@ class DiskPantry(Pantry):
 
     def rescan(self):
         fn_match = re.compile(
-                r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_"
-                r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
+            r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_" r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$"
+        )
         for fn in os.listdir(self.data_root):
-            if ("grib_filter_rules" in fn
-                    or fn == "static"
-                    or fn.endswith("-processed")):
+            if "grib_filter_rules" in fn or fn == "static" or fn.endswith("-processed"):
                 continue
 
             mo = fn_match.match(fn)
@@ -240,10 +242,12 @@ class DiskPantry(Pantry):
 
 
 if arkimet is not None:
+
     class ArkimetEmptyPantry(EmptyPantry):
         """
         Storage-less arkimet pantry only used to load recipes
         """
+
         def __init__(self, session: "arkimet.dataset.Session", **kw):
             super().__init__(**kw)
             self.session = session
@@ -256,6 +260,7 @@ if arkimet is not None:
         """
         Arkimet-based storage of GRIB files to be processed
         """
+
         def __init__(self, session: arkimet.dataset.Session, **kw):
             super().__init__(**kw)
             self.session = session
@@ -281,8 +286,8 @@ if arkimet is not None:
                     if matcher is None:
                         if hasattr(inp, "eccodes"):
                             log.info(
-                                "%s (model=%s): skipping input with no arkimet matcher filter",
-                                inp.name, inp.model)
+                                "%s (model=%s): skipping input with no arkimet matcher filter", inp.name, inp.model
+                            )
                         continue
                     todo_list.append((matcher, inp))
 
@@ -296,6 +301,7 @@ if arkimet is not None:
         """
         Read a stream of arkimet metadata and store its data into a dataset
         """
+
         def __init__(self, pantry: "Pantry", todo_list: List[Tuple[Any, "inputs.Input"]]):
             self.pantry = pantry
             self.data_root = pantry.data_root
@@ -356,6 +362,7 @@ class EccodesPantry(DiskPantry):
     """
     eccodes-based storage of GRIB files to be processed
     """
+
     def __init__(self, grib_input=False, **kw):
         super().__init__(**kw)
         self.grib_input = grib_input
@@ -380,8 +387,11 @@ class EccodesPantry(DiskPantry):
                     elif eccodes == "skip":
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
-                    print(f'  print "s:{inp.model or ""},{inp.name},'
-                          '[year],[month],[day],[hour],[minute],[second],[endStep]";', file=f)
+                    print(
+                        f'  print "s:{inp.model or ""},{inp.name},'
+                        '[year],[month],[day],[hour],[minute],[second],[endStep]";',
+                        file=f,
+                    )
                     print(f'  write "{self.get_eccodes_fullname(inp)}";', file=f)
                     print("}", file=f)
 
@@ -421,8 +431,8 @@ class EccodesPantry(DiskPantry):
         with tempfile.TemporaryFile("w+b") as outfd:
             try:
                 proc = subprocess.Popen(
-                        ["grib_filter", self.grib_filter_rules, "-"],
-                        stdin=subprocess.PIPE, stdout=outfd)
+                    ["grib_filter", self.grib_filter_rules, "-"], stdin=subprocess.PIPE, stdout=outfd
+                )
 
                 def dispatch(md: arkimet.Metadata) -> bool:
                     proc.stdin.write(md.data)
