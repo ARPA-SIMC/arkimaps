@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional, Set, Tuple
 # if TYPE_CHECKING:
 from . import inputs
 from .lint import Lint
+
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
@@ -12,6 +13,7 @@ class StepSkipped(Exception):
     """
     Exception raised in Step constructor to signal that the step should be skipped
     """
+
     pass
 
 
@@ -19,6 +21,7 @@ class StepConfig:
     """
     Flavour configuration for a step
     """
+
     def __init__(self, name: str, options: Optional[Kwargs] = None, **kw):
         self.name = name
         self.options: Kwargs = options if options is not None else {}
@@ -31,26 +34,19 @@ class Step:
     """
     One recipe step provided by a Mixer
     """
+
     defaults: Optional[Kwargs] = None
 
-    def __init__(self,
-                 step: str,
-                 step_config: StepConfig,
-                 params: Optional[Kwargs],
-                 sources: Dict[str, inputs.InputFile]):
+    def __init__(
+        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, inputs.InputFile]
+    ):
         self.name = step
         self.params = self.compile_args(step_config, params if params is not None else {})
         if bool(self.params.get("skip")):
             raise StepSkipped()
 
     @classmethod
-    def lint(
-            cls,
-            lint: Lint, *,
-            defined_in: str,
-            name: str,
-            step: str,
-            **kwargs):
+    def lint(cls, lint: Lint, *, defined_in: str, name: str, step: str, **kwargs):
         """
         Consistency check the given input arguments
         """
@@ -116,14 +112,11 @@ class MagicsMacro(Step):
     """
     Run a Magics macro with optional default arguments
     """
+
     macro_name: str
 
     @classmethod
-    def lint(
-            cls,
-            lint: Lint, *,
-            params: Optional[Dict[str, Any]] = None,
-            **kwargs):
+    def lint(cls, lint: Lint, *, params: Optional[Dict[str, Any]] = None, **kwargs):
         super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
@@ -134,6 +127,7 @@ class AddBasemap(MagicsMacro):
     """
     Add a base map
     """
+
     macro_name = "mmap"
 
 
@@ -141,6 +135,7 @@ class AddCoastlinesBg(MagicsMacro):
     """
     Add background coastlines
     """
+
     macro_name = "mcoast"
     defaults = {
         "params": {
@@ -154,6 +149,7 @@ class AddSymbols(MagicsMacro):
     """
     Add symbols settings
     """
+
     macro_name = "msymb"
     defaults = {
         "params": {
@@ -170,6 +166,7 @@ class AddContour(MagicsMacro):
     """
     Add contouring of the previous data
     """
+
     macro_name = "mcont"
     defaults = {
         "params": {
@@ -178,11 +175,7 @@ class AddContour(MagicsMacro):
     }
 
     @classmethod
-    def lint(
-            cls,
-            lint: Lint, *,
-            params: Optional[Dict[str, Any]] = None,
-            **kwargs):
+    def lint(cls, lint: Lint, *, params: Optional[Dict[str, Any]] = None, **kwargs):
         super().lint(lint, params=params, **kwargs)
         cll = params.get("contour_level_list")
         cscl = params.get("contour_shade_colour_list")
@@ -199,13 +192,15 @@ class AddContour(MagicsMacro):
                     lint.warn_recipe_step(
                         f"contour_level_list has {len(cll)} items while"
                         f" contour_shade_colour_list has {len(cscl)} items",
-                        **kwargs)
+                        **kwargs,
+                    )
 
 
 class AddWind(MagicsMacro):
     """
     Add wind flag rendering of the previous data
     """
+
     macro_name = "mwind"
 
 
@@ -213,6 +208,7 @@ class AddGrid(MagicsMacro):
     """
     Add a coordinates grid
     """
+
     macro_name = "mcoast"
     defaults = {
         "params": {
@@ -225,6 +221,7 @@ class AddCoastlinesFg(MagicsMacro):
     """
     Add foreground coastlines
     """
+
     macro_name = "mcoast"
     defaults = {
         "params": {
@@ -242,15 +239,16 @@ class AddBoundaries(MagicsMacro):
     """
     Add political boundaries
     """
+
     macro_name = "mcoast"
     defaults = {
         "params": {
-            'map_boundaries': "on",
-            'map_boundaries_colour': "#504040",
-            'map_administrative_boundaries_countries_list': ["ITA"],
-            'map_administrative_boundaries_colour': "#504040",
-            'map_administrative_boundaries_style': "solid",
-            'map_administrative_boundaries': "on",
+            "map_boundaries": "on",
+            "map_boundaries_colour": "#504040",
+            "map_administrative_boundaries_countries_list": ["ITA"],
+            "map_administrative_boundaries_colour": "#504040",
+            "map_administrative_boundaries_style": "solid",
+            "map_administrative_boundaries": "on",
         },
     }
 
@@ -259,11 +257,10 @@ class AddGrib(Step):
     """
     Add a grib file
     """
-    def __init__(self,
-                 step: str,
-                 step_config: StepConfig,
-                 params: Optional[Kwargs],
-                 sources: Dict[str, inputs.InputFile]):
+
+    def __init__(
+        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, inputs.InputFile]
+    ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("grib")
         inp = sources.get(input_name)
@@ -279,12 +276,7 @@ class AddGrib(Step):
                 params.setdefault(k, v)
 
     @classmethod
-    def lint(
-            cls,
-            lint: Lint, *,
-            grib: str,
-            params: Optional[Dict[str, Any]] = None,
-            **kwargs):
+    def lint(cls, lint: Lint, *, grib: str, params: Optional[Dict[str, Any]] = None, **kwargs):
         super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
@@ -307,11 +299,10 @@ class AddUserBoundaries(Step):
     """
     Add user-defined boundaries from a shapefile
     """
-    def __init__(self,
-                 step: str,
-                 step_config: StepConfig,
-                 params: Optional[Kwargs],
-                 sources: Dict[str, inputs.InputFile]):
+
+    def __init__(
+        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, inputs.InputFile]
+    ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("shape")
         inp = sources.get(input_name)
@@ -341,16 +332,19 @@ class AddUserBoundaries(Step):
             res.add(shape)
         return res
 
+    @classmethod
+    def get_all_possible_input_names(cls, args: Kwargs) -> Set[str]:
+        raise NotImplementedError()
+
 
 class AddGeopoints(Step):
     """
     Add geopoints
     """
-    def __init__(self,
-                 step: str,
-                 step_config: StepConfig,
-                 params: Optional[Kwargs],
-                 sources: Dict[str, inputs.InputFile]):
+
+    def __init__(
+        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, inputs.InputFile]
+    ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("points")
         inp = sources.get(input_name)
