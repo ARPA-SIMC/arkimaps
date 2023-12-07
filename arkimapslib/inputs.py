@@ -70,6 +70,18 @@ class ModelStep:
             return self._value == other._value
         return NotImplemented
 
+    def __lt__(self, other):
+        if isinstance(other, int):
+            return self._value < other
+        if isinstance(other, str):
+            val, unit = self._parse_value(other)
+            if unit != "h":
+                raise ValueError(f"only 'h' currently supported as a time unit (found {unit!r})")
+            return self._value < val
+        if isinstance(other, ModelStep):
+            return self._value < other._value
+        return NotImplemented
+
     def __hash__(self) -> int:
         return hash(self._value)
 
@@ -206,11 +218,23 @@ class Instant:
             return self._reftime == other._reftime and self._step == other._step
         return NotImplemented
 
+    def __lt__(self, other):
+        if isinstance(other, Instant):
+            if self._reftime < other._reftime:
+                return True
+            if self._reftime > other._reftime:
+                return False
+            return self._step < other._step
+        return NotImplemented
+
     def __hash__(self) -> int:
         return hash((self._reftime, self._step))
 
     def __str__(self):
-        return f"{self._reftime:%Y-%m-%dT%H:%M:%S}+{self._step._value}"
+        return f"{self._reftime:%Y-%m-%dT%H:%M:%S}{self._step.suffix()}"
+
+    def __repr__(self):
+        return f"Instant({self})"
 
     def pantry_suffix(self) -> str:
         """

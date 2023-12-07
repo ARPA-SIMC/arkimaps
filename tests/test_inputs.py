@@ -101,9 +101,12 @@ class TestInputs(unittest.TestCase):
             # Notify one more data in the test instant: it should notice the duplicate
             with self.assertLogs() as log:
                 test.add_instant(instant1)
-            self.assertEqual(log.output, [
-                'WARNING:arkimaps.inputs:test: multiple data found for 2021-01-10T00:00:00+0',
-            ])
+            self.assertEqual(
+                log.output,
+                [
+                    "WARNING:arkimaps.inputs:test: multiple data found for 2021-01-10T00:00:00+000",
+                ],
+            )
             self.assertCountEqual(test.instants, [instant1])
             self.assertCountEqual(test.instants_to_truncate, [instant1])
             self.assertEqual(os.path.getsize(data_file), len(mds[0].data) * 2)
@@ -259,6 +262,26 @@ class TestModelStep(unittest.TestCase):
         with self.assertRaises(ValueError):
             ms == "h"
 
+    def test_lt(self):
+        ms = ModelStep(0)
+        self.assertLess(ms, 1)
+        self.assertLess(ms, "1h")
+        self.assertLess(ms, ModelStep("1h"))
+
+        ms = ModelStep(12)
+        self.assertLess(ms, 13)
+        self.assertLess(ms, "13h")
+        self.assertLess(ms, ModelStep("13h"))
+
+        with self.assertRaises(ValueError):
+            ms < "721m"
+        with self.assertRaises(ValueError):
+            ms < "43201s"
+        with self.assertRaises(ValueError):
+            ms < ""
+        with self.assertRaises(ValueError):
+            ms < "h"
+
     def test_suffix(self):
         ms = ModelStep(0)
         self.assertEqual(ms.suffix(), "+000")
@@ -289,3 +312,8 @@ class TestInstant(unittest.TestCase):
         self.assertTrue(i == Instant(datetime.datetime(2023, 1, 1), 12))
         self.assertTrue(i != Instant(datetime.datetime(2023, 1, 1), 11))
         self.assertTrue(i != Instant(datetime.datetime(2023, 1, 2), 12))
+
+    def test_lt(self):
+        i = Instant(datetime.datetime(2023, 1, 1), 12)
+        self.assertLess(i, Instant(datetime.datetime(2023, 1, 1), 13))
+        self.assertLess(i, Instant(datetime.datetime(2023, 1, 2), 12))
