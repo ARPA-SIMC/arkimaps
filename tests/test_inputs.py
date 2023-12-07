@@ -29,21 +29,16 @@ class TestInputs(unittest.TestCase):
                 pantry.add_input(inp)
             yield pantry
 
-    def add_to_pantry(
-            self,
-            pantry: Pantry,
-            fname: str,
-            instant: Optional[Instant] = None,
-            name: Optional[str] = None):
+    def add_to_pantry(self, pantry: Pantry, fname: str, instant: Optional[Instant] = None, name: Optional[str] = None):
         fn_match = re.compile(
-                r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_"
-                r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$")
+            r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_" r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$"
+        )
 
         mo = fn_match.match(os.path.basename(fname))
         if instant is None:
             instant = Instant(
-                    datetime.datetime.strptime(mo.group("reftime"), "%Y_%m_%d_%H_%M_%S"),
-                    int(mo.group("step")))
+                datetime.datetime.strptime(mo.group("reftime"), "%Y_%m_%d_%H_%M_%S"), int(mo.group("step"))
+            )
 
         if name is None:
             name = mo.group("name")
@@ -53,8 +48,8 @@ class TestInputs(unittest.TestCase):
             inp = [x for x in inp if x.model == mo.group("model")]
         if not inp:
             inp = arkimapslib.inputs.Source(
-                    config=Config(),
-                    model=mo.group("model"), name=name, defined_in=__file__, arkimet="", eccodes="")
+                config=Config(), model=mo.group("model"), name=name, defined_in=__file__, arkimet="", eccodes=""
+            )
             pantry.add_input(inp)
 
         testsource = os.path.join("testdata", fname)
@@ -71,9 +66,7 @@ class TestInputs(unittest.TestCase):
         inp.add_instant(instant)
 
     def test_trim(self):
-        test = arkimapslib.inputs.Source(
-                config=Config(),
-                name="test", defined_in=__file__, arkimet="", eccodes="")
+        test = arkimapslib.inputs.Source(config=Config(), name="test", defined_in=__file__, arkimet="", eccodes="")
         testsource = os.path.join("testdata", "t2m", "cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
         with open(testsource, "rb") as infd:
             mds = arkimet.Metadata.read_bundle(infd)
@@ -137,10 +130,12 @@ class TestInputs(unittest.TestCase):
     def test_model_mix_allowed(self):
         with self.pantry() as pantry:
             # Inputs from two different models
-            self.add_to_pantry(pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet",
-                               Instant(datetime.datetime(2021, 1, 10), 12))
-            self.add_to_pantry(pantry, "wflags10m/ifs_v_2021_1_10_0_0_0+12.arkimet",
-                               Instant(datetime.datetime(2021, 1, 10), 12))
+            self.add_to_pantry(
+                pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet", Instant(datetime.datetime(2021, 1, 10), 12)
+            )
+            self.add_to_pantry(
+                pantry, "wflags10m/ifs_v_2021_1_10_0_0_0+12.arkimet", Instant(datetime.datetime(2021, 1, 10), 12)
+            )
 
             # Derived input defined for any model
             cat = Input.create(config=Config(), name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
@@ -157,14 +152,17 @@ class TestInputs(unittest.TestCase):
     def test_model_mix_restricted(self):
         with self.pantry() as pantry:
             # Inputs from two different models
-            self.add_to_pantry(pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet",
-                               Instant(datetime.datetime(2021, 1, 10), 12))
-            self.add_to_pantry(pantry, "wflags10m/ifs_v_2021_1_10_0_0_0+12.arkimet",
-                               Instant(datetime.datetime(2021, 1, 10), 12))
+            self.add_to_pantry(
+                pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet", Instant(datetime.datetime(2021, 1, 10), 12)
+            )
+            self.add_to_pantry(
+                pantry, "wflags10m/ifs_v_2021_1_10_0_0_0+12.arkimet", Instant(datetime.datetime(2021, 1, 10), 12)
+            )
 
             # Derived input defined only for cosmo
             cat = Input.create(
-                config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+                config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__
+            )
             pantry.add_input(cat)
 
             # Derived input prerequisites are not satisfied
@@ -172,14 +170,17 @@ class TestInputs(unittest.TestCase):
 
         with self.pantry() as pantry:
             # Inputs from two different models
-            self.add_to_pantry(pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet",
-                               Instant(datetime.datetime(2021, 1, 10), 12))
-            self.add_to_pantry(pantry, "wflags10m/cosmo_v_2021_1_10_0_0_0+12.arkimet",
-                               Instant(datetime.datetime(2021, 1, 10), 12))
+            self.add_to_pantry(
+                pantry, "wflags10m/cosmo_u_2021_1_10_0_0_0+12.arkimet", Instant(datetime.datetime(2021, 1, 10), 12)
+            )
+            self.add_to_pantry(
+                pantry, "wflags10m/cosmo_v_2021_1_10_0_0_0+12.arkimet", Instant(datetime.datetime(2021, 1, 10), 12)
+            )
 
             # Derived input defined only for cosmo
             cat = Input.create(
-                config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+                config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__
+            )
             pantry.add_input(cat)
 
             # Derived input prerequisites are not satisfied
@@ -200,12 +201,7 @@ class TestInputs(unittest.TestCase):
             config = Config()
             config.static_dir.insert(0, static_dir)
 
-            inp = Input.create(
-                config=config,
-                name="testfile",
-                path="testfile",
-                type="static",
-                defined_in=__file__)
+            inp = Input.create(config=config, name="testfile", path="testfile", type="static", defined_in=__file__)
 
             self.assertEqual(inp.abspath, os.path.join(static_dir, "testfile"))
             self.assertEqual(inp.path, "testfile")
@@ -275,10 +271,13 @@ class TestModelStep(unittest.TestCase):
             ModelStep(12),
         }
         self.assertEqual(len(steps), 2)
-        self.assertEqual(steps, {
-            ModelStep(0),
-            ModelStep(12),
-        })
+        self.assertEqual(
+            steps,
+            {
+                ModelStep(0),
+                ModelStep(12),
+            },
+        )
 
 
 class TestInstant(unittest.TestCase):
