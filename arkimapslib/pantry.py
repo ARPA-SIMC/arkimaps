@@ -36,7 +36,7 @@ class Pantry:
     Storage of GRIB files used as inputs to recipes
     """
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args, **kw) -> None:
         # List of input definitions, indexed by name
         self.inputs: Dict[str, List[inputs.Input]] = {}
         # Log of input processing operations performed
