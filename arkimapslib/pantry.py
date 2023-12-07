@@ -415,12 +415,13 @@ class EccodesPantry(DiskPantry):
     def _parse_filter_output(self, line: bytes):
         if not line.startswith(b"s:"):
             return
-        model, name, ye, mo, da, ho, mi, se, step = line[2:].split(b",")
+        modelname, name, ye, mo, da, ho, mi, se, step = line[2:].split(b",")
         reftime = datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se))
-        if not model:
+        model: Optional[str]
+        if not modelname:
             model = None
         else:
-            model = model.decode()
+            model = modelname.decode()
         for inp in self.inputs[name.decode()]:
             if inp.model == model:
                 inp.add_instant(inputs.Instant(reftime, int(step)))
