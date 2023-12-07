@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 from collections import defaultdict
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from arkimapslib import outputbundle
 from arkimapslib.cmdline import Command, Fail, Success
@@ -311,12 +311,18 @@ class DocumentRecipes(RecipesMixin, Command):
         self.kitchen.document_recipes(dest)
 
 
-class DumpRecipes(RecipesMixin, Command):
+class DumpRecipes(RecipesMixin, FlavoursMixin, Command):
     """
     dump content parsed from recipes directory
     """
 
     NAME = "dump-recipes"
+
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument("--inputs", action="store_true", help="dump inputs instead of recipes")
+        return parser
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
@@ -327,7 +333,7 @@ class DumpRecipes(RecipesMixin, Command):
 
         self.load_recipes()
 
-    def run(self):
+    def dump_recipes(self):
         res_inputs = {}
         for name, inputs in self.kitchen.pantry.inputs.items():
             res_inputs[name] = []
@@ -340,6 +346,18 @@ class DumpRecipes(RecipesMixin, Command):
         print()
         # TODO: self.recipes = Recipes()
         # TODO: self.flavours: Dict[str, Flavour] = {}
+
+    def dump_inputs(self):
+        flavours = self.parse_flavours()
+        all_inputs = self.kitchen.list_inputs(flavours)
+        for name in sorted(all_inputs):
+            print(name)
+
+    def run(self):
+        if self.args.inputs:
+            self.dump_inputs()
+        else:
+            self.dump_recipes()
 
 
 class LintCmd(RecipesMixin, Command):
@@ -361,7 +379,7 @@ class LintCmd(RecipesMixin, Command):
         self.load_recipes(lint=lint)
 
 
-class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):
+class Dispatch(RecipesMixin, WorkingKitchenMixin, FlavoursMixin, Command):
     """
     do not render: dispatch into a working directory
     """
@@ -381,7 +399,7 @@ class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):
         """
         Acquire input data
         """
-        self.kitchen.fill_pantry()
+        self.kitchen.fill_pantry(flavours=self.parse_flavours())
 
 
 class Render(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
@@ -498,7 +516,7 @@ class Process(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
 
     def run(self):
         # Acquire input data
-        self.kitchen.fill_pantry()
+        self.kitchen.fill_pantry(flavours=self.parse_flavours())
         self.render_tarball()
 
 

@@ -3,7 +3,7 @@ import contextlib
 import datetime
 import os
 import tempfile
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Set, Union
 
 import yaml
 
@@ -116,6 +116,20 @@ class Kitchen:
                 if "extends" in recipe:
                     self.recipes.add_derived(lint=lint, **recipe)
 
+    def list_inputs(self, flavours: List[Flavour]) -> Set[str]:
+        """
+        Filter the available of recipes according the flavours' recipe filters,
+        and return the names of all possible inputs that can be used by the
+        remaining recipes
+        """
+        all_inputs: Set[str] = set()
+        for recipe in self.recipes:
+            for flavour in flavours:
+                if not flavour.allows_recipe(recipe):
+                    continue
+                all_inputs.update(flavour.list_inputs_recursive(recipe, self.pantry))
+        return all_inputs
+
     def document_recipes(self, path: str):
         """
         Generate markdown documentation for all the recipes found.
@@ -144,11 +158,15 @@ class WorkingKitchen(Kitchen):
             self.tempdir = None
             self.workdir = workdir
 
-    def fill_pantry(self, path: Optional[str] = None):
+    def fill_pantry(self, path: Optional[str] = None, flavours: Optional[List[Flavour]] = None):
         """
         Fill the pantry from the given path or standard input
         """
-        self.pantry.fill(path)
+        if not flavours:
+            self.pantry.fill(path)
+        else:
+            all_inputs = self.list_inputs(flavours)
+            self.pantry.fill(path, input_filter=all_inputs)
 
     def make_orders(self, flavour: Union[Flavour, str], recipe: Optional[str] = None) -> List[orders.Order]:
         """

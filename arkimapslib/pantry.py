@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple, Optional, Set, Tuple
 
 try:
     import arkimet
@@ -91,7 +91,7 @@ class Pantry:
         # Input for a new model: store it
         old.append(inp)
 
-    def fill(self, path: Optional[str] = None):
+    def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
         """
         Read data from standard input and acquire it into the pantry.
 
@@ -269,7 +269,7 @@ if arkimet is not None:
             inp.compile_arkimet_matcher(self.session)
             super().add_input(inp)
 
-        def fill(self, path: Optional[str] = None):
+        def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
             """
             Read data from standard input and acquire it into the pantry
             """
@@ -281,6 +281,8 @@ if arkimet is not None:
             for inps in self.inputs.values():
                 for inp in inps:
                     if getattr(inp, "arkimet", None) == "skip":
+                        continue
+                    if input_filter is not None and inp.name not in input_filter:
                         continue
                     matcher = getattr(inp, "arkimet_matcher", None)
                     if matcher is None:
@@ -378,7 +380,7 @@ class EccodesPantry(DiskPantry):
         self.grib_input = grib_input
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
-    def fill(self, path: Optional[str] = None):
+    def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
@@ -395,6 +397,8 @@ class EccodesPantry(DiskPantry):
                             log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue
                     elif eccodes == "skip":
+                        continue
+                    if input_filter is not None and inp.name not in input_filter:
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
                     print(
