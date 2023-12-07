@@ -3,8 +3,7 @@ import inspect
 import json
 import logging
 import os
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set,
-                    TextIO, Type)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, TextIO, Type
 
 from . import steps, toposort
 from .config import Config
@@ -24,6 +23,7 @@ class Recipes:
     """
     Repository of all known recipes
     """
+
     def __init__(self):
         self.recipes: Dict[str, "Recipe"] = {}
         # Temporary storage for derived recipes not yet instantiated
@@ -108,6 +108,7 @@ class RecipeStep:
     """
     A step of a recipe
     """
+
     def __init__(self, name: str, step: Type[steps.Step], args: Kwargs, id: Optional[str] = None):
         self.name = name
         self.step = step
@@ -161,17 +162,19 @@ class Recipe:
     """
     A parsed and validated recipe
     """
+
     def __init__(
-            self, *,
-            name: str,
-            defined_in: str,
-            notes: Optional[str] = None,
-            description: str = "Unnamed recipe",
-            mixer: str = "default",
-            info: Optional[Dict[str, Any]] = None,
-            recipe: Sequence[Dict[str, Any]] = (),
-            **kwargs,
-            ):
+        self,
+        *,
+        name: str,
+        defined_in: str,
+        notes: Optional[str] = None,
+        description: str = "Unnamed recipe",
+        mixer: str = "default",
+        info: Optional[Dict[str, Any]] = None,
+        recipe: Sequence[Dict[str, Any]] = (),
+        **kwargs,
+    ):
         from .mixers import mixers
 
         # Name of the recipe
@@ -207,19 +210,23 @@ class Recipe:
 
     @classmethod
     def lint(
-            cls, lint: Lint, *,
-            name: str,
-            defined_in: str,
-            notes: Optional[str] = None,
-            description: str = "Unnamed recipe",
-            mixer: str = "default",
-            info: Optional[Dict[str, Any]] = None,
-            recipe: Sequence[Dict[str, Any]] = (),
-            **kwargs: Any):
+        cls,
+        lint: Lint,
+        *,
+        name: str,
+        defined_in: str,
+        notes: Optional[str] = None,
+        description: str = "Unnamed recipe",
+        mixer: str = "default",
+        info: Optional[Dict[str, Any]] = None,
+        recipe: Sequence[Dict[str, Any]] = (),
+        **kwargs: Any,
+    ):
         for k, v in kwargs.items():
             lint.warn_recipe(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
 
         from .mixers import mixers
+
         if mixer not in mixers.registry:
             lint.warn_recipe(f"Unknown mixer: {mixer!r}", defined_in=defined_in, name=name)
         else:
@@ -236,18 +243,15 @@ class Recipe:
                 step_cls = step_collection.get(step)
                 if step_cls is None:
                     lint.warn_recipe(
-                        f"Recipe step {s!r} contains invalid step={step!r}", defined_in=defined_in, name=name)
+                        f"Recipe step {s!r} contains invalid step={step!r}", defined_in=defined_in, name=name
+                    )
                     continue
                 step_cls.lint(lint, defined_in=defined_in, name=name, step=step, **s)
 
     @classmethod
     def inherit(
-            cls, *,
-            name: str,
-            defined_in: str,
-            parent: "Recipe",
-            change: Optional[Dict[str, Any]] = None,
-            **kwargs: Any) -> Dict[str, Any]:
+        cls, *, name: str, defined_in: str, parent: "Recipe", change: Optional[Dict[str, Any]] = None, **kwargs: Any
+    ) -> Dict[str, Any]:
         """
         Compute recipe arguments deriving them from an existing one
         """
@@ -292,6 +296,7 @@ class Recipe:
 
     def document(self, pantry: "pantry.Pantry", dest: str):
         from .flavours import Flavour
+
         empty_flavour = Flavour(config=Config(), name="default", defined_in=__file__)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "wt") as fd:
