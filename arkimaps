@@ -14,6 +14,7 @@ from typing import List, Optional
 
 from arkimapslib import outputbundle
 from arkimapslib.cmdline import Command, Fail, Success
+
 # if TYPE_CHECKING:
 from arkimapslib.flavours import Flavour
 from arkimapslib.lint import Lint
@@ -33,10 +34,10 @@ class LogCollector(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         entry = {
-            'ts': time.clock_gettime(time.CLOCK_REALTIME),
-            'level': record.levelno,
-            'msg': self.format(record),
-            'name': record.name
+            "ts": time.clock_gettime(time.CLOCK_REALTIME),
+            "level": record.levelno,
+            "msg": self.format(record),
+            "name": record.name,
         }
         self.entries.append(entry)
 
@@ -44,6 +45,7 @@ class LogCollector(logging.Handler):
 #
 # Mixins used to compose the various command line actions
 #
+
 
 class RecipesMixin:
     """
@@ -56,9 +58,13 @@ class RecipesMixin:
         default_recipes_dir = SYSTEM_RECIPE_DIR
         if os.path.isdir("recipes"):
             default_recipes_dir = os.path.abspath("recipes")
-        parser.add_argument("--recipes", metavar="dir", action="store", default=default_recipes_dir,
-                            help="directory with the YAML recipes (default: ./recipes (if existing)"
-                                 " or " + SYSTEM_RECIPE_DIR)
+        parser.add_argument(
+            "--recipes",
+            metavar="dir",
+            action="store",
+            default=default_recipes_dir,
+            help="directory with the YAML recipes (default: ./recipes (if existing)" " or " + SYSTEM_RECIPE_DIR,
+        )
         return parser
 
     def load_recipes(self, lint: Optional[Lint] = None):
@@ -72,6 +78,7 @@ class RenderMixin:
     """
     Command line options to control rendering of recipes
     """
+
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
@@ -80,12 +87,26 @@ class RenderMixin:
         if not os.path.isdir(default_styles):
             default_styles = "/usr/share/magics/styles/ecmwf"
 
-        parser.add_argument("--styles", metavar="dir", action="store", default=default_styles,
-                            help="styles directory. Default: ./styles (if existing) or /usr/share/magics/styles/ecmwf")
-        parser.add_argument("--output", "-o", metavar="file.tar", action="store",
-                            help="write rendered output to the given file. Default: write to stdout")
-        parser.add_argument("--flavours", action="store", default="default",
-                            help="comma-separated list of flavours to render. Default: \"%(default)s\"")
+        parser.add_argument(
+            "--styles",
+            metavar="dir",
+            action="store",
+            default=default_styles,
+            help="styles directory. Default: ./styles (if existing) or /usr/share/magics/styles/ecmwf",
+        )
+        parser.add_argument(
+            "--output",
+            "-o",
+            metavar="file.tar",
+            action="store",
+            help="write rendered output to the given file. Default: write to stdout",
+        )
+        parser.add_argument(
+            "--flavours",
+            action="store",
+            default="default",
+            help='comma-separated list of flavours to render. Default: "%(default)s"',
+        )
 
         return parser
 
@@ -123,7 +144,7 @@ class RenderMixin:
         for flavour_name in self.args.flavours.split(","):
             flavour = self.kitchen.flavours.get(flavour_name)
             if flavour is None:
-                raise Fail(f"Flavour \"{flavour_name}\" not found")
+                raise Fail(f'Flavour "{flavour_name}" not found')
             flavours.append(flavour)
         return flavours
 
@@ -139,11 +160,11 @@ class RenderMixin:
             orders += self.kitchen.make_orders(flavour=flavour)
 
         # Prepare input summary after we're done with input processing
-        input_summary = outputbundle.InputSummary(
-                summary=self.kitchen.pantry.summarize_inputs(orders))
+        input_summary = outputbundle.InputSummary(summary=self.kitchen.pantry.summarize_inputs(orders))
 
         renderer = Renderer(
-                config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
+            config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory()
+        )
 
         rendered: List[Order] = []
         with self.open_output() as bundle:
@@ -157,8 +178,7 @@ class RenderMixin:
             bundle.add_log(log_entries)
 
             # Add products summary
-            order_summary = outputbundle.Products(
-                    summary=Order.summarize_orders(self.kitchen, rendered))
+            order_summary = outputbundle.Products(summary=Order.summarize_orders(self.kitchen, rendered))
             bundle.add_products(order_summary)
 
             # Let the Pantry store processing artifacts if it has any
@@ -186,21 +206,31 @@ class WorkingKitchenMixin:
     Mixin for commands that need a kitchen that can be used to generate
     products
     """
+
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
-        parser.add_argument("--filter", metavar="{arkimet|eccodes}", default="arkimet",
-                            help="backend to use to organise data into recipe inputs. Default: %(default)s")
-        parser.add_argument("--grib", action="store_true",
-                            help="read input as GRIB data instead of arkimet output. Implies --filter=eccodes")
+        parser.add_argument(
+            "--filter",
+            metavar="{arkimet|eccodes}",
+            default="arkimet",
+            help="backend to use to organise data into recipe inputs. Default: %(default)s",
+        )
+        parser.add_argument(
+            "--grib",
+            action="store_true",
+            help="read input as GRIB data instead of arkimet output. Implies --filter=eccodes",
+        )
         return parser
 
     def make_kitchen(self, workdir):
         if self.args.grib or self.args.filter == "eccodes":
             from arkimapslib.kitchen import EccodesKitchen
+
             return EccodesKitchen(workdir, grib_input=self.args.grib)
         elif self.args.filter == "arkimet":
             from arkimapslib.kitchen import ArkimetKitchen
+
             return ArkimetKitchen(workdir)
         else:
             raise Fail(f"Unsupported value `{self.args.filter}` for --filter")
@@ -215,12 +245,14 @@ class PrintArkiQuery(RecipesMixin, Command):
     """
     print an arkimet query to query data that can be used by the recipes found
     """
+
     NAME = "print-arki-query"
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
 
         from arkimapslib.kitchen import ArkimetEmptyKitchen
+
         self.kitchen = ArkimetEmptyKitchen()
 
         self.load_recipes()
@@ -234,20 +266,25 @@ class DocumentRecipes(RecipesMixin, Command):
     """
     generate recipes documentation
     """
+
     NAME = "document-recipes"
 
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
-        parser.add_argument("--destdir", metavar="dir", action="store",
-                            help="directory where documentation is written. It"
-                                 " defaults to the recipes directory")
+        parser.add_argument(
+            "--destdir",
+            metavar="dir",
+            action="store",
+            help="directory where documentation is written. It" " defaults to the recipes directory",
+        )
         return parser
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
 
         from arkimapslib.kitchen import EccodesEmptyKitchen
+
         self.kitchen = EccodesEmptyKitchen()
 
         self.load_recipes()
@@ -265,12 +302,14 @@ class DumpRecipes(RecipesMixin, Command):
     """
     dump content parsed from recipes directory
     """
+
     NAME = "dump-recipes"
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
 
         from arkimapslib.kitchen import EccodesEmptyKitchen
+
         self.kitchen = EccodesEmptyKitchen()
 
         self.load_recipes()
@@ -294,12 +333,14 @@ class LintCmd(RecipesMixin, Command):
     """
     Validate contents of recipes
     """
+
     NAME = "lint"
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
 
         from arkimapslib.kitchen import EccodesEmptyKitchen
+
         self.kitchen = EccodesEmptyKitchen()
 
     def run(self):
@@ -311,11 +352,11 @@ class Dispatch(RecipesMixin, WorkingKitchenMixin, Command):
     """
     do not render: dispatch into a working directory
     """
+
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
-        parser.add_argument("workdir", metavar="dir", action="store",
-                            help="working directory")
+        parser.add_argument("workdir", metavar="dir", action="store", help="working directory")
         return parser
 
     def __init__(self, *args, **kw):
@@ -334,14 +375,16 @@ class Render(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
     """
     render data that was already dispatched
     """
+
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
-        parser.add_argument("workdir", metavar="dir", action="store",
-                            help="working directory")
-        parser.add_argument("--simulate", action="store_true",
-                            help="print what products would be generated"
-                                 " (note that this will still generate derived inputs)")
+        parser.add_argument("workdir", metavar="dir", action="store", help="working directory")
+        parser.add_argument(
+            "--simulate",
+            action="store_true",
+            help="print what products would be generated" " (note that this will still generate derived inputs)",
+        )
         return parser
 
     def __init__(self, *args, **kw):
@@ -364,15 +407,15 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
     """
     generate the given product only, and display it with xdg-open
     """
+
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
-        parser.add_argument("-d", "--date", metavar="datetime", action="store",
-                            help="render product at this reference time")
-        parser.add_argument("workdir", metavar="dir", action="store",
-                            help="working directory")
-        parser.add_argument("name", metavar="prod[+step]", action="store",
-                            help="name of the product to preview")
+        parser.add_argument(
+            "-d", "--date", metavar="datetime", action="store", help="render product at this reference time"
+        )
+        parser.add_argument("workdir", metavar="dir", action="store", help="working directory")
+        parser.add_argument("name", metavar="prod[+step]", action="store", help="name of the product to preview")
         return parser
 
     def __init__(self, *args, **kw):
@@ -393,7 +436,7 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
             step = None
 
         if self.args.date is not None:
-            res = subprocess.run(['date', '--date=' + self.args.date, '+%s'], text=True, capture_output=True)
+            res = subprocess.run(["date", "--date=" + self.args.date, "+%s"], text=True, capture_output=True)
             reftime = datetime.datetime.fromtimestamp(int(res.stdout))
         else:
             reftime = None
@@ -408,7 +451,8 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
 
         # Prepare it
         renderer = Renderer(
-                config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory())
+            config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory()
+        )
         order = renderer.render_one(order)
         log.info("Rendered %s to %s", order.recipe.name, order.outputs[0].relpath)
 
@@ -427,8 +471,9 @@ class Process(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
     @classmethod
     def make_subparser(cls, subparsers):
         parser = super().make_subparser(subparsers)
-        parser.add_argument("--workdir", metavar="dir", action="store",
-                            help="working directory. Default: a temporary one")
+        parser.add_argument(
+            "--workdir", metavar="dir", action="store", help="working directory. Default: a temporary one"
+        )
         return parser
 
     def __init__(self, *args, **kw):
