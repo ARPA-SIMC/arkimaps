@@ -74,7 +74,38 @@ class RecipesMixin:
         self.kitchen.load_recipes([self.args.recipes], lint=lint)
 
 
-class RenderMixin:
+class FlavoursMixin:
+    """
+    Command that takes one or more flavours as option
+    """
+
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+
+        parser.add_argument(
+            "--flavours",
+            action="store",
+            default="default",
+            help='comma-separated list of flavours to render. Default: "%(default)s"',
+        )
+
+        return parser
+
+    def parse_flavours(self) -> List[Flavour]:
+        """
+        Parse --flavours argument into a list of flavours
+        """
+        flavours = []
+        for flavour_name in self.args.flavours.split(","):
+            flavour = self.kitchen.flavours.get(flavour_name)
+            if flavour is None:
+                raise Fail(f'Flavour "{flavour_name}" not found')
+            flavours.append(flavour)
+        return flavours
+
+
+class RenderMixin(FlavoursMixin):
     """
     Command line options to control rendering of recipes
     """
@@ -100,12 +131,6 @@ class RenderMixin:
             metavar="file.tar",
             action="store",
             help="write rendered output to the given file. Default: write to stdout",
-        )
-        parser.add_argument(
-            "--flavours",
-            action="store",
-            default="default",
-            help='comma-separated list of flavours to render. Default: "%(default)s"',
         )
 
         return parser
@@ -135,18 +160,6 @@ class RenderMixin:
         else:
             with outputbundle.Writer(out=sys.stdout.buffer) as bundle:
                 yield bundle
-
-    def parse_flavours(self) -> List[Flavour]:
-        """
-        Parse --flavours argument into a list of flavours
-        """
-        flavours = []
-        for flavour_name in self.args.flavours.split(","):
-            flavour = self.kitchen.flavours.get(flavour_name)
-            if flavour is None:
-                raise Fail(f'Flavour "{flavour_name}" not found')
-            flavours.append(flavour)
-        return flavours
 
     def render_tarball(self):
         """
