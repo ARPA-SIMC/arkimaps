@@ -302,7 +302,7 @@ if arkimet is not None:
         Read a stream of arkimet metadata and store its data into a dataset
         """
 
-        def __init__(self, pantry: "Pantry", todo_list: List[Tuple[Any, "inputs.Input"]]):
+        def __init__(self, pantry: "ArkimetPantry", todo_list: List[Tuple[Any, "inputs.Input"]]):
             self.pantry = pantry
             self.data_root = pantry.data_root
             self.todo_list = todo_list
@@ -425,7 +425,7 @@ class EccodesPantry(DiskPantry):
             if inp.model == model:
                 inp.add_instant(inputs.Instant(reftime, int(step)))
 
-    def read_grib(self, path: str):
+    def read_grib(self, path: Optional[str]):
         """
         Run grib_filter on GRIB input
         """
@@ -434,7 +434,7 @@ class EccodesPantry(DiskPantry):
         for line in res.stdout.splitlines():
             self._parse_filter_output(line)
 
-    def read_arkimet(self, path: str):
+    def read_arkimet(self, path: Optional[str]):
         """
         Run grib_filter on arkimet input
         """
