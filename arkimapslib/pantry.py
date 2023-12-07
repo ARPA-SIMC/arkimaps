@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple, Optional, Set, Tuple
 
 try:
     import arkimet
@@ -36,7 +36,7 @@ class Pantry:
     Storage of GRIB files used as inputs to recipes
     """
 
-    def __init__(self, *args, **kw):
+    def __init__(self, *args, **kw) -> None:
         # List of input definitions, indexed by name
         self.inputs: Dict[str, List[inputs.Input]] = {}
         # Log of input processing operations performed
@@ -91,7 +91,7 @@ class Pantry:
         # Input for a new model: store it
         old.append(inp)
 
-    def fill(self, path: Optional[str] = None):
+    def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
         """
         Read data from standard input and acquire it into the pantry.
 
@@ -269,7 +269,7 @@ if arkimet is not None:
             inp.compile_arkimet_matcher(self.session)
             super().add_input(inp)
 
-        def fill(self, path: Optional[str] = None):
+        def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
             """
             Read data from standard input and acquire it into the pantry
             """
@@ -281,6 +281,8 @@ if arkimet is not None:
             for inps in self.inputs.values():
                 for inp in inps:
                     if getattr(inp, "arkimet", None) == "skip":
+                        continue
+                    if input_filter is not None and inp.name not in input_filter:
                         continue
                     matcher = getattr(inp, "arkimet_matcher", None)
                     if matcher is None:
@@ -302,7 +304,7 @@ if arkimet is not None:
         Read a stream of arkimet metadata and store its data into a dataset
         """
 
-        def __init__(self, pantry: "Pantry", todo_list: List[Tuple[Any, "inputs.Input"]]):
+        def __init__(self, pantry: "ArkimetPantry", todo_list: List[Tuple[Any, "inputs.Input"]]):
             self.pantry = pantry
             self.data_root = pantry.data_root
             self.todo_list = todo_list
@@ -378,7 +380,7 @@ class EccodesPantry(DiskPantry):
         self.grib_input = grib_input
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
-    def fill(self, path: Optional[str] = None):
+    def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
@@ -395,6 +397,8 @@ class EccodesPantry(DiskPantry):
                             log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
                         continue
                     elif eccodes == "skip":
+                        continue
+                    if input_filter is not None and inp.name not in input_filter:
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
                     print(
@@ -415,17 +419,18 @@ class EccodesPantry(DiskPantry):
     def _parse_filter_output(self, line: bytes):
         if not line.startswith(b"s:"):
             return
-        model, name, ye, mo, da, ho, mi, se, step = line[2:].split(b",")
+        modelname, name, ye, mo, da, ho, mi, se, step = line[2:].split(b",")
         reftime = datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se))
-        if not model:
+        model: Optional[str]
+        if not modelname:
             model = None
         else:
-            model = model.decode()
+            model = modelname.decode()
         for inp in self.inputs[name.decode()]:
             if inp.model == model:
                 inp.add_instant(inputs.Instant(reftime, int(step)))
 
-    def read_grib(self, path: str):
+    def read_grib(self, path: Optional[str]):
         """
         Run grib_filter on GRIB input
         """
@@ -434,7 +439,7 @@ class EccodesPantry(DiskPantry):
         for line in res.stdout.splitlines():
             self._parse_filter_output(line)
 
-    def read_arkimet(self, path: str):
+    def read_arkimet(self, path: Optional[str]):
         """
         Run grib_filter on arkimet input
         """
