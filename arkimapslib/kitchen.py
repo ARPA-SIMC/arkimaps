@@ -144,6 +144,12 @@ class WorkingKitchen(Kitchen):
             self.tempdir = None
             self.workdir = workdir
 
+    def fill_pantry(self, path: Optional[str] = None):
+        """
+        Fill the pantry from the given path or standard input
+        """
+        self.pantry.fill(path)
+
     def make_orders(self, flavour: Union[Flavour, str], recipe: Optional[str] = None) -> List[orders.Order]:
         """
         Generate all possible orders for all available recipes
