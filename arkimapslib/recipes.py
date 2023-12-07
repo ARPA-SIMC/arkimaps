@@ -76,7 +76,7 @@ class Recipes:
         # in dependency order
 
         # Start with the existing recipes, that have no dependencies
-        deps = {name: {} for name in self.recipes.keys()}
+        deps = {name: {} for name in self.recipes}
 
         # Add the derived recipes in the queue
         for name, info in self.new_derived.items():
