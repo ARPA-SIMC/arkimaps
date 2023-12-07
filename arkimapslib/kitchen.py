@@ -157,10 +157,10 @@ class WorkingKitchen(Kitchen):
             recipes = [self.recipes.get(recipe)]
 
         res: List[orders.Order] = []
-        for recipe in recipes:
-            if not flavour.allows_recipe(recipe):
+        for rec in recipes:
+            if not flavour.allows_recipe(rec):
                 continue
-            res.extend(flavour.make_orders(recipe, self.pantry))
+            res.extend(flavour.make_orders(rec, self.pantry))
         return res
 
     def make_order(
