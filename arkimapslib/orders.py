@@ -46,19 +46,19 @@ class Order:
     Serializable instructions to prepare a product, based on a recipe and its
     input files
     """
+
     def __init__(
-            self, *,
-            flavour: "Flavour",
-            recipe: "Recipe",
-            input_files: Dict[str, "inputs.InputFile"],
-            instant: "inputs.Instant",
-            ):
-        # Reference to the flavour to use for summaries. It will be lost for
-        # rendering, to avoid pickling the complex structure
-        self.flavour: Optional["Flavour"] = flavour
-        # Reference to the recipe to use for summaries. It will be lost for
-        # rendering, to avoid pickling the complex structure
-        self.recipe: Optional["Recipe"] = recipe
+        self,
+        *,
+        flavour: "Flavour",
+        recipe: "Recipe",
+        input_files: Dict[str, "inputs.InputFile"],
+        instant: "inputs.Instant",
+    ):
+        # Reference to the flavour to use for summaries
+        self.flavour: "Flavour" = flavour
+        # Reference to the recipe to use for summaries
+        self.recipe: "Recipe" = recipe
         # Name of the Mixer to use
         self.mixer = recipe.mixer
         # Dict mapping source names to pathnames of GRIB files
