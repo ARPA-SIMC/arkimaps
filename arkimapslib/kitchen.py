@@ -27,8 +27,10 @@ class Kitchen:
     """
     Shared context for this arkimaps run
     """
+
     def __init__(self, config: Optional[Config] = None):
         from .recipes import Recipes
+
         if config is None:
             self.config = Config()
         else:
@@ -83,11 +85,14 @@ class Kitchen:
                         if isinstance(input_contents, list):
                             for ic in input_contents:
                                 self.pantry.add_input(
-                                    Input.create(config=self.config, name=name, defined_in=relfn, lint=lint, **ic))
+                                    Input.create(config=self.config, name=name, defined_in=relfn, lint=lint, **ic)
+                                )
                         else:
                             self.pantry.add_input(
                                 Input.create(
-                                    config=self.config, name=name, defined_in=relfn, lint=lint, **input_contents))
+                                    config=self.config, name=name, defined_in=relfn, lint=lint, **input_contents
+                                )
+                            )
 
                 flavours = recipe.pop("flavours", None)
                 if flavours is not None:
@@ -99,7 +104,8 @@ class Kitchen:
                         if old is not None:
                             raise RuntimeError(f"{relfn}: flavour {name} was already defined in {old.defined_in}")
                         self.flavours[name] = Flavour.create(
-                            config=self.config, name=name, defined_in=relfn, lint=lint, **flavour)
+                            config=self.config, name=name, defined_in=relfn, lint=lint, **flavour
+                        )
 
                 recipe["name"] = relfn[:-5]
                 recipe["defined_in"] = relfn
@@ -117,7 +123,7 @@ class Kitchen:
         Write documentation to the given path
         """
         for recipe in self.recipes:
-            dest = os.path.join(path, recipe.name) + '.md'
+            dest = os.path.join(path, recipe.name) + ".md"
             recipe.document(self.pantry, dest)
 
 
@@ -158,21 +164,22 @@ class WorkingKitchen(Kitchen):
         return res
 
     def make_order(
-            self,
-            recipe: Recipe,
-            flavour: Flavour,
-            step: Union[None, int, str, ModelStep],
-            reftime: Optional[datetime.datetime]) -> orders.Order:
+        self,
+        recipe: Recipe,
+        flavour: Flavour,
+        step: Union[None, int, str, ModelStep],
+        reftime: Optional[datetime.datetime],
+    ) -> orders.Order:
         """
         Generate all possible orders for all available recipes
         """
         selected = []
-        for o in flavour.make_orders(recipe, self.pantry):
-            if step is not None and o.instant.step != step:
+        for order in flavour.make_orders(recipe, self.pantry):
+            if step is not None and order.instant.step != step:
                 continue
-            if reftime is not None and o.instant.reftime != reftime:
+            if reftime is not None and order.instant.reftime != reftime:
                 continue
-            selected.append(o)
+            selected.append(order)
         if not selected:
             raise RuntimeError(f"not enough data to prepare {recipe.name}")
         selected.sort(key=lambda x: x.instant)
@@ -180,6 +187,7 @@ class WorkingKitchen(Kitchen):
 
 
 if arkimet is not None:
+
     class ArkimetRecipesMixin:
         def __init__(self, *args, **kw):
             # Arkimet session
@@ -187,8 +195,7 @@ if arkimet is not None:
             # Force directory segments so we can access each data by filesystem
             # path
             super().__init__(*args, **kw)
-            self.session = self.context_stack.enter_context(
-                    arkimet.dataset.Session(force_dir_segments=True))
+            self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
 
         def get_merged_arki_query(self):
             empty_flavour = Flavour(config=self.config, name="default", defined_in=__file__)
@@ -211,6 +218,7 @@ if arkimet is not None:
         """
         Arkimet-based kitchen used to load recipes but not prepare products
         """
+
         def __init__(self, *args, **kw):
             super().__init__(*args, **kw)
             self.pantry = pantry.ArkimetEmptyPantry(self.session)
@@ -219,6 +227,7 @@ if arkimet is not None:
         def __init__(self, *args, **kw):
             super().__init__(*args, **kw)
             from .pantry import ArkimetPantry
+
             self.pantry = ArkimetPantry(root=self.workdir, session=self.session)
 
 
@@ -226,6 +235,7 @@ class EccodesEmptyKitchen(Kitchen):
     """
     Eccodes-based kitchen used to load recipes but not prepare products
     """
+
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.pantry = pantry.EmptyPantry()

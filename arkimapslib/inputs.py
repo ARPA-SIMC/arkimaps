@@ -53,23 +53,22 @@ class ModelStep:
     _value: int
 
     def __init__(self, value: Union[int, str, "ModelStep"]):
-        v, u = self._parse_value(value)
-        if u != "h":
-            raise ValueError(f"only 'h' currently supported as a time unit (found {u!r})")
-        self._value = v
+        val, unit = self._parse_value(value)
+        if unit != "h":
+            raise ValueError(f"only 'h' currently supported as a time unit (found {unit!r})")
+        self._value = val
 
     def __eq__(self, other):
         if isinstance(other, int):
             return self._value == other
-        elif isinstance(other, str):
-            v, u = self._parse_value(other)
-            if u != "h":
-                raise ValueError(f"only 'h' currently supported as a time unit (found {u!r})")
-            return self._value == v
-        elif isinstance(other, ModelStep):
+        if isinstance(other, str):
+            val, unit = self._parse_value(other)
+            if unit != "h":
+                raise ValueError(f"only 'h' currently supported as a time unit (found {unit!r})")
+            return self._value == val
+        if isinstance(other, ModelStep):
             return self._value == other._value
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __hash__(self) -> int:
         return hash(self._value)
@@ -205,8 +204,7 @@ class Instant:
     def __eq__(self, other):
         if isinstance(other, Instant):
             return self._reftime == other._reftime and self._step == other._step
-        else:
-            return NotImplemented
+        return NotImplemented
 
     def __hash__(self) -> int:
         return hash((self._reftime, self._step))
