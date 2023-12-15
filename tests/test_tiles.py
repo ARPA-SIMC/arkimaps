@@ -20,30 +20,58 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
     def test_tessellate(self):
         self.assertCountEqual(TileOrder.tessellate(0, 0, 0, 0, 1), [])
 
-        self.assertCountEqual(TileOrder.tessellate(0, 1, 0, 1, 2), [
-            (0, 0, 1, 1),
-        ])
+        self.assertCountEqual(
+            TileOrder.tessellate(0, 1, 0, 1, 2),
+            [
+                (0, 0, 1, 1),
+            ],
+        )
 
-        self.assertCountEqual(TileOrder.tessellate(0, 2, 0, 2, 2), [
-            (0, 0, 2, 2),
-        ])
+        self.assertCountEqual(
+            TileOrder.tessellate(0, 2, 0, 2, 2),
+            [
+                (0, 0, 2, 2),
+            ],
+        )
 
-        self.assertCountEqual(TileOrder.tessellate(0, 3, 0, 3, 2), [
-            (0, 0, 2, 2), (2, 0, 1, 2), (0, 2, 3, 1),
-        ])
+        self.assertCountEqual(
+            TileOrder.tessellate(0, 3, 0, 3, 2),
+            [
+                (0, 0, 2, 2),
+                (2, 0, 1, 2),
+                (0, 2, 3, 1),
+            ],
+        )
 
-        self.assertCountEqual(TileOrder.tessellate(0, 10, 0, 10, 8), [
-            (0, 0, 8, 8), (8, 0, 2, 8), (0, 8, 10, 2),
-        ])
+        self.assertCountEqual(
+            TileOrder.tessellate(0, 10, 0, 10, 8),
+            [
+                (0, 0, 8, 8),
+                (8, 0, 2, 8),
+                (0, 8, 10, 2),
+            ],
+        )
 
-        self.assertCountEqual(TileOrder.tessellate(0, 4, 0, 5, 8), [
-            (0, 0, 4, 5),
-        ])
+        self.assertCountEqual(
+            TileOrder.tessellate(0, 4, 0, 5, 8),
+            [
+                (0, 0, 4, 5),
+            ],
+        )
 
-        self.assertCountEqual(TileOrder.tessellate(0, 10, 0, 10, 4), [
-            (0, 0, 4, 4), (4, 0, 4, 4), (0, 4, 4, 4), (4, 4, 4, 4),
-            (8, 0, 2, 4), (8, 4, 2, 4), (0, 8, 8, 2), (8, 8, 2, 2),
-        ])
+        self.assertCountEqual(
+            TileOrder.tessellate(0, 10, 0, 10, 4),
+            [
+                (0, 0, 4, 4),
+                (4, 0, 4, 4),
+                (0, 4, 4, 4),
+                (4, 4, 4, 4),
+                (8, 0, 2, 4),
+                (8, 4, 2, 4),
+                (0, 8, 8, 2),
+                (8, 8, 2, 2),
+            ],
+        )
 
     def test_render(self):
         self.kitchen.config.tile_group_width = 2
@@ -60,10 +88,15 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
         # self.assertEqual(len(orders), 17)
         self.assertEqual(len(orders), 5)
 
-        self.assertCountEqual([(o.x, o.y, o.width) for o in orders if not isinstance(o, LegendOrder)], [
-            (32, 22, 2), (32, 24, 2),
-            (34, 22, 2), (34, 24, 2),
-        ])
+        self.assertCountEqual(
+            [(o.x, o.y, o.width) for o in orders if not isinstance(o, LegendOrder)],
+            [
+                (32, 22, 2),
+                (32, 24, 2),
+                (34, 22, 2),
+                (34, 24, 2),
+            ],
+        )
 
         renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
         with tempfile.NamedTemporaryFile() as tf:
@@ -77,44 +110,48 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         magics_names = []
         for order in orders:
-            for output in order.outputs:
-                magics_names.append(output.relpath)
+            magics_names.append(order.output.relpath)
 
-        self.assertCountEqual(magics_names, [
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32-22-2-2.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32-24-2-2.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34-22-2-2.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34-24-2-2.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png',
-        ])
+        self.assertCountEqual(
+            magics_names,
+            [
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32-22-2-2.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32-24-2-2.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34-22-2-2.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34-24-2-2.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png",
+            ],
+        )
 
-        self.assertCountEqual(output_names, [
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/22.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/23.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/22.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/23.png',
-
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/24.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/25.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/24.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/25.png',
-
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/22.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/23.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/22.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/23.png',
-
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/24.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/25.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/24.png',
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/25.png',
-
-            '2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png'])
+        self.assertCountEqual(
+            output_names,
+            [
+                "version.txt",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/22.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/23.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/22.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/23.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/24.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/32/25.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/24.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/33/25.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/22.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/23.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/22.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/23.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/24.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/25.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/24.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/35/25.png",
+                "2021-01-10T00:00:00/t2m_ita_small_tiles+legend.png",
+            ],
+        )
 
         # Test summary
-        summary = Order.summarize_orders(self.kitchen, rendered)
-        imgsummary = summary[0]["images"]["2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/24.png"]
-        self.assertIn("projection", imgsummary["georef"])
+        products_info = outputbundle.Products()
+        Order.summarize_orders(self.kitchen, rendered, products_info)
+        product_info = products_info.by_path["2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/24.png"]
+        self.assertIn("projection", product_info.georef)
 
     def test_render_twice(self):
         self.kitchen.config.tile_group_width = 2
@@ -166,9 +203,7 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
         for o1, o2 in zip(orders1, orders2):
             self.assertEqual(str(o1), str(o2))
 
-            self.assertEqual(
-                    [out.relpath for out in o1.outputs],
-                    [out.relpath for out in o2.outputs])
+            self.assertEqual(o1.output.relpath, o2.output.relpath)
 
     def test_tile_coords(self):
         self.assertEqual(deg2num(11.25, 41.0, 6), (34, 23))

@@ -1,21 +1,27 @@
 # from __future__ import annotations
 
+import datetime
 import io
 import json
 import tarfile
 import zipfile
+from collections import Counter, defaultdict
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple
+from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set
 
 if TYPE_CHECKING:
-    from .inputs import Input
+    from .flavours import Flavour
+    from .inputs import Input, Instant, ModelStep
+    from .orders import Order
+    from .recipes import Recipe
 
 
 class InputSummary:
     """
     Summary about inputs useed in processing
     """
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.inputs: Dict[str, Dict[str, Any]] = {}
 
     def add(self, inp: "Input"):
@@ -28,15 +34,121 @@ class InputSummary:
         return json.dumps(self.inputs, indent=1).encode()
 
 
+class ReftimeOrders:
+    """
+    Information and statistics for all orders for a given reftime
+    """
+
+    def __init__(self) -> None:
+        self.inputs: Set[str] = set()
+        self.steps: Dict["ModelStep", int] = Counter()
+        self.legend_info: Optional[Dict[str, Any]] = None
+        self.render_time_ns: int = 0
+
+    def add(self, order: "Order"):
+        self.inputs.update(order.input_files.keys())
+        self.steps[order.instant.step] += 1
+        if order.legend_info:
+            self.legend_info = order.legend_info
+        self.render_time_ns += order.render_time_ns
+
+    def to_jsonable(self) -> Dict[str, Any]:
+        return {
+            "inputs": sorted(self.inputs),
+            "steps": {str(s): c for s, c in self.steps.items()},
+            "legend_info": self.legend_info,
+            "render_stats": {
+                "time_ns": self.render_time_ns,
+            },
+        }
+
+
+class RecipeOrders:
+    """
+    Information and statistics for all orders generated from one recipe
+    """
+
+    def __init__(self):
+        self.by_reftime: Dict[datetime.datetime, ReftimeOrders] = defaultdict(ReftimeOrders)
+
+    def add(self, orders: List["Order"]):
+        for order in orders:
+            self.by_reftime[order.instant.reftime].add(order)
+
+    def to_jsonable(self) -> Dict[str, Any]:
+        return {
+            reftime.strftime("%Y-%m-%d %H:%M:%S"): stats.to_jsonable() for reftime, stats in self.by_reftime.items()
+        }
+
+
+class ProductInfo:
+    """
+    Information about a generated product image
+    """
+
+    def __init__(self) -> None:
+        self.recipe: Optional["Recipe"] = None
+        self.georef: Dict[str, Any] = {}
+        self.instant: Optional["Instant"] = None
+
+    def add_recipe(self, recipe: "Recipe"):
+        self.recipe = recipe
+
+    def add_georef(self, georef: Dict[str, Any]):
+        self.georef = georef
+
+    def add_instant(self, instant: "Instant"):
+        self.instant = instant
+
+    def to_jsonable(self) -> Dict[str, Any]:
+        res = {
+            "recipe": self.recipe.name,
+            "reftime": self.instant.reftime.strftime("%Y-%m-%d %H:%M:%S"),
+            "step": str(self.instant.step),
+        }
+        if self.georef:
+            res["georef"] = self.georef
+        return res
+
+
 class Products:
-    def __init__(self, summary: List[Dict[str, Any]]):
-        self.summary = summary
+    """
+    Information about the products present in the bundle
+    """
+
+    def __init__(self) -> None:
+        self.flavour: Optional[Flavour] = None
+        self.by_recipe: Dict[str, RecipeOrders] = defaultdict(RecipeOrders)
+        self.by_path: Dict[str, ProductInfo] = defaultdict(ProductInfo)
+
+    def add_flavour(self, flavour: "Flavour"):
+        self.flavour = flavour
+
+    def add_orders(self, recipe: "Recipe", orders: List["Order"]):
+        self.by_recipe[recipe.name].add(orders)
+
+        for order in orders:
+            order.summarize_outputs(self)
+
+    def to_jsonable(self) -> Dict[str, Any]:
+        return {
+            "flavour": self.flavour.summarize() if self.flavour else None,
+            "recipes": {k: v.to_jsonable() for k, v in self.by_recipe.items()},
+            "products": {k: v.to_jsonable() for k, v in self.by_path.items()},
+        }
+
+    def serialize(self) -> bytes:
+        """
+        Serialize as a bytes object
+        """
+        return json.dumps(self.to_jsonable(), indent=1).encode()
 
 
 class LogEntry(NamedTuple):
     """
     One serializable log entry
     """
+
     ts: float
     level: int
     msg: str
@@ -47,6 +159,7 @@ class Log:
     """
     A collection of log entries
     """
+
     def __init__(self):
         self.entries: List[LogEntry] = []
 
@@ -54,8 +167,7 @@ class Log:
         """
         Add a log entry
         """
-        self.entries.append(
-                LogEntry(ts=ts, level=level, msg=msg, name=name))
+        self.entries.append(LogEntry(ts=ts, level=level, msg=msg, name=name))
 
     def serialize(self) -> bytes:
         """
@@ -153,6 +265,10 @@ class TarWriter(Writer):
         Create a new output bundle, written to the given file descriptor
         """
         self.tarfile = tarfile.open(mode="w|", fileobj=out)
+        with io.BytesIO() as buf:
+            buf.write(b"1\n")
+            buf.seek(0)
+            self.add_artifact("version.txt", buf)
 
     def __enter__(self):
         return self
@@ -178,11 +294,11 @@ class TarWriter(Writer):
             self.tarfile.addfile(tarinfo=info, fileobj=fd)
 
     def add_products(self, products: Products):
-        # Add products summary
-        with io.BytesIO(json.dumps(products.summary, indent=1).encode()) as buf:
-            info = tarfile.TarInfo(name="products.json")
-            info.size = len(buf.getvalue())
-            self.tarfile.addfile(tarinfo=info, fileobj=buf)
+        buf = products.serialize()
+        info = tarfile.TarInfo(name="products.json")
+        info.size = len(buf)
+        with io.BytesIO(buf) as fd:
+            self.tarfile.addfile(tarinfo=info, fileobj=fd)
 
     def add_product(self, bundle_path: str, data: IO[bytes]):
         info = tarfile.TarInfo(bundle_path)
@@ -202,6 +318,7 @@ class ZipWriter(Writer):
         Create a new output bundle, written to the given file descriptor
         """
         self.zipfile = zipfile.ZipFile(out, mode="w", compression=zipfile.ZIP_STORED)
+        self.zipfile.writestr("version.txt", "1\n")
 
     def __enter__(self):
         return self
@@ -218,7 +335,7 @@ class ZipWriter(Writer):
         self.zipfile.writestr("log.json", entries.serialize())
 
     def add_products(self, products: Products):
-        self.zipfile.writestr("products.json", json.dumps(products.summary, indent=1))
+        self.zipfile.writestr("products.json", products.serialize())
 
     def add_product(self, bundle_path: str, data: IO[bytes]):
         self.zipfile.writestr(bundle_path, data.read())

@@ -88,6 +88,9 @@ class ModelStep:
     def __str__(self) -> str:
         return f"{self._value}h"
 
+    def __repr__(self) -> str:
+        return f"ModelStep('{self._value}h')"
+
     def is_zero(self) -> bool:
         """Test if the step is zero, regardless of unit."""
         return self._value == 0

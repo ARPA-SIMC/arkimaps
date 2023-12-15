@@ -159,7 +159,7 @@ class Renderer:
         for output in outputs:
             # Set render information in the order
             order = self.orders_by_name[(script_file, output.name)]
-            order.add_output(output, timing=timings[output.name])
+            order.set_output(output, timing=timings[output.name])
             orders.add(order)
 
         return list(orders)
@@ -175,7 +175,7 @@ class Renderer:
         # Set render information in the order
         output = outputs[0]
         order = self.orders_by_name[(script_file, output.name)]
-        order.add_output(output, timing=timings[output.name])
+        order.set_output(output, timing=timings[output.name])
         return order
 
     def write_render_script(self, orders: Sequence['Order']) -> str:

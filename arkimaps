@@ -193,8 +193,9 @@ class RenderMixin(FlavoursMixin):
             bundle.add_log(self.log_collector.entries)
 
             # Add products summary
-            order_summary = outputbundle.Products(summary=Order.summarize_orders(self.kitchen, rendered))
-            bundle.add_products(order_summary)
+            products_info = outputbundle.Products()
+            Order.summarize_orders(self.kitchen, rendered, products_info)
+            bundle.add_products(products_info)
 
             # Let the Pantry store processing artifacts if it has any
             self.kitchen.pantry.store_processing_artifacts(bundle)
