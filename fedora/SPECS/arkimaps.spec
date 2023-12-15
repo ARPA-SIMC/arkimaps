@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.10
+Version:        1.11
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -88,6 +88,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Fri Dec 15 2023 Daniele Branchini <dbranchini@arpae.it> - 1.11-1
+- Updated contouring for total precipitation
+
 * Mon Dec 11 2023 Daniele Branchini <dbranchini@arpae.it> - 1.10-1
 - Do not dispatch inputs not needed by recipes selected by flavour (#87)
 - Deal with time units in arkimet timeranges (#157)

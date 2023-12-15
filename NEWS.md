@@ -1,3 +1,7 @@
+# New in version 1.11
+
+* Updated contouring for total precipitation
+
 # New in version 1.10
 
 * Do not dispatch inputs not needed by recipes selected by flavour (#87)
