@@ -100,6 +100,7 @@ With arguments:
     "contour_shade_method": "area_fill",
     "contour_shade_min_level": 0.5,
     "contour_level_list": [
+      0.5,
       1.0,
       2.0,
       5.0,
@@ -115,6 +116,7 @@ With arguments:
       500.0
     ],
     "contour_shade_colour_list": [
+      "rgb(0.83,0.83,0.83)",
       "rgb( 0.686,1.000,1.000)",
       "rgb( 0.000,1.000,1.000)",
       "rgb( 0.447,0.639,1.000)",
