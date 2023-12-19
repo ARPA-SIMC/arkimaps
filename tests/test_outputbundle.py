@@ -1,12 +1,14 @@
 # from __future__ import annotations
 import datetime
 import io
+import logging
+import os
 import tempfile
 import unittest
 from typing import Type
 
 import arkimapslib.outputbundle as ob
-from arkimapslib import flavours, orders
+from arkimapslib import flavours, orders, inputs
 from arkimapslib.config import Config
 from arkimapslib.inputs import ModelStep, Instant
 from arkimapslib.recipes import Recipe
@@ -19,6 +21,66 @@ class BundleTestsMixin:
     def setUp(self):
         super().setUp()
         self.config = Config()
+        self.flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
+        self.recipe = Recipe(name="recipe", defined_in="recipe.yaml")
+        self.input = inputs.Static(
+            config=self.config,
+            name="test",
+            defined_in="test.yaml",
+            model="testmodel",
+            mgrib={"foo": 1},
+            notes="test notes",
+            path=os.path.join(self.config.static_dir[0], "puntiCitta.geo"),
+        )
+        self.instant = Instant(reftime=datetime.datetime(2023, 12, 15), step=12)
+        self.order = orders.MapOrder(
+            flavour=self.flavour,
+            recipe=self.recipe,
+            input_files={"test": self.input},
+            instant=self.instant,
+        )
+        self.order.output = orders.Output(name="output", relpath="test/output.png", magics_output="test/magics.png")
+
+    def test_inputsummary(self):
+        self.input.stats.computation_log.append((100_000_000, "mock processing"))
+        self.input.stats.used_by.add(self.recipe)
+
+        val = ob.InputSummary()
+        val.add(self.input)
+
+        serialized = val.serialize()
+
+        # TODO: deserialize and inspect
+
+    def test_reftimeorders(self):
+        val = ob.ReftimeOrders()
+        val.add(self.order)
+
+        as_json = val.to_jsonable()
+        # TODO: read back and inspect
+
+    def test_recipeorders(self):
+        val = ob.RecipeOrders()
+        val.add([self.order])
+
+        as_json = val.to_jsonable()
+        # TODO: read back and inspect
+
+    def test_productinfo(self):
+        val = ob.ProductInfo()
+        val.add_recipe(self.recipe)
+        val.add_instant(self.instant)
+        val.add_georef({"lat": 45.0, "lon": 11.0})
+
+        as_json = val.to_jsonable()
+        # TODO: read back and inspect
+
+    def test_log(self):
+        val = ob.Log()
+        val.append(ts=12345.67, level=logging.INFO, msg="test message", name="test.logger")
+
+        serialized = val.serialize()
+        # TODO: read back and inspect
 
     def test_serialize(self):
         with tempfile.NamedTemporaryFile() as tf:
@@ -81,19 +143,9 @@ class BundleTestsMixin:
         with self.assertRaisesRegex(AssertionError, "not been rendered"):
             products.add_orders(recipe=recipe, orders=[order])
 
-    def test_add_products(self):
-        flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
-        recipe = Recipe(name="recipe", defined_in="recipe.yaml")
-        order = orders.MapOrder(
-            flavour=flavour,
-            recipe=recipe,
-            input_files={},
-            instant=Instant(reftime=datetime.datetime(2023, 12, 15), step=12),
-        )
-        order.output = orders.Output(name="output", relpath="test/output.png", magics_output="test/magics.png")
-
+    def test_products(self):
         products = ob.Products()
-        products.add_orders(recipe=recipe, orders=[order])
+        products.add_orders(recipe=self.recipe, orders=[self.order])
 
         # products = ob.Products(
         #     summary=[

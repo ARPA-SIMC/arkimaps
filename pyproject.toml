@@ -4,3 +4,5 @@ line-length = 120
 [tool.pylint.'MESSAGES CONTROL']
 disable = "invalid-name,too-many-instance-attributes,too-many-locals,missing-function-docstring,too-many-arguments"
 
+[tool.pylint.MAIN]
+max-line-length = 120
