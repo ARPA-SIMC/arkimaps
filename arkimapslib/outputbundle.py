@@ -5,6 +5,7 @@ import io
 import json
 import tarfile
 import zipfile
+from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Set
@@ -18,7 +19,19 @@ if TYPE_CHECKING:
     from .recipes import Recipe
 
 
-class InputSummary:
+class Serializable(ABC):
+    @abstractmethod
+    def to_jsonable(self) -> Dict[str, Any]:
+        ...
+
+    @classmethod
+    @abstractmethod
+    def from_jsonable(cls, **kwargs: Any):
+        # TODO: from 3.11 we can type the return value as Self
+        ...
+
+
+class InputSummary(Serializable):
     """
     Summary about inputs useed in processing
     """
@@ -29,11 +42,16 @@ class InputSummary:
     def add(self, inp: "Input"):
         self.inputs[inp.name] = inp.stats.summarize()
 
-    def serialize(self) -> bytes:
-        """
-        Serialize as a bytes object
-        """
-        return json.dumps(self.inputs, indent=1).encode()
+    def to_jsonable(self) -> Dict[str, Any]:
+        # TODO: return {"inputs": self.inputs}
+        return self.inputs
+
+    @classmethod
+    def from_jsonable(cls, **kwargs: Any):
+        res = cls()
+        for k, v in kwargs:
+            res.inputs[k] = v
+        return res
 
 
 class ReftimeOrders:
@@ -162,7 +180,7 @@ class ProductInfo:
         )
 
 
-class Products:
+class Products(Serializable):
     """
     Information about the products present in the bundle
     """
@@ -188,11 +206,13 @@ class Products:
             "products": {k: v.to_jsonable() for k, v in self.by_path.items()},
         }
 
-    def serialize(self) -> bytes:
-        """
-        Serialize as a bytes object
-        """
-        return json.dumps(self.to_jsonable(), indent=1).encode()
+    @classmethod
+    def from_jsonable(cls, **kwargs: Any):
+        res = cls()
+        res.flavour = kwargs["flavour"]
+        res.by_recipe = {k: RecipeOrders.from_jsonable(v) for k, v in kwargs["recipes"].items()}
+        res.by_path = {k: ProductInfo.from_jsonable(**v) for k, v in kwargs["products"].items()}
+        return res
 
 
 class LogEntry(NamedTuple):
@@ -206,12 +226,12 @@ class LogEntry(NamedTuple):
     name: str
 
 
-class Log:
+class Log(Serializable):
     """
     A collection of log entries
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.entries: List[LogEntry] = []
 
     def append(self, *, ts: float, level: int, msg: str, name: str):
@@ -220,16 +240,17 @@ class Log:
         """
         self.entries.append(LogEntry(ts=ts, level=level, msg=msg, name=name))
 
-    def serialize(self) -> bytes:
-        """
-        Serialize as a bytes object
-        """
-        return json.dumps(
-            {
-                "entries": [e._asdict() for e in self.entries],
-            },
-            indent=1,
-        ).encode()
+    def to_jsonable(self) -> Dict[str, Any]:
+        return {
+            "entries": [e._asdict() for e in self.entries],
+        }
+
+    @classmethod
+    def from_jsonable(cls, **kwargs: Any):
+        entries: List[Dict[str, Any]] = kwargs["entries"]
+        res = cls()
+        res.entries = [LogEntry(**e) for e in entries]
+        return res
 
 
 class Reader:
@@ -338,16 +359,23 @@ class ZipReader(Reader):
         return self.zipfile.namelist()
 
 
-class Writer:
+class Writer(ABC):
     """
     Write functions for output bundles
     """
+
+    @abstractmethod
+    def _add_serializable(self, name: str, value: Serializable) -> None:
+        """
+        Add a serializable object to the bundle, using the given file name
+        """
+        ...
 
     def add_input_summary(self, input_summary: InputSummary):
         """
         Add inputs.json with a summary of inputs used
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.add_input_summary() not implemented")
+        self._add_serializable("inputs.json", input_summary)
 
     def add_log(self, entries: Log):
         """
@@ -355,20 +383,24 @@ class Writer:
 
         If no log entries were generated, log.json is not added.
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.add_log() not implemented")
+        if not entries.entries:
+            return
+        self._add_serializable("log.json", entries)
 
     def add_products(self, products: Products):
         """
         Add products.json with information about generated products
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.add_products() not implemented")
+        self._add_serializable("products.json", products)
 
+    @abstractmethod
     def add_product(self, bundle_path: str, data: IO[bytes]):
         """
         Add a product
         """
         raise NotImplementedError(f"{self.__class__.__name__}.add_product() not implemented")
 
+    @abstractmethod
     def add_artifact(self, bundle_path: str, data: IO[bytes]):
         """
         Add a processing artifact
@@ -393,26 +425,10 @@ class TarWriter(Writer):
     def __exit__(self, *args):
         self.tarfile.close()
 
-    def add_input_summary(self, input_summary: InputSummary):
-        buf = input_summary.serialize()
-        info = tarfile.TarInfo(name="inputs.json")
-        info.size = len(buf)
-        with io.BytesIO(buf) as fd:
-            self.tarfile.addfile(tarinfo=info, fileobj=fd)
-
-    def add_log(self, entries: Log):
-        if not entries.entries:
-            return
-        # Add processing log
-        buf = entries.serialize()
-        info = tarfile.TarInfo(name="log.json")
-        info.size = len(buf)
-        with io.BytesIO(buf) as fd:
-            self.tarfile.addfile(tarinfo=info, fileobj=fd)
-
-    def add_products(self, products: Products):
-        buf = products.serialize()
-        info = tarfile.TarInfo(name="products.json")
+    def _add_serializable(self, name: str, value: Serializable) -> None:
+        as_json = value.to_jsonable()
+        buf = json.dumps(as_json, indent=1).encode()
+        info = tarfile.TarInfo(name=name)
         info.size = len(buf)
         with io.BytesIO(buf) as fd:
             self.tarfile.addfile(tarinfo=info, fileobj=fd)
@@ -443,16 +459,10 @@ class ZipWriter(Writer):
     def __exit__(self, *args):
         self.zipfile.close()
 
-    def add_input_summary(self, input_summary: InputSummary):
-        self.zipfile.writestr("inputs.json", input_summary.serialize())
-
-    def add_log(self, entries: Log):
-        if not entries.entries:
-            return
-        self.zipfile.writestr("log.json", entries.serialize())
-
-    def add_products(self, products: Products):
-        self.zipfile.writestr("products.json", products.serialize())
+    def _add_serializable(self, name: str, value: Serializable) -> None:
+        as_json = value.to_jsonable()
+        buf = json.dumps(as_json, indent=1).encode()
+        self.zipfile.writestr(name, buf)
 
     def add_product(self, bundle_path: str, data: IO[bytes]):
         self.zipfile.writestr(bundle_path, data.read())

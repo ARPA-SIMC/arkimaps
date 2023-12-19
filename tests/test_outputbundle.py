@@ -14,10 +14,7 @@ from arkimapslib.inputs import ModelStep, Instant
 from arkimapslib.recipes import Recipe
 
 
-class BundleTestsMixin:
-    reader_cls: Type[ob.Reader]
-    writer_cls: Type[ob.Writer]
-
+class BaseFixture:
     def setUp(self):
         super().setUp()
         self.config = Config()
@@ -41,6 +38,8 @@ class BundleTestsMixin:
         )
         self.order.output = orders.Output(name="output", relpath="test/output.png", magics_output="test/magics.png")
 
+
+class TestTypes(BaseFixture, unittest.TestCase):
     def test_inputsummary(self):
         self.input.stats.computation_log.append((100_000_000, "mock processing"))
         self.input.stats.used_by.add(self.recipe)
@@ -48,9 +47,8 @@ class BundleTestsMixin:
         val = ob.InputSummary()
         val.add(self.input)
 
-        serialized = val.serialize()
-
-        # TODO: deserialize and inspect
+        as_json = val.to_jsonable()
+        # TODO: read back and inspect
 
     def test_reftimeorders(self):
         val = ob.ReftimeOrders()
@@ -79,8 +77,66 @@ class BundleTestsMixin:
         val = ob.Log()
         val.append(ts=12345.67, level=logging.INFO, msg="test message", name="test.logger")
 
-        serialized = val.serialize()
+        as_json = val.to_jsonable()
         # TODO: read back and inspect
+
+    def test_add_unrendered_products(self):
+        flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
+        recipe = Recipe(name="recipe", defined_in="recipe.yaml")
+        order = orders.MapOrder(
+            flavour=flavour,
+            recipe=recipe,
+            input_files={},
+            instant=Instant(reftime=datetime.datetime(2023, 12, 15), step=12),
+        )
+
+        products = ob.Products()
+        with self.assertRaisesRegex(AssertionError, "not been rendered"):
+            products.add_orders(recipe=recipe, orders=[order])
+
+    def test_products(self):
+        val = ob.Products()
+        val.add_orders(recipe=self.recipe, orders=[self.order])
+
+        # products = ob.Products(
+        #     summary=[
+        #         {
+        #             "flavour": {
+        #                 "name": "flavour",
+        #                 "defined_in": "flavour.yaml",
+        #             },
+        #             "recipe": {
+        #                 "name": "recipe",
+        #                 "defined_in": "recipe.yaml",
+        #                 "description": "recipe description",
+        #                 "info": {},
+        #             },
+        #             "reftimes": {
+        #                 "2023-06-01 12:00:00": {
+        #                     "inputs": ["input1", "input2"],
+        #                     "steps": {
+        #                         str(ModelStep(12)): 3,
+        #                     },
+        #                     "legend_info": {},
+        #                     "render_stats": {
+        #                         "time_ns": 123_456_789_012,
+        #                     },
+        #                 }
+        #             },
+        #             "images": {
+        #                 "test/product": {"georef": {}},
+        #             },
+        #         },
+        #     ]
+        # )
+
+        as_json = val.to_jsonable()
+        # TODO: read back and inspect
+
+
+class BundleTestsMixin(BaseFixture):
+    reader_cls: Type[ob.Reader]
+    writer_cls: Type[ob.Writer]
 
     def test_serialize(self):
         with tempfile.NamedTemporaryFile() as tf:
@@ -128,59 +184,6 @@ class BundleTestsMixin:
                 self.assertEqual(reader.input_summary().inputs, input_summary.inputs)
                 self.assertEqual(reader.log().entries, log.entries)
                 self.assertEqual(reader.products().to_jsonable(), products.to_jsonable())
-
-    def test_add_unrendered_products(self):
-        flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
-        recipe = Recipe(name="recipe", defined_in="recipe.yaml")
-        order = orders.MapOrder(
-            flavour=flavour,
-            recipe=recipe,
-            input_files={},
-            instant=Instant(reftime=datetime.datetime(2023, 12, 15), step=12),
-        )
-
-        products = ob.Products()
-        with self.assertRaisesRegex(AssertionError, "not been rendered"):
-            products.add_orders(recipe=recipe, orders=[order])
-
-    def test_products(self):
-        products = ob.Products()
-        products.add_orders(recipe=self.recipe, orders=[self.order])
-
-        # products = ob.Products(
-        #     summary=[
-        #         {
-        #             "flavour": {
-        #                 "name": "flavour",
-        #                 "defined_in": "flavour.yaml",
-        #             },
-        #             "recipe": {
-        #                 "name": "recipe",
-        #                 "defined_in": "recipe.yaml",
-        #                 "description": "recipe description",
-        #                 "info": {},
-        #             },
-        #             "reftimes": {
-        #                 "2023-06-01 12:00:00": {
-        #                     "inputs": ["input1", "input2"],
-        #                     "steps": {
-        #                         str(ModelStep(12)): 3,
-        #                     },
-        #                     "legend_info": {},
-        #                     "render_stats": {
-        #                         "time_ns": 123_456_789_012,
-        #                     },
-        #                 }
-        #             },
-        #             "images": {
-        #                 "test/product": {"georef": {}},
-        #             },
-        #         },
-        #     ]
-        # )
-        with io.BytesIO() as buf:
-            with self.writer_cls(out=buf) as writer:
-                writer.add_products(products)
 
 
 class TestZipBundle(BundleTestsMixin, unittest.TestCase):
