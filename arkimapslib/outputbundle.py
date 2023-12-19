@@ -54,7 +54,7 @@ class InputSummary(Serializable):
         return res
 
 
-class ReftimeOrders:
+class ReftimeOrders(Serializable):
     """
     Information and statistics for all orders for a given reftime
     """
@@ -92,13 +92,13 @@ class ReftimeOrders:
         }
 
     @classmethod
-    def from_jsonable(cls, **kwargs) -> "ReftimeOrders":
+    def from_jsonable(cls, **kwargs: Any) -> "ReftimeOrders":
         render_stats = kwargs.pop("render_stats")
         steps = kwargs.pop("steps")
         return cls(render_time_ns=render_stats["time_ns"], steps={ModelStep(k): v for k, v in steps.items()}, **kwargs)
 
 
-class RecipeOrders:
+class RecipeOrders(Serializable):
     """
     Information and statistics for all orders generated from one recipe
     """
@@ -116,16 +116,16 @@ class RecipeOrders:
         }
 
     @classmethod
-    def from_jsonable(cls, data: Dict[str, Any]):
+    def from_jsonable(cls, **kwargs: Any):
         res = cls()
         res.by_reftime = {
             datetime.datetime.strptime(k, "%Y-%m-%d %H:%M:%S"): ReftimeOrders.from_jsonable(**v)
-            for k, v in data.items()
+            for k, v in kwargs.items()
         }
         return res
 
 
-class ProductInfo:
+class ProductInfo(Serializable):
     """
     Information about a generated product image
     """
@@ -166,17 +166,13 @@ class ProductInfo:
     @classmethod
     def from_jsonable(
         cls,
-        *,
-        recipe: Optional[str] = None,
-        reftime: Optional[str] = None,
-        step: Optional[int] = None,
-        georef: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ):
         return cls(
-            recipe=recipe,
-            reftime=datetime.datetime.strptime(reftime, "%Y-%m-%d %H:%M:%S"),
-            step=step,
-            georef=georef,
+            recipe=kwargs["recipe"],
+            reftime=datetime.datetime.strptime(kwargs["reftime"], "%Y-%m-%d %H:%M:%S"),
+            step=kwargs["step"],
+            georef=kwargs.get("georef", None),
         )
 
 
@@ -210,7 +206,7 @@ class Products(Serializable):
     def from_jsonable(cls, **kwargs: Any):
         res = cls()
         res.flavour = kwargs["flavour"]
-        res.by_recipe = {k: RecipeOrders.from_jsonable(v) for k, v in kwargs["recipes"].items()}
+        res.by_recipe = {k: RecipeOrders.from_jsonable(**v) for k, v in kwargs["recipes"].items()}
         res.by_path = {k: ProductInfo.from_jsonable(**v) for k, v in kwargs["products"].items()}
         return res
 
@@ -294,7 +290,7 @@ class Reader:
         data = self._load_json("products.json")
         res = Products()
         res.flavour = data["flavour"]
-        res.by_recipe = {k: RecipeOrders.from_jsonable(v) for k, v in data["recipes"].items()}
+        res.by_recipe = {k: RecipeOrders.from_jsonable(**v) for k, v in data["recipes"].items()}
         res.by_path = {k: ProductInfo.from_jsonable(**v) for k, v in data["products"].items()}
         return res
 
