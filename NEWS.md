@@ -1,3 +1,7 @@
+# New in version 1.12
+
+* Updated contouring for snow fall
+
 # New in version 1.11
 
 * Updated contouring for total precipitation
