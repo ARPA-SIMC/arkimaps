@@ -153,27 +153,57 @@ class BundleTestsMixin(BaseFixture):
     reader_cls: Type[ob.Reader]
     writer_cls: Type[ob.Writer]
 
-    def test_serialize(self):
+    def test_product(self):
+        product = b"TEST DATA"
+
         with tempfile.NamedTemporaryFile() as tf:
-            self.input.stats.add_computation_log(100_000_000, "mock processing")
-            self.input.stats.used_by.add(self.recipe.name)
+            with self.writer_cls(out=tf) as writer:
+                with io.BytesIO(product) as fd:
+                    writer.add_product("test/test.png", fd)
 
-            input_summary = ob.InputSummary()
-            input_summary.add(self.input)
+            tf.flush()
 
-            log = ob.Log()
-            log.append(ts=1.5, level=2, msg="message", name="logname")
+            with self.reader_cls(path=tf.name) as reader:
+                p1 = reader.load_product("test/test.png")
 
-            products = ob.Products()
-            products.flavour = {"name": "test"}
-            products.by_recipe["rtest"] = recipe_orders = ob.RecipeOrders()
-            recipe_orders.by_reftime[datetime.datetime(2023, 7, 1)] = ro = ob.ReftimeOrders()
-            ro.inputs.add("test")
-            ro.steps[ModelStep(17)] = 1
-            ro.legend_info = {"bar": 2}
-            ro.render_time_ns = 12345
-            products.by_path["test"] = ob.ProductInfo(recipe="recipe", reftime=datetime.datetime(2023, 7, 1), step=17)
+        self.assertEqual(p1, product)
 
+    def test_artifact(self):
+        artifact = b"TEST DATA"
+
+        with tempfile.NamedTemporaryFile() as tf:
+            with self.writer_cls(out=tf) as writer:
+                with io.BytesIO(artifact) as fd:
+                    writer.add_artifact("test/test.bin", fd)
+
+            tf.flush()
+
+            with self.reader_cls(path=tf.name) as reader:
+                p1 = reader.load_artifact("test/test.bin")
+
+        self.assertEqual(p1, artifact)
+
+    def test_serialize(self):
+        self.input.stats.add_computation_log(100_000_000, "mock processing")
+        self.input.stats.used_by.add(self.recipe.name)
+
+        input_summary = ob.InputSummary()
+        input_summary.add(self.input)
+
+        log = ob.Log()
+        log.append(ts=1.5, level=2, msg="message", name="logname")
+
+        products = ob.Products()
+        products.flavour = {"name": "test"}
+        products.by_recipe["rtest"] = recipe_orders = ob.RecipeOrders()
+        recipe_orders.by_reftime[datetime.datetime(2023, 7, 1)] = ro = ob.ReftimeOrders()
+        ro.inputs.add("test")
+        ro.steps[ModelStep(17)] = 1
+        ro.legend_info = {"bar": 2}
+        ro.render_time_ns = 12345
+        products.by_path["test"] = ob.ProductInfo(recipe="recipe", reftime=datetime.datetime(2023, 7, 1), step=17)
+
+        with tempfile.NamedTemporaryFile() as tf:
             with self.writer_cls(out=tf) as writer:
                 writer.add_input_summary(input_summary)
                 writer.add_log(log)

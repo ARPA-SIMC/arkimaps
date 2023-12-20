@@ -8,7 +8,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Set
+from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
 
 from .types import ModelStep
 
@@ -71,7 +71,7 @@ class InputProcessingStats(Serializable):
     @classmethod
     def from_jsonable(cls, data: Dict[str, Any]):
         res = cls()
-        res.computation_log = [tuple(i) for i in data["computation"]]
+        res.computation_log = [(elapsed, what) for elapsed, what in data["computation"]]
         res.used_by = set(data["used_by"])
         return res
 
@@ -295,17 +295,19 @@ class Log(Serializable):
         return res
 
 
-class Reader:
+class Reader(ABC):
     """
     Read functions for output bundles
     """
 
+    @abstractmethod
     def version(self) -> str:
         """
         Return the bundle version information
         """
         raise NotImplementedError(f"{self.__class__.__name__}.version() not implemented")
 
+    @abstractmethod
     def _load_json(self, path: str) -> Dict[str, Any]:
         """
         Load the contents of a JSON file
@@ -330,14 +332,33 @@ class Reader:
         """
         return Products.from_jsonable(self._load_json("products.json"))
 
+    @abstractmethod
     def find(self) -> List[str]:
         """
         List all paths in the bundle
         """
         raise NotImplementedError(f"{self.__class__.__name__}.find() not implemented")
 
+    @abstractmethod
+    def load_product(self, bundle_path: str) -> bytes:
+        """
+        Add a product
+        """
+        ...
+
+    @abstractmethod
+    def load_artifact(self, bundle_path: str) -> bytes:
+        """
+        Add a processing artifact
+        """
+        ...
+
 
 class TarReader(Reader):
+    """
+    Read an output bundle from a tar file
+    """
+
     def __init__(self, path: Path):
         """
         Read an existing output bundle
@@ -358,6 +379,13 @@ class TarReader(Reader):
         with self.tarfile.extractfile("version.txt") as fd:
             return fd.read().strip().decode()
 
+    def load_product(self, bundle_path: str) -> bytes:
+        with self.tarfile.extractfile(bundle_path) as fd:
+            return fd.read()
+
+    def load_artifact(self, bundle_path: str) -> bytes:
+        return self.load_product(bundle_path)
+
     def find(self) -> List[str]:
         """
         List all paths in the bundle
@@ -366,6 +394,10 @@ class TarReader(Reader):
 
 
 class ZipReader(Reader):
+    """
+    Read an output bundle from a zip file
+    """
+
     def __init__(self, path: Path):
         """
         Read an existing output bundle
@@ -383,6 +415,12 @@ class ZipReader(Reader):
 
     def version(self) -> str:
         return self.zipfile.read("version.txt").strip().decode()
+
+    def load_product(self, bundle_path: str) -> bytes:
+        return self.zipfile.read(bundle_path)
+
+    def load_artifact(self, bundle_path: str) -> bytes:
+        return self.load_product(bundle_path)
 
     def find(self) -> List[str]:
         """
@@ -441,6 +479,10 @@ class Writer(ABC):
 
 
 class TarWriter(Writer):
+    """
+    Write an output bundle as a tar file.
+    """
+
     def __init__(self, out: IO[bytes]):
         """
         Create a new output bundle, written to the given file descriptor
@@ -478,6 +520,10 @@ class TarWriter(Writer):
 
 
 class ZipWriter(Writer):
+    """
+    Write an output bundle as a zip file.
+    """
+
     def __init__(self, out: IO[bytes]):
         """
         Create a new output bundle, written to the given file descriptor
