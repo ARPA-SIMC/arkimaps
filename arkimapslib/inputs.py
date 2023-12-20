@@ -280,23 +280,12 @@ class InputProcessingStats:
     Statistics collected while processing inputs
     """
 
-    def __init__(self, input: "Input"):
-        self.input = input
+    def __init__(self) -> None:
         # List of strings describing computation steps, and the time they took
         # in nanoseconds
         self.computation_log: List[Tuple[int, str]] = []
         # List of recipes that used this input to generate products
         self.used_by: Set[Recipe] = set()
-
-    @contextlib.contextmanager
-    def collect(self, pantry: "pantry.Pantry", what: str) -> Generator[None, None, None]:
-        start = perf_counter_ns()
-        try:
-            yield
-        finally:
-            elapsed = perf_counter_ns() - start
-            self.computation_log.append((elapsed, what))
-            pantry.log_input_processing(self.input, what)
 
     def summarize(self) -> Dict[str, Any]:
         """
@@ -341,7 +330,7 @@ class Input:
         # Optional notes for the documentation
         self.notes = notes
         # Processing statistics
-        self.stats = InputProcessingStats(self)
+        self.stats = InputProcessingStats()
 
     @classmethod
     def create(cls, *, lint: Optional[Lint] = None, type: str = "default", **kw):
@@ -376,6 +365,19 @@ class Input:
         """
         for k, v in kwargs.items():
             lint.warn_input(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
+
+    @contextlib.contextmanager
+    def _collect_stats(self, pantry: "pantry.Pantry", what: str) -> Generator[None, None, None]:
+        """
+        Collect statistics about processing done to generate this input
+        """
+        start = perf_counter_ns()
+        try:
+            yield
+        finally:
+            elapsed = perf_counter_ns() - start
+            self.stats.computation_log.append((elapsed, what))
+            pantry.log_input_processing(self, what)
 
     def __getstate__(self):
         return {
@@ -769,7 +771,7 @@ class VG6DStatProcMixin:
         if self.comp_full_steps:
             cmd.append("--comp-full-steps")
         cmd += ["-", decumulated_data]
-        with self.stats.collect(pantry, " ".join(shlex.quote(c) for c in cmd)):
+        with self._collect_stats(pantry, " ".join(shlex.quote(c) for c in cmd)):
             v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
             for input_file in source_instants.values():
                 with open(input_file.pathname, "rb") as src:
@@ -788,7 +790,7 @@ class VG6DStatProcMixin:
                 log.warning("%s: vg6d_transform generated empty output", self.name)
                 return
 
-            with self.stats.collect(pantry, f"grib_filter {size}b"):
+            with self._collect_stats(pantry, f"grib_filter {size}b"):
                 res = subprocess.run(
                     ["grib_filter", grib_filter_rules, decumulated_data], stdout=subprocess.PIPE, check=True
                 )
@@ -927,7 +929,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
             cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
             log.debug("running %s", " ".join(shlex.quote(x) for x in cmd))
 
-            with self.stats.collect(pantry, " ".join(shlex.quote(c) for c in cmd)):
+            with self._collect_stats(pantry, " ".join(shlex.quote(c) for c in cmd)):
                 v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
                 for input_file in input_files:
                     with open(input_file.pathname, "rb") as fd:
@@ -971,7 +973,7 @@ class Cat(AlignInstantsMixin, Derived):
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
-            with self.stats.collect(
+            with self._collect_stats(
                 pantry, "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
             ):
                 with open(output_pathname, "wb") as out:
@@ -1001,7 +1003,7 @@ class Or(Derived):
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: using %s for instant %s as %s", self.name, input_file.info.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
-            with self.stats.collect(pantry, input_file.pathname + " as " + output_name):
+            with self._collect_stats(pantry, input_file.pathname + " as " + output_name):
                 os.link(input_file.pathname, output_pathname)
             self.add_instant(instant)
 
@@ -1088,7 +1090,7 @@ class GroundToMSL(GribSetMixin, Derived):
         has_output = False
         for instant, input_file in pantry.get_instants(self.inputs[1]).items():
             output_name = pantry.get_basename(self, instant)
-            with self.stats.collect(
+            with self._collect_stats(
                 pantry,
                 " ".join(("groundtomsl", shlex.quote(z_input.pathname), shlex.quote(input_file.pathname), output_name)),
             ):
@@ -1146,7 +1148,7 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
         # For each instant, run the expression
         for instant, input_files in available_instants.items():
             output_name = pantry.get_basename(self, instant)
-            with self.stats.collect(
+            with self._collect_stats(
                 pantry, "expr " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
             ):
                 with contextlib.ExitStack() as stack:
@@ -1209,7 +1211,7 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
         # For each instant, run the expression
         for instant, input_files in available_instants.items():
             output_name = pantry.get_basename(self, instant)
-            with self.stats.collect(
+            with self._collect_stats(
                 pantry, "sffraction " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
             ):
                 with GRIB(input_files[0].pathname) as grib_tp:
