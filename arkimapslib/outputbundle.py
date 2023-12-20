@@ -10,6 +10,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
 
+from . import steps
 from .types import ModelStep
 
 if TYPE_CHECKING:
@@ -122,8 +123,10 @@ class ReftimeOrders(Serializable):
     def add(self, order: "Order"):
         self.inputs.update(order.input_files.keys())
         self.steps[order.instant.step] += 1
-        if order.legend_info:
-            self.legend_info = order.legend_info
+        if self.legend_info is None:
+            for step in order.order_steps:
+                if isinstance(step, steps.AddContour):
+                    self.legend_info = step.params["params"]
         self.render_time_ns += order.render_time_ns
 
     def to_jsonable(self) -> Dict[str, Any]:

@@ -24,7 +24,7 @@ class Recipes:
     Repository of all known recipes
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.recipes: Dict[str, "Recipe"] = {}
         # Temporary storage for derived recipes not yet instantiated
         self.new_derived: Dict[str, Dict[str, Any]] = {}

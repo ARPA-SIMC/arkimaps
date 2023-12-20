@@ -19,7 +19,7 @@ class BaseFixture:
         super().setUp()
         self.config = Config()
         self.flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
-        self.recipe = Recipe(name="recipe", defined_in="recipe.yaml")
+        self.recipe = Recipe(name="recipe", defined_in="recipe.yaml", recipe=[{"step": "add_basemap"}])
         self.input = inputs.Static(
             config=self.config,
             name="test",
@@ -67,6 +67,38 @@ class TestTypes(BaseFixture, unittest.TestCase):
         as_json = val.to_jsonable()
         val1 = ob.ReftimeOrders.from_jsonable(as_json)
         # TODO: inspect val1
+
+    def test_reftimeorders_legend(self):
+        val = ob.ReftimeOrders()
+        val.add(self.order)
+        self.assertIsNone(val.legend_info)
+
+        recipe = Recipe(
+            name="recipe",
+            defined_in="recipe.yaml",
+            recipe=[
+                {"step": "add_basemap"},
+                {
+                    "step": "add_contour",
+                    "params": {"legend": "on"},
+                },
+            ],
+        )
+        order = orders.MapOrder(
+            flavour=self.flavour,
+            recipe=recipe,
+            input_files={"test": self.input},
+            instant=self.instant,
+        )
+
+        val = ob.ReftimeOrders()
+        val.add(order)
+        self.assertEqual(
+            val.legend_info,
+            {
+                "legend": "on",
+            },
+        )
 
     def test_recipeorders(self):
         val = ob.RecipeOrders()

@@ -71,10 +71,6 @@ class Order:
         # Output file name, set after the product has been rendered
         self.output: Optional[Output] = None
 
-        # If this order generates a legend, this is information about the
-        # legend to be forwarded to the summary
-        self.legend_info: Optional[Dict[str, Any]] = None
-
         # Summary stats about the rendering
         self.render_time_ns: int = 0
 
@@ -506,10 +502,6 @@ class LegendOrder(Order):
         params.pop("legend_title_font_size", None)
         params.pop("legend_automatic_position", None)
         self.order_steps.append(contour_step)
-
-        self.legend_info = {
-            "params": params,
-        }
 
     def __str__(self):
         return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/legend"

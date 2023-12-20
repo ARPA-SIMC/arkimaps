@@ -1,9 +1,9 @@
 # from __future__ import annotations
-from typing import Dict, Any, Optional, Set, Tuple
+from typing import Dict, Any, Optional, Set, Tuple, TYPE_CHECKING
 
-# if TYPE_CHECKING:
-from . import inputs
-from .lint import Lint
+if TYPE_CHECKING:
+    from . import inputs
+    from .lint import Lint
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -38,7 +38,7 @@ class Step:
     defaults: Optional[Kwargs] = None
 
     def __init__(
-        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, inputs.InputFile]
+        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]
     ):
         self.name = step
         self.params = self.compile_args(step_config, params if params is not None else {})
@@ -46,7 +46,7 @@ class Step:
             raise StepSkipped()
 
     @classmethod
-    def lint(cls, lint: Lint, *, defined_in: str, name: str, step: str, **kwargs):
+    def lint(cls, lint: "Lint", *, defined_in: str, name: str, step: str, **kwargs):
         """
         Consistency check the given input arguments
         """
@@ -116,7 +116,7 @@ class MagicsMacro(Step):
     macro_name: str
 
     @classmethod
-    def lint(cls, lint: Lint, *, params: Optional[Dict[str, Any]] = None, **kwargs):
+    def lint(cls, lint: "Lint", *, params: Optional[Dict[str, Any]] = None, **kwargs):
         super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
@@ -175,7 +175,7 @@ class AddContour(MagicsMacro):
     }
 
     @classmethod
-    def lint(cls, lint: Lint, *, params: Optional[Dict[str, Any]] = None, **kwargs):
+    def lint(cls, lint: "Lint", *, params: Optional[Dict[str, Any]] = None, **kwargs):
         super().lint(lint, params=params, **kwargs)
         cll = params.get("contour_level_list")
         cscl = params.get("contour_shade_colour_list")
@@ -259,7 +259,7 @@ class AddGrib(Step):
     """
 
     def __init__(
-        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, inputs.InputFile]
+        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]
     ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("grib")
@@ -276,7 +276,7 @@ class AddGrib(Step):
                 params.setdefault(k, v)
 
     @classmethod
-    def lint(cls, lint: Lint, *, grib: str, params: Optional[Dict[str, Any]] = None, **kwargs):
+    def lint(cls, lint: "Lint", *, grib: str, params: Optional[Dict[str, Any]] = None, **kwargs):
         super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
@@ -301,7 +301,7 @@ class AddUserBoundaries(Step):
     """
 
     def __init__(
-        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, inputs.InputFile]
+        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]
     ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("shape")
@@ -343,7 +343,7 @@ class AddGeopoints(Step):
     """
 
     def __init__(
-        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, inputs.InputFile]
+        self, step: str, step_config: StepConfig, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]
     ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("points")
