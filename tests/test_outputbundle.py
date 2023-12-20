@@ -48,21 +48,24 @@ class TestTypes(BaseFixture, unittest.TestCase):
         val.add(self.input)
 
         as_json = val.to_jsonable()
-        # TODO: read back and inspect
+        val1 = ob.InputSummary.from_jsonable(as_json)
+        # TODO: inspect val1
 
     def test_reftimeorders(self):
         val = ob.ReftimeOrders()
         val.add(self.order)
 
         as_json = val.to_jsonable()
-        # TODO: read back and inspect
+        val1 = ob.ReftimeOrders.from_jsonable(as_json)
+        # TODO: inspect val1
 
     def test_recipeorders(self):
         val = ob.RecipeOrders()
         val.add([self.order])
 
         as_json = val.to_jsonable()
-        # TODO: read back and inspect
+        val1 = ob.RecipeOrders.from_jsonable(as_json)
+        # TODO: inspect val1
 
     def test_productinfo(self):
         val = ob.ProductInfo()
@@ -71,14 +74,16 @@ class TestTypes(BaseFixture, unittest.TestCase):
         val.add_georef({"lat": 45.0, "lon": 11.0})
 
         as_json = val.to_jsonable()
-        # TODO: read back and inspect
+        val1 = ob.ProductInfo.from_jsonable(as_json)
+        # TODO: inspect val1
 
     def test_log(self):
         val = ob.Log()
         val.append(ts=12345.67, level=logging.INFO, msg="test message", name="test.logger")
 
         as_json = val.to_jsonable()
-        # TODO: read back and inspect
+        val1 = ob.Log.from_jsonable(as_json)
+        # TODO: inspect val1
 
     def test_add_unrendered_products(self):
         flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
@@ -131,7 +136,8 @@ class TestTypes(BaseFixture, unittest.TestCase):
         # )
 
         as_json = val.to_jsonable()
-        # TODO: read back and inspect
+        val1 = ob.Products.from_jsonable(as_json)
+        # TODO: inspect val1
 
 
 class BundleTestsMixin(BaseFixture):
