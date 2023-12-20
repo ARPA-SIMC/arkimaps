@@ -40,9 +40,18 @@ class BaseFixture:
 
 
 class TestTypes(BaseFixture, unittest.TestCase):
+    def test_inputprocessingstats(self):
+        val = ob.InputProcessingStats()
+        val.add_computation_log(100_000_000, "mock processing")
+        val.used_by.add(self.recipe.name)
+
+        as_json = val.to_jsonable()
+        val1 = ob.InputProcessingStats.from_jsonable(as_json)
+        # TODO: inspect val1
+
     def test_inputsummary(self):
-        self.input.stats.computation_log.append((100_000_000, "mock processing"))
-        self.input.stats.used_by.add(self.recipe)
+        self.input.stats.add_computation_log(100_000_000, "mock processing")
+        self.input.stats.used_by.add(self.recipe.name)
 
         val = ob.InputSummary()
         val.add(self.input)
@@ -146,8 +155,11 @@ class BundleTestsMixin(BaseFixture):
 
     def test_serialize(self):
         with tempfile.NamedTemporaryFile() as tf:
+            self.input.stats.add_computation_log(100_000_000, "mock processing")
+            self.input.stats.used_by.add(self.recipe.name)
+
             input_summary = ob.InputSummary()
-            input_summary.inputs["test"] = {"foo": 1}
+            input_summary.add(self.input)
 
             log = ob.Log()
             log.append(ts=1.5, level=2, msg="message", name="logname")
@@ -187,7 +199,7 @@ class BundleTestsMixin(BaseFixture):
                 )
 
                 self.assertEqual(reader.version(), "1")
-                self.assertEqual(reader.input_summary().inputs, input_summary.inputs)
+                self.assertEqual(reader.input_summary().to_jsonable(), input_summary.to_jsonable())
                 self.assertEqual(reader.log().entries, log.entries)
                 self.assertEqual(reader.products().to_jsonable(), products.to_jsonable())
 

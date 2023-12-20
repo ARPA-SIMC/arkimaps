@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Set
 
-from .inputs import ModelStep
+from .types import ModelStep
 
 if TYPE_CHECKING:
     from .flavours import Flavour
@@ -38,26 +38,64 @@ class Serializable(ABC):
         ...
 
 
+class InputProcessingStats(Serializable):
+    """
+    Statistics collected while processing inputs
+    """
+
+    def __init__(self) -> None:
+        # List of strings describing computation steps, and the time they took
+        # in nanoseconds
+        self.computation_log: List[Tuple[int, str]] = []
+        # List of recipes that used this input to generate products
+        self.used_by: Set[str] = set()
+
+    def add_computation_log(self, elapsed: int, what: str) -> None:
+        """
+        Add an entry to the computation log.
+
+        :param elapsed: elapsed time in nanoseconds
+        :param what: description of the computation
+        """
+        self.computation_log.append((elapsed, what))
+
+    def to_jsonable(self) -> Dict[str, Any]:
+        """
+        Produce a JSON-serializable summary about this input
+        """
+        return {
+            "used_by": sorted(self.used_by),
+            "computation": self.computation_log,
+        }
+
+    @classmethod
+    def from_jsonable(cls, data: Dict[str, Any]):
+        res = cls()
+        res.computation_log = [tuple(i) for i in data["computation"]]
+        res.used_by = set(data["used_by"])
+        return res
+
+
 class InputSummary(Serializable):
     """
     Summary about inputs useed in processing
     """
 
     def __init__(self) -> None:
-        self.inputs: Dict[str, Dict[str, Any]] = {}
+        self.inputs: Dict[str, InputProcessingStats] = {}
 
     def add(self, inp: "Input"):
-        self.inputs[inp.name] = inp.stats.summarize()
+        self.inputs[inp.name] = inp.stats
 
     def to_jsonable(self) -> Dict[str, Any]:
         # TODO: return {"inputs": self.inputs}
-        return self.inputs
+        return {name: stats.to_jsonable() for name, stats in self.inputs.items()}
 
     @classmethod
     def from_jsonable(cls, data: Dict[str, Any]):
         res = cls()
         for k, v in data.items():
-            res.inputs[k] = v
+            res.inputs[k] = InputProcessingStats.from_jsonable(v)
         return res
 
 
@@ -278,29 +316,19 @@ class Reader:
         """
         Return the input summary information
         """
-        summary = InputSummary()
-        summary.inputs = self._load_json("inputs.json")
-        return summary
+        return InputSummary.from_jsonable(self._load_json("inputs.json"))
 
     def log(self) -> Log:
         """
         Return the log information
         """
-        data = self._load_json("log.json")
-        res = Log()
-        res.entries = [LogEntry(**e) for e in data["entries"]]
-        return res
+        return Log.from_jsonable(self._load_json("log.json"))
 
     def products(self) -> Products:
         """
         Return the products information
         """
-        data = self._load_json("products.json")
-        res = Products()
-        res.flavour = data["flavour"]
-        res.by_recipe = {k: RecipeOrders.from_jsonable(v) for k, v in data["recipes"].items()}
-        res.by_path = {k: ProductInfo.from_jsonable(v) for k, v in data["products"].items()}
-        return res
+        return Products.from_jsonable(self._load_json("products.json"))
 
     def find(self) -> List[str]:
         """

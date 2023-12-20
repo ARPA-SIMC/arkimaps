@@ -49,12 +49,12 @@ class Pantry:
         # Collect which inputs have been used by which recipes
         for order in orders:
             for input_file in order.input_files.values():
-                input_file.info.stats.used_by.add(order.recipe)
+                input_file.info.stats.used_by.add(order.recipe.name)
 
-        for name, inps in self.inputs.items():
-            for input in inps:
-                if input.stats.used_by or input.stats.computation_log:
-                    summary.add(input)
+        for inps in self.inputs.values():
+            for inp in inps:
+                if inp.stats.used_by or inp.stats.computation_log:
+                    summary.add(inp)
 
     def log_input_processing(self, input: inputs.Input, message: str):
         """
