@@ -34,10 +34,8 @@ class LogCollector(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         self.entries.append(
-            ts=time.clock_gettime(time.CLOCK_REALTIME),
-            level=record.levelno,
-            msg=self.format(record),
-            name=record.name)
+            ts=time.clock_gettime(time.CLOCK_REALTIME), level=record.levelno, msg=self.format(record), name=record.name
+        )
 
 
 #
@@ -194,7 +192,8 @@ class RenderMixin(FlavoursMixin):
 
             # Add products summary
             products_info = outputbundle.Products()
-            Order.summarize_orders(self.kitchen, rendered, products_info)
+            for order in rendered:
+                products_info.add_order(order)
             bundle.add_products(products_info)
 
             # Let the Pantry store processing artifacts if it has any

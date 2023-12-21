@@ -102,7 +102,7 @@ class TestTypes(BaseFixture, unittest.TestCase):
 
     def test_recipeorders(self):
         val = ob.RecipeOrders()
-        val.add([self.order])
+        val.add(self.order)
 
         as_json = val.to_jsonable()
         val1 = ob.RecipeOrders.from_jsonable(as_json)
@@ -138,11 +138,11 @@ class TestTypes(BaseFixture, unittest.TestCase):
 
         products = ob.Products()
         with self.assertRaisesRegex(AssertionError, "not been rendered"):
-            products.add_orders(recipe=recipe, orders=[order])
+            products.add_order(order)
 
     def test_products(self):
         val = ob.Products()
-        val.add_orders(recipe=self.recipe, orders=[self.order])
+        val.add_order(self.order)
 
         # products = ob.Products(
         #     summary=[

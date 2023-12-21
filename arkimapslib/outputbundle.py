@@ -3,6 +3,7 @@
 import datetime
 import io
 import json
+import logging
 import tarfile
 import zipfile
 from abc import ABC, abstractmethod
@@ -18,6 +19,9 @@ if TYPE_CHECKING:
     from .inputs import Input, Instant
     from .orders import Order
     from .recipes import Recipe
+    from .kitchen import Kitchen
+
+log = logging.getLogger("outputbundle")
 
 
 class Serializable(ABC):
@@ -159,9 +163,8 @@ class RecipeOrders(Serializable):
     def __init__(self):
         self.by_reftime: Dict[datetime.datetime, ReftimeOrders] = defaultdict(ReftimeOrders)
 
-    def add(self, orders: List["Order"]):
-        for order in orders:
-            self.by_reftime[order.instant.reftime].add(order)
+    def add(self, order: "Order"):
+        self.by_reftime[order.instant.reftime].add(order)
 
     def to_jsonable(self) -> Dict[str, Any]:
         return {
@@ -235,14 +238,18 @@ class Products(Serializable):
         self.by_recipe: Dict[str, RecipeOrders] = defaultdict(RecipeOrders)
         self.by_path: Dict[str, ProductInfo] = defaultdict(ProductInfo)
 
-    def add_flavour(self, flavour: "Flavour"):
-        self.flavour = flavour.summarize()
+    def add_order(self, order: "Order") -> None:
+        """
+        Add information from this order to the products summary
+        """
+        # Add flavour information
+        if self.flavour is None:
+            self.flavour = order.flavour.summarize()
+        elif self.flavour["name"] != order.flavour.name:
+            log.error("Found different flavours %s and %s", self.flavour["name"], order.flavour.name)
 
-    def add_orders(self, recipe: "Recipe", orders: List["Order"]):
-        self.by_recipe[recipe.name].add(orders)
-
-        for order in orders:
-            order.summarize_outputs(self)
+        order.summarize_outputs(self)
+        self.by_recipe[order.recipe.name].add(order)
 
     def to_jsonable(self) -> Dict[str, Any]:
         return {

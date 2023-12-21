@@ -150,26 +150,6 @@ class Order:
         if georef is not None:
             products_info.by_path[self.output.relpath].add_georef(georef)
 
-    @classmethod
-    def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"], products_info: outputbundle.Products):
-        """
-        Summarize a list of orders into a json-able structure
-        """
-        by_fr: Dict[str, List[Order]] = defaultdict(list)
-
-        # Group by flavour and recipe
-        for order in orders:
-            by_fr[(order.flavour.name, order.recipe.name)].append(order)
-
-        common_flavour_name: Optional[str] = None
-        for (flavour_name, recipe_name), orders_fr in by_fr.items():
-            if common_flavour_name is None:
-                common_flavour_name = flavour_name
-            elif common_flavour_name != flavour_name:
-                log.error("Found different flavours %s and %s", common_flavour_name, flavour_name)
-            products_info.add_orders(kitchen.recipes.get(recipe_name), orders_fr)
-        products_info.add_flavour(kitchen.flavours[flavour_name])
-
 
 class MapOrder(Order):
     def __init__(
@@ -347,15 +327,18 @@ class TileOrder(Order):
                 with io.BytesIO() as buf:
                     tile.save(buf, "PNG")
                     buf.seek(0)
-                    tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
-                    bundle.add_product(tar_path, buf)
-                    log.info("Rendered %s to %s", self, tar_path)
+                    bundle_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+                    bundle.add_product(bundle_path, buf)
+                    log.info("Rendered %s to %s", self, bundle_path)
 
     def summarize_outputs(self, products_info: outputbundle.Products):
         """
         Add information about the images producted by this order to the
         products information of an output bundle
         """
+        if self.output is None:
+            raise AssertionError(f"{self}: product has not been rendered")
+
         relpath, basename = os.path.split(self.output.relpath)
 
         start_x, start_y, width, height = (int(x) for x in basename[:-4].split("-"))
@@ -366,24 +349,24 @@ class TileOrder(Order):
             lon_width = (lonmax - lonmin) / width
             lat_height = (latmax - latmin) / height
 
-        # Slice the tile's georeferencing
+        # Add information about each tile slice
         for x in range(width):
             for y in range(height):
-                tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
-                products_info.by_path[tar_path].add_recipe(self.recipe)
-                products_info.by_path[tar_path].add_instant(self.instant)
+                bundle_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+                products_info.by_path[bundle_path].add_recipe(self.recipe)
+                products_info.by_path[bundle_path].add_instant(self.instant)
 
-                if georef is not None:
-                    bbox = [
-                        lonmin + x * lon_width,
-                        latmin + y * lat_height,
-                        lonmin + (x + 1) * lon_width,
-                        latmin + (y + 1) * lat_height,
-                    ]
+                if georef is None:
+                    continue
 
-                    tile_georef = georef.copy()
-                    tile_georef["bbox"] = bbox
-                    products_info.by_path[tar_path].add_georef(tile_georef)
+                tile_georef = georef.copy()
+                tile_georef["bbox"] = [
+                    lonmin + x * lon_width,
+                    latmin + y * lat_height,
+                    lonmin + (x + 1) * lon_width,
+                    latmin + (y + 1) * lat_height,
+                ]
+                products_info.by_path[bundle_path].add_georef(tile_georef)
 
     @classmethod
     def make_orders(
