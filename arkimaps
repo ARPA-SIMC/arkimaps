@@ -126,7 +126,7 @@ class RenderMixin(FlavoursMixin):
         parser.add_argument(
             "--output",
             "-o",
-            metavar="file.tar",
+            metavar="file.tar|zip",
             action="store",
             help="write rendered output to the given file. Default: write to stdout",
         )
