@@ -114,30 +114,23 @@ class ReftimeOrders(Serializable):
         *,
         inputs: Optional[Sequence[str]] = None,
         steps: Optional[Dict[ModelStep, int]] = None,
-        legend_info: Optional[Dict[str, Any]] = None,
         render_time_ns: int = 0,
     ):
         self.inputs: Set[str] = set(inputs) if inputs else set()
         self.steps: Dict[ModelStep, int] = Counter()
         if steps:
             self.steps.update(steps)
-        self.legend_info: Optional[Dict[str, Any]] = legend_info
         self.render_time_ns: int = render_time_ns
 
     def add(self, order: "Order"):
         self.inputs.update(order.input_files.keys())
         self.steps[order.instant.step] += 1
-        if self.legend_info is None:
-            for step in order.order_steps:
-                if isinstance(step, steps.AddContour):
-                    self.legend_info = step.params["params"]
         self.render_time_ns += order.render_time_ns
 
     def to_jsonable(self) -> Dict[str, Any]:
         return {
             "inputs": sorted(self.inputs),
             "steps": {str(s): c for s, c in self.steps.items()},
-            "legend_info": self.legend_info,
             "render_stats": {
                 "time_ns": self.render_time_ns,
             },
@@ -151,7 +144,6 @@ class ReftimeOrders(Serializable):
             render_time_ns=render_stats["time_ns"],
             steps={ModelStep(k): v for k, v in steps.items()},
             inputs=data.get("inputs"),
-            legend_info=data.get("legend_info"),
         )
 
 
@@ -160,23 +152,33 @@ class RecipeOrders(Serializable):
     Information and statistics for all orders generated from one recipe
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.by_reftime: Dict[datetime.datetime, ReftimeOrders] = defaultdict(ReftimeOrders)
+        self.legend_info: Optional[Dict[str, Any]] = None
 
     def add(self, order: "Order"):
         self.by_reftime[order.instant.reftime].add(order)
+        if self.legend_info is None:
+            for step in order.order_steps:
+                if isinstance(step, steps.AddContour):
+                    self.legend_info = step.params["params"]
 
     def to_jsonable(self) -> Dict[str, Any]:
         return {
-            reftime.strftime("%Y-%m-%d %H:%M:%S"): stats.to_jsonable() for reftime, stats in self.by_reftime.items()
+            "reftimes": {
+                reftime.strftime("%Y-%m-%d %H:%M:%S"): stats.to_jsonable() for reftime, stats in self.by_reftime.items()
+            },
+            "legend_info": self.legend_info,
         }
 
     @classmethod
     def from_jsonable(cls, data: Dict[str, Any]):
         res = cls()
         res.by_reftime = {
-            datetime.datetime.strptime(k, "%Y-%m-%d %H:%M:%S"): ReftimeOrders.from_jsonable(v) for k, v in data.items()
+            datetime.datetime.strptime(k, "%Y-%m-%d %H:%M:%S"): ReftimeOrders.from_jsonable(v)
+            for k, v in data["reftimes"].items()
         }
+        res.legend_info = data.get("legend_info")
         return res
 
 

@@ -68,8 +68,16 @@ class TestTypes(BaseFixture, unittest.TestCase):
         val1 = ob.ReftimeOrders.from_jsonable(as_json)
         # TODO: inspect val1
 
-    def test_reftimeorders_legend(self):
-        val = ob.ReftimeOrders()
+    def test_recipeorders(self):
+        val = ob.RecipeOrders()
+        val.add(self.order)
+
+        as_json = val.to_jsonable()
+        val1 = ob.RecipeOrders.from_jsonable(as_json)
+        # TODO: inspect val1
+
+    def test_recipeorders_legend(self):
+        val = ob.RecipeOrders()
         val.add(self.order)
         self.assertIsNone(val.legend_info)
 
@@ -91,7 +99,7 @@ class TestTypes(BaseFixture, unittest.TestCase):
             instant=self.instant,
         )
 
-        val = ob.ReftimeOrders()
+        val = ob.RecipeOrders()
         val.add(order)
         self.assertEqual(
             val.legend_info,
@@ -99,14 +107,6 @@ class TestTypes(BaseFixture, unittest.TestCase):
                 "legend": "on",
             },
         )
-
-    def test_recipeorders(self):
-        val = ob.RecipeOrders()
-        val.add(self.order)
-
-        as_json = val.to_jsonable()
-        val1 = ob.RecipeOrders.from_jsonable(as_json)
-        # TODO: inspect val1
 
     def test_productinfo(self):
         val = ob.ProductInfo()
