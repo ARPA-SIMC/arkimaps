@@ -1,3 +1,17 @@
+# New in version 1.12
+
+* Updated contouring for snow fall
+
+# New in version 1.11
+
+* Updated contouring for total precipitation
+
+# New in version 1.10
+
+* Do not dispatch inputs not needed by recipes selected by flavour (#87)
+* Deal with time units in arkimet timeranges (#157)
+* Fixed serialization of ModelStep steps (#154)
+
 # New in version 1.9
 
 * Added `tground` product

@@ -44,7 +44,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `ztw850`| Geopotenziale, temperatura e vento a 850 hPa | [ztw850.png](ztw850.png)               | [ztw850.md](../recipes/standalone/ztw850.md) |
 | `ztw925`| Geopotenziale, temperatura e vento a 925 hPa | [ztw925.png](ztw925.png)               | [ztw925.md](../recipes/standalone/ztw925.md) |
 | `z500t850`| Geopotenziale a 500 hPa, temperatura a 850 hPa | [z500t850.png](z500t850.png)       | [z500t850.md](../recipes/standalone/z500t850.md) |
-| `tp1h`    | Precipitazione cumulata su 1h con frazione nevosa e vento a 10m || [tp1h.png](tp1h.png) | [tp1h.md](../recipes/standalone/tp1h.md)   |
+| `tp1h`    | Precipitazione cumulata su 1h con frazione nevosa e vento a 10m | [tp1h.png](tp1h.png) | [tp1h.md](../recipes/standalone/tp1h.md)   |
 | `tp3h` `tp6h` `tp12h` `tp24h` | Precipitazione totale cumulata su 3/6/12/24h con frazione nevosa  | [tp24h.png](tp24h.png) | [tp3h.md](../recipes/standalone/tp3h.md) [tp6h.md](../recipes/standalone/tp6h.md) [tp12h.md](../recipes/standalone/tp12h.md) [tp24h.md](../recipes/standalone/tp24h.md) |
 | `cp3h` `cp6h` `cp12h` `cp24h` | Precipitazione convettiva cumulata su 3/6/12/24h | [cp24h.png](cp24h.png)  |  [cp3h.md](../recipes/cp3h.md) [cp6h.md](../recipes/cp6h.md) [cp12h.md](../recipes/cp12h.md) [cp24h.md](../recipes/cp24h.md) |
 | `sf1h` `sf3h` `sf6h` `sf12h` `sf24h` | Precipitazione nevosa totale cumulata su 1/3/6/12/24h     | [sf24h.png](sf24h.png)  |  [sf1h.md](../recipes/sf1h.md) [sf3h.md](../recipes/sf3h.md) [sf6h.md](../recipes/sf6h.md) [sf12h.md](../recipes/sf12h.md) [sf24h.md](../recipes/sf24h.md) |
