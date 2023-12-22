@@ -3,8 +3,8 @@ import io
 import logging
 import math
 import os
-from collections import Counter, defaultdict
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Tuple
 
 from PIL import Image
 
@@ -14,8 +14,6 @@ from .steps import StepSkipped, StepConfig, AddBasemap
 from .pygen import PyGen
 
 if TYPE_CHECKING:
-    import datetime
-
     from . import inputs, steps
     from .flavours import Flavour
     from .kitchen import Kitchen
@@ -71,34 +69,33 @@ class Order:
         self.output_options: Dict[str, Any] = {}
 
         # Output file name, set after the product has been rendered
-        self.outputs: List[Output] = []
-
-        # If this order generates a legend, this is information about the
-        # legend to be forwarded to the summary
-        self.legend_info: Optional[Dict[str, Any]] = None
+        self.output: Optional[Output] = None
 
         # Summary stats about the rendering
         self.render_time_ns: int = 0
 
-    def add_output(self, output: Output, timing: int = 0):
+    def set_output(self, output: Output, timing: int = 0):
         """
         Add a rendered output to this order
         """
-        self.outputs.append(output)
+        if self.output is not None:
+            log.error("%s: output already set to %s and set again to %s", self, self.output, output)
+        self.output = output
         self.render_time_ns += timing
 
     def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer):
         """
         Add render results to a tarball
         """
-        for output in self.outputs:
-            log.info("Rendered %s to %s", self, output.relpath)
+        if self.output is None:
+            raise AssertionError(f"{self}: product has not been rendered")
+        log.info("Rendered %s to %s", self, self.output.relpath)
 
-            # Move the generated image to the output tar
-            path = os.path.join(workdir, output.relpath)
-            with open(path, "rb") as data:
-                bundle.add_product(output.relpath, data)
-            os.unlink(path)
+        # Move the generated image to the output bundle
+        path = os.path.join(workdir, self.output.relpath)
+        with open(path, "rb") as data:
+            bundle.add_product(self.output.relpath, data)
+        os.unlink(path)
 
     def georeference(self) -> Optional[Dict[str, Any]]:
         """
@@ -138,84 +135,20 @@ class Order:
             "bbox": [min(lllon, urlon), min(lllat, urlat), max(lllon, urlon), max(lllat, urlat)],
         }
 
-    def georeference_outputs(self) -> Optional[Dict[str, Dict[str, Any]]]:
+    def summarize_outputs(self, products_info: outputbundle.Products):
         """
-        Georeference not the image produced but each singoe output of this
-        order.
+        Add information about the images producted by this order to the
+        products information of an output bundle
+        """
+        if self.output is None:
+            raise AssertionError(f"{self}: product has not been rendered")
 
-        Return a dict mapping output relpath to georeferencing information, or
-        None if this output cannot be georeferenced
-        """
+        products_info.by_path[self.output.relpath].add_recipe(self.recipe)
+        products_info.by_path[self.output.relpath].add_instant(self.instant)
+
         georef = self.georeference()
-        if georef is None:
-            return None
-
-        lonmin, latmin, lonmax, latmax = georef["bbox"]
-
-        result: Dict[str, Dict[str, Any]] = {}
-        for output in self.outputs:
-            result[output.relpath] = georef
-
-        return result
-
-    @classmethod
-    def summarize_orders(cls, kitchen: "Kitchen", orders: List["Order"]) -> List[Dict[str, Any]]:
-        """
-        Summarize a list of orders into a json-able structure
-        """
-        result: List[Dict[str, Any]] = []
-
-        by_fr: Dict[str, List[Order]] = defaultdict(list)
-
-        # Group by flavour and recipe
-        for order in orders:
-            by_fr[(order.flavour.name, order.recipe.name)].append(order)
-
-        for (flavour_name, recipe_name), orders_fr in by_fr.items():
-            by_output = {}
-            record = {
-                "flavour": kitchen.flavours[flavour_name].summarize(),
-                "recipe": kitchen.recipes.get(recipe_name).summarize(),
-                "reftimes": {},
-                "images": by_output,
-            }
-
-            # Group orders by reftime
-            by_rt: Dict[datetime.datetime, List[Order]] = defaultdict(list)
-            for order in orders_fr:
-                by_rt[order.instant.reftime].append(order)
-                for output in order.outputs:
-                    georef = order.georeference_outputs()
-                    if georef is not None:
-                        for name, info in georef.items():
-                            by_output[name] = {
-                                "georef": info,
-                            }
-
-            for reftime, orders in by_rt.items():
-                inputs: Set[str] = set()
-                steps: dict[str, int] = Counter()
-                legend_info: Optional[Dict[str, Any]] = None
-                render_time_ns: int = 0
-                for order in orders:
-                    inputs.update(order.input_files.keys())
-                    steps[str(order.instant.step)] += 1
-                    if order.legend_info:
-                        legend_info = order.legend_info
-                    render_time_ns += order.render_time_ns
-                record_rt = {
-                    "inputs": sorted(inputs),
-                    "steps": steps,
-                    "legend_info": legend_info,
-                    "render_stats": {
-                        "time_ns": render_time_ns,
-                    },
-                }
-                record["reftimes"][reftime.strftime("%Y-%m-%d %H:%M:%S")] = record_rt
-
-            result.append(record)
-
-        return result
+        if georef is not None:
+            products_info.by_path[self.output.relpath].add_georef(georef)
 
 
 class MapOrder(Order):
@@ -235,7 +168,7 @@ class MapOrder(Order):
                 step_config = flavour.step_config(recipe_step.name)
                 s = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
             except StepSkipped:
-                log.debug("%s: %s (skipped)", self, s.name)
+                log.debug("%s: %s (skipped)", self, recipe_step.name)
                 continue
             self.order_steps.append(s)
 
@@ -377,67 +310,63 @@ class TileOrder(Order):
         """
         Add render results to a tarball
         """
-        for output in self.outputs:
-            relpath, basename = os.path.split(output.relpath)
+        relpath, basename = os.path.split(self.output.relpath)
 
-            start_x, start_y, width, height = (int(x) for x in basename[:-4].split("-"))
+        start_x, start_y, width, height = (int(x) for x in basename[:-4].split("-"))
 
-            rendered = Image.open(os.path.join(workdir, output.relpath), mode="r")
-            # Requires PIL >= 8.0.0
-            # rendered = Image.open(os.path.join(workdir, output.relpath), mode='r', formats=('PNG',))
+        rendered = Image.open(os.path.join(workdir, self.output.relpath), mode="r")
+        # Requires PIL >= 8.0.0
+        # rendered = Image.open(os.path.join(workdir, self.output.relpath), mode='r', formats=('PNG',))
 
-            # Slice the tile and add it to the tar file
-            for x in range(width):
-                for y in range(height):
-                    tile = rendered.crop(
-                        (x * TILE_WIDTH_PX, y * TILE_HEIGHT_PX, (x + 1) * TILE_WIDTH_PX, (y + 1) * TILE_HEIGHT_PX)
-                    )
-                    with io.BytesIO() as buf:
-                        tile.save(buf, "PNG")
-                        tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
-                        bundle.add_product(tar_path, buf)
-                        log.info("Rendered %s to %s", self, tar_path)
+        # Slice the tile and add it to the bundle
+        for x in range(width):
+            for y in range(height):
+                tile = rendered.crop(
+                    (x * TILE_WIDTH_PX, y * TILE_HEIGHT_PX, (x + 1) * TILE_WIDTH_PX, (y + 1) * TILE_HEIGHT_PX)
+                )
+                with io.BytesIO() as buf:
+                    tile.save(buf, "PNG")
+                    buf.seek(0)
+                    bundle_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+                    bundle.add_product(bundle_path, buf)
+                    log.info("Rendered %s to %s", self, bundle_path)
 
-    def georeference_outputs(self) -> Optional[Dict[str, Dict[str, Any]]]:
+    def summarize_outputs(self, products_info: outputbundle.Products):
         """
-        Georeference not the image produced but each singoe output of this
-        order.
-
-        Return a dict mapping output relpath to georeferencing information, or
-        None if this output cannot be georeferenced
+        Add information about the images producted by this order to the
+        products information of an output bundle
         """
+        if self.output is None:
+            raise AssertionError(f"{self}: product has not been rendered")
+
+        relpath, basename = os.path.split(self.output.relpath)
+
+        start_x, start_y, width, height = (int(x) for x in basename[:-4].split("-"))
+
         georef = self.georeference()
-        if georef is None:
-            return None
-
-        lonmin, latmin, lonmax, latmax = georef["bbox"]
-
-        result: Dict[str, Dict[str, Any]] = {}
-        for output in self.outputs:
-            relpath, basename = os.path.split(output.relpath)
-
-            start_x, start_y, width, height = (int(x) for x in basename[:-4].split("-"))
-
+        if georef is not None:
+            lonmin, latmin, lonmax, latmax = georef["bbox"]
             lon_width = (lonmax - lonmin) / width
             lat_height = (latmax - latmin) / height
 
-            # Slice the tile's georeferencing
-            for x in range(width):
-                for y in range(height):
-                    tar_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+        # Add information about each tile slice
+        for x in range(width):
+            for y in range(height):
+                bundle_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
+                products_info.by_path[bundle_path].add_recipe(self.recipe)
+                products_info.by_path[bundle_path].add_instant(self.instant)
 
-                    bbox = [
-                        lonmin + x * lon_width,
-                        latmin + y * lat_height,
-                        lonmin + (x + 1) * lon_width,
-                        latmin + (y + 1) * lat_height,
-                    ]
+                if georef is None:
+                    continue
 
-                    tile_georef = georef.copy()
-                    tile_georef["bbox"] = bbox
-                    result[tar_path] = tile_georef
-
-        return result
+                tile_georef = georef.copy()
+                tile_georef["bbox"] = [
+                    lonmin + x * lon_width,
+                    latmin + y * lat_height,
+                    lonmin + (x + 1) * lon_width,
+                    latmin + (y + 1) * lat_height,
+                ]
+                products_info.by_path[bundle_path].add_georef(tile_georef)
 
     @classmethod
     def make_orders(
@@ -556,10 +485,6 @@ class LegendOrder(Order):
         params.pop("legend_title_font_size", None)
         params.pop("legend_automatic_position", None)
         self.order_steps.append(contour_step)
-
-        self.legend_info = {
-            "params": params,
-        }
 
     def __str__(self):
         return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/legend"

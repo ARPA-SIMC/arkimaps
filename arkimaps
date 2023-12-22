@@ -30,16 +30,12 @@ log = logging.getLogger("arkimaps")
 class LogCollector(logging.Handler):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.entries = []
+        self.entries = outputbundle.Log()
 
     def emit(self, record: logging.LogRecord):
-        entry = {
-            "ts": time.clock_gettime(time.CLOCK_REALTIME),
-            "level": record.levelno,
-            "msg": self.format(record),
-            "name": record.name,
-        }
-        self.entries.append(entry)
+        self.entries.append(
+            ts=time.clock_gettime(time.CLOCK_REALTIME), level=record.levelno, msg=self.format(record), name=record.name
+        )
 
 
 #
@@ -128,7 +124,7 @@ class RenderMixin(FlavoursMixin):
         parser.add_argument(
             "--output",
             "-o",
-            metavar="file.tar",
+            metavar="file.tar|zip",
             action="store",
             help="write rendered output to the given file. Default: write to stdout",
         )
@@ -154,11 +150,15 @@ class RenderMixin(FlavoursMixin):
     @contextlib.contextmanager
     def open_output(self) -> outputbundle.Writer:
         if self.args.output:
+            if self.args.output.endswith(".zip"):
+                writer_cls = outputbundle.ZipWriter
+            else:
+                writer_cls = outputbundle.TarWriter
             with open(self.args.output, "wb") as out:
-                with outputbundle.Writer(out=out) as bundle:
+                with writer_cls(out=out) as bundle:
                     yield bundle
         else:
-            with outputbundle.Writer(out=sys.stdout.buffer) as bundle:
+            with outputbundle.TarWriter(out=sys.stdout.buffer) as bundle:
                 yield bundle
 
     def render_tarball(self):
@@ -173,7 +173,8 @@ class RenderMixin(FlavoursMixin):
             orders += self.kitchen.make_orders(flavour=flavour)
 
         # Prepare input summary after we're done with input processing
-        input_summary = outputbundle.InputSummary(summary=self.kitchen.pantry.summarize_inputs(orders))
+        input_summary = outputbundle.InputSummary()
+        self.kitchen.pantry.summarize_inputs(orders, input_summary)
 
         renderer = Renderer(
             config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory()
@@ -187,12 +188,13 @@ class RenderMixin(FlavoursMixin):
             # Perform rendering
             rendered = renderer.render(orders, bundle)
 
-            log_entries = outputbundle.Log(entries=self.log_collector.entries)
-            bundle.add_log(log_entries)
+            bundle.add_log(self.log_collector.entries)
 
             # Add products summary
-            order_summary = outputbundle.Products(summary=Order.summarize_orders(self.kitchen, rendered))
-            bundle.add_products(order_summary)
+            products_info = outputbundle.Products()
+            for order in rendered:
+                products_info.add_order(order)
+            bundle.add_products(products_info)
 
             # Let the Pantry store processing artifacts if it has any
             self.kitchen.pantry.store_processing_artifacts(bundle)

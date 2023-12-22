@@ -15,7 +15,9 @@ import numpy
 from .config import Config
 from .grib import GRIB
 from .lint import Lint
+from .types import ModelStep, Instant
 from .utils import perf_counter_ns, TypeRegistry
+from .outputbundle import InputProcessingStats
 
 if TYPE_CHECKING:
     from . import pantry
@@ -43,224 +45,6 @@ def keep_only_first_grib(fname: str):
             eccodes.codes_release(gid)
 
 
-class ModelStep:
-    """
-    Identifies a step of a model, as a time span value and unit
-    """
-
-    __slots__ = ("_value",)
-
-    _value: int
-
-    def __init__(self, value: Union[int, str, "ModelStep"]):
-        val, unit = self._parse_value(value)
-        if unit != "h":
-            raise ValueError(f"only 'h' currently supported as a time unit (found {unit!r})")
-        self._value = val
-
-    def __eq__(self, other):
-        if isinstance(other, int):
-            return self._value == other
-        if isinstance(other, str):
-            val, unit = self._parse_value(other)
-            if unit != "h":
-                raise ValueError(f"only 'h' currently supported as a time unit (found {unit!r})")
-            return self._value == val
-        if isinstance(other, ModelStep):
-            return self._value == other._value
-        return NotImplemented
-
-    def __lt__(self, other):
-        if isinstance(other, int):
-            return self._value < other
-        if isinstance(other, str):
-            val, unit = self._parse_value(other)
-            if unit != "h":
-                raise ValueError(f"only 'h' currently supported as a time unit (found {unit!r})")
-            return self._value < val
-        if isinstance(other, ModelStep):
-            return self._value < other._value
-        return NotImplemented
-
-    def __hash__(self) -> int:
-        return hash(self._value)
-
-    def __str__(self) -> str:
-        return f"{self._value}h"
-
-    def is_zero(self) -> bool:
-        """Test if the step is zero, regardless of unit."""
-        return self._value == 0
-
-    def suffix(self) -> str:
-        """
-        Return a suffix that can be used in filenames to identify a step
-        """
-        return f"+{self._value:03d}"
-
-    @staticmethod
-    def _parse_value(value: Union[int, str, "ModelStep"]):
-        """
-        Parse a value (optionally with suffix) into a value and a unit
-        """
-        if isinstance(value, int):
-            return value, "h"
-        elif isinstance(value, ModelStep):
-            return value._value, "h"
-        elif isinstance(value, str):
-            if len(value) < 2:
-                raise ValueError(f"value {value!r} is too short to be a number plus unit suffix")
-            return int(value[:-1]), value[-1]
-
-        raise TypeError(f"value {value!r} is neither an int nor a str nor a ModelStep")
-
-    @classmethod
-    def from_grib1(cls, value: int, unit: int) -> "ModelStep":
-        """
-        Instantiate a ModelStep from a value and its GRIB1 unit
-        """
-        if unit == 0:  # minutes
-            if value % 60 != 0:
-                raise NotImplementedError(f"unsupported step {value} minutes")
-            return cls(value // 60)
-        if unit == 1:  # hours
-            return cls(value)
-        if unit == 2:  # days
-            return cls(value * 24)
-        if unit == 3:  # months
-            raise NotImplementedError("unsupported step unit: months")
-        if unit == 4:  # years
-            raise NotImplementedError("unsupported step unit: years")
-        if unit == 5:  # decades
-            raise NotImplementedError("unsupported step unit: decades")
-        if unit == 6:  # normals
-            raise NotImplementedError("unsupported step unit: normals")
-        if unit == 7:  # centuries
-            raise NotImplementedError("unsupported step unit: centuries")
-        if unit == 10:  # 3-hours
-            return cls(value * 3)
-        if unit == 11:  # 6-hours
-            return cls(value * 6)
-        if unit == 12:  # 12-hours
-            return cls(value * 12)
-        if unit == 254:  # seconds
-            if value % 3600 != 0:
-                raise NotImplementedError(f"unsupported step {value} seconds")
-            return cls(value // 3600)
-        raise ValueError(f"Unsupported GRIB time unit: {unit!r}")
-
-    @classmethod
-    def from_timedef(cls, value: int, unit: int) -> "ModelStep":
-        """
-        Instantiate a ModelStep from a value and its Timedef unit
-        """
-        if unit == 0:  # minutes
-            if value % 60 != 0:
-                raise NotImplementedError(f"unsupported step {value} minutes")
-            return cls(value // 60)
-        if unit == 1:  # hours
-            return cls(value)
-        if unit == 2:  # days
-            return cls(value * 24)
-        if unit == 3:  # months
-            raise NotImplementedError("unsupported step unit: months")
-        if unit == 4:  # years
-            raise NotImplementedError("unsupported step unit: years")
-        if unit == 5:  # decades
-            raise NotImplementedError("unsupported step unit: decades")
-        if unit == 6:  # normals
-            raise NotImplementedError("unsupported step unit: normals")
-        if unit == 7:  # centuries
-            raise NotImplementedError("unsupported step unit: centuries")
-        if unit == 10:  # 3-hours
-            return cls(value * 3)
-        if unit == 11:  # 6-hours
-            return cls(value * 6)
-        if unit == 12:  # 12-hours
-            return cls(value * 12)
-        if unit == 13:  # seconds
-            if value % 3600 != 0:
-                raise NotImplementedError(f"unsupported step {value} seconds")
-            return cls(value // 3600)
-        raise ValueError(f"Unsupported GRIB time unit: {unit!r}")
-
-
-class Instant:
-    """
-    Identifies an instant of time for which we have data for an input.
-
-    Note that different combinations of reftime+step that would map to the same
-    physical instant of time are considered distinct for arkimaps purposes
-    """
-
-    __slots__ = ("_reftime", "_step")
-
-    _reftime: datetime.datetime
-    _step: ModelStep
-
-    def __init__(self, reftime: datetime.datetime, step: Union[int, str, ModelStep]):
-        self._reftime = reftime
-        self._step = ModelStep(step)
-
-    @property
-    def reftime(self) -> datetime.datetime:
-        """
-        Access the model reference time.
-        """
-        return self._reftime
-
-    @property
-    def step(self):
-        return self._step
-
-    def __eq__(self, other):
-        if isinstance(other, Instant):
-            return self._reftime == other._reftime and self._step == other._step
-        return NotImplemented
-
-    def __lt__(self, other):
-        if isinstance(other, Instant):
-            if self._reftime < other._reftime:
-                return True
-            if self._reftime > other._reftime:
-                return False
-            return self._step < other._step
-        return NotImplemented
-
-    def __hash__(self) -> int:
-        return hash((self._reftime, self._step))
-
-    def __str__(self):
-        return f"{self._reftime:%Y-%m-%dT%H:%M:%S}{self._step.suffix()}"
-
-    def __repr__(self):
-        return f"Instant({self})"
-
-    def pantry_suffix(self) -> str:
-        """
-        Return a suffix that identifies a product for this instance in the
-        pantry
-        """
-        return (
-            f"_{self._reftime.year}_{self._reftime.month}_{self._reftime.day}"
-            f"_{self._reftime.hour}_{self._reftime.minute}_{self._reftime.second}"
-            f"+{self._step._value}"
-        )
-
-    def product_suffix(self) -> str:
-        """
-        Return a suffix that identifies a product for this instance in the
-        output
-        """
-        return f"_{self.reftime:%Y-%m-%dT%H:%M:%S}{self._step.suffix()}"
-
-    def step_suffix(self) -> str:
-        """
-        Return a suffix that can be used in filenames to identify a step
-        """
-        return self._step.suffix()
-
-
 class InputTypes(TypeRegistry["Input"]):
     """
     Registry of available Input implementations
@@ -270,39 +54,6 @@ class InputTypes(TypeRegistry["Input"]):
 
 
 input_types = InputTypes()
-
-
-class InputProcessingStats:
-    """
-    Statistics collected while processing inputs
-    """
-
-    def __init__(self, input: "Input"):
-        self.input = input
-        # List of strings describing computation steps, and the time they took
-        # in nanoseconds
-        self.computation_log: List[Tuple[int, str]] = []
-        # List of recipes that used this input to generate products
-        self.used_by: Set[Recipe] = set()
-
-    @contextlib.contextmanager
-    def collect(self, pantry: "pantry.Pantry", what: str) -> Generator[None, None, None]:
-        start = perf_counter_ns()
-        try:
-            yield
-        finally:
-            elapsed = perf_counter_ns() - start
-            self.computation_log.append((elapsed, what))
-            pantry.log_input_processing(self.input, what)
-
-    def summarize(self) -> Dict[str, Any]:
-        """
-        Produce a JSON-serializable summary about this input
-        """
-        return {
-            "used_by": sorted(recipe.name for recipe in self.used_by),
-            "computation": self.computation_log,
-        }
 
 
 class Input:
@@ -338,7 +89,7 @@ class Input:
         # Optional notes for the documentation
         self.notes = notes
         # Processing statistics
-        self.stats = InputProcessingStats(self)
+        self.stats = InputProcessingStats()
 
     @classmethod
     def create(cls, *, lint: Optional[Lint] = None, type: str = "default", **kw):
@@ -373,6 +124,19 @@ class Input:
         """
         for k, v in kwargs.items():
             lint.warn_input(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
+
+    @contextlib.contextmanager
+    def _collect_stats(self, pantry: "pantry.Pantry", what: str) -> Generator[None, None, None]:
+        """
+        Collect statistics about processing done to generate this input
+        """
+        start = perf_counter_ns()
+        try:
+            yield
+        finally:
+            elapsed = perf_counter_ns() - start
+            self.stats.add_computation_log(elapsed, what)
+            pantry.log_input_processing(self, what)
 
     def __getstate__(self):
         return {
@@ -766,7 +530,7 @@ class VG6DStatProcMixin:
         if self.comp_full_steps:
             cmd.append("--comp-full-steps")
         cmd += ["-", decumulated_data]
-        with self.stats.collect(pantry, " ".join(shlex.quote(c) for c in cmd)):
+        with self._collect_stats(pantry, " ".join(shlex.quote(c) for c in cmd)):
             v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
             for input_file in source_instants.values():
                 with open(input_file.pathname, "rb") as src:
@@ -785,7 +549,7 @@ class VG6DStatProcMixin:
                 log.warning("%s: vg6d_transform generated empty output", self.name)
                 return
 
-            with self.stats.collect(pantry, f"grib_filter {size}b"):
+            with self._collect_stats(pantry, f"grib_filter {size}b"):
                 res = subprocess.run(
                     ["grib_filter", grib_filter_rules, decumulated_data], stdout=subprocess.PIPE, check=True
                 )
@@ -924,7 +688,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
             cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
             log.debug("running %s", " ".join(shlex.quote(x) for x in cmd))
 
-            with self.stats.collect(pantry, " ".join(shlex.quote(c) for c in cmd)):
+            with self._collect_stats(pantry, " ".join(shlex.quote(c) for c in cmd)):
                 v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
                 for input_file in input_files:
                     with open(input_file.pathname, "rb") as fd:
@@ -968,7 +732,7 @@ class Cat(AlignInstantsMixin, Derived):
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
-            with self.stats.collect(
+            with self._collect_stats(
                 pantry, "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
             ):
                 with open(output_pathname, "wb") as out:
@@ -998,7 +762,7 @@ class Or(Derived):
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: using %s for instant %s as %s", self.name, input_file.info.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
-            with self.stats.collect(pantry, input_file.pathname + " as " + output_name):
+            with self._collect_stats(pantry, input_file.pathname + " as " + output_name):
                 os.link(input_file.pathname, output_pathname)
             self.add_instant(instant)
 
@@ -1085,7 +849,7 @@ class GroundToMSL(GribSetMixin, Derived):
         has_output = False
         for instant, input_file in pantry.get_instants(self.inputs[1]).items():
             output_name = pantry.get_basename(self, instant)
-            with self.stats.collect(
+            with self._collect_stats(
                 pantry,
                 " ".join(("groundtomsl", shlex.quote(z_input.pathname), shlex.quote(input_file.pathname), output_name)),
             ):
@@ -1143,7 +907,7 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
         # For each instant, run the expression
         for instant, input_files in available_instants.items():
             output_name = pantry.get_basename(self, instant)
-            with self.stats.collect(
+            with self._collect_stats(
                 pantry, "expr " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
             ):
                 with contextlib.ExitStack() as stack:
@@ -1206,7 +970,7 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
         # For each instant, run the expression
         for instant, input_files in available_instants.items():
             output_name = pantry.get_basename(self, instant)
-            with self.stats.collect(
+            with self._collect_stats(
                 pantry, "sffraction " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
             ):
                 with GRIB(input_files[0].pathname) as grib_tp:

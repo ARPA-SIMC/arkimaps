@@ -8,8 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import (TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type,
-                    Union)
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type, Union
 
 import yaml
 
@@ -25,6 +24,7 @@ class OrderResult:
     Encapsulate the results of rendering an order, to be used for inspecting
     details of rendering
     """
+
     def __init__(self, renderer, order):
         self.renderer = renderer
         self.order = order
@@ -44,31 +44,31 @@ class OrderResult:
 
 class RecipeTestMixin:
     expected_basemap_args = {
-        'page_id_line': False,
-        'page_x_length': 38,
-        'page_y_length': 31,
-        'output_width': 1280,
-        'subpage_map_projection': 'cylindrical',
-        'subpage_lower_left_longitude': 2.5,
-        'subpage_lower_left_latitude': 35.0,
-        'subpage_upper_right_longitude': 20.0,
-        'subpage_upper_right_latitude': 50.0,
-        'subpage_x_length': 34,
-        'subpage_x_position': 2,
-        'subpage_y_length': 30,
-        'subpage_y_position': 1,
-        'super_page_x_length': 40,
-        'super_page_y_length': 32,
-        'map_grid': True,
-        'map_grid_latitude_reference': 45.0,
-        'map_grid_longitude_reference': 0.0,
-        'map_grid_longitude_increment': 2.5,
-        'map_grid_latitude_increment': 2.5,
-        'map_grid_colour': 'grey',
-        'map_grid_line_style': 'dash',
-        'map_label_colour': 'black',
-        'map_label_height': 0.4,
-        'map_label_latitude_frequency': 1,
+        "page_id_line": False,
+        "page_x_length": 38,
+        "page_y_length": 31,
+        "output_width": 1280,
+        "subpage_map_projection": "cylindrical",
+        "subpage_lower_left_longitude": 2.5,
+        "subpage_lower_left_latitude": 35.0,
+        "subpage_upper_right_longitude": 20.0,
+        "subpage_upper_right_latitude": 50.0,
+        "subpage_x_length": 34,
+        "subpage_x_position": 2,
+        "subpage_y_length": 30,
+        "subpage_y_position": 1,
+        "super_page_x_length": 40,
+        "super_page_y_length": 32,
+        "map_grid": True,
+        "map_grid_latitude_reference": 45.0,
+        "map_grid_longitude_reference": 0.0,
+        "map_grid_longitude_increment": 2.5,
+        "map_grid_latitude_increment": 2.5,
+        "map_grid_colour": "grey",
+        "map_grid_line_style": "dash",
+        "map_label_colour": "black",
+        "map_label_height": 0.4,
+        "map_label_latitude_frequency": 1,
     }
 
     flavour_name = "default"
@@ -89,6 +89,7 @@ class RecipeTestMixin:
         #    value
         #
         import socket
+
         super().setUpClass()
         magic_crashes: List[Dict[str, Any]]
         try:
@@ -142,15 +143,16 @@ class RecipeTestMixin:
         self.kitchen_recipes_loaded = True
 
     def fill_pantry(
-            self,
-            reftime=datetime.datetime(2021, 1, 10),
-            step=12,
-            recipe_dirs=None,
-            expected=None,
-            recipe_name=None,
-            flavour_name=None,
-            exclude=None,
-            extra_sample_dirs: Sequence[str] = ()):
+        self,
+        reftime=datetime.datetime(2021, 1, 10),
+        step=12,
+        recipe_dirs=None,
+        expected=None,
+        recipe_name=None,
+        flavour_name=None,
+        exclude=None,
+        extra_sample_dirs: Sequence[str] = (),
+    ):
         """
         Load recipes if needed, then fill the pantry with the inputs they require
         """
@@ -189,8 +191,10 @@ class RecipeTestMixin:
                         continue
                     if inp.model is not None and inp.model != self.model_name:
                         continue
-                    reftime_str = (f"{reftime.year}_{reftime.month}_{reftime.day}"
-                                   f"_{reftime.hour}_{reftime.minute}_{reftime.second}")
+                    reftime_str = (
+                        f"{reftime.year}_{reftime.month}_{reftime.day}"
+                        f"_{reftime.hour}_{reftime.minute}_{reftime.second}"
+                    )
                     if inp.model is None:
                         expected.append(f"{inp.name}_{reftime_str}+{step}.grib")
                     else:
@@ -227,12 +231,12 @@ class RecipeTestMixin:
         # Test rendering with Magics
         rendered = renderer.render_one(order)
         self.assertIsNotNone(rendered)
-        self.assertEqual(len(rendered.outputs), 1)
-        output = rendered.outputs[0]
+        output = rendered.output
         self.assertEqual(
-                output.relpath,
-                f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}/"
-                f"{os.path.basename(self.recipe_name)}+{step:03d}.png")
+            output.relpath,
+            f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}/"
+            f"{os.path.basename(self.recipe_name)}+{step:03d}.png",
+        )
 
     def order_to_python(self, order) -> str:
         """
@@ -260,11 +264,9 @@ class RecipeTestMixin:
         re_size = re.compile(r"\b\d+b\b")
         simplified_log = []
         for e in self.kitchen.pantry.process_log:
-            message = e.message.replace(self.kitchen.pantry.data_root + '/', '')
+            message = e.message.replace(self.kitchen.pantry.data_root + "/", "")
             message = re_size.sub("xxxb", message)
-            simplified_log.append(
-                    f"{e.input.name}:{e.input.__class__.__name__}:" +
-                    message)
+            simplified_log.append(f"{e.input.name}:{e.input.__class__.__name__}:" + message)
         self.assertCountEqual(simplified_log, log)
 
     def assertMgribArgsEqual(self, order, cosmo=None, ifs=None, erg5=None):
@@ -295,11 +297,13 @@ class RecipeTestMixin:
 
 class ArkimetMixin:
     from arkimapslib.kitchen import ArkimetKitchen
+
     kitchen_class = ArkimetKitchen
 
 
 class EccodesMixin:
     from arkimapslib.kitchen import EccodesKitchen
+
     kitchen_class = EccodesKitchen
 
 
@@ -325,9 +329,8 @@ class ERG5Mixin:
 
 
 def add_recipe_test_cases(
-        module_name, recipe_name,
-        test_mixin: Optional[Type] = None,
-        models: Sequence[str] = ("IFS", "Cosmo")):
+    module_name, recipe_name, test_mixin: Optional[Type] = None, models: Sequence[str] = ("IFS", "Cosmo")
+):
     """
     Create test cases for the given recipe.
 
@@ -367,9 +370,10 @@ def add_recipe_test_cases(
             model_mixin = globals()[f"{model}Mixin"]
 
             test_case = type(
-                    cls_name,
-                    (_test_mixin, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
-                    {"recipe_name": recipe_name})
+                cls_name,
+                (_test_mixin, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
+                {"recipe_name": recipe_name},
+            )
             test_case.__module__ = module_name
             setattr(module, cls_name, test_case)
 
@@ -400,6 +404,7 @@ class Workdir(contextlib.ExitStack):
 
     def as_kitchen(self, kitchen_class: Union[str, Type[Kitchen]] = Kitchen) -> Kitchen:
         import arkimapslib.kitchen
+
         if kitchen_class == "arkimet":
             kitchen_class = arkimapslib.kitchen.ArkimetKitchen
         elif kitchen_class == "eccodes":
