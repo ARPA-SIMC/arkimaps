@@ -125,13 +125,17 @@ class Order:
             log.info("%s: Order has no add_basemap step", self)
             return None
 
-        if not projection.startswith("EPSG:"):
+        if projection.startswith("EPSG:"):
+            epsg = int(projection[5:])
+        elif projection == "cylindrical":
+            epsg = 4326
+        else:
             log.info("%s: Order has still unsupported projection %s", self, projection)
             return None
 
         return {
             "projection": "EPSG",
-            "epsg": int(projection[5:]),
+            "epsg": epsg,
             "bbox": [min(lllon, urlon), min(lllat, urlat), max(lllon, urlon), max(lllat, urlat)],
         }
 
