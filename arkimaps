@@ -21,7 +21,7 @@ from arkimapslib.lint import Lint
 from arkimapslib.orders import Order
 from arkimapslib.render import Renderer
 
-VERSION = "1.12"
+VERSION = "1.13"
 SYSTEM_RECIPE_DIR = "/usr/share/arkimaps/recipes"
 
 log = logging.getLogger("arkimaps")

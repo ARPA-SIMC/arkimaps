@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.12
+Version:        1.13
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -88,6 +88,11 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed Dec 27 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.13-1
+- Added info about legend and georeferencing in `products.json` (#149)
+- Added Python API to read PNG and metadata (#149)
+- Map cylindrical projection to EPSG:4326 (#158)
+
 * Wed Dec 20 2023 Daniele Branchini <dbranchini@arpae.it> - 1.12-1
 - Updated contouring for snow fall
 

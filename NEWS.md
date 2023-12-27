@@ -1,3 +1,9 @@
+# New in version 1.13
+
+* Added info about legend and georeferencing in `products.json` (#149)
+* Added Python API to read PNG and metadata (#149)
+* Map cylindrical projection to EPSG:4326 (#158)
+
 # New in version 1.12
 
 * Updated contouring for snow fall
