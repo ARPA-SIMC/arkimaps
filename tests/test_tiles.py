@@ -149,7 +149,9 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         # Test summary
         products_info = outputbundle.Products()
-        Order.summarize_orders(self.kitchen, rendered, products_info)
+        for order in orders:
+            products_info.add_order(order)
+
         product_info = products_info.by_path["2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/24.png"]
         self.assertIn("projection", product_info.georef)
 
