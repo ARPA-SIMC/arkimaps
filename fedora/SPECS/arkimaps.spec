@@ -56,7 +56,6 @@ install -D -m0755 arkimet-postprocessor %{buildroot}%{_libdir}/arkimet/%{name}
 #install recipes in /usr/share/arkimaps/
 install -d -m0755 %{buildroot}%{_datadir}/%{name}/
 cp -R recipes %{buildroot}%{_datadir}/%{name}/
-# chmod -R 444 %{buildroot}%{_datadir}/%{name}/recipes
 
 #generate recipes doc
 mkdir -p %{buildroot}%{_docdir}/%{name}/
