@@ -60,10 +60,10 @@ cp -R recipes %{buildroot}%{_datadir}/%{name}/
 
 #generate recipes doc
 mkdir -p %{buildroot}%{_docdir}/%{name}/
-%{__python3} arkimaps document-recipes --destdir %{buildroot}%{_docdir}/%{name}/
+%{python3} arkimaps document-recipes --destdir %{buildroot}%{_docdir}/%{name}/
 
 %check
-%{__python3} setup.py test
+%{py3_test_envvars} %{python3} setup.py test
 
 %files
 %{_bindir}/%{name}
