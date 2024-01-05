@@ -112,7 +112,7 @@ Postprocessor for arkimet.
 * Thu Oct 26 2023 Daniele Branchini <dbranchini@arpae.it> - 1.8-1
 - Fix redundancy in product summary (#153)
 
-* Fri Oct 12 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.7-2
+* Thu Oct 12 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.7-2
 - Add dependency to python3-pillow
 
 * Thu Oct  5 2023 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.7-1
