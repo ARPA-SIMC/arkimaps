@@ -60,7 +60,7 @@ class TestShape(TestCase):
 
         renderer = Renderer(config=kitchen.config, workdir=kitchen.workdir)
         order = renderer.render_one(orders[0])
-        imagefile = os.path.join(kitchen.workdir, order.outputs[0].relpath)
+        imagefile = os.path.join(kitchen.workdir, order.output.relpath)
         img = Image.open(imagefile, mode="r")
         # TODO: this should change to match the cut region
         self.assertEqual(
