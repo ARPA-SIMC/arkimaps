@@ -1,5 +1,15 @@
 # from __future__ import annotations
 
+"""
+Read/write arkimaps output bundles.
+
+An output bundle is a zip or tar file with the output products of an arkimaps
+run, and their associated metadata.
+
+The main entry points for reading an output bundle are :py:class:`ZipReader` and
+:py:class:`TarReader`.
+"""
+
 import datetime
 import io
 import json
@@ -25,6 +35,10 @@ log = logging.getLogger("outputbundle")
 
 
 class Serializable(ABC):
+    """
+    Base for classes that can be serialized to JSON
+    """
+
     @abstractmethod
     def to_jsonable(self) -> Dict[str, Any]:
         """
@@ -328,19 +342,19 @@ class Reader(ABC):
 
     def input_summary(self) -> InputSummary:
         """
-        Return the input summary information
+        Return summary of all inputs used during processing
         """
         return InputSummary.from_jsonable(self._load_json("inputs.json"))
 
     def log(self) -> Log:
         """
-        Return the log information
+        Return the log generated during processing
         """
         return Log.from_jsonable(self._load_json("log.json"))
 
     def products(self) -> Products:
         """
-        Return the products information
+        Return metadata for all products
         """
         return Products.from_jsonable(self._load_json("products.json"))
 
@@ -354,21 +368,32 @@ class Reader(ABC):
     @abstractmethod
     def load_product(self, bundle_path: str) -> bytes:
         """
-        Add a product
+        Load a product by its path.
+
+        Return the raw PNG image data
         """
-        ...
 
     @abstractmethod
     def load_artifact(self, bundle_path: str) -> bytes:
         """
-        Add a processing artifact
+        Load processing artifact.
+
+        Return the raw file data
         """
-        ...
 
 
 class TarReader(Reader):
     """
     Read an output bundle from a tar file
+
+    Usage::
+
+        with TarReader(path) as reader:
+            for name in reader.find():
+                if name.endswith(".png"):
+                    print(name)
+
+    See :py:class:`Reader` for the full method list
     """
 
     def __init__(self, path: Path):
@@ -408,6 +433,15 @@ class TarReader(Reader):
 class ZipReader(Reader):
     """
     Read an output bundle from a zip file
+
+    Usage::
+
+        with ZipReader(path) as reader:
+            for name in reader.find():
+                if name.endswith(".png"):
+                    print(name)
+
+    See :py:class:`Reader` for the full method list
     """
 
     def __init__(self, path: Path):
