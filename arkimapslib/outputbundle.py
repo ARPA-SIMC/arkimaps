@@ -62,12 +62,14 @@ class InputProcessingStats(Serializable):
     Statistics collected while processing inputs
     """
 
+    computation_log: List[Tuple[int, str]]
+    """List of strings describing computation steps, and the time they took in nanoseconds"""
+    used_by: Set[str]
+    """List of recipes that used this input to generate products"""
+
     def __init__(self) -> None:
-        # List of strings describing computation steps, and the time they took
-        # in nanoseconds
-        self.computation_log: List[Tuple[int, str]] = []
-        # List of recipes that used this input to generate products
-        self.used_by: Set[str] = set()
+        self.computation_log = []
+        self.used_by = set()
 
     def add_computation_log(self, elapsed: int, what: str) -> None:
         """
@@ -100,8 +102,11 @@ class InputSummary(Serializable):
     Summary about inputs useed in processing
     """
 
+    inputs: Dict[str, InputProcessingStats]
+    """Per-input processing information indexed by input name"""
+
     def __init__(self) -> None:
-        self.inputs: Dict[str, InputProcessingStats] = {}
+        self.inputs = {}
 
     def add(self, inp: "Input"):
         self.inputs[inp.name] = inp.stats
@@ -123,6 +128,13 @@ class ReftimeOrders(Serializable):
     Information and statistics for all orders for a given reftime
     """
 
+    inputs: Set[str]
+    """Names of inputs used"""
+    steps: Dict[ModelStep, int]
+    """Numer of products produced for each step"""
+    render_time_ns: int
+    """Total processing time in nanoseconds"""
+
     def __init__(
         self,
         *,
@@ -130,11 +142,11 @@ class ReftimeOrders(Serializable):
         steps: Optional[Dict[ModelStep, int]] = None,
         render_time_ns: int = 0,
     ):
-        self.inputs: Set[str] = set(inputs) if inputs else set()
-        self.steps: Dict[ModelStep, int] = Counter()
+        self.inputs = set(inputs) if inputs else set()
+        self.steps = Counter()
         if steps:
             self.steps.update(steps)
-        self.render_time_ns: int = render_time_ns
+        self.render_time_ns = render_time_ns
 
     def add(self, order: "Order"):
         self.inputs.update(order.input_files.keys())
@@ -166,9 +178,14 @@ class RecipeOrders(Serializable):
     Information and statistics for all orders generated from one recipe
     """
 
+    by_reftime: Dict[datetime.datetime, ReftimeOrders]
+    """Summary of all products produced for this recipe at this reference time"""
+    legend_info: Optional[Dict[str, Any]]
+    """Legend information for products produced from this recipe"""
+
     def __init__(self) -> None:
-        self.by_reftime: Dict[datetime.datetime, ReftimeOrders] = defaultdict(ReftimeOrders)
-        self.legend_info: Optional[Dict[str, Any]] = None
+        self.by_reftime = defaultdict(ReftimeOrders)
+        self.legend_info = None
 
     def add(self, order: "Order"):
         self.by_reftime[order.instant.reftime].add(order)
@@ -201,6 +218,15 @@ class ProductInfo(Serializable):
     Information about a generated product image
     """
 
+    recipe: Optional[str]
+    """Name of the recipe used for this product"""
+    reftime: Optional[datetime.datetime]
+    """Reference time"""
+    step: Optional[ModelStep]
+    """Step"""
+    georef: Dict[str, Any]
+    """Georeferencing information"""
+
     def __init__(
         self,
         *,
@@ -209,10 +235,10 @@ class ProductInfo(Serializable):
         step: Optional[ModelStep] = None,
         georef: Optional[Dict[str, Any]] = None,
     ):
-        self.recipe: Optional[str] = recipe
-        self.reftime: Optional[datetime.datetime] = reftime
-        self.step: Optional[ModelStep] = step
-        self.georef: Dict[str, Any] = georef if georef is not None else {}
+        self.recipe = recipe
+        self.reftime = reftime
+        self.step = step
+        self.georef = georef if georef is not None else {}
 
     def add_recipe(self, recipe: "Recipe"):
         self.recipe = recipe.name
@@ -249,10 +275,17 @@ class Products(Serializable):
     Information about the products present in the bundle
     """
 
+    flavour: Optional[Dict[str, Any]]
+    """Information about the flavour used"""
+    by_recipe: Dict[str, RecipeOrders]
+    """Recipes used, indexed by name"""
+    by_path: Dict[str, ProductInfo]
+    """Products generated, indexed by their path"""
+
     def __init__(self) -> None:
-        self.flavour: Optional[Dict[str, Any]] = None
-        self.by_recipe: Dict[str, RecipeOrders] = defaultdict(RecipeOrders)
-        self.by_path: Dict[str, ProductInfo] = defaultdict(ProductInfo)
+        self.flavour = None
+        self.by_recipe = defaultdict(RecipeOrders)
+        self.by_path = defaultdict(ProductInfo)
 
     def add_order(self, order: "Order") -> None:
         """
@@ -289,18 +322,28 @@ class LogEntry(NamedTuple):
     """
 
     ts: float
+    """Timestamp in seconds"""
     level: int
+    """Log level"""
     msg: str
+    """Log message"""
     name: str
+    """Logger name"""
 
 
 class Log(Serializable):
     """
-    A collection of log entries
+    A collection of log entries.
+
+    Iterate :py:attr:`Log.entries` for a list of all log entries generated
+    during processing.
     """
 
+    entries: List[LogEntry]
+    """List of all log entries"""
+
     def __init__(self) -> None:
-        self.entries: List[LogEntry] = []
+        self.entries = []
 
     def append(self, *, ts: float, level: int, msg: str, name: str):
         """
