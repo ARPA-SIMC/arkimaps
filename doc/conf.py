@@ -6,8 +6,8 @@
 import os
 import sys
 
-# Add the main module directory to sys.path for autodoc to find it
-sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), "..")))
+# Prepend the main module directory to sys.path for autodoc to find it
+sys.path.insert(0, os.path.normpath(os.path.join(os.path.dirname(__file__), "..")))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
