@@ -1,3 +1,7 @@
+# unreleased
+
+* Updated emro shapefile
+
 # New in version 1.13
 
 * Added info about legend and georeferencing in `products.json` (#149)
