@@ -1,5 +1,6 @@
-# unreleased
+# New in version 1.14
 
+* Added initial documentation for outputbundle (#159)
 * Updated emro shapefile
 
 # New in version 1.13
