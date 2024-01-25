@@ -17,6 +17,7 @@ BuildRequires:  python3-devel
 BuildRequires:  python3-pyyaml
 BuildRequires:  python3-gdal
 BuildRequires:  python3-pillow
+BuildRequires:  pyproject-rpm-macros
 
 # for tests
 BuildRequires:  arkimet
