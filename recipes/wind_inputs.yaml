@@ -24,11 +24,11 @@ inputs:
      eccodes: centre != 98 and shortName is "10v" and editionNumber == 2
  ws10m:
    - model: erg5
-     arkimet: product:GRIB2,00200, 000, 002, 001, 004, 000;level:GRIB2S,103,003,0000010000
+     arkimet: product:GRIB2,00200,000,002,001,004,;level:GRIB2S,103,003,0000010000
      eccodes: shortName is "ws" and level == 10
  wdir10m:
    - model: erg5
-     arkimet: product:GRIB2,00200, 000, 002, 000, 004, 000;level:GRIB2S,103,003,0000010000
+     arkimet: product:GRIB2,00200,000,002,000,004,;level:GRIB2S,103,003,0000010000
      eccodes: shortName is "wdir" and level == 10
  uv10m:
  # the correct order of components is needed for subsequent mgrib calls
@@ -172,7 +172,7 @@ inputs:
    type: cat
    inputs: [upv, vpv]
  wmax:
-   arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187 or GRIB2,00080,000,002,022,015,001
+   arkimet: product:GRIB1,98,228,28 or GRIB1,,201,187 or GRIB2,00080,000,002,022,015,
    eccodes: shortName is "10fg3" or shortName is "vmax_10m"
  wspeed10m:
    type: vg6d_transform
