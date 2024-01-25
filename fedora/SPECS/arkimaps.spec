@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.14
+Version:        1.15
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -87,6 +87,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Jan 25 2024 Daniele Branchini <dbranchini@arpae.it> - 1.15-1
+- Minor fixes in ICON products definitions
+
 * Wed Jan 24 2024 Daniele Branchini <dbranchini@arpae.it> - 1.14-1
 - Added initial documentation for outputbundle (#159)
 - Updated emro shapefile
