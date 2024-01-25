@@ -8,6 +8,24 @@ run, and their associated metadata.
 
 The main entry points for reading an output bundle are :py:class:`ZipReader` and
 :py:class:`TarReader`.
+
+Example program to show all products in a zip bundle::
+
+    #!/usr/bin/python3
+
+    import json
+    import sys
+
+    from arkimapslib.outputbundle import ZipReader
+
+
+    reader = ZipReader(sys.argv[1])
+    products = reader.products()
+    for path, info in products.by_path.items():
+        georef = info.georef
+        recipe_info = products.by_recipe[info.recipe]
+        legend_info = recipe_info.legend_info
+        print(json.dumps({"path": path, "georef": georef, "legend": legend_info}, indent=1))
 """
 
 import datetime
