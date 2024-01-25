@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Recipe workflow &#8212; arkimaps 1.12 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="arkimaps glossary" href="GLOSSARY.html" />
+    <link rel="prev" title="Recipe inputs" href="INPUTS.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="recipe-workflow">
+<h1>Recipe workflow<a class="headerlink" href="#recipe-workflow" title="Permalink to this heading">¶</a></h1>
+<p>Documentation of how data is processed to go from a recipe to a final product.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">GLOSSARY.rst</span></code> for a detailed explanation of the terms used in arkimet.</p>
+<section id="loading-recipes">
+<h2>Loading recipes<a class="headerlink" href="#loading-recipes" title="Permalink to this heading">¶</a></h2>
+<p>Recipes are loaded by scanning the recipes directory recursively for <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> files
+(see <code class="docutils literal notranslate"><span class="pre">arkimapslib.kitchen.Kitchen.load_recipes()</span></code>).</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">inputs</span></code> part of each recipe is added to a global repository of input
+definitions.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">flavours</span></code> part of each recipe is added to a global repository of flavour
+definitions.</p>
+<p>For each recipe which has a <code class="docutils literal notranslate"><span class="pre">recipe</span></code> section, a product is created with the
+same name as the name of the recipe file (without <code class="docutils literal notranslate"><span class="pre">.yaml</span></code> extension).</p>
+</section>
+<section id="filling-the-pantry">
+<h2>Filling the pantry<a class="headerlink" href="#filling-the-pantry" title="Permalink to this heading">¶</a></h2>
+<p>arkimaps is designed to process an unorganized stream of GRIB data.</p>
+<p>The stream is processed matching each GRIB data with the filter expressions
+provided in the input definitions found in recipes, storing each matched GRIB
+in a directory called <code class="docutils literal notranslate"><span class="pre">pantry</span></code> inside the working directory.</p>
+<p>Inside the pantry, each input found in this way is stored as
+<code class="docutils literal notranslate"><span class="pre">[$model_]$name+$step.grib</span></code>, where:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">$model</span></code> is the model name as found in the input definition, if the input
+definition defined filtering rules for different models</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$name</span></code> is the input name</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">$step</span></code> is the step detected for this input: <code class="docutils literal notranslate"><span class="pre">endStep</span></code> is used when
+filtering using <a class="reference external" href="https://confluence.ecmwf.int/display/ECC/ecCodes+Home">ecCodes</a>, and a function of the Timerange metadata is used
+when filtering using <a class="reference external" href="https://github.com/ARPA-SIMC/arkimet">Arkimet</a>.</p></li>
+</ul>
+<p>See <code class="docutils literal notranslate"><span class="pre">EccodesPantry.fill()</span></code> and <code class="docutils literal notranslate"><span class="pre">ArkimetPantry.fill()</span></code> in
+<code class="docutils literal notranslate"><span class="pre">arkimapslib.pantry</span></code>.</p>
+</section>
+<section id="making-orders">
+<h2>Making orders<a class="headerlink" href="#making-orders" title="Permalink to this heading">¶</a></h2>
+<p>For each flavour requested for rendering, and for each recipe that can be
+rendered in that flavour, the pantry is scanned to see which inputs are
+available and for which steps, and the result is used to build a list of all
+products that are expected in the output.</p>
+<p>During this process, arkimaps also computes those input data that need to be
+generated as derivations of other input data.</p>
+<section id="filtering-recipes">
+<h3>Filtering recipes<a class="headerlink" href="#filtering-recipes" title="Permalink to this heading">¶</a></h3>
+<p>A flavour can optionally define a <code class="docutils literal notranslate"><span class="pre">recipes_filter</span></code> which limits what recipes
+can be built using that flavour.</p>
+<p>As a first step of making orders, each flavour limits the recipes built with it
+to only those it allows.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">arkimapslib.kitchen.WorkingKitchen.make_orders()</span></code></p>
+</section>
+<section id="postprocessing-input-data">
+<h3>Postprocessing input data<a class="headerlink" href="#postprocessing-input-data" title="Permalink to this heading">¶</a></h3>
+<p>Inputs defined in recipes have a <code class="docutils literal notranslate"><span class="pre">type</span></code> that defines if they correspond to
+GRIB data as found in the stream to be processed, if they need to be fetched
+from other locations, or if they need to be computed from other inputs.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">INPUTS.rst</span></code> for a detailed description of available input types.</p>
+</section>
+<section id="computing-model-steps-for-which-an-order-can-be-made">
+<h3>Computing model steps for which an order can be made<a class="headerlink" href="#computing-model-steps-for-which-an-order-can-be-made" title="Permalink to this heading">¶</a></h3>
+<p>For each recipe, arkimaps scans its recipe steps to see what inputs they use,
+building a list of inputs used by the recipe.</p>
+<p>For each input used by the recipe, arkimaps queries the pantry for the set of
+model steps that are available for it, and intersects all sets found.</p>
+<p>The result is the list of model steps that are available for all inputs of the
+recipe: an order made for those steps will have all needed inputs available for
+rendering.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">arkimapslib.flavours.Flavour.make_orders()</span></code></p>
+</section>
+<section id="generating-the-orders-list">
+<h3>Generating the orders list<a class="headerlink" href="#generating-the-orders-list" title="Permalink to this heading">¶</a></h3>
+<p>Having computed all the inputs needed for all model step for which a product
+can be computed, arkimet builds a list of orders for the renderer, one for each
+product.</p>
+<p>For each order, arkimaps also computes the list of recipe steps found in the
+recipe, plus all the arguments for each step, computed taking the current
+flavour into account.</p>
+</section>
+</section>
+<section id="rendering-orders">
+<h2>Rendering orders<a class="headerlink" href="#rendering-orders" title="Permalink to this heading">¶</a></h2>
+<p>Once an order has been prepared with all its inputs, rendering it only needs
+executing all recipe steps in order, and writing the resulting image to the
+working directory. This is done in <code class="docutils literal notranslate"><span class="pre">arkimapslib.orders.Order.prepare()</span></code>.</p>
+<p>Since each order is self-contained, it can be rendered in parallel together
+with all other orders. This is orchestrated by
+<code class="docutils literal notranslate"><span class="pre">arkimapslib.render.Renderer.renderer</span></code>, which distributes the orders to be
+rendered to a to a multiprocessing pool of simple executors.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">arkimaps</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="INPUTS.html">Recipe inputs</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Recipe workflow</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#loading-recipes">Loading recipes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#filling-the-pantry">Filling the pantry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#making-orders">Making orders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#rendering-orders">Rendering orders</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="GLOSSARY.html">arkimaps glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="INPUTS.html" title="previous chapter">Recipe inputs</a></li>
+      <li>Next: <a href="GLOSSARY.html" title="next chapter">arkimaps glossary</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2024, ARPAE-SIMC.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/RECIPE_WORKFLOW.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

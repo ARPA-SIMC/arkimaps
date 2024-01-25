@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>arkimaps glossary &#8212; arkimaps 1.12 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference documentation" href="reference/index.html" />
+    <link rel="prev" title="Recipe workflow" href="RECIPE_WORKFLOW.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="arkimaps-glossary">
+<h1>arkimaps glossary<a class="headerlink" href="#arkimaps-glossary" title="Permalink to this heading">¶</a></h1>
+<p>Arkimaps processing uses terminology taken from a metaphore of cooking.</p>
+<p>While the cooking metaphore makes the terminology mostly intuitive, it might be
+useful to have exact definitions of the terms used by arkimaps in the context
+of arkimaps.</p>
+<p>Those are provided in this file.</p>
+<section id="flavor">
+<span id="id1"></span><h2>Flavor<a class="headerlink" href="#flavor" title="Permalink to this heading">¶</a></h2>
+<p>A named set of default arguments for <a class="reference internal" href="#recipe-step">recipe steps</a>.</p>
+<p>Specifying different sets of default arguments can be useful for rendering the
+same recipes, for example, on different areas, or with different branding or
+graphic layouts.</p>
+</section>
+<section id="input">
+<span id="id2"></span><h2>Input<a class="headerlink" href="#input" title="Permalink to this heading">¶</a></h2>
+<p>Input data (usually in <a class="reference external" href="https://en.wikipedia.org/wiki/GRIB">GRIB</a> format) that
+can be used by a <a class="reference internal" href="#recipe-step">recipe step</a>.</p>
+</section>
+<section id="mixer">
+<span id="id3"></span><h2>Mixer<a class="headerlink" href="#mixer" title="Permalink to this heading">¶</a></h2>
+<p>A repository of <a class="reference internal" href="#recipe-step">recipe steps</a> that can be executed by a <a class="reference internal" href="#recipe">recipe</a>.</p>
+<p>It is defined in arkimaps’ code. Currently only one mixer is provided called
+<code class="docutils literal notranslate"><span class="pre">default</span></code>, in <code class="docutils literal notranslate"><span class="pre">arkimapslib/mixers.py</span></code>.</p>
+</section>
+<section id="model-step">
+<span id="id4"></span><h2>Model step<a class="headerlink" href="#model-step" title="Permalink to this heading">¶</a></h2>
+<p>A step in the output of a forecast model, defined in hours from the reference
+time of a model run.</p>
+</section>
+<section id="order">
+<span id="id5"></span><h2>Order<a class="headerlink" href="#order" title="Permalink to this heading">¶</a></h2>
+<p>An order is a collection of all the data needed to generate one single
+<a class="reference internal" href="#product">product</a>.</p>
+<p>Typically, for each <a class="reference internal" href="#recipe">recipe</a> there is an order for each <a class="reference internal" href="#model-step">model step</a> for which
+all required <a class="reference internal" href="#input">input</a> data are available.</p>
+</section>
+<section id="pantry">
+<span id="id6"></span><h2>Pantry<a class="headerlink" href="#pantry" title="Permalink to this heading">¶</a></h2>
+<p>Repository of <a class="reference internal" href="#input">input</a> data available to <a class="reference internal" href="#recipe-step">recipe steps</a>.</p>
+</section>
+<section id="product">
+<span id="id7"></span><h2>Product<a class="headerlink" href="#product" title="Permalink to this heading">¶</a></h2>
+<p>An image file produced by a <a class="reference internal" href="#recipe">recipe</a>.</p>
+</section>
+<section id="recipe">
+<span id="id8"></span><h2>Recipe<a class="headerlink" href="#recipe" title="Permalink to this heading">¶</a></h2>
+<p>Defines what is needed to turn <a class="reference internal" href="#input">inputs</a> into a <a class="reference internal" href="#product">product</a>.</p>
+<p>It can contain:</p>
+<ul class="simple">
+<li><p>Zero or more <a class="reference internal" href="#input">inputs</a></p></li>
+<li><p>The name of the <a class="reference internal" href="#mixer">mixer</a> to use for processing <a class="reference internal" href="#input">inputs</a> (by default:
+<code class="docutils literal notranslate"><span class="pre">default</span></code>)</p></li>
+<li><p>A set of <a class="reference internal" href="#recipe-step">recipe steps</a> to perform with the <a class="reference internal" href="#mixer">mixer</a> on the <a class="reference internal" href="#input">inputs</a></p></li>
+<li><p>Zero or more <a class="reference internal" href="#flavor">flavors</a> that define set of default parameters for
+recipe <a class="reference internal" href="#recipe-step">recipe steps</a>.</p></li>
+</ul>
+<p>To allow to define only once some elements common to multiple recipes, there
+can be recipes that only define inputs or flavours for reuse by other recipes,
+but provide no sequence of steps themselves.</p>
+</section>
+<section id="recipe-step">
+<span id="id9"></span><h2>Recipe step<a class="headerlink" href="#recipe-step" title="Permalink to this heading">¶</a></h2>
+<p>One processing element on a <a class="reference internal" href="#recipe">recipe</a>. Each step has a name and optional
+arguments.</p>
+<p>The set of available step names are defined by the <a class="reference internal" href="#mixer">mixer</a> used for processing.</p>
+<p>Arguments for steps that are not explicitly provided by recipes can be provided
+by <a class="reference internal" href="#flavor">flavors</a>.</p>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">arkimaps</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="INPUTS.html">Recipe inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RECIPE_WORKFLOW.html">Recipe workflow</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">arkimaps glossary</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#flavor">Flavor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#input">Input</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#mixer">Mixer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#model-step">Model step</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#order">Order</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pantry">Pantry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#product">Product</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recipe">Recipe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#recipe-step">Recipe step</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="RECIPE_WORKFLOW.html" title="previous chapter">Recipe workflow</a></li>
+      <li>Next: <a href="reference/index.html" title="next chapter">Reference documentation</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2024, ARPAE-SIMC.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/GLOSSARY.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

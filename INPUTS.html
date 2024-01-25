@@ -1,0 +1,422 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>Recipe inputs &#8212; arkimaps 1.12 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Recipe workflow" href="RECIPE_WORKFLOW.html" />
+    <link rel="prev" title="Welcome to arkimaps’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="recipe-inputs">
+<h1>Recipe inputs<a class="headerlink" href="#recipe-inputs" title="Permalink to this heading">¶</a></h1>
+<p>Input types are defined in <code class="docutils literal notranslate"><span class="pre">arkimapslib/inputs.py</span></code>, and this is their
+reference manual.</p>
+<p>When defined in <code class="docutils literal notranslate"><span class="pre">yaml</span></code> recipes, an input can a dict defining the input for
+all models, or a list of dict defining the input differently depending on the
+model.</p>
+<p>Input types such as <code class="docutils literal notranslate"><span class="pre">cat</span></code> can be derived from one or more other inputs by
+computation, and Arkimaps will handle the chain of dependencies correctly.</p>
+<p>Inputs can be defined anywhere in the recipe directory, and dependencies
+between them will be handled correctly.</p>
+<section id="input-definition">
+<h2>Input definition<a class="headerlink" href="#input-definition" title="Permalink to this heading">¶</a></h2>
+<p>An input has a <code class="docutils literal notranslate"><span class="pre">name</span></code>, a <code class="docutils literal notranslate"><span class="pre">type</span></code>, optionally a <code class="docutils literal notranslate"><span class="pre">model</span></code>, optionally some
+<code class="docutils literal notranslate"><span class="pre">notes</span></code> for the documentation, and other keywords depending on the type.</p>
+<p>This is an example input definition for a recipe, with an input valid for any
+model:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">:</span>
+  <span class="n">sf</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">ifs</span>
+      <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,</span><span class="mi">98</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">144</span>
+      <span class="n">eccodes</span><span class="p">:</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;sf&quot;</span>
+</pre></div>
+</div>
+<p>This is an example input definition that matches GRIBs differently depending on
+the model that generated the data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">:</span>
+  <span class="n">tp</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+      <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,,</span><span class="mi">2</span><span class="p">,</span><span class="mi">61</span>
+      <span class="n">eccodes</span><span class="p">:</span> <span class="n">centre</span> <span class="o">!=</span> <span class="mi">98</span> <span class="ow">and</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;tp&quot;</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">ifs</span>
+      <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,</span><span class="mi">98</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">228</span>
+      <span class="n">eccodes</span><span class="p">:</span> <span class="n">centre</span> <span class="o">==</span> <span class="mi">98</span> <span class="ow">and</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;tp&quot;</span>
+</pre></div>
+</div>
+<p>This is an example input definition that processes GRIBs differently depending on
+the model that generated the data:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">:</span>
+  <span class="n">sf</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">ifs</span>
+      <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,</span><span class="mi">98</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">144</span>
+      <span class="n">eccodes</span><span class="p">:</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;sf&quot;</span>
+  <span class="n">snowcon</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+      <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,,</span><span class="mi">2</span><span class="p">,</span><span class="mi">78</span>
+      <span class="n">eccodes</span><span class="p">:</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;snow_con&quot;</span> <span class="ow">or</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;snoc&quot;</span>
+  <span class="n">snowgsp</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+      <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,,</span><span class="mi">2</span><span class="p">,</span><span class="mi">79</span>
+      <span class="n">eccodes</span><span class="p">:</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;snow_gsp&quot;</span> <span class="ow">or</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;lssf&quot;</span>
+  <span class="n">snowsum</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+      <span class="nb">type</span><span class="p">:</span> <span class="n">vg6d_transform</span>
+      <span class="n">args</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;--output-variable-list=B13205&quot;</span><span class="p">]</span>
+      <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">snowcon</span><span class="p">,</span> <span class="n">snowgsp</span><span class="p">]</span>
+  <span class="n">snowcosmo</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+      <span class="nb">type</span><span class="p">:</span> <span class="ow">or</span>
+      <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">snowsum</span><span class="p">,</span> <span class="n">snowgsp</span><span class="p">]</span>
+  <span class="n">snowdec1h</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+      <span class="nb">type</span><span class="p">:</span> <span class="n">decumulate</span>
+      <span class="n">step</span><span class="p">:</span> <span class="mi">1</span>
+      <span class="n">inputs</span><span class="p">:</span> <span class="n">snowcosmo</span>
+    <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">ifs</span>
+      <span class="nb">type</span><span class="p">:</span> <span class="n">decumulate</span>
+      <span class="n">step</span><span class="p">:</span> <span class="mi">1</span>
+      <span class="n">inputs</span><span class="p">:</span> <span class="n">sf</span>
+</pre></div>
+</div>
+<p>Inputs are referenced by name. They can be defined in the same file as recipes,
+but don’t need to, and recipes can reference inputs defined in any other yaml
+file.</p>
+</section>
+<section id="input-type-reference">
+<h2>Input type reference<a class="headerlink" href="#input-type-reference" title="Permalink to this heading">¶</a></h2>
+<section id="default">
+<h3><code class="docutils literal notranslate"><span class="pre">default</span></code><a class="headerlink" href="#default" title="Permalink to this heading">¶</a></h3>
+<p>A GRIB matched from the stream of data to be processed. The <code class="docutils literal notranslate"><span class="pre">arkimet</span></code> keyword
+defines an arkimet matcher, and the <code class="docutils literal notranslate"><span class="pre">eccodes</span></code> keyword defines a
+<code class="docutils literal notranslate"><span class="pre">grib_filter</span></code> expression, that select data from a stream of model output.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">t2m</span><span class="p">:</span>
+ <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+   <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,,</span><span class="mi">2</span><span class="p">,</span><span class="mi">11</span><span class="p">;</span><span class="n">level</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,</span><span class="mi">105</span><span class="p">,</span><span class="mi">2</span>
+   <span class="n">eccodes</span><span class="p">:</span> <span class="n">centre</span> <span class="o">!=</span> <span class="mi">98</span> <span class="ow">and</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;2t&quot;</span> <span class="ow">and</span> <span class="n">indicatorOfTypeOfLevel</span> <span class="o">==</span> <span class="mi">105</span> <span class="ow">and</span> <span class="n">timeRangeIndicator</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">2</span>
+ <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">ifs</span>
+   <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,</span><span class="mi">98</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">167</span><span class="p">;</span><span class="n">level</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,</span><span class="mi">1</span>
+   <span class="n">eccodes</span><span class="p">:</span> <span class="n">centre</span> <span class="o">==</span> <span class="mi">98</span> <span class="ow">and</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;2t&quot;</span> <span class="ow">and</span> <span class="n">indicatorOfTypeOfLevel</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">timeRangeIndicator</span> <span class="o">==</span> <span class="mi">0</span>
+ <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">erg5</span>
+   <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB2</span><span class="p">,</span><span class="mi">00200</span><span class="p">,</span><span class="mi">000</span><span class="p">,</span><span class="mi">000</span><span class="p">,</span><span class="mi">000</span><span class="p">,</span><span class="mi">004</span><span class="p">,</span><span class="mi">000</span><span class="p">;</span><span class="n">level</span><span class="p">:</span><span class="n">GRIB2S</span><span class="p">,</span><span class="mi">103</span><span class="p">,</span><span class="mi">003</span><span class="p">,</span><span class="mi">0000001800</span>
+   <span class="n">eccodes</span><span class="p">:</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;t&quot;</span> <span class="ow">and</span> <span class="n">level</span> <span class="o">==</span> <span class="mi">2</span>
+</pre></div>
+</div>
+<p>If you define inputs differently depending on models, please make sure that the
+filter expression can discriminate the model. In the example above, if you
+defined <code class="docutils literal notranslate"><span class="pre">eccodess</span></code> simply as <code class="docutils literal notranslate"><span class="pre">shortname</span> <span class="pre">is</span> <span class="pre">&quot;2t&quot;</span></code> for both Cosmo and IFS,
+then you might end up with a temperature from IFS that is postprocessed using
+the Cosmo postprocessing.</p>
+</section>
+<section id="static">
+<h3><code class="docutils literal notranslate"><span class="pre">static</span></code><a class="headerlink" href="#static" title="Permalink to this heading">¶</a></h3>
+<p>References a file distributed with Arkimaps.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">puntiCitta</span><span class="p">:</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="n">static</span>
+  <span class="n">path</span><span class="p">:</span> <span class="n">puntiCitta</span><span class="o">.</span><span class="n">geo</span>
+</pre></div>
+</div>
+</section>
+<section id="shape">
+<h3><code class="docutils literal notranslate"><span class="pre">shape</span></code><a class="headerlink" href="#shape" title="Permalink to this heading">¶</a></h3>
+<p>References a shapefile distributed with Arkimaps.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sottozoneAllertaER</span><span class="p">:</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="n">shape</span>
+  <span class="n">path</span><span class="p">:</span> <span class="n">shapes</span><span class="o">/</span><span class="n">Sottozone_allerta_ER</span>
+</pre></div>
+</div>
+<p>One cannot use <code class="docutils literal notranslate"><span class="pre">static</span></code> for shapefiles, because shapefiles are actually directories.</p>
+</section>
+<section id="cat">
+<h3><code class="docutils literal notranslate"><span class="pre">cat</span></code><a class="headerlink" href="#cat" title="Permalink to this heading">¶</a></h3>
+<p>For each level for which all inputs are available, it creates a new GRIB by
+concatenating the GRIB data listed as inputs.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">uv10m</span><span class="p">:</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="n">cat</span>
+  <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">u10m</span><span class="p">,</span> <span class="n">v10m</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="decumulate">
+<h3><code class="docutils literal notranslate"><span class="pre">decumulate</span></code><a class="headerlink" href="#decumulate" title="Permalink to this heading">¶</a></h3>
+<p>Performs decumulation using <a class="reference external" href="https://github.com/ARPA-SIMC/libsim">vg6d_transform</a>.</p>
+<p>The output of vg6d_transform_is split by step using <a class="reference external" href="https://confluence.ecmwf.int/display/ECC/ecCodes+Home">ecCodes</a>’ <code class="docutils literal notranslate"><span class="pre">endStep</span></code>, and
+stored in the pantry as <code class="docutils literal notranslate"><span class="pre">$name+$step.grib</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">:</span>
+ <span class="n">tp</span><span class="p">:</span>
+   <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+     <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,,</span><span class="mi">2</span><span class="p">,</span><span class="mi">61</span>
+     <span class="n">eccodes</span><span class="p">:</span> <span class="n">centre</span> <span class="o">!=</span> <span class="mi">98</span> <span class="ow">and</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;tp&quot;</span>
+   <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">ifs</span>
+     <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,</span><span class="mi">98</span><span class="p">,</span><span class="mi">128</span><span class="p">,</span><span class="mi">228</span>
+     <span class="n">eccodes</span><span class="p">:</span> <span class="n">centre</span> <span class="o">==</span> <span class="mi">98</span> <span class="ow">and</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;tp&quot;</span>
+ <span class="n">tpdec1h</span><span class="p">:</span>
+   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">decumulate</span>
+     <span class="n">step</span><span class="p">:</span> <span class="mi">1</span>
+     <span class="n">inputs</span><span class="p">:</span> <span class="n">tp</span>
+ <span class="n">tpdec3h</span><span class="p">:</span>
+   <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">decumulate</span>
+     <span class="n">step</span><span class="p">:</span> <span class="mi">3</span>
+     <span class="n">inputs</span><span class="p">:</span> <span class="n">tp</span>
+</pre></div>
+</div>
+</section>
+<section id="average">
+<h3><code class="docutils literal notranslate"><span class="pre">average</span></code><a class="headerlink" href="#average" title="Permalink to this heading">¶</a></h3>
+<p>Performs averaging using <a class="reference external" href="https://github.com/ARPA-SIMC/libsim">vg6d_transform</a>.</p>
+<p>The output of vg6d_transform_is split by step using <a class="reference external" href="https://confluence.ecmwf.int/display/ECC/ecCodes+Home">ecCodes</a>’ <code class="docutils literal notranslate"><span class="pre">endStep</span></code>, and
+stored in the pantry as <code class="docutils literal notranslate"><span class="pre">$name+$step.grib</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">inputs</span><span class="p">:</span>
+  <span class="n">t2mavg</span><span class="p">:</span>
+    <span class="o">-</span> <span class="nb">type</span><span class="p">:</span> <span class="n">average</span>
+      <span class="n">step</span><span class="p">:</span> <span class="mi">24</span>
+      <span class="n">inputs</span><span class="p">:</span> <span class="n">t2m</span>
+</pre></div>
+</div>
+</section>
+<section id="vg6d-transform">
+<h3><code class="docutils literal notranslate"><span class="pre">vg6d_transform</span></code><a class="headerlink" href="#vg6d-transform" title="Permalink to this heading">¶</a></h3>
+<p>Runs <a class="reference external" href="https://github.com/ARPA-SIMC/libsim">vg6d_transform</a> run on another input, with arguments taken from the input
+definition.</p>
+<p>The output of vg6d_transform_is split by step using <a class="reference external" href="https://confluence.ecmwf.int/display/ECC/ecCodes+Home">ecCodes</a>’ <code class="docutils literal notranslate"><span class="pre">endStep</span></code>, and
+stored in the pantry as <code class="docutils literal notranslate"><span class="pre">$name+$step.grib</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">wspeed10m</span><span class="p">:</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="n">vg6d_transform</span>
+  <span class="n">args</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;--output-variable-list=B11002&quot;</span><span class="p">]</span>
+  <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">u10m</span><span class="p">,</span> <span class="n">v10m</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="or">
+<h3><code class="docutils literal notranslate"><span class="pre">or</span></code><a class="headerlink" href="#or" title="Permalink to this heading">¶</a></h3>
+<p>Choose the first available in a list of possible inputs. This can be used to
+implement values that can be computed in different ways depending on available
+input values.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">snowcon</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+    <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,,</span><span class="mi">2</span><span class="p">,</span><span class="mi">78</span>
+    <span class="n">eccodes</span><span class="p">:</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;snow_con&quot;</span> <span class="ow">or</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;snoc&quot;</span>
+<span class="n">snowgsp</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+    <span class="n">arkimet</span><span class="p">:</span> <span class="n">product</span><span class="p">:</span><span class="n">GRIB1</span><span class="p">,,</span><span class="mi">2</span><span class="p">,</span><span class="mi">79</span>
+    <span class="n">eccodes</span><span class="p">:</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;snow_gsp&quot;</span> <span class="ow">or</span> <span class="n">shortName</span> <span class="ow">is</span> <span class="s2">&quot;lssf&quot;</span>
+<span class="n">snowsum</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">vg6d_transform</span>
+    <span class="n">args</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;--output-variable-list=B13205&quot;</span><span class="p">]</span>
+    <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">snowcon</span><span class="p">,</span> <span class="n">snowgsp</span><span class="p">]</span>
+<span class="n">snowcosmo</span><span class="p">:</span>
+  <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">cosmo</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="ow">or</span>
+    <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">snowsum</span><span class="p">,</span> <span class="n">snowgsp</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>In this case, if convective snow has been computed, it is added to large scale.
+Otherwise, just large scale is used.</p>
+</section>
+<section id="groundtomsl">
+<h3><code class="docutils literal notranslate"><span class="pre">groundtomsl</span></code><a class="headerlink" href="#groundtomsl" title="Permalink to this heading">¶</a></h3>
+<p>Given two inputs, assume that:</p>
+<ul class="simple">
+<li><p>the first is ground geopotential, and that it is only computed for step 0</p></li>
+<li><p>the second is a value computed for all step and measured as height above
+ground</p></li>
+</ul>
+<p>The two values are combined to convert the second value to a value above mean
+sea level.</p>
+<p><code class="docutils literal notranslate"><span class="pre">grib_set</span></code> and <code class="docutils literal notranslate"><span class="pre">clip</span></code> are applied if present.</p>
+<p>Due to internal optimization, the second input value is not available in the
+<code class="docutils literal notranslate"><span class="pre">clip</span></code> expression.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hzero</span><span class="p">:</span>
+ <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">ifs</span>
+   <span class="nb">type</span><span class="p">:</span> <span class="n">groundtomsl</span>
+   <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">z</span><span class="p">,</span> <span class="n">hzeroground</span><span class="p">]</span>
+   <span class="n">clip</span><span class="p">:</span> <span class="s2">&quot;hzero[hzero &lt;= z] = -999&quot;</span>
+   <span class="n">grib_set</span><span class="p">:</span>
+     <span class="n">shortName</span><span class="p">:</span> <span class="n">deg0l</span>
+</pre></div>
+</div>
+</section>
+<section id="sffraction">
+<h3><code class="docutils literal notranslate"><span class="pre">sffraction</span></code><a class="headerlink" href="#sffraction" title="Permalink to this heading">¶</a></h3>
+<p>Compute snow fraction percentage on total precipitation.</p>
+<p>Given two inputs, assume that:</p>
+<ul class="simple">
+<li><p>the first is total precipitation</p></li>
+<li><p>the second is total snow preciptation</p></li>
+</ul>
+<p>The fraction is calculated only on points with total precipitation &gt;= 0.5mm</p>
+<p>The fraction is clipped between 0 and 100.</p>
+<p><code class="docutils literal notranslate"><span class="pre">grib_set</span></code> is applied if present.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sffraction24h</span><span class="p">:</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="n">sffraction</span>
+  <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">tpdec24h</span><span class="p">,</span> <span class="n">snowdec24h</span><span class="p">]</span>
+  <span class="n">grib_set</span><span class="p">:</span>
+    <span class="n">shortName</span><span class="p">:</span> <span class="n">tp</span>
+</pre></div>
+</div>
+</section>
+<section id="expr">
+<h3><code class="docutils literal notranslate"><span class="pre">expr</span></code><a class="headerlink" href="#expr" title="Permalink to this heading">¶</a></h3>
+<p>given one or more source inputs, generate a new input computing its values
+using an expression between numpy arrays.</p>
+<p><code class="docutils literal notranslate"><span class="pre">grib_set</span></code> and <code class="docutils literal notranslate"><span class="pre">clip</span></code> are applied if present.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sffraction</span><span class="p">:</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="n">expr</span>
+  <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">tpdec3h</span><span class="p">,</span> <span class="n">snowdec3h</span><span class="p">]</span>
+  <span class="n">expr</span><span class="p">:</span> <span class="n">sffraction</span> <span class="o">=</span> <span class="n">snowdec3h</span><span class="p">[</span><span class="n">snowdec3h</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mi">100</span> <span class="o">/</span> <span class="n">tpdec3h</span><span class="p">[</span><span class="n">snowdec3h</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="reference-of-arguments-shared-by-at-least-two-input-types">
+<h2>Reference of arguments shared by at least two input types<a class="headerlink" href="#reference-of-arguments-shared-by-at-least-two-input-types" title="Permalink to this heading">¶</a></h2>
+<section id="inputs">
+<h3><code class="docutils literal notranslate"><span class="pre">inputs</span></code><a class="headerlink" href="#inputs" title="Permalink to this heading">¶</a></h3>
+<p>Lists the source inputs that are used to compute this input.</p>
+<p>Order can matter: for example, <code class="docutils literal notranslate"><span class="pre">cat</span></code> will concate inputs in the order they
+are listed.</p>
+</section>
+<section id="grib-set">
+<h3><code class="docutils literal notranslate"><span class="pre">grib_set</span></code><a class="headerlink" href="#grib-set" title="Permalink to this heading">¶</a></h3>
+<p>In these input types, you can optionally add a <code class="docutils literal notranslate"><span class="pre">grib_set</span></code> dictionary
+argument, which is a set of <code class="docutils literal notranslate"><span class="pre">key=value</span></code> assignments done via eccodes on the
+resulting grib before writing it out.</p>
+<p>This can be used to correct the GRIB metadata after processing.</p>
+</section>
+<section id="clip">
+<h3><code class="docutils literal notranslate"><span class="pre">clip</span></code><a class="headerlink" href="#clip" title="Permalink to this heading">¶</a></h3>
+<p>In these input types, you can optionally add a <code class="docutils literal notranslate"><span class="pre">clip</span></code> expression as a string.</p>
+<p>The expression is a Python expression that can use as variables the names of
+the source inputs, as well as the name of the current input. The variables will
+be numpy arrays. The goal is to change the array named as the current input, to
+postprocess it before writing it out.</p>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">hzero</span><span class="p">:</span>
+ <span class="o">-</span> <span class="n">model</span><span class="p">:</span> <span class="n">ifs</span>
+   <span class="nb">type</span><span class="p">:</span> <span class="n">groundtomsl</span>
+   <span class="n">inputs</span><span class="p">:</span> <span class="p">[</span><span class="n">z</span><span class="p">,</span> <span class="n">hzeroground</span><span class="p">]</span>
+   <span class="n">clip</span><span class="p">:</span> <span class="s2">&quot;hzero[hzero &lt;= z] = -999&quot;</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">arkimaps</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Recipe inputs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#input-definition">Input definition</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#input-type-reference">Input type reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#reference-of-arguments-shared-by-at-least-two-input-types">Reference of arguments shared by at least two input types</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RECIPE_WORKFLOW.html">Recipe workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="GLOSSARY.html">arkimaps glossary</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference/index.html#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to arkimaps’s documentation!</a></li>
+      <li>Next: <a href="RECIPE_WORKFLOW.html" title="next chapter">Recipe workflow</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2024, ARPAE-SIMC.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/INPUTS.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,682 @@
+
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>outputbundle package &#8212; arkimaps 1.12 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+    <script src="../_static/jquery.js"></script>
+    <script src="../_static/underscore.js"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+    <script src="../_static/doctools.js"></script>
+    <script src="../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Reference documentation" href="index.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="outputbundle-package">
+<h1>outputbundle package<a class="headerlink" href="#outputbundle-package" title="Permalink to this heading">¶</a></h1>
+<section id="module-arkimapslib.outputbundle">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-arkimapslib.outputbundle" title="Permalink to this heading">¶</a></h2>
+<p>Read/write arkimaps output bundles.</p>
+<p>An output bundle is a zip or tar file with the output products of an arkimaps
+run, and their associated metadata.</p>
+<p>The main entry points for reading an output bundle are <a class="reference internal" href="#arkimapslib.outputbundle.ZipReader" title="arkimapslib.outputbundle.ZipReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">ZipReader</span></code></a> and
+<a class="reference internal" href="#arkimapslib.outputbundle.TarReader" title="arkimapslib.outputbundle.TarReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">TarReader</span></code></a>.</p>
+<p>Example program to show all products in a zip bundle:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/python3</span>
+
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">arkimapslib.outputbundle</span> <span class="kn">import</span> <span class="n">ZipReader</span>
+
+
+<span class="n">reader</span> <span class="o">=</span> <span class="n">ZipReader</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">products</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">products</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">path</span><span class="p">,</span> <span class="n">info</span> <span class="ow">in</span> <span class="n">products</span><span class="o">.</span><span class="n">by_path</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="n">georef</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">georef</span>
+    <span class="n">recipe_info</span> <span class="o">=</span> <span class="n">products</span><span class="o">.</span><span class="n">by_recipe</span><span class="p">[</span><span class="n">info</span><span class="o">.</span><span class="n">recipe</span><span class="p">]</span>
+    <span class="n">legend_info</span> <span class="o">=</span> <span class="n">recipe_info</span><span class="o">.</span><span class="n">legend_info</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">path</span><span class="p">,</span> <span class="s2">&quot;georef&quot;</span><span class="p">:</span> <span class="n">georef</span><span class="p">,</span> <span class="s2">&quot;legend&quot;</span><span class="p">:</span> <span class="n">legend_info</span><span class="p">},</span> <span class="n">indent</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputProcessingStats">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">InputProcessingStats</span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#InputProcessingStats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.InputProcessingStats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Statistics collected while processing inputs</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputProcessingStats.add_computation_log">
+<span class="sig-name descname"><span class="pre">add_computation_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elapsed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">what</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#InputProcessingStats.add_computation_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.InputProcessingStats.add_computation_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an entry to the computation log.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elapsed</strong> – elapsed time in nanoseconds</p></li>
+<li><p><strong>what</strong> – description of the computation</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputProcessingStats.computation_log">
+<span class="sig-name descname"><span class="pre">computation_log</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.InputProcessingStats.computation_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of strings describing computation steps, and the time they took in nanoseconds</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputProcessingStats.from_jsonable">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_jsonable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#InputProcessingStats.from_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.InputProcessingStats.from_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreate an object serialized by to_jsonable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputProcessingStats.to_jsonable">
+<span class="sig-name descname"><span class="pre">to_jsonable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#InputProcessingStats.to_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.InputProcessingStats.to_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce a JSON-serializable summary about this input</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputProcessingStats.used_by">
+<span class="sig-name descname"><span class="pre">used_by</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.InputProcessingStats.used_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of recipes that used this input to generate products</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputSummary">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">InputSummary</span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#InputSummary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.InputSummary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary about inputs useed in processing</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputSummary.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Input</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#InputSummary.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.InputSummary.add" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputSummary.from_jsonable">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_jsonable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#InputSummary.from_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.InputSummary.from_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreate an object serialized by to_jsonable</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputSummary.inputs">
+<span class="sig-name descname"><span class="pre">inputs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#arkimapslib.outputbundle.InputProcessingStats" title="arkimapslib.outputbundle.InputProcessingStats"><span class="pre">InputProcessingStats</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.InputSummary.inputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Per-input processing information indexed by input name</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.InputSummary.to_jsonable">
+<span class="sig-name descname"><span class="pre">to_jsonable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#InputSummary.to_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.InputSummary.to_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a version of this object that can be serialized to JSON, and
+deserialized with from_jsonable()</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Log">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">Log</span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Log" title="Permalink to this definition">¶</a></dt>
+<dd><p>A collection of log entries.</p>
+<p>Iterate <a class="reference internal" href="#arkimapslib.outputbundle.Log.entries" title="arkimapslib.outputbundle.Log.entries"><code class="xref py py-attr docutils literal notranslate"><span class="pre">Log.entries</span></code></a> for a list of all log entries generated
+during processing.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Log.append">
+<span class="sig-name descname"><span class="pre">append</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Log.append"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Log.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a log entry</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Log.entries">
+<span class="sig-name descname"><span class="pre">entries</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#arkimapslib.outputbundle.LogEntry" title="arkimapslib.outputbundle.LogEntry"><span class="pre">LogEntry</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.Log.entries" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of all log entries</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Log.from_jsonable">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_jsonable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Log.from_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Log.from_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreate an object serialized by to_jsonable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Log.to_jsonable">
+<span class="sig-name descname"><span class="pre">to_jsonable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Log.to_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Log.to_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a version of this object that can be serialized to JSON, and
+deserialized with from_jsonable()</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.LogEntry">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">LogEntry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#LogEntry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.LogEntry" title="Permalink to this definition">¶</a></dt>
+<dd><p>One serializable log entry</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.LogEntry.level">
+<span class="sig-name descname"><span class="pre">level</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#arkimapslib.outputbundle.LogEntry.level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log level</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.LogEntry.msg">
+<span class="sig-name descname"><span class="pre">msg</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arkimapslib.outputbundle.LogEntry.msg" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log message</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.LogEntry.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#arkimapslib.outputbundle.LogEntry.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Logger name</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.LogEntry.ts">
+<span class="sig-name descname"><span class="pre">ts</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#arkimapslib.outputbundle.LogEntry.ts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Timestamp in seconds</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">ProductInfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reftime</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ModelStep</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">georef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ProductInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Information about a generated product image</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.add_georef">
+<span class="sig-name descname"><span class="pre">add_georef</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">georef</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ProductInfo.add_georef"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.add_georef" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.add_instant">
+<span class="sig-name descname"><span class="pre">add_instant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">instant</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Instant</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ProductInfo.add_instant"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.add_instant" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.add_recipe">
+<span class="sig-name descname"><span class="pre">add_recipe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipe</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Recipe</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ProductInfo.add_recipe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.add_recipe" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.from_jsonable">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_jsonable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ProductInfo.from_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.from_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreate an object serialized by to_jsonable</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.georef">
+<span class="sig-name descname"><span class="pre">georef</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.georef" title="Permalink to this definition">¶</a></dt>
+<dd><p>Georeferencing information</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.recipe">
+<span class="sig-name descname"><span class="pre">recipe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.recipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the recipe used for this product</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.reftime">
+<span class="sig-name descname"><span class="pre">reftime</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.reftime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reference time</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.step">
+<span class="sig-name descname"><span class="pre">step</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">ModelStep</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Step</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ProductInfo.to_jsonable">
+<span class="sig-name descname"><span class="pre">to_jsonable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ProductInfo.to_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ProductInfo.to_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a version of this object that can be serialized to JSON, and
+deserialized with from_jsonable()</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Products">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">Products</span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Products"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Products" title="Permalink to this definition">¶</a></dt>
+<dd><p>Information about the products present in the bundle</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Products.add_order">
+<span class="sig-name descname"><span class="pre">add_order</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Order</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Products.add_order"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Products.add_order" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add information from this order to the products summary</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Products.by_path">
+<span class="sig-name descname"><span class="pre">by_path</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#arkimapslib.outputbundle.ProductInfo" title="arkimapslib.outputbundle.ProductInfo"><span class="pre">ProductInfo</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.Products.by_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Products generated, indexed by their path</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Products.by_recipe">
+<span class="sig-name descname"><span class="pre">by_recipe</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#arkimapslib.outputbundle.RecipeOrders" title="arkimapslib.outputbundle.RecipeOrders"><span class="pre">RecipeOrders</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.Products.by_recipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recipes used, indexed by name</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Products.flavour">
+<span class="sig-name descname"><span class="pre">flavour</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.Products.flavour" title="Permalink to this definition">¶</a></dt>
+<dd><p>Information about the flavour used</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Products.from_jsonable">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_jsonable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Products.from_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Products.from_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreate an object serialized by to_jsonable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Products.to_jsonable">
+<span class="sig-name descname"><span class="pre">to_jsonable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Products.to_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Products.to_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a version of this object that can be serialized to JSON, and
+deserialized with from_jsonable()</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Reader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">Reader</span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Reader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read functions for output bundles</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Reader.find">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Reader.find"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Reader.find" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all paths in the bundle</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Reader.input_summary">
+<span class="sig-name descname"><span class="pre">input_summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#arkimapslib.outputbundle.InputSummary" title="arkimapslib.outputbundle.InputSummary"><span class="pre">InputSummary</span></a></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Reader.input_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Reader.input_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return summary of all inputs used during processing</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Reader.load_artifact">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Reader.load_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Reader.load_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load processing artifact.</p>
+<p>Return the raw file data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Reader.load_product">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">load_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Reader.load_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Reader.load_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a product by its path.</p>
+<p>Return the raw PNG image data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Reader.log">
+<span class="sig-name descname"><span class="pre">log</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#arkimapslib.outputbundle.Log" title="arkimapslib.outputbundle.Log"><span class="pre">Log</span></a></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Reader.log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Reader.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the log generated during processing</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Reader.products">
+<span class="sig-name descname"><span class="pre">products</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#arkimapslib.outputbundle.Products" title="arkimapslib.outputbundle.Products"><span class="pre">Products</span></a></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Reader.products"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Reader.products" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return metadata for all products</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Reader.version">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Reader.version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Reader.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the bundle version information</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.RecipeOrders">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">RecipeOrders</span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#RecipeOrders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.RecipeOrders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Information and statistics for all orders generated from one recipe</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.RecipeOrders.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Order</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#RecipeOrders.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.RecipeOrders.add" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.RecipeOrders.by_reftime">
+<span class="sig-name descname"><span class="pre">by_reftime</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">datetime</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#arkimapslib.outputbundle.ReftimeOrders" title="arkimapslib.outputbundle.ReftimeOrders"><span class="pre">ReftimeOrders</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.RecipeOrders.by_reftime" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summary of all products produced for this recipe at this reference time</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.RecipeOrders.from_jsonable">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_jsonable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#RecipeOrders.from_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.RecipeOrders.from_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreate an object serialized by to_jsonable</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.RecipeOrders.legend_info">
+<span class="sig-name descname"><span class="pre">legend_info</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.RecipeOrders.legend_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Legend information for products produced from this recipe</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.RecipeOrders.to_jsonable">
+<span class="sig-name descname"><span class="pre">to_jsonable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#RecipeOrders.to_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.RecipeOrders.to_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a version of this object that can be serialized to JSON, and
+deserialized with from_jsonable()</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ReftimeOrders">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">ReftimeOrders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">steps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">ModelStep</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">render_time_ns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ReftimeOrders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ReftimeOrders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Information and statistics for all orders for a given reftime</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ReftimeOrders.add">
+<span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Order</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ReftimeOrders.add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ReftimeOrders.add" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ReftimeOrders.from_jsonable">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_jsonable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#arkimapslib.outputbundle.ReftimeOrders" title="arkimapslib.outputbundle.ReftimeOrders"><span class="pre">ReftimeOrders</span></a></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ReftimeOrders.from_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ReftimeOrders.from_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreate an object serialized by to_jsonable</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ReftimeOrders.inputs">
+<span class="sig-name descname"><span class="pre">inputs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.ReftimeOrders.inputs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Names of inputs used</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ReftimeOrders.render_time_ns">
+<span class="sig-name descname"><span class="pre">render_time_ns</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#arkimapslib.outputbundle.ReftimeOrders.render_time_ns" title="Permalink to this definition">¶</a></dt>
+<dd><p>Total processing time in nanoseconds</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ReftimeOrders.steps">
+<span class="sig-name descname"><span class="pre">steps</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">ModelStep</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#arkimapslib.outputbundle.ReftimeOrders.steps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numer of products produced for each step</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ReftimeOrders.to_jsonable">
+<span class="sig-name descname"><span class="pre">to_jsonable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ReftimeOrders.to_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ReftimeOrders.to_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a version of this object that can be serialized to JSON, and
+deserialized with from_jsonable()</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Serializable">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">Serializable</span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Serializable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Serializable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base for classes that can be serialized to JSON</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Serializable.from_jsonable">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_jsonable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Serializable.from_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Serializable.from_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreate an object serialized by to_jsonable</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Serializable.to_jsonable">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">to_jsonable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Serializable.to_jsonable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Serializable.to_jsonable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a version of this object that can be serialized to JSON, and
+deserialized with from_jsonable()</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.TarReader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">TarReader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#TarReader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.TarReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an output bundle from a tar file</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">TarReader</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">reader</span><span class="o">.</span><span class="n">find</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.png&quot;</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#arkimapslib.outputbundle.Reader" title="arkimapslib.outputbundle.Reader"><code class="xref py py-class docutils literal notranslate"><span class="pre">Reader</span></code></a> for the full method list</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.TarReader.find">
+<span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#TarReader.find"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.TarReader.find" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all paths in the bundle</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.TarReader.load_artifact">
+<span class="sig-name descname"><span class="pre">load_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#TarReader.load_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.TarReader.load_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load processing artifact.</p>
+<p>Return the raw file data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.TarReader.load_product">
+<span class="sig-name descname"><span class="pre">load_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#TarReader.load_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.TarReader.load_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a product by its path.</p>
+<p>Return the raw PNG image data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.TarReader.version">
+<span class="sig-name descname"><span class="pre">version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#TarReader.version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.TarReader.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the bundle version information</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.TarWriter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">TarWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#TarWriter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.TarWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an output bundle as a tar file.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.TarWriter.add_artifact">
+<span class="sig-name descname"><span class="pre">add_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#TarWriter.add_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.TarWriter.add_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a processing artifact</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.TarWriter.add_product">
+<span class="sig-name descname"><span class="pre">add_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#TarWriter.add_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.TarWriter.add_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a product</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Writer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">Writer</span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Writer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Writer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write functions for output bundles</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Writer.add_artifact">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Writer.add_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Writer.add_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a processing artifact</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Writer.add_input_summary">
+<span class="sig-name descname"><span class="pre">add_input_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_summary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#arkimapslib.outputbundle.InputSummary" title="arkimapslib.outputbundle.InputSummary"><span class="pre">InputSummary</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Writer.add_input_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Writer.add_input_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add inputs.json with a summary of inputs used</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Writer.add_log">
+<span class="sig-name descname"><span class="pre">add_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#arkimapslib.outputbundle.Log" title="arkimapslib.outputbundle.Log"><span class="pre">Log</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Writer.add_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Writer.add_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add log.json with log entries generated during processing.</p>
+<p>If no log entries were generated, log.json is not added.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Writer.add_product">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">add_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Writer.add_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Writer.add_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a product</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.Writer.add_products">
+<span class="sig-name descname"><span class="pre">add_products</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">products</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#arkimapslib.outputbundle.Products" title="arkimapslib.outputbundle.Products"><span class="pre">Products</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#Writer.add_products"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.Writer.add_products" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add products.json with information about generated products</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ZipReader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">ZipReader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ZipReader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ZipReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read an output bundle from a zip file</p>
+<p>Usage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">ZipReader</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">as</span> <span class="n">reader</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">reader</span><span class="o">.</span><span class="n">find</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.png&quot;</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#arkimapslib.outputbundle.Reader" title="arkimapslib.outputbundle.Reader"><code class="xref py py-class docutils literal notranslate"><span class="pre">Reader</span></code></a> for the full method list</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ZipReader.find">
+<span class="sig-name descname"><span class="pre">find</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ZipReader.find"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ZipReader.find" title="Permalink to this definition">¶</a></dt>
+<dd><p>List all paths in the bundle</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ZipReader.load_artifact">
+<span class="sig-name descname"><span class="pre">load_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ZipReader.load_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ZipReader.load_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load processing artifact.</p>
+<p>Return the raw file data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ZipReader.load_product">
+<span class="sig-name descname"><span class="pre">load_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ZipReader.load_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ZipReader.load_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a product by its path.</p>
+<p>Return the raw PNG image data</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ZipReader.version">
+<span class="sig-name descname"><span class="pre">version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ZipReader.version"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ZipReader.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the bundle version information</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ZipWriter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">arkimapslib.outputbundle.</span></span><span class="sig-name descname"><span class="pre">ZipWriter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ZipWriter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ZipWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write an output bundle as a zip file.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ZipWriter.add_artifact">
+<span class="sig-name descname"><span class="pre">add_artifact</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ZipWriter.add_artifact"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ZipWriter.add_artifact" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a processing artifact</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="arkimapslib.outputbundle.ZipWriter.add_product">
+<span class="sig-name descname"><span class="pre">add_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bundle_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">IO</span><span class="p"><span class="pre">[</span></span><span class="pre">bytes</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/arkimapslib/outputbundle.html#ZipWriter.add_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#arkimapslib.outputbundle.ZipWriter.add_product" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a product</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">arkimaps</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../INPUTS.html">Recipe inputs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../RECIPE_WORKFLOW.html">Recipe workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../GLOSSARY.html">arkimaps glossary</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Reference documentation</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">outputbundle package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="index.html#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Reference documentation</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Reference documentation</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2024, ARPAE-SIMC.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 5.3.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../_sources/reference/outputbundle.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
