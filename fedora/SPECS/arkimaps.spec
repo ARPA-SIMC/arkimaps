@@ -63,7 +63,7 @@ mkdir -p %{buildroot}%{_docdir}/%{name}/
 %{python3} arkimaps document-recipes --destdir %{buildroot}%{_docdir}/%{name}/
 
 %check
-%{py3_test_envvars} %{python3} -m unittest discover --start-directory tests --verbose
+%{python3} -m unittest discover --start-directory tests --verbose
 
 %files
 %{_bindir}/%{name}
