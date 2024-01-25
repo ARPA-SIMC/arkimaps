@@ -17,7 +17,6 @@ BuildRequires:  python3-devel
 BuildRequires:  python3-pyyaml
 BuildRequires:  python3-gdal
 BuildRequires:  python3-pillow
-BuildRequires:  pyproject-rpm-macros
 
 # for tests
 BuildRequires:  arkimet
@@ -88,6 +87,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Jan 25 2024 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.15-2
+- Remove pyproject-rpm-macros
+
 * Thu Jan 25 2024 Daniele Branchini <dbranchini@arpae.it> - 1.15-1
 - Minor fixes in ICON products definitions
 
