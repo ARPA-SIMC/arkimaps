@@ -5,7 +5,7 @@ Mixer: **default**
 ## Inputs
 
 * **wmax**:
-    * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187 or GRIB2,00080,000,002,022,015,001`
+    * **Arkimet matcher**: `product:GRIB1,98,228,28 or GRIB1,,201,187 or GRIB2,00080,000,002,022,015,`
     * **grib_filter matcher**: `shortName is "10fg3" or shortName is "vmax_10m"`
 
 ## Steps

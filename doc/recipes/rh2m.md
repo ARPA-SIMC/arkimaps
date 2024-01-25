@@ -14,7 +14,7 @@ Mixer: **default**
         * **Preprocessing**: vg6d_transform
         * **Inputs**: t2m, 2d
     * Model **erg5**:
-        * **Arkimet matcher**: `product:GRIB2,00200,000,001,001,004,000;level:GRIB2S,103,003,0000001800`
+        * **Arkimet matcher**: `product:GRIB2,00200,000,001,001,004,;level:GRIB2S,103,003,0000001800`
         * **grib_filter matcher**: `shortName is "r" and level == 2`
     * Model **icon**:
         * **vg6d_transform arguments**: --output-variable-list=B13003
@@ -28,7 +28,7 @@ Mixer: **default**
         * **Arkimet matcher**: `product:GRIB1,98,128,167;level:GRIB1,1`
         * **grib_filter matcher**: `centre == 98 and shortName is "2t" and levelType == 1 and level == 0 and timeRangeIndicator == 0`
     * Model **erg5**:
-        * **Arkimet matcher**: `product:GRIB2,00200,000,000,000,004,000;level:GRIB2S,103,003,0000001800`
+        * **Arkimet matcher**: `product:GRIB2,00200,000,000,000,004,;level:GRIB2S,103,003,0000001800`
         * **grib_filter matcher**: `shortName is "t" and level == 2`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,000,000,,;level:GRIB2S,103,000,0000000002;timerange:Timedef,,254,`
