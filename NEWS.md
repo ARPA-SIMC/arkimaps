@@ -1,7 +1,3 @@
-# New in version 1.15
-
-* Minor fixes in ICON products definitions
-
 # New in version 1.14
 
 * Added initial documentation for outputbundle (#159)
