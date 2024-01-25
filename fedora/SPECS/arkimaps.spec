@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -88,6 +88,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Jan 25 2024 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.14-2
+- Remove macro py3_test_envvars to support EPEL8
+
 * Wed Jan 24 2024 Daniele Branchini <dbranchini@arpae.it> - 1.14-1
 - Added initial documentation for outputbundle (#159)
 - Updated emro shapefile
