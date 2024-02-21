@@ -15,7 +15,7 @@ inputs:
     arkimet: product:GRIB1,80,201,84;level:GRIB1,4
     eccodes: shortName is "hzerocl"
   - model: icon
-    arkimet: product:GRIB2,,,003,006,,;level:GRIB2D,004,000,0000000000,101,000,0000000000
+    arkimet: product:GRIB2,,,003,006,,;level:GRIB2D,004,000,0000000000,101,,
     eccodes: centre != 98 and shortName is "h" and editionNumber == 2
   - model: ifs
     type: groundtomsl
