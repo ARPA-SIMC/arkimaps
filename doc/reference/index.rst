@@ -6,6 +6,7 @@ Reference documentation
    :caption: Contents:
 
    outputbundle
+   outputbundle-schema
 
 
 Indices and tables
