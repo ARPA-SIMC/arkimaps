@@ -5,7 +5,7 @@ Mixer: **default**
 ## Inputs
 
 * **litota3**:
-    * **Arkimet matcher**: `product:GRIB2,,0,17,4,5; timerange:Timedef,,0,3h`
+    * **Arkimet matcher**: `product:GRIB2,,000,017,004,,; timerange:Timedef,,0,3h`
     * **grib_filter matcher**: `shortName is "litota3"`
 
 ## Steps

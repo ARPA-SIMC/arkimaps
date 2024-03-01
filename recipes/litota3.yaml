@@ -3,7 +3,7 @@
 description: Averaged total lightning flash density in the last 3 hours
 inputs:
  litota3:
-  arkimet: product:GRIB2,,0,17,4,5; timerange:Timedef,,0,3h
+  arkimet: product:GRIB2,,000,017,004,,; timerange:Timedef,,0,3h
   eccodes: shortName is "litota3"
 recipe:
  - step: add_basemap
