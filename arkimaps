@@ -487,10 +487,10 @@ class Preview(RecipesMixin, RenderMixin, WorkingKitchenMixin, Command):
             config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory()
         )
         order = renderer.render_one(order)
-        log.info("Rendered %s to %s", order.recipe.name, order.outputs[0].relpath)
+        log.info("Rendered %s to %s", order.recipe.name, order.output.relpath)
 
         # Display it
-        output_pathname = os.path.join(self.kitchen.workdir, order.outputs[0].relpath)
+        output_pathname = os.path.join(self.kitchen.workdir, order.output.relpath)
         subprocess.run(["xdg-open", output_pathname], check=True)
         input("Press enter when done> ")
         os.unlink(output_pathname)
