@@ -3,6 +3,7 @@ import io
 import logging
 import math
 import os
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Tuple
 
@@ -39,7 +40,7 @@ class Output(NamedTuple):
     magics_output: str
 
 
-class Order:
+class Order(ABC):
     """
     Serializable instructions to prepare a product, based on a recipe and its
     input files
@@ -73,6 +74,12 @@ class Order:
 
         # Summary stats about the rendering
         self.render_time_ns: int = 0
+
+    @abstractmethod
+    def print_python_function(self, function_name: str, gen: PyGen):
+        """
+        Print a function that renders this order
+        """
 
     def set_output(self, output: Output, timing: int = 0):
         """

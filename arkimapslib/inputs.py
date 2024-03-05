@@ -891,7 +891,12 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
         self.expr_fn = compile(expr, filename=self.defined_in, mode="exec")
 
     @classmethod
-    def lint(cls, lint: Lint, *, expr: str, **kwargs):
+    def lint(cls, lint: Lint, **kwargs):
+        expr = kwargs.pop("expr", None)
+        if expr is None:
+            lint.warn_input("missing 'expr'", **kwargs)
+        if not isinstance(expr, str):
+            lint.warn_input("'expr' is not a string", **kwargs)
         super().lint(lint, **kwargs)
 
     def to_dict(self):

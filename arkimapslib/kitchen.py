@@ -9,8 +9,11 @@ import yaml
 
 try:
     import arkimet
+
+    HAVE_ARKIMET = True
 except ModuleNotFoundError:
-    arkimet = None
+    HAVE_ARKIMET = False
+
 from . import orders, pantry
 from .config import Config
 from .flavours import Flavour
@@ -173,10 +176,11 @@ class WorkingKitchen(Kitchen):
         Generate all possible orders for all available recipes
         """
         if isinstance(flavour, str):
-            flavour = self.flavours.get(flavour)
+            flavour = self.flavours[flavour]
 
+        recipes: List[Recipe]
         if recipe is None:
-            recipes = self.recipes
+            recipes = list(self.recipes)
         else:
             recipes = [self.recipes.get(recipe)]
 
@@ -210,49 +214,51 @@ class WorkingKitchen(Kitchen):
         return selected[0]
 
 
-if arkimet is not None:
+class ArkimetRecipesMixin:
+    def __init__(self, *args, **kw):
+        # Arkimet session
+        #
+        # Force directory segments so we can access each data by filesystem
+        # path
+        super().__init__(*args, **kw)
+        if HAVE_ARKIMET is False:
+            raise RuntimeError("Arkimet processing functionality is needed, but arkimet is not installed")
+        self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
 
-    class ArkimetRecipesMixin:
-        def __init__(self, *args, **kw):
-            # Arkimet session
-            #
-            # Force directory segments so we can access each data by filesystem
-            # path
-            super().__init__(*args, **kw)
-            self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
+    def get_merged_arki_query(self):
+        empty_flavour = Flavour(config=self.config, name="default", defined_in=__file__)
+        merged = None
+        input_names = set()
+        for recipe in self.recipes:
+            input_names.update(empty_flavour.list_inputs_recursive(recipe, self.pantry))
+        for input_name in input_names:
+            for inp in self.pantry.inputs[input_name]:
+                matcher = getattr(inp, "arkimet_matcher", None)
+                if matcher is None:
+                    continue
+                if merged is None:
+                    merged = matcher
+                else:
+                    merged = merged.merge(matcher)
+        return merged
 
-        def get_merged_arki_query(self):
-            empty_flavour = Flavour(config=self.config, name="default", defined_in=__file__)
-            merged = None
-            input_names = set()
-            for recipe in self.recipes:
-                input_names.update(empty_flavour.list_inputs_recursive(recipe, self.pantry))
-            for input_name in input_names:
-                for inp in self.pantry.inputs[input_name]:
-                    matcher = getattr(inp, "arkimet_matcher", None)
-                    if matcher is None:
-                        continue
-                    if merged is None:
-                        merged = matcher
-                    else:
-                        merged = merged.merge(matcher)
-            return merged
 
-    class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
-        """
-        Arkimet-based kitchen used to load recipes but not prepare products
-        """
+class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
+    """
+    Arkimet-based kitchen used to load recipes but not prepare products
+    """
 
-        def __init__(self, *args, **kw):
-            super().__init__(*args, **kw)
-            self.pantry = pantry.ArkimetEmptyPantry(self.session)
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.pantry = pantry.ArkimetEmptyPantry(self.session)
 
-    class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
-        def __init__(self, *args, **kw):
-            super().__init__(*args, **kw)
-            from .pantry import ArkimetPantry
 
-            self.pantry = ArkimetPantry(root=self.workdir, session=self.session)
+class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        from .pantry import ArkimetPantry
+
+        self.pantry = ArkimetPantry(root=self.workdir, session=self.session)
 
 
 class EccodesEmptyKitchen(Kitchen):

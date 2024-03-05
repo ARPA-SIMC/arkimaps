@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 from collections import defaultdict
-from typing import List, Optional, Set
+from typing import Generator, List, Optional, Type
 
 from arkimapslib import outputbundle
 from arkimapslib.cmdline import Command, Fail, Success
@@ -43,7 +43,7 @@ class LogCollector(logging.Handler):
 #
 
 
-class RecipesMixin:
+class RecipesMixin(Command):
     """
     Command line options and code to load recipes into a kitchen
     """
@@ -70,7 +70,7 @@ class RecipesMixin:
         self.kitchen.load_recipes([self.args.recipes], lint=lint)
 
 
-class FlavoursMixin:
+class FlavoursMixin(Command):
     """
     Command that takes one or more flavours as option
     """
@@ -148,8 +148,9 @@ class RenderMixin(FlavoursMixin):
         return self.args.styles
 
     @contextlib.contextmanager
-    def open_output(self) -> outputbundle.Writer:
+    def open_output(self) -> Generator[outputbundle.Writer, None, None]:
         if self.args.output:
+            writer_cls: Type[outputbundle.Writer]
             if self.args.output.endswith(".zip"):
                 writer_cls = outputbundle.ZipWriter
             else:
@@ -161,7 +162,7 @@ class RenderMixin(FlavoursMixin):
             with outputbundle.TarWriter(out=sys.stdout.buffer) as bundle:
                 yield bundle
 
-    def render_tarball(self):
+    def render_tarball(self) -> None:
         """
         Render all recipes for which inputs are available, into a tarball
         """
@@ -216,7 +217,7 @@ class RenderMixin(FlavoursMixin):
                     print(f"  {order}")
 
 
-class WorkingKitchenMixin:
+class WorkingKitchenMixin(Command):
     """
     Mixin for commands that need a kitchen that can be used to generate
     products

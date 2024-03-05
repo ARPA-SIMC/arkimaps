@@ -116,7 +116,8 @@ class MagicsMacro(Step):
     macro_name: str
 
     @classmethod
-    def lint(cls, lint: "Lint", *, params: Optional[Dict[str, Any]] = None, **kwargs):
+    def lint(cls, lint: "Lint", **kwargs):
+        kwargs.pop("params", None)
         super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
@@ -175,8 +176,12 @@ class AddContour(MagicsMacro):
     }
 
     @classmethod
-    def lint(cls, lint: "Lint", *, params: Optional[Dict[str, Any]] = None, **kwargs):
-        super().lint(lint, params=params, **kwargs)
+    def lint(cls, lint: "Lint", **kwargs):
+        super().lint(lint, **kwargs)
+        params = kwargs.get("params", None)
+        if params is None:
+            lint.warn_recipe_step("missing 'params'", **kwargs)
+            return
         cll = params.get("contour_level_list")
         cscl = params.get("contour_shade_colour_list")
         if cll is not None and cscl is not None:
@@ -263,6 +268,10 @@ class AddGrib(Step):
     ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("grib")
+        if input_name is None:
+            raise KeyError(f"{self.name}: missing 'grib' key")
+        if not isinstance(input_name, str):
+            raise KeyError(f"{self.name}: 'grib' must be a string")
         inp = sources.get(input_name)
         if inp is None:
             raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
@@ -276,7 +285,15 @@ class AddGrib(Step):
                 params.setdefault(k, v)
 
     @classmethod
-    def lint(cls, lint: "Lint", *, grib: str, params: Optional[Dict[str, Any]] = None, **kwargs):
+    def lint(cls, lint: "Lint", **kwargs):
+        kwargs.pop("params", None)
+
+        grib = kwargs.pop("grib", None)
+        if grib is None:
+            lint.warn_recipe_step("missing 'grib'", **kwargs)
+        if not isinstance(grib, str):
+            lint.warn_recipe_step("'grib' must be a string", **kwargs)
+
         super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
@@ -305,10 +322,23 @@ class AddUserBoundaries(Step):
     ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("shape")
+        if input_name is None:
+            raise KeyError(f"{self.name}: missing 'shape'")
+        if not isinstance(input_name, str):
+            raise KeyError(f"{self.name}: 'shape' must be a string")
         inp = sources.get(input_name)
         if inp is None:
             raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
         self.shape = inp
+
+    @classmethod
+    def lint(cls, lint: "Lint", **kwargs):
+        shape = kwargs.pop("shape", None)
+        if shape is None:
+            lint.warn_recipe_step("missing 'shape'", **kwargs)
+        if not isinstance(shape, str):
+            lint.warn_recipe_step("'shape' must be a string", **kwargs)
+        super().lint(lint, **kwargs)
 
     def _run_params(self):
         params = {
@@ -347,10 +377,23 @@ class AddGeopoints(Step):
     ):
         super().__init__(step, step_config, params, sources)
         input_name = self.params.get("points")
+        if input_name is None:
+            raise KeyError(f"{self.name}: missing 'points'")
+        if not isinstance(input_name, str):
+            raise KeyError(f"{self.name}: 'points' must be a string")
         inp = sources.get(input_name)
         if inp is None:
             raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
         self.points = inp
+
+    @classmethod
+    def lint(cls, lint: "Lint", **kwargs):
+        points = kwargs.pop("points", None)
+        if points is None:
+            lint.warn_recipe_step("missing 'points'", **kwargs)
+        if not isinstance(points, str):
+            lint.warn_recipe_step("'points' must be a string", **kwargs)
+        super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         params = dict(self.params.get("params", {}))

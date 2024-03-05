@@ -74,7 +74,7 @@ class RecipeTestMixin:
     flavour_name = "default"
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         # There are cases in which Magics crashes, and they are outside our
         # control (see debian bugs #985137 and #985364, and arkimaps issues #69
         # and #71)
@@ -105,12 +105,12 @@ class RecipeTestMixin:
                 if hostname == socket.gethostname():
                     cls.magics_crashes_skip_tests.add(name)
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.kitchen = self.kitchen_class()
         self.kitchen.__enter__()
         self.kitchen_recipes_loaded = False
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self.kitchen.__exit__(None, None, None)
         self.kitchen = None
 

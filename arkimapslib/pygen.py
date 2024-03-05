@@ -16,7 +16,8 @@ class PyGen:
     """
     Helper to generate Python renderer code
     """
-    def __init__(self):
+
+    def __init__(self) -> None:
         # Names to import at the beginning of the script
         self.plain_imports: List[str] = []
         self.from_imports: dict[str, List[str]] = defaultdict(list)
@@ -30,25 +31,33 @@ class PyGen:
         self.indent = ""
         self.import_("Dict", "Generator", "List", "NamedTuple", from_="typing")
         self.import_("contextlib", "io", "json", "os", "time")
-        self.preamble("Output", """
+        self.preamble(
+            "Output",
+            """
             class Output(NamedTuple):
                 name: str
                 relpath: str
                 magics_output: str
-        """)
+        """,
+        )
 
         if hasattr(time, "perf_counter_ns"):
             self.preamble("perf_counter_ns", "perf_counter_ns = time.perf_counter_ns")
         else:
             # Polyfill for Python < 3.7"
-            self.preamble("perf_counter_ns", """
+            self.preamble(
+                "perf_counter_ns",
+                """
                 def perf_counter_ns() -> int:
                    return int(time.perf_counter() * 1000000000)
-            """)
+            """,
+            )
 
         self.preamble("timings", "timings: Dict[str, int] = {}")
         self.preamble("outputs", "outputs: List[Output] = []")
-        self.preamble("take_time", """
+        self.preamble(
+            "take_time",
+            """
             @contextlib.contextmanager
             def take_time(name: str) -> Generator[None, None, None]:
                 start = perf_counter_ns()
@@ -56,7 +65,8 @@ class PyGen:
                     yield
                 finally:
                     timings[name] = perf_counter_ns() - start
-        """)
+        """,
+        )
 
     def import_(self, *names: str, from_: Optional[str] = None):
         """
@@ -153,9 +163,11 @@ class PyGen:
         self.line("except FileNotFoundError:")
         self.line("    pass")
         order_args = "".join([f", {k}={v!r}" for k, v in order.output_options.items()])
-        self.line(f"parts = [macro.output(output_formats=['png'],"
-                  f" output_name=os.path.join(workdir, {relpath!r}, {basename!r}),"
-                  f" output_name_first_page_number='off'{order_args})]")
+        self.line(
+            f"parts = [macro.output(output_formats=['png'],"
+            f" output_name=os.path.join(workdir, {relpath!r}, {basename!r}),"
+            f" output_name_first_page_number='off'{order_args})]"
+        )
 
         for step in order.order_steps:
             name, parms = step.as_magics_macro()
@@ -178,4 +190,4 @@ class PyGen:
         Mangle any string to a valid Python identifier name
         """
         # See https://stackoverflow.com/questions/3303312/how-do-i-convert-a-string-to-a-valid-variable-name-in-python
-        return re.sub(r'\W+|^(?=\d)', '_', name)
+        return re.sub(r"\W+|^(?=\d)", "_", name)

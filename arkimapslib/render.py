@@ -8,8 +8,7 @@ import shutil
 import subprocess
 import sys
 from collections import deque
-from typing import (TYPE_CHECKING, Deque, Dict, Generator, Iterable, List,
-                    Optional, Sequence, Set, Tuple)
+from typing import TYPE_CHECKING, Any, Deque, Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple
 
 from . import outputbundle
 from .config import Config
@@ -63,7 +62,7 @@ def groups(orders: Iterable["Order"], count: int) -> Generator[List["Order"], No
 
 
 class Renderer:
-    def __init__(self, config: Config, workdir: str, styles_dir: str = None):
+    def __init__(self, config: Config, workdir: str, styles_dir: Optional[str] = None):
         self.config = config
         self.workdir = workdir
         if styles_dir is None:
@@ -91,7 +90,7 @@ class Renderer:
         for k, v in self.env_overrides.items():
             os.environ[k] = v
 
-    def render(self, orders: Iterable['Order'], bundle: outputbundle.Writer) -> List["Order"]:
+    def render(self, orders: Sequence["Order"], bundle: outputbundle.Writer) -> List["Order"]:
         """
         Render the given order list, adding results to the tar file.
 
@@ -114,8 +113,8 @@ class Renderer:
 
     async def render_asyncio(self, queue: Deque[str], bundle: outputbundle.Writer) -> List["Order"]:
         # TODO: hardcoded default to os.cpu_count, can be configurable
-        max_tasks = os.cpu_count()
-        pending = set()
+        max_tasks = os.cpu_count() or 1
+        pending: Set[Any] = set()
         log.debug("%d render scripts to run on %d parallel tasks", len(queue), max_tasks)
 
         rendered: List["Order"] = []
@@ -148,8 +147,7 @@ class Renderer:
         return rendered
 
     async def run_render_script(self, script_file: str) -> List["Order"]:
-        proc = await asyncio.create_subprocess_exec(
-                sys.executable, script_file, stdout=asyncio.subprocess.PIPE)
+        proc = await asyncio.create_subprocess_exec(sys.executable, script_file, stdout=asyncio.subprocess.PIPE)
 
         stdout, stderr = await proc.communicate()
         render_info = json.loads(stdout)
@@ -164,7 +162,7 @@ class Renderer:
 
         return list(orders)
 
-    def render_one(self, order: 'Order') -> Optional['Order']:
+    def render_one(self, order: "Order") -> Optional["Order"]:
         script_file = self.write_render_script([order])
 
         # Run the render script
@@ -178,7 +176,7 @@ class Renderer:
         order.set_output(output, timing=timings[output.name])
         return order
 
-    def write_render_script(self, orders: Sequence['Order']) -> str:
+    def write_render_script(self, orders: Sequence["Order"]) -> str:
         """
         Render one order to a Python renderer script.
 

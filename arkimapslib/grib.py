@@ -1,66 +1,71 @@
 # from __future__ import annotations
-from typing import BinaryIO, Optional, Union
+from typing import TYPE_CHECKING, BinaryIO, Optional, Union
 
-import numpy
+if TYPE_CHECKING:
+    import numpy
 
 try:
     import eccodes
+
+    HAVE_ECCODES = True
 except ModuleNotFoundError:
-    eccodes = None
+    HAVE_ECCODES = False
 
 
-if eccodes is None:
+class GRIB:
+    def __init__(self, fname: str):
+        self.fname = fname
+        self.fd: Optional[BinaryIO] = None
+        self.gid: Optional[int] = None
 
-    class GRIB:
-        def __init__(self, fname: str):
+    def __enter__(self):
+        if not HAVE_ECCODES:
             raise RuntimeError("GRIB processing functionality is needed, but eccodes is not installed")
 
-else:
+        self.fd = open(self.fname, "rb")
+        self.gid = eccodes.codes_grib_new_from_file(self.fd)
+        return self
 
-    class GRIB:
-        def __init__(self, fname: str):
-            self.fname = fname
-            self.fd: Optional[BinaryIO] = None
-            self.gid: Optional[int] = None
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        eccodes.codes_release(self.gid)
+        self.fd.close()
 
-        def __enter__(self):
-            self.fd = open(self.fname, "rb")
-            self.gid = eccodes.codes_grib_new_from_file(self.fd)
-            return self
+    def get_long(self, k: str) -> int:
+        assert self.gid is not None
+        return eccodes.codes_get_long(self.gid, k)
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            eccodes.codes_release(self.gid)
-            self.fd.close()
+    def get_string(self, k: str) -> str:
+        assert self.gid is not None
+        return eccodes.codes_get_string(self.gid, k)
 
-        def get_long(self, k: str) -> int:
-            return eccodes.codes_get_long(self.gid, k)
+    def get_double(self, k: str) -> float:
+        assert self.gid is not None
+        return eccodes.codes_get_double(self.gid, k)
 
-        def get_string(self, k: str) -> str:
-            return eccodes.codes_get_string(self.gid, k)
+    def __setitem__(self, k: str, v: Union[int, float, str]):
+        assert self.gid is not None
+        try:
+            if isinstance(v, int):
+                eccodes.codes_set_long(self.gid, k, v)
+            elif isinstance(v, float):
+                eccodes.codes_set_double(self.gid, k, v)
+            elif isinstance(v, str):
+                eccodes.codes_set_string(self.gid, k, v)
+            else:
+                raise RuntimeError(f"Cannot set {k}={v!r} (of type {type(v).__name__} in GRIB file")
+        except eccodes.KeyValueNotFoundError as e:
+            raise RuntimeError(f"Cannot set {k}={v!r} (of type {type(v).__name__} in GRIB file: {e}")
 
-        def get_double(self, k: str) -> float:
-            return eccodes.codes_get_double(self.gid, k)
+    @property
+    def values(self) -> "numpy.array":
+        assert self.gid is not None
+        return eccodes.codes_get_values(self.gid)
 
-        def __setitem__(self, k: str, v: Union[int, float, str]):
-            try:
-                if isinstance(v, int):
-                    eccodes.codes_set_long(self.gid, k, v)
-                elif isinstance(v, float):
-                    eccodes.codes_set_double(self.gid, k, v)
-                elif isinstance(v, str):
-                    eccodes.codes_set_string(self.gid, k, v)
-                else:
-                    raise RuntimeError(f"Cannot set {k}={v!r} (of type {type(v).__name__} in GRIB file")
-            except eccodes.KeyValueNotFoundError as e:
-                raise RuntimeError(f"Cannot set {k}={v!r} (of type {type(v).__name__} in GRIB file: {e}")
+    @values.setter
+    def values(self, val: "numpy.array"):
+        assert self.gid is not None
+        eccodes.codes_set_values(self.gid, val)
 
-        @property
-        def values(self) -> numpy.array:
-            return eccodes.codes_get_values(self.gid)
-
-        @values.setter
-        def values(self, val: numpy.array):
-            eccodes.codes_set_values(self.gid, val)
-
-        def dumps(self) -> bytes:
-            return eccodes.codes_get_message(self.gid)
+    def dumps(self) -> bytes:
+        assert self.gid is not None
+        return eccodes.codes_get_message(self.gid)
