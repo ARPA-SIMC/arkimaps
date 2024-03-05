@@ -333,11 +333,12 @@ class AddUserBoundaries(Step):
 
     @classmethod
     def lint(cls, lint: "Lint", **kwargs):
-        shape = kwargs.pop("shape", None)
-        if shape is None:
-            lint.warn_recipe_step("missing 'shape'", **kwargs)
-        if not isinstance(shape, str):
-            lint.warn_recipe_step("'shape' must be a string", **kwargs)
+        kwargs.pop("shape", None)
+        # Shape may be defined by the flavour
+        # if shape is None:
+        #     lint.warn_recipe_step("missing 'shape'", **kwargs)
+        # if not isinstance(shape, str):
+        #     lint.warn_recipe_step("'shape' must be a string", **kwargs)
         super().lint(lint, **kwargs)
 
     def _run_params(self):
@@ -388,11 +389,12 @@ class AddGeopoints(Step):
 
     @classmethod
     def lint(cls, lint: "Lint", **kwargs):
-        points = kwargs.pop("points", None)
-        if points is None:
-            lint.warn_recipe_step("missing 'points'", **kwargs)
-        if not isinstance(points, str):
-            lint.warn_recipe_step("'points' must be a string", **kwargs)
+        kwargs.pop("points", None)
+        # Points may be defined by the flavour
+        # if points is None:
+        #     lint.warn_recipe_step("missing 'points'", **kwargs)
+        # if not isinstance(points, str):
+        #     lint.warn_recipe_step("'points' must be a string", **kwargs)
         super().lint(lint, **kwargs)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:

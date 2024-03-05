@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import TYPE_CHECKING, Tuple, Union, List
+from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 import osgeo
 from osgeo import osr
@@ -22,6 +22,7 @@ class Postprocessors(TypeRegistry["Postprocessor"]):
     """
     Registry of available Postprocessor implementations
     """
+
     def lint(self, *, lint: "Lint", name: str, defined_in: str, **kwargs):
         cls = self.registry.get(name)
         if cls is None:
@@ -38,13 +39,7 @@ class Postprocessor:
         self.config = config
 
     @classmethod
-    def lint(
-            cls, *,
-            config: "Config",
-            lint: "Lint",
-            name: str,
-            defined_in: str,
-            **kwargs):
+    def lint(cls, lint: "Lint", *, name: str, defined_in: str, type: Optional[str] = None, **kwargs):
         """
         Consistency check the given input arguments
         """
@@ -57,8 +52,9 @@ class Postprocessor:
             impl_cls = postprocessors.by_name(name)
         except KeyError as e:
             raise KeyError(
-                    f"flavour requires unknown postprocessor {name}."
-                    f" Available: {', '.join(postprocessors.registry.keys())}") from e
+                f"flavour requires unknown postprocessor {name}."
+                f" Available: {', '.join(postprocessors.registry.keys())}"
+            ) from e
         return impl_cls(**kwargs)
 
     def static_path(self, path: str) -> str:
@@ -107,13 +103,19 @@ class Watermark(Postprocessor):
       https://pillow.readthedocs.io/en/stable/reference/ImageColor.html#color-names
       Default: "#fff0"
     """
+
     def __init__(
-            self, *,
-            message: str,
-            font: str, size: int = 10,
-            x: int, y: int, anchor: str = "la",
-            color: str = "#fff0",
-            **kwargs):
+        self,
+        *,
+        message: str,
+        font: str,
+        size: int = 10,
+        x: int,
+        y: int,
+        anchor: str = "la",
+        color: str = "#fff0",
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.message = message
         self.font = self.static_path(font)
@@ -127,12 +129,18 @@ class Watermark(Postprocessor):
 
     @classmethod
     def lint(
-            cls, lint: "Lint", *,
-            message: str,
-            font: str, size: int = 10,
-            x: int, y: int, anchor: str = "la",
-            color: Union[str, List[str]] = "#fff0",
-            **kwargs):
+        cls,
+        lint: "Lint",
+        *,
+        message: str,
+        font: str,
+        size: int = 10,
+        x: int,
+        y: int,
+        anchor: str = "la",
+        color: Union[str, List[str]] = "#fff0",
+        **kwargs,
+    ):
         super().lint(lint, **kwargs)
         if not isinstance(message, str):
             lint.warn_input(f"message is not a string: {message!r}", **kwargs)
@@ -180,23 +188,19 @@ class CutShape(Postprocessor):
     * ``shapefile``: name of the shapefile to use. The file needs to be found
       inside the static data directory
     """
-    def __init__(
-            self, *,
-            shapefile: str,
-            **kwargs):
+
+    def __init__(self, *, shapefile: str, **kwargs):
         super().__init__(**kwargs)
         self.shapefile = self.static_path(shapefile)
         log.info("%s resolved as %s", shapefile, self.shapefile)
 
     @classmethod
-    def lint(
-            cls, lint: "Lint", *,
-            shapefile: str,
-            **kwargs):
-        super().lint(lint, **kwargs)
+    def lint(cls, lint: "Lint", **kwargs):
+        shapefile = kwargs.pop("shapefile", None)
         if not isinstance(shapefile, str):
             # TODO: try to resolve it?
             lint.warn_input(f"shapefile is not a string: {shapefile!r}", **kwargs)
+        super().lint(lint, **kwargs)
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         georef = order.georeference()
@@ -227,7 +231,8 @@ class CutShape(Postprocessor):
         gen.line(
             "ds_png.SetGeoTransform(["
             f"{bbox[0]}, {bbox[2]-bbox[0]}/ds_png.RasterXSize, 0,"
-            f" {bbox[3]}, 0, {bbox[1]-bbox[3]}/ds_png.RasterYSize])")
+            f" {bbox[3]}, 0, {bbox[1]-bbox[3]}/ds_png.RasterYSize])"
+        )
 
         # Converto il PNG in un GeoTIFF in memoria usando il virtual FS di GDAL
         # https://gdal.org/user/virtual_file_systems.html#vsimem-in-memory-files
@@ -240,8 +245,10 @@ class CutShape(Postprocessor):
         tif_path = "/vsimem/input.tif"
         gen.line(f"ds_tif = gdal.Translate({tif_path!r}, ds_png, format='GTiff')")
         # Ritaglio il GeoTIFF, scrivendo su tutte le bande
-        gen.line(f"gdal.Rasterize(ds_tif, {shape_id}, inverse=True, bands=list(range(1, ds_tif.RasterCount + 1)),"
-                 " burnValues=(0,) * ds_tif.RasterCount)")
+        gen.line(
+            f"gdal.Rasterize(ds_tif, {shape_id}, inverse=True, bands=list(range(1, ds_tif.RasterCount + 1)),"
+            " burnValues=(0,) * ds_tif.RasterCount)"
+        )
         # Salvo il GeoTiff (alla fine di tutti i postprocessing)
         gen.line(f"gdal.Translate(os.path.join(workdir, {full_relpath!r}), ds_tif)")
         # NOTA: il file un memoria va chiuso manualmente. Si potrebbe fare una classe RAII
@@ -251,8 +258,8 @@ class CutShape(Postprocessor):
 
     @staticmethod
     def convert_magics_bbox_to_epsg(
-            bbox: Tuple[float, float, float, float],
-            epsg_out: int) -> Tuple[float, float, float, float]:
+        bbox: Tuple[float, float, float, float], epsg_out: int
+    ) -> Tuple[float, float, float, float]:
         """
         Metodo per la conversione del bounding box di Magics (in EPSG:4326 e
         nella forma [LONMIN, LATMIN, LONMAX, LATMAX]).

@@ -25,14 +25,18 @@ class Flavour:
     """
     Set of default settings used for generating a product
     """
-    def __init__(self, *,
-                 config: Config,
-                 name: str,
-                 defined_in: str,
-                 steps: Optional[Kwargs] = None,
-                 postprocess: Optional[Kwargs] = None,
-                 recipes_filter: Optional[List[str]] = None,
-                 **kw):
+
+    def __init__(
+        self,
+        *,
+        config: Config,
+        name: str,
+        defined_in: str,
+        steps: Optional[Kwargs] = None,
+        postprocess: Optional[Kwargs] = None,
+        recipes_filter: Optional[List[str]] = None,
+        **kw,
+    ):
         self.config = config
         self.name = name
         self.defined_in = defined_in
@@ -42,8 +46,7 @@ class Flavour:
             if not isinstance(recipes_filter, list):
                 raise ValueError(f"{defined_in}: recipes_filter is {type(recipes_filter).__name__} instead of list")
             for expr in recipes_filter:
-                self.recipes_filter.append(
-                        re.compile(fnmatch.translate(expr)))
+                self.recipes_filter.append(re.compile(fnmatch.translate(expr)))
 
         self.steps: Dict[str, StepConfig] = {}
         if steps is not None:
@@ -53,21 +56,24 @@ class Flavour:
         self.postprocessors: List[Postprocessor] = []
         if postprocess is not None:
             for desc in postprocess:
-                name = desc.pop("type", None)
+                name = desc.get("type")
                 if name is None:
                     raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
                 self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
 
     @classmethod
     def lint(
-            cls, lint: Lint, *,
-            config: Config,
-            name: str,
-            defined_in: str,
-            steps: Optional[Kwargs] = None,
-            postprocess: Optional[Kwargs] = None,
-            recipes_filter: Optional[List[str]] = None,
-            **kwargs):
+        cls,
+        lint: Lint,
+        *,
+        config: Config,
+        name: str,
+        defined_in: str,
+        steps: Optional[Kwargs] = None,
+        postprocess: Optional[Kwargs] = None,
+        recipes_filter: Optional[List[str]] = None,
+        **kwargs,
+    ):
         """
         Consistency check the given input arguments
         """
@@ -79,7 +85,7 @@ class Flavour:
                 lint.warn_flavour("`postprocess` is not a list", defined_in=defined_in, name=name)
             else:
                 for desc in postprocess:
-                    name = desc.pop("type", None)
+                    name = desc.get("type")
                     if name is None:
                         lint.warn_flavour("Postprocessor listed without 'type'", defined_in=defined_in, name=name)
                         continue
@@ -101,7 +107,7 @@ class Flavour:
     @classmethod
     def create(cls, *, lint: Optional[Lint] = None, **kwargs):
         tile_cls: Type[Flavour]
-        if 'tile' in kwargs:
+        if "tile" in kwargs:
             tile_cls = TiledFlavour
         else:
             tile_cls = SimpleFlavour
@@ -168,9 +174,7 @@ class Flavour:
                 input_names.add(input_name)
         return input_names
 
-    def make_orders(self,
-                    recipe: "recipes.Recipe",
-                    pantry: "pantry.DiskPantry") -> List["orders.Order"]:
+    def make_orders(self, recipe: "recipes.Recipe", pantry: "pantry.DiskPantry") -> List["orders.Order"]:
         """
         Scan a recipe and return a set with all the inputs it needs
         """
@@ -199,8 +203,13 @@ class Flavour:
                 if not output_instants:
                     continue
             else:
-                log.debug("flavour %s: recipe %s inputs %s available for instants %r",
-                          self.name, recipe.name, input_name, output_instants.keys())
+                log.debug(
+                    "flavour %s: recipe %s inputs %s available for instants %r",
+                    self.name,
+                    recipe.name,
+                    input_name,
+                    output_instants.keys(),
+                )
 
             # Intersect the output instants for the recipe input list
             if inputs is None:
@@ -225,19 +234,21 @@ class Flavour:
         return self.inputs_to_orders(recipe, inputs, inputs_for_all_instants)
 
     def inputs_to_orders(
-            self,
-            recipe: "recipes.Recipe",
-            inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
-            inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
+        self,
+        recipe: "recipes.Recipe",
+        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+        inputs_for_all_instants: Dict[str, "inputs.InputFile"],
+    ) -> List["orders.Order"]:
         raise NotImplementedError(f"{self.__class__}.inputs_to_orders not implemented")
 
 
 class SimpleFlavour(Flavour):
     def inputs_to_orders(
-            self,
-            recipe: "recipes.Recipe",
-            inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
-            inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
+        self,
+        recipe: "recipes.Recipe",
+        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+        inputs_for_all_instants: Dict[str, "inputs.InputFile"],
+    ) -> List["orders.Order"]:
         res: List["orders.Order"] = []
         if inputs is None:
             return res
@@ -247,12 +258,14 @@ class SimpleFlavour(Flavour):
             if inputs_for_all_instants:
                 input_files.update(inputs_for_all_instants)
 
-            res.append(orders.MapOrder(
-                flavour=self,
-                recipe=recipe,
-                input_files=input_files,
-                instant=output_instant,
-            ))
+            res.append(
+                orders.MapOrder(
+                    flavour=self,
+                    recipe=recipe,
+                    input_files=input_files,
+                    instant=output_instant,
+                )
+            )
         return res
 
 
@@ -269,6 +282,7 @@ class TiledFlavour(Flavour):
      * ``lon_min: Float``: minimum longitude
      * ``lon_max: Float``: maximum longitude
     """
+
     def __init__(self, *, tile: Dict[str, Any], **kw):
         super().__init__(**kw)
         self.zoom_min = int(tile.get("zoom_min", 3))
@@ -279,10 +293,7 @@ class TiledFlavour(Flavour):
         self.lon_max = float(tile["lon_max"])
 
     @classmethod
-    def lint(
-            cls, lint: Lint, *,
-            tile: Dict[str, Any],
-            **kwargs):
+    def lint(cls, lint: Lint, *, tile: Dict[str, Any], **kwargs):
         super().lint(lint, **kwargs)
 
     def summarize(self) -> Dict[str, Any]:
@@ -293,10 +304,8 @@ class TiledFlavour(Flavour):
         return res
 
     def make_order_for_legend(
-            self,
-            recipe: "recipes.Recipe",
-            input_files: Dict[str, "inputs.InputFile"],
-            output_instant: "inputs.Instant"):
+        self, recipe: "recipes.Recipe", input_files: Dict[str, "inputs.InputFile"], output_instant: "inputs.Instant"
+    ):
         """
         Create an order to generate the legend for a tileset
         """
@@ -338,10 +347,11 @@ class TiledFlavour(Flavour):
         )
 
     def inputs_to_orders(
-            self,
-            recipe: "recipes.Recipe",
-            inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
-            inputs_for_all_instants: Dict[str, "inputs.InputFile"]) -> List["orders.Order"]:
+        self,
+        recipe: "recipes.Recipe",
+        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+        inputs_for_all_instants: Dict[str, "inputs.InputFile"],
+    ) -> List["orders.Order"]:
         res: List["orders.Order"] = []
         if inputs is not None:
             # For each instant we found, build an order
@@ -349,14 +359,20 @@ class TiledFlavour(Flavour):
                 if inputs_for_all_instants:
                     input_files.update(inputs_for_all_instants)
 
-                res.extend(orders.TileOrder.make_orders(
-                            flavour=self,
-                            recipe=recipe,
-                            input_files=input_files,
-                            instant=output_instant,
-                            lat_min=self.lat_min, lat_max=self.lat_max,
-                            lon_min=self.lon_min, lon_max=self.lon_max,
-                            zoom_min=self.zoom_min, zoom_max=self.zoom_max))
+                res.extend(
+                    orders.TileOrder.make_orders(
+                        flavour=self,
+                        recipe=recipe,
+                        input_files=input_files,
+                        instant=output_instant,
+                        lat_min=self.lat_min,
+                        lat_max=self.lat_max,
+                        lon_min=self.lon_min,
+                        lon_max=self.lon_max,
+                        zoom_min=self.zoom_min,
+                        zoom_max=self.zoom_max,
+                    )
+                )
 
                 if idx == 0:
                     order = self.make_order_for_legend(recipe, input_files, output_instant)
