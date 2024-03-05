@@ -15,9 +15,9 @@ recipe:
     contour_shade: on
     contour_shade_method: area_fill
     contour_level_selection_type: level_list
-    contour_level_list: [0, 2.0, 4.0., 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 50.0]
+    contour_level_list: [ 2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0, 18.0, 20.0, 50.0]
     contour_shade_colour_method: list
-    contour_shade_colour_list: [ "#ffffff", "#ffff00", "#80ff00", "#00ff28", "#00ffe6",
+    contour_shade_colour_list: [ "#ffff00", "#80ff00", "#00ff28", "#00ffe6",
             "#0087ff", "#1500ff", "#9700ff", "#ff00df", "#ff0020", "#ff7700" ]
     contour_highlight: off
     contour_hilo: off
