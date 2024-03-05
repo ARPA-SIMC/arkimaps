@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import sys
 from collections import deque
-from typing import TYPE_CHECKING, Any, Deque, Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Any, Deque, Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 from . import outputbundle
 from .config import Config
@@ -146,11 +146,23 @@ class Renderer:
 
         return rendered
 
+    def _parse_renderer_output(self, script_file: str, stdout: Union[str, bytes]) -> Dict[str, Any]:
+        """
+        Parse JSON output from a render script
+        """
+        if len(stdout.strip()) == 0:
+            raise RuntimeError(f"{script_file}: render script produced an empty output")
+        try:
+            render_info = json.loads(stdout)
+        except json.decoder.JSONDecodeError as e:
+            raise RuntimeError(f"{script_file}: render script produced invalid JSON") from e
+        return render_info
+
     async def run_render_script(self, script_file: str) -> List["Order"]:
         proc = await asyncio.create_subprocess_exec(sys.executable, script_file, stdout=asyncio.subprocess.PIPE)
 
         stdout, stderr = await proc.communicate()
-        render_info = json.loads(stdout)
+        render_info = self._parse_renderer_output(script_file, stdout)
         timings = render_info["timings"]
         outputs = [Output(*o) for o in render_info["outputs"]]
         orders: Set["Order"] = set()
@@ -167,7 +179,7 @@ class Renderer:
 
         # Run the render script
         res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
-        render_info = json.loads(res.stdout)
+        render_info = self._parse_renderer_output(script_file, res.stdout)
         timings = render_info["timings"]
         outputs = [Output(*o) for o in render_info["outputs"]]
         # Set render information in the order
