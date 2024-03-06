@@ -3,4 +3,3 @@ images:
  - name: rocky:8
  - name: rocky:9
  - name: fedora:38
- - name: fedora:36

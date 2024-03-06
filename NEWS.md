@@ -1,3 +1,11 @@
+# New in version 1.16
+
+* Added LPI product
+* Fixed recipes for litota3 and hzero products
+* Documented output bundle json structure (#162)
+* Fixed preview after order refactoring (#163)
+* Better validation of the output of a render script (#164)
+
 # New in version 1.15
 
 * Minor fixes in ICON products definitions

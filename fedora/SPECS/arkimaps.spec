@@ -1,9 +1,9 @@
-%global releaseno 2
+%global releaseno 1
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.15
+Version:        1.16
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -87,6 +87,13 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed Mar  6 2024 Daniele Branchini <dbranchini@arpae.it> - 1.16-1
+- Added LPI product
+- Fixed recipes for litota3 and hzero products
+- Documented output bundle json structure (#162)
+- Fixed preview after order refactoring (#163)
+- Better validation of the output of a render script (#164)
+
 * Thu Jan 25 2024 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.15-2
 - Remove pyproject-rpm-macros
 
