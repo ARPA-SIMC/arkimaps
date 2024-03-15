@@ -94,7 +94,7 @@ With arguments:
       400.0,
       450.0,
       500.0,
-      700.0
+      1000.0
     ],
     "contour_shade_colour_list": [
       "rgb(1,0,1)",

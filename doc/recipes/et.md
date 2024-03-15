@@ -86,7 +86,7 @@ With arguments:
       1600.0,
       1800.0,
       2000,
-      2500
+      10000
     ],
     "contour_shade_colour_list": [
       "rgb(1,1,1)",

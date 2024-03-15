@@ -1,3 +1,8 @@
+# New in version 1.17
+
+* extended extremes for dda, et, eta, ta, tclim, tpaperc, tpclim products
+* fixed LPI legend
+
 # New in version 1.16
 
 * Added LPI product

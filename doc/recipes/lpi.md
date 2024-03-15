@@ -83,7 +83,7 @@ With arguments:
     "legend": true,
     "legend_display_type": "continuous",
     "legend_title": true,
-    "legend_title_text": "Lightning Potential Index (LPI)",
+    "legend_title_text": "Lightning Potential Index [j/kg] - LPI",
     "legend_text_colour": "black",
     "legend_text_font_size": 0.4,
     "legend_title_font_size": 0.5,
