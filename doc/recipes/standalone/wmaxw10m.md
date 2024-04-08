@@ -193,3 +193,30 @@ With arguments:
 }
 ```
 
+### add_user_boundaries
+
+Add user-defined boundaries from a shapefile
+
+
+### add_geopoints
+
+Add geopoints
+
+
+### add_symbols
+
+Add symbols settings
+
+With arguments:
+```
+{
+  "params": {
+    "symbol_type": "marker",
+    "symbol_marker_index": 15,
+    "legend": "off",
+    "symbol_colour": "black",
+    "symbol_height": 0.28
+  }
+}
+```
+
