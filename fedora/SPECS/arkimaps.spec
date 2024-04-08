@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.17
+Version:        1.18
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -87,6 +87,10 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Mon Apr  8 2024 Daniele Branchini <dbranchini@arpae.it> - 1.18-1
+- extended extremes for bic product
+- fixed custom boundaries for wmax product
+
 * Fri Mar 15 2024 Daniele Branchini <dbranchini@arpae.it> - 1.17-1
 - extended extremes for dda, et, eta, ta, tclim, tpaperc, tpclim products
 - fixed LPI legend

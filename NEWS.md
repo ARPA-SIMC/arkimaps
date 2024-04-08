@@ -1,3 +1,8 @@
+# New in version 1.18
+
+* extended extremes for bic product
+* fixed custom boundaries for wmax product
+
 # New in version 1.17
 
 * extended extremes for dda, et, eta, ta, tclim, tpaperc, tpclim products
