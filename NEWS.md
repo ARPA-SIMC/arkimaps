@@ -1,3 +1,7 @@
+# New in version 1.19
+
+* fixed extremes for bic product
+
 # New in version 1.18
 
 * extended extremes for bic product

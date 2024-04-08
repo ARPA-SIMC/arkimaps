@@ -59,7 +59,7 @@ With arguments:
     "contour_shade": "on",
     "contour_shade_colour_method": "list",
     "contour_shade_method": "area_fill",
-    "contour_shade_min_level": -1000.0,
+    "contour_shade_min_level": -5000.0,
     "contour_level_list": [
       -5000.0,
       -900.0,
