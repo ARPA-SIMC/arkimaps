@@ -277,11 +277,11 @@ class AddGrib(Step):
             raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
         self.grib_input = inp
 
-        if self.grib_input.info.mgrib:
+        if self.grib_input.info.spec.mgrib:
             params = self.params.get("params")
             if params is None:
                 self.params["params"] = params = {}
-            for k, v in self.grib_input.info.mgrib.items():
+            for k, v in self.grib_input.info.spec.mgrib.items():
                 params.setdefault(k, v)
 
     @classmethod

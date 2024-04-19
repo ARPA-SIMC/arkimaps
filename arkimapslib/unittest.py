@@ -189,13 +189,13 @@ class RecipeTestMixin:
                 for inp in inputs:
                     if inp.NAME != "default":
                         continue
-                    if inp.model is not None and inp.model != self.model_name:
+                    if inp.spec.model is not None and inp.spec.model != self.model_name:
                         continue
                     reftime_str = (
                         f"{reftime.year}_{reftime.month}_{reftime.day}"
                         f"_{reftime.hour}_{reftime.minute}_{reftime.second}"
                     )
-                    if inp.model is None:
+                    if inp.spec.model is None:
                         expected.append(f"{inp.name}_{reftime_str}+{step}.grib")
                     else:
                         expected.append(f"{self.model_name}_{inp.name}_{reftime_str}+{step}.grib")

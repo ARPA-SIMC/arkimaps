@@ -72,7 +72,7 @@ class Pantry:
             self.inputs[inp.name] = [inp]
             return
 
-        if len(old) == 1 and old[0].model is None:
+        if len(old) == 1 and old[0].spec.model is None:
             # We had an input for model=None (all models)
             # so we refuse to add more
             raise RuntimeError(
@@ -80,10 +80,10 @@ class Pantry:
             )
 
         for i in old:
-            if i.model == inp.model:
+            if i.spec.model == inp.spec.model:
                 # We already had an input for this model name
                 raise RuntimeError(
-                    f"{inp.defined_in}: input {inp.name} (model {inp.model}) already defined in {i.defined_in}"
+                    f"{inp.defined_in}: input {inp.name} (model {inp.spec.model}) already defined in {i.defined_in}"
                 )
 
         # Input for a new model: store it
@@ -148,10 +148,10 @@ class DiskPantry(Pantry):
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
         """
-        if inp.model is None:
+        if inp.spec.model is None:
             pantry_basename = inp.name
         else:
-            pantry_basename = f"{inp.model}_{inp.name}"
+            pantry_basename = f"{inp.spec.model}_{inp.name}"
         return pantry_basename + f"{instant.pantry_suffix()}.{fmt}"
 
     def get_fullname(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
@@ -166,10 +166,10 @@ class DiskPantry(Pantry):
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
         """
-        if inp.model is None:
+        if inp.spec.model is None:
             pantry_basename = inp.name
         else:
-            pantry_basename = f"{inp.model}_{inp.name}"
+            pantry_basename = f"{inp.spec.model}_{inp.name}"
         return os.path.join(self.data_root, f"{pantry_basename}-{suffix}")
 
     def get_input_file(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> "inputs.InputFile":
@@ -179,10 +179,10 @@ class DiskPantry(Pantry):
         return inputs.InputFile(self.get_fullname(inp, instant, fmt=fmt), inp, instant)
 
     def get_eccodes_fullname(self, inp: "inputs.Input", fmt="grib") -> str:
-        if inp.model is None:
+        if inp.spec.model is None:
             pantry_basename = inp.name
         else:
-            pantry_basename = f"{inp.model}_{inp.name}"
+            pantry_basename = f"{inp.spec.model}_{inp.name}"
         return f"{self.data_root}/{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
 
     def get_instants(
@@ -199,7 +199,7 @@ class DiskPantry(Pantry):
         res: Dict[Optional[inputs.Instant], "inputs.InputFile"] = {}
         for inp in inps:
             # Skip inputs for mismatching models (see #114)
-            if model is not None and inp.model is not None and model != inp.model:
+            if model is not None and inp.spec.model is not None and model != inp.spec.model:
                 continue
             instants = inp.get_instants(self)
             for instant, input_file in instants.items():
@@ -231,7 +231,7 @@ class DiskPantry(Pantry):
             inps = self.inputs.get(mo.group("name"))
             model = mo.group("model")
             if model:
-                inps = [inp for inp in inps if inp.model == model]
+                inps = [inp for inp in inps if inp.spec.model == model]
             inp = inps[0]
 
             reftime = mo.group("reftime")
@@ -286,7 +286,7 @@ if arkimet is not None:
                     if matcher is None:
                         if hasattr(inp, "eccodes"):
                             log.info(
-                                "%s (model=%s): skipping input with no arkimet matcher filter", inp.name, inp.model
+                                "%s (model=%s): skipping input with no arkimet matcher filter", inp.name, inp.spec.model
                             )
                         continue
                     todo_list.append((matcher, inp))
@@ -341,10 +341,10 @@ if arkimet is not None:
                     instant = inputs.Instant(reftime, step)
 
                     source = md.to_python("source")
-                    if inp.model is None:
+                    if inp.spec.model is None:
                         pantry_basename = inp.name
                     else:
-                        pantry_basename = f"{inp.model}_{inp.name}"
+                        pantry_basename = f"{inp.spec.model}_{inp.name}"
 
                     relname = pantry_basename + instant.pantry_suffix() + "." + source["format"]
 
@@ -392,7 +392,7 @@ class EccodesPantry(DiskPantry):
                     eccodes = getattr(inp, "eccodes", None)
                     if eccodes is None:
                         if hasattr(inp, "arkimet_matcher"):
-                            log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.model)
+                            log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.spec.model)
                         continue
                     elif eccodes == "skip":
                         continue
@@ -400,7 +400,7 @@ class EccodesPantry(DiskPantry):
                         continue
                     print(f"if ( {eccodes} ) {{", file=f)
                     print(
-                        f'  print "s:{inp.model or ""},{inp.name},'
+                        f'  print "s:{inp.spec.model or ""},{inp.name},'
                         '[year],[month],[day],[hour],[minute],[second],[endStep]";',
                         file=f,
                     )
@@ -425,7 +425,7 @@ class EccodesPantry(DiskPantry):
         else:
             model = modelname.decode()
         for inp in self.inputs[name.decode()]:
-            if inp.model == model:
+            if inp.spec.model == model:
                 inp.add_instant(inputs.Instant(reftime, int(step)))
 
     def read_grib(self, path: Optional[str]):

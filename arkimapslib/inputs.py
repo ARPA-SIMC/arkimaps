@@ -7,7 +7,8 @@ import shlex
 import shutil
 import subprocess
 import tempfile
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Type, Union
 
 import eccodes
 import numpy
@@ -15,9 +16,10 @@ import numpy
 from .config import Config
 from .grib import GRIB
 from .lint import Lint
-from .types import ModelStep, Instant
-from .utils import perf_counter_ns, TypeRegistry
+from .models import BaseDataModel
 from .outputbundle import InputProcessingStats
+from .utils import perf_counter_ns, TypeRegistry
+from .types import ModelStep, Instant
 
 if TYPE_CHECKING:
     from . import pantry
@@ -56,6 +58,19 @@ class InputTypes(TypeRegistry["Input"]):
 input_types = InputTypes()
 
 
+class InputSpec(BaseDataModel):
+    """
+    Data model common for all inputs
+    """
+
+    #: model, identifying this instance among other alternatives for this input
+    model: Optional[str] = None
+    #: Extra arguments passed to mgrib on loading
+    mgrib: Optional[Dict[str, Any]] = None
+    #: Optional notes for the documentation
+    notes: Optional[str] = None
+
+
 class Input:
     """
     An input element to a recipe.
@@ -65,6 +80,7 @@ class Input:
     """
 
     NAME: str
+    Spec: Type[InputSpec] = InputSpec
 
     def __init__(
         self,
@@ -72,22 +88,16 @@ class Input:
         config: Config,
         name: str,
         defined_in: str,
-        model: Optional[str] = None,
-        mgrib: Optional["Kwargs"] = None,
-        notes: Optional[str] = None,
+        **kwargs,
     ):
         # Configuration for this run
         self.config = config
         # Name of the input in the recipe
         self.name = name
-        # model, identifying this instance among other alternatives for this input
-        self.model = model
         # file name where this input was defined
         self.defined_in = defined_in
-        # Extra arguments passed to mgrib on loading
-        self.mgrib = mgrib
-        # Optional notes for the documentation
-        self.notes = notes
+        # Input data as specified in the recipe
+        self.spec = self.Spec(**kwargs)
         # Processing statistics
         self.stats = InputProcessingStats()
 
@@ -209,11 +219,19 @@ class Input:
         Document the details about this input in Markdown
         """
         ind = " " * indent
-        if self.notes:
-            print(f"{ind}**Note**: {self.notes}", file=file)
-        if self.mgrib:
-            for k, v in self.mgrib.items():
+        if self.spec.notes:
+            print(f"{ind}**Note**: {self.spec.notes}", file=file)
+        if self.spec.mgrib:
+            for k, v in self.spec.mgrib.items():
                 print(f"{ind}* **mgrib {{k}}**: `{v}`", file=file)
+
+
+class StaticInputSpec(InputSpec):
+    """
+    Data model for Static inputs
+    """
+
+    path: Path
 
 
 @input_types.register
@@ -345,7 +363,7 @@ class Source(Input):
                     lint.warn_input(f"eccodes match {eccodes!r} cannot be parsed: {errors}", **kwargs)
 
     def __repr__(self):
-        return f"Source:{self.model}:{self.name}"
+        return f"Source:{self.spec.model}:{self.name}"
 
     def to_dict(self):
         res = super().to_dict()
@@ -624,7 +642,7 @@ class AlignInstantsMixin:
         # Get the steps for each of our inputs
         available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
         for input_name in self.inputs:
-            input_instants = pantry.get_instants(input_name, model=self.model)
+            input_instants = pantry.get_instants(input_name, model=self.spec.model)
             # Intersect the steps to get only those for which we have all inputs
             if available_instants is None:
                 available_instants = {k: [v] for k, v in input_instants.items()}

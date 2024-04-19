@@ -5,14 +5,17 @@ from arkimapslib.unittest import add_recipe_test_cases
 class RH2MMixin:
     def test_dispatch(self):
         pantry_reftime = "2021_1_10_0_0_0"
-        self.fill_pantry(expected=[
-            f'{self.model_name}_2d_{pantry_reftime}+12.grib',
-            f'{self.model_name}_t2m_{pantry_reftime}+12.grib'])
+        self.fill_pantry(
+            expected=[
+                f"{self.model_name}_2d_{pantry_reftime}+12.grib",
+                f"{self.model_name}_t2m_{pantry_reftime}+12.grib",
+            ]
+        )
 
         # Check that the right input was selected
         cpdec3h = self.kitchen.pantry.inputs.get("rh2m")
         for i in cpdec3h:
-            if i.model == "erg5":
+            if i.spec.model == "erg5":
                 self.assertEqual(i.__class__.__name__, "Source")
             else:
                 self.assertEqual(i.__class__.__name__, "VG6DTransform")
@@ -20,10 +23,12 @@ class RH2MMixin:
         orders = self.make_orders()
         self.assertEqual(len(orders), 1)
 
-        self.assertProcessLogEqual([
-            "rh2m:VG6DTransform:vg6d_transform --output-variable-list=B13003 -"
-            f" {self.model_name}_rh2m_2021_1_10_0_0_0+12.grib",
-        ])
+        self.assertProcessLogEqual(
+            [
+                "rh2m:VG6DTransform:vg6d_transform --output-variable-list=B13003 -"
+                f" {self.model_name}_rh2m_2021_1_10_0_0_0+12.grib",
+            ]
+        )
 
         self.assertRenders(orders[0])
 
@@ -37,7 +42,7 @@ class RH2MERG5Mixin:
         # Check that the right input was selected
         cpdec3h = self.kitchen.pantry.inputs.get("rh2m")
         for i in cpdec3h:
-            if i.model == "erg5":
+            if i.spec.model == "erg5":
                 self.assertEqual(i.__class__.__name__, "Source")
             else:
                 self.assertEqual(i.__class__.__name__, "VG6DTransform")
