@@ -72,7 +72,8 @@ class PantryTestMixin:
             self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
         # Processing in separate steps
-        with tempfile.TemporaryDirectory() as workdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            workdir = Path(tmpdir)
             # First step: fill
             with self.pantry(workdir) as pantry:
                 add_inputs(pantry)
@@ -105,7 +106,7 @@ class PantryTestMixin:
 
 class TestArkimetPantry(PantryTestMixin, TestCase):
     @contextlib.contextmanager
-    def pantry(self, workdir=None):
+    def pantry(self, workdir: Optional[Path] = None):
         import arkimet
 
         with arkimet.dataset.Session() as session:
@@ -129,7 +130,7 @@ class TestArkimetPantry(PantryTestMixin, TestCase):
 
 class TestEccodesPantry(PantryTestMixin, TestCase):
     @contextlib.contextmanager
-    def pantry(self, workdir=None):
+    def pantry(self, workdir: Optional[Path] = None):
         with self.workdir(workdir) as workdir:
             yield pantry.EccodesPantry(root=workdir)
 

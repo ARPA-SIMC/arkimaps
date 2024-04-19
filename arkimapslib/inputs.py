@@ -36,8 +36,8 @@ Kwargs = Dict[str, Any]
 log = logging.getLogger("arkimaps.inputs")
 
 
-def keep_only_first_grib(fname: str):
-    with open(fname, "r+b") as infd:
+def keep_only_first_grib(fname: Path):
+    with fname.open("r+b") as infd:
         gid = eccodes.codes_grib_new_from_file(infd)
         try:
             if eccodes.codes_get_message_offset(gid) != 0:
@@ -319,6 +319,17 @@ class Shape(Static):
         raise RuntimeError(f"{path}.shp does not exist inside {self.config.static_dir}")
 
 
+class SourceInputSpec(InputSpec):
+    """
+    Data model for Source inputs
+    """
+
+    #: arkimet matcher filter
+    arkimet: Optional[str] = None
+    #: grib_filter if expression
+    eccodes: Optional[str] = None
+
+
 @input_types.register
 class Source(Input):
     """
@@ -326,15 +337,12 @@ class Source(Input):
     """
 
     NAME = "default"
+    Spec = SourceInputSpec
 
-    def __init__(self, *, arkimet: Optional[str] = None, eccodes: Optional[str] = None, **kw):
-        super().__init__(**kw)
-        # arkimet matcher filter
-        self.arkimet = arkimet
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         # Compiled arkimet matcher, when available/used
         self.arkimet_matcher: Optional[arkimet.Matcher] = None
-        # grib_filter if expression
-        self.eccodes = eccodes
         # set of available steps
         self.instants: Set[Instant] = set()
         # set of steps for which the data in the pantry contains multiple
@@ -368,8 +376,8 @@ class Source(Input):
 
     def to_dict(self):
         res = super().to_dict()
-        res["arkimet"] = self.arkimet
-        res["eccodes"] = self.eccodes
+        res["arkimet"] = self.spec.arkimet
+        res["eccodes"] = self.spec.eccodes
         return res
 
     def add_instant(self, instant: Instant):
@@ -395,15 +403,15 @@ class Source(Input):
         return res
 
     def compile_arkimet_matcher(self, session: "arkimet.Session"):
-        if self.arkimet is None or self.arkimet == "skip":
+        if self.spec.arkimet is None or self.spec.arkimet == "skip":
             self.arkimet_matcher = None
         else:
-            self.arkimet_matcher = session.matcher(self.arkimet)
+            self.arkimet_matcher = session.matcher(self.spec.arkimet)
 
     def document(self, file, indent=4):
         ind = " " * indent
-        print(f"{ind}* **Arkimet matcher**: `{self.arkimet}`", file=file)
-        print(f"{ind}* **grib_filter matcher**: `{self.eccodes}`", file=file)
+        print(f"{ind}* **Arkimet matcher**: `{self.spec.arkimet}`", file=file)
+        print(f"{ind}* **grib_filter matcher**: `{self.spec.eccodes}`", file=file)
         super().document(file, indent)
 
 

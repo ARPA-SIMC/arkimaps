@@ -279,13 +279,13 @@ if arkimet is not None:
             todo_list: List[Tuple[Any, "inputs.Input"]] = []
             for inps in self.inputs.values():
                 for inp in inps:
-                    if getattr(inp, "arkimet", None) == "skip":
+                    if getattr(inp.spec, "arkimet", None) == "skip":
                         continue
                     if input_filter is not None and inp.name not in input_filter:
                         continue
                     matcher = getattr(inp, "arkimet_matcher", None)
                     if matcher is None:
-                        if hasattr(inp, "eccodes"):
+                        if hasattr(inp.spec, "eccodes"):
                             log.info(
                                 "%s (model=%s): skipping input with no arkimet matcher filter", inp.name, inp.spec.model
                             )
@@ -390,7 +390,7 @@ class EccodesPantry(DiskPantry):
         with open(self.grib_filter_rules, "w") as f:
             for inps in self.inputs.values():
                 for inp in inps:
-                    eccodes = getattr(inp, "eccodes", None)
+                    eccodes = getattr(inp.spec, "eccodes", None)
                     if eccodes is None:
                         if hasattr(inp, "arkimet_matcher"):
                             log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.spec.model)

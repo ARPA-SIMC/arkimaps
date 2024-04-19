@@ -146,12 +146,12 @@ class RecipeTestMixin:
         self,
         reftime=datetime.datetime(2021, 1, 10),
         step=12,
-        recipe_dirs=None,
+        recipe_dirs: Optional[Path] = None,
         expected=None,
         recipe_name=None,
         flavour_name=None,
         exclude=None,
-        extra_sample_dirs: Sequence[str] = (),
+        extra_sample_dirs: Sequence[Union[str, Path]] = (),
     ):
         """
         Load recipes if needed, then fill the pantry with the inputs they require
@@ -165,18 +165,18 @@ class RecipeTestMixin:
         recipe = self.kitchen.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
-        sample_dirs = [os.path.basename(recipe_name)]
-        sample_dirs.extend(extra_sample_dirs)
+        sample_dirs: list[Path] = [Path(os.path.basename(recipe_name))]
+        sample_dirs += [Path(p) for p in extra_sample_dirs]
         for dirname in sample_dirs:
-            sample_dir = os.path.join("testdata", dirname)
-            for fn in os.listdir(sample_dir):
-                if not fn.endswith(".arkimet"):
+            sample_dir = Path("testdata") / dirname
+            for fn in sample_dir.iterdir():
+                if not fn.name.endswith(".arkimet"):
                     continue
-                if not fn.startswith(self.model_name):
+                if not fn.name.startswith(self.model_name):
                     continue
-                if exclude is not None and fnmatch.fnmatch(fn, exclude):
+                if exclude is not None and fnmatch.fnmatch(fn.name, exclude):
                     continue
-                self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
+                self.kitchen.pantry.fill(path=sample_dir / fn.name)
 
         # Check that we imported the right files with the right names
         input_names = flavour.list_inputs(recipe)
@@ -200,7 +200,7 @@ class RecipeTestMixin:
                     else:
                         expected.append(f"{self.model_name}_{inp.name}_{reftime_str}+{step}.grib")
         for fn in expected:
-            self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
+            self.assertIn(fn, os.listdir(self.kitchen.pantry.data_root))
 
     def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), step=12):
         """

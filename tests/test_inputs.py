@@ -5,6 +5,7 @@ import os
 import re
 import tempfile
 import unittest
+from pathlib import Path
 from typing import List, Optional
 
 import arkimet
@@ -22,8 +23,9 @@ class TestInputs(unittest.TestCase):
         if inputs is None:
             inputs = ()
 
-        with tempfile.TemporaryDirectory() as pantry_dir:
-            os.makedirs(os.path.join(pantry_dir, "pantry"))
+        with tempfile.TemporaryDirectory() as tempdir:
+            pantry_dir = Path(tempdir)
+            (pantry_dir / "pantry").mkdir(parents=True)
             pantry = DiskPantry(pantry_dir)
             for inp in inputs:
                 pantry.add_input(inp)
@@ -150,7 +152,7 @@ class TestInputs(unittest.TestCase):
 
             # Check that the output file is not tagged with the model name
             input_file = list(res.values())[0]
-            self.assertRegex(input_file.pathname, r"/pantry/uv_")
+            self.assertRegex(str(input_file.pathname), r"/pantry/uv_")
 
     def test_model_mix_restricted(self):
         with self.pantry() as pantry:
@@ -192,22 +194,24 @@ class TestInputs(unittest.TestCase):
 
             # Check that the output file is tagged with the model name
             input_file = list(res.values())[0]
-            self.assertRegex(input_file.pathname, r"/pantry/cosmo_uv_")
+            self.assertRegex(str(input_file.pathname), r"/pantry/cosmo_uv_")
 
     def test_static(self):
         with self.pantry() as pantry:
-            static_dir = os.path.join(pantry.data_root, "static")
-            os.makedirs(static_dir)
-            with open(os.path.join(static_dir, "testfile"), "wt") as fd:
+            static_dir = pantry.data_root / "static"
+            static_dir.mkdir(parents=True)
+            with (static_dir / "testfile").open("wt") as fd:
                 print("testdata", file=fd)
 
             config = Config()
             config.static_dir.insert(0, static_dir)
 
-            inp = Input.create(config=config, name="testfile", path="testfile", type="static", defined_in=__file__)
+            inp = Input.create(
+                config=config, name="testfile", path=Path("testfile"), type="static", defined_in=__file__
+            )
 
-            self.assertEqual(inp.abspath, os.path.join(static_dir, "testfile"))
-            self.assertEqual(inp.path, "testfile")
+            self.assertEqual(inp.abspath, static_dir / "testfile")
+            self.assertEqual(inp.spec.path, Path("testfile"))
 
 
 class TestModelStep(unittest.TestCase):
