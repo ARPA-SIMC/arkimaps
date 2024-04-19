@@ -217,7 +217,7 @@ class Renderer:
             gen.empty_line()
 
         for idx, order in enumerate(orders):
-            gen.line(f"order{idx}({self.workdir!r})")
+            gen.line(f"order{idx}({str(self.workdir)!r})")
         gen.empty_line()
         gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
 

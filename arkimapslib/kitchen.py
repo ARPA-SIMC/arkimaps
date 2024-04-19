@@ -148,23 +148,23 @@ class Kitchen:
 
 
 class WorkingKitchen(Kitchen):
-    def __init__(self, workdir: Optional[str] = None):
+    def __init__(self, workdir: Optional[Path] = None):
         """
         If no working directory is provided, it uses a temporary one
         """
         super().__init__()
         self.pantry: "pantry.DiskPantry"
         self.tempdir: Optional[tempfile.TemporaryDirectory]
-        self.workdir: str
+        self.workdir: Path
 
         if workdir is None:
             self.tempdir = tempfile.TemporaryDirectory()
-            self.workdir = self.context_stack.enter_context(self.tempdir)
+            self.workdir = Path(self.context_stack.enter_context(self.tempdir))
         else:
             self.tempdir = None
             self.workdir = workdir
 
-    def fill_pantry(self, path: Optional[str] = None, flavours: Optional[List[Flavour]] = None):
+    def fill_pantry(self, path: Optional[Path] = None, flavours: Optional[List[Flavour]] = None):
         """
         Fill the pantry from the given path or standard input
         """

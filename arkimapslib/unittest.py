@@ -264,7 +264,7 @@ class RecipeTestMixin:
         re_size = re.compile(r"\b\d+b\b")
         simplified_log = []
         for e in self.kitchen.pantry.process_log:
-            message = e.message.replace(self.kitchen.pantry.data_root + "/", "")
+            message = e.message.replace(str(self.kitchen.pantry.data_root) + "/", "")
             message = re_size.sub("xxxb", message)
             simplified_log.append(f"{e.input.name}:{e.input.__class__.__name__}:" + message)
         self.assertCountEqual(simplified_log, log)

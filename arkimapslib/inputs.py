@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple, Type, Union
 
 import eccodes
 import numpy
@@ -243,12 +243,13 @@ class Static(Input):
     # TODO: in newer pythons, use importlib.resources.Resource and copy to
     # workdir in get_instants
     NAME = "static"
+    Spec = StaticInputSpec
 
-    def __init__(self, *, path: str, **kw):
+    def __init__(self, **kw):
         super().__init__(**kw)
-        abspath, path = self.clean_path(path)
+        abspath, path = self.clean_path(self.spec.path)
         self.abspath = abspath
-        self.path = path
+        self.spec.path = path
 
     @classmethod
     def lint(cls, lint: Lint, *, path: str, **kwargs):
@@ -257,10 +258,10 @@ class Static(Input):
     def to_dict(self):
         res = super().to_dict()
         res["abspath"] = self.abspath
-        res["path"] = self.path
+        res["path"] = self.spec.path
         return res
 
-    def clean_path(self, path: str):
+    def clean_path(self, path: Path) -> Tuple[Path, Path]:
         """
         Resolve path into an absolute path, and turn it into a clean relative
         path inside it.
@@ -268,20 +269,20 @@ class Static(Input):
         Also perform any validation expected on this kind of static input paths
         """
         for static_dir in self.config.static_dir:
-            if not os.path.isdir(static_dir):
+            if not static_dir.is_dir():
                 continue
-            abspath = os.path.abspath(os.path.join(static_dir, path))
-            cp = os.path.commonpath((abspath, static_dir))
-            if not os.path.samefile(cp, static_dir):
+            abspath = (static_dir / path).absolute()
+            cp = Path(os.path.commonpath((abspath, static_dir)))
+            if not cp.samefile(static_dir):
                 raise RuntimeError(f"{path} leads outside the static directory")
-            if not os.path.exists(abspath):
+            if not abspath.exists():
                 continue
-            return abspath, os.path.relpath(abspath, static_dir)
+            return abspath, abspath.relative_to(static_dir)
         raise RuntimeError(f"{path} does not exist inside {self.config.static_dir}")
 
     def document(self, file, indent=4):
         ind = " " * indent
-        print(f"{ind}* **Path**: `{self.path}`", file=file)
+        print(f"{ind}* **Path**: `{self.spec.path}`", file=file)
         super().document(file, indent)
 
     def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
@@ -547,7 +548,7 @@ class VG6DStatProcMixin:
         ]
         if self.comp_full_steps:
             cmd.append("--comp-full-steps")
-        cmd += ["-", decumulated_data]
+        cmd += ["-", str(decumulated_data)]
         with self._collect_stats(pantry, " ".join(shlex.quote(c) for c in cmd)):
             v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
             for input_file in source_instants.values():
@@ -751,7 +752,7 @@ class Cat(AlignInstantsMixin, Derived):
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
             with self._collect_stats(
-                pantry, "cat " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
+                pantry, "cat " + ",".join(shlex.quote(str(i.pathname)) for i in input_files) + " " + str(output_name)
             ):
                 with open(output_pathname, "wb") as out:
                     for input_file in input_files:
@@ -780,7 +781,7 @@ class Or(Derived):
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: using %s for instant %s as %s", self.name, input_file.info.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
-            with self._collect_stats(pantry, input_file.pathname + " as " + output_name):
+            with self._collect_stats(pantry, f"{input_file.pathname} as {output_name}"):
                 os.link(input_file.pathname, output_pathname)
             self.add_instant(instant)
 
@@ -869,7 +870,14 @@ class GroundToMSL(GribSetMixin, Derived):
             output_name = pantry.get_basename(self, instant)
             with self._collect_stats(
                 pantry,
-                " ".join(("groundtomsl", shlex.quote(z_input.pathname), shlex.quote(input_file.pathname), output_name)),
+                " ".join(
+                    (
+                        "groundtomsl",
+                        shlex.quote(str(z_input.pathname)),
+                        shlex.quote(str(input_file.pathname)),
+                        str(output_name),
+                    )
+                ),
             ):
                 with GRIB(input_file.pathname) as val_grib:
                     # Add z
@@ -931,7 +939,7 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
         for instant, input_files in available_instants.items():
             output_name = pantry.get_basename(self, instant)
             with self._collect_stats(
-                pantry, "expr " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
+                pantry, "expr " + ",".join(shlex.quote(str(i.pathname)) for i in input_files) + " " + output_name
             ):
                 with contextlib.ExitStack() as stack:
                     # Open all input GRIBs
@@ -994,7 +1002,8 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
         for instant, input_files in available_instants.items():
             output_name = pantry.get_basename(self, instant)
             with self._collect_stats(
-                pantry, "sffraction " + ",".join(shlex.quote(i.pathname) for i in input_files) + " " + output_name
+                pantry,
+                "sffraction " + ",".join(shlex.quote(str(i.pathname)) for i in input_files) + " " + str(output_name),
             ):
                 with GRIB(input_files[0].pathname) as grib_tp:
                     template = grib_tp
@@ -1038,7 +1047,7 @@ class InputFile(NamedTuple):
     """
 
     # Pathname to the file
-    pathname: str
+    pathname: Path
     # Input with information about the file
     info: Input
     # Forecast step (if None, this input file is valid for all steps)

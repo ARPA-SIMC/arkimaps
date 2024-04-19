@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple, Optional, Set, Tuple
 
 try:
@@ -89,7 +90,7 @@ class Pantry:
         # Input for a new model: store it
         old.append(inp)
 
-    def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
+    def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
         """
         Read data from standard input and acquire it into the pantry.
 
@@ -139,11 +140,11 @@ class DiskPantry(Pantry):
     Pantry with disk-based storage
     """
 
-    def __init__(self, root: str, **kw):
+    def __init__(self, root: Path, **kw):
         super().__init__(**kw)
-        self.data_root: str = os.path.join(root, "pantry")
+        self.data_root: Path = root / "pantry"
 
-    def get_basename(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
+    def get_basename(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> Path:
         """
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
@@ -152,16 +153,16 @@ class DiskPantry(Pantry):
             pantry_basename = inp.name
         else:
             pantry_basename = f"{inp.spec.model}_{inp.name}"
-        return pantry_basename + f"{instant.pantry_suffix()}.{fmt}"
+        return Path(pantry_basename + f"{instant.pantry_suffix()}.{fmt}")
 
-    def get_fullname(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> str:
+    def get_fullname(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> Path:
         """
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
         """
-        return os.path.join(self.data_root, self.get_basename(inp, instant, fmt=fmt))
+        return self.data_root / self.get_basename(inp, instant, fmt=fmt)
 
-    def get_accessory_fullname(self, inp: "inputs.Input", suffix: str) -> str:
+    def get_accessory_fullname(self, inp: "inputs.Input", suffix: str) -> Path:
         """
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
@@ -170,7 +171,7 @@ class DiskPantry(Pantry):
             pantry_basename = inp.name
         else:
             pantry_basename = f"{inp.spec.model}_{inp.name}"
-        return os.path.join(self.data_root, f"{pantry_basename}-{suffix}")
+        return self.data_root / f"{pantry_basename}-{suffix}"
 
     def get_input_file(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> "inputs.InputFile":
         """
@@ -178,12 +179,12 @@ class DiskPantry(Pantry):
         """
         return inputs.InputFile(self.get_fullname(inp, instant, fmt=fmt), inp, instant)
 
-    def get_eccodes_fullname(self, inp: "inputs.Input", fmt="grib") -> str:
+    def get_eccodes_fullname(self, inp: "inputs.Input", fmt="grib") -> Path:
         if inp.spec.model is None:
             pantry_basename = inp.name
         else:
             pantry_basename = f"{inp.spec.model}_{inp.name}"
-        return f"{self.data_root}/{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
+        return self.data_root / f"{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
 
     def get_instants(
         self, input_name: str, model: Optional[str] = None
@@ -219,11 +220,11 @@ class DiskPantry(Pantry):
         fn_match = re.compile(
             r"^(?:(?P<model>\w+)_)?(?P<name>\w+)_" r"(?P<reftime>\d+_\d+_\d+_\d+_\d+_\d+)\+(?P<step>\d+)\.(?P<ext>\w+)$"
         )
-        for fn in os.listdir(self.data_root):
-            if "grib_filter_rules" in fn or fn == "static" or fn.endswith("-processed"):
+        for fn in self.data_root.iterdir():
+            if "grib_filter_rules" in fn.name or fn.name == "static" or fn.name.endswith("-processed"):
                 continue
 
-            mo = fn_match.match(fn)
+            mo = fn_match.match(fn.name)
             if not mo:
                 log.warning("%s: unrecognised file found in pantry", fn)
                 continue
@@ -267,12 +268,12 @@ if arkimet is not None:
             inp.compile_arkimet_matcher(self.session)
             super().add_input(inp)
 
-        def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
+        def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
             """
             Read data from standard input and acquire it into the pantry
             """
             # Create pantry dir if missing
-            os.makedirs(self.data_root, exist_ok=True)
+            self.data_root.mkdir(parents=True, exist_ok=True)
 
             # Dispatch todo-list
             todo_list: List[Tuple[Any, "inputs.Input"]] = []
@@ -378,12 +379,12 @@ class EccodesPantry(DiskPantry):
         self.grib_input = grib_input
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
-    def fill(self, path: Optional[str] = None, input_filter: Optional[Set[str]] = None):
+    def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
         """
         Read data from standard input and acquire it into the pantry
         """
         # Create pantry dir if missing
-        os.makedirs(self.data_root, exist_ok=True)
+        self.data_root.mkdir(parents=True, exist_ok=True)
 
         # Build grib_filter rules
         with open(self.grib_filter_rules, "w") as f:
@@ -428,7 +429,7 @@ class EccodesPantry(DiskPantry):
             if inp.spec.model == model:
                 inp.add_instant(inputs.Instant(reftime, int(step)))
 
-    def read_grib(self, path: Optional[str]):
+    def read_grib(self, path: Optional[Path]):
         """
         Run grib_filter on GRIB input
         """
@@ -437,7 +438,7 @@ class EccodesPantry(DiskPantry):
         for line in res.stdout.splitlines():
             self._parse_filter_output(line)
 
-    def read_arkimet(self, path: Optional[str]):
+    def read_arkimet(self, path: Optional[Path]):
         """
         Run grib_filter on arkimet input
         """

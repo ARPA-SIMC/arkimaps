@@ -299,7 +299,7 @@ class AddGrib(Step):
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         params = dict(self.params.get("mgrib", {}))
         params.update(self.params.get("params", {}))
-        params["grib_input_file_name"] = self.grib_input.pathname
+        params["grib_input_file_name"] = str(self.grib_input.pathname)
         return "mgrib", params
 
     @classmethod
@@ -347,7 +347,7 @@ class AddUserBoundaries(Step):
             "map_user_layer_colour": "blue",
         }
         params.update(self.params.get("params", {}))
-        params["map_user_layer_name"] = self.shape.pathname
+        params["map_user_layer_name"] = str(self.shape.pathname)
         return params
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
@@ -399,7 +399,7 @@ class AddGeopoints(Step):
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         params = dict(self.params.get("params", {}))
-        params["geo_input_file_name"] = self.points.pathname
+        params["geo_input_file_name"] = str(self.points.pathname)
         return "mgeo", params
 
     @classmethod
