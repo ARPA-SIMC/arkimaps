@@ -16,7 +16,7 @@ import numpy
 from .config import Config
 from .grib import GRIB
 from .lint import Lint
-from .models import BaseDataModel
+from .models import BaseDataModel, pydantic
 from .outputbundle import InputProcessingStats
 from .utils import perf_counter_ns, TypeRegistry
 from .types import ModelStep, Instant
@@ -415,16 +415,29 @@ class Source(Input):
         super().document(file, indent)
 
 
+class DerivedInputSpec(InputSpec):
+    """
+    Data model for Source inputs
+    """
+
+    inputs: List[str] = pydantic.Field(default_factory=list, min_items=1)
+
+    @pydantic.validator("inputs", pre=True)
+    def string_to_list(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
+
+
 class Derived(Input):
     """
     Base class for inputs derives from other inputs
     """
 
-    def __init__(self, *, inputs: Union[str, List[str]] = None, **kw):
-        if inputs is None:
-            raise RuntimeError(f"inputs must be present for '{self.NAME}' inputs")
-        super().__init__(**kw)
-        self.inputs: List[str] = [inputs] if isinstance(inputs, str) else [str(x) for x in inputs]
+    Spec = DerivedInputSpec
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         # set of available steps
         self.instants: Set[Instant] = set()
 
@@ -434,12 +447,12 @@ class Derived(Input):
 
     def to_dict(self):
         res = super().to_dict()
-        res["inputs"] = self.inputs
+        res["inputs"] = self.spec.inputs
         return res
 
     def get_all_inputs(self) -> List[str]:
         res = super().get_all_inputs()
-        res.extend(self.inputs)
+        res.extend(self.spec.inputs)
         return res
 
     def add_instant(self, instant: Instant):
@@ -470,7 +483,7 @@ class Derived(Input):
     def document(self, file, indent=4):
         ind = " " * indent
         print(f"{ind}* **Preprocessing**: {self.NAME}", file=file)
-        print(f"{ind}* **Inputs**: {', '.join(self.inputs)}", file=file)
+        print(f"{ind}* **Inputs**: {', '.join(self.spec.inputs)}", file=file)
         super().document(file, indent)
 
 
@@ -488,9 +501,9 @@ class VG6DStatProcMixin:
             raise RuntimeError("step must be present for 'decumulate' inputs")
         super().__init__(**kw)
         self.step = int(step)
-        if len(self.inputs) != 1:
+        if len(self.spec.inputs) != 1:
             raise RuntimeError(
-                f"input {self.name}: {self.NAME} has inputs {', '.join(self.inputs)} and should have only one"
+                f"input {self.name}: {self.NAME} has inputs {', '.join(self.spec.inputs)} and should have only one"
             )
         self.comp_stat_proc = comp_stat_proc
         self.comp_frac_valid = comp_frac_valid
@@ -520,7 +533,7 @@ class VG6DStatProcMixin:
 
     def generate(self, pantry: "pantry.DiskPantry"):
         # Get the instants of our source input
-        source_instants = pantry.get_instants(self.inputs[0])
+        source_instants = pantry.get_instants(self.spec.inputs[0])
 
         # TODO: check that they match the instant
 
@@ -529,7 +542,7 @@ class VG6DStatProcMixin:
             log.info("input %s: missing source data", self.name)
             return
 
-        log.info("input %s: generating from %r", self.name, self.inputs)
+        log.info("input %s: generating from %r", self.name, self.spec.inputs)
 
         # Generate derived input
         grib_filter_rules = pantry.get_accessory_fullname(self, "grib_filter_rules.txt")
@@ -650,7 +663,7 @@ class AlignInstantsMixin:
     def align_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], List["InputFile"]]:
         # Get the steps for each of our inputs
         available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
-        for input_name in self.inputs:
+        for input_name in self.spec.inputs:
             input_instants = pantry.get_instants(input_name, model=self.spec.model)
             # Intersect the steps to get only those for which we have all inputs
             if available_instants is None:
@@ -780,7 +793,7 @@ class Or(Derived):
 
     def generate(self, pantry: "pantry.DiskPantry"):
         available_instants: Dict[Instant, InputFile] = {}
-        for input_name in self.inputs:
+        for input_name in self.spec.inputs:
             for instant, input_file in pantry.get_instants(input_name).items():
                 available_instants.setdefault(instant, input_file)
 
@@ -849,11 +862,11 @@ class GroundToMSL(GribSetMixin, Derived):
     NAME = "groundtomsl"
 
     def generate(self, pantry: "pantry.DiskPantry"):
-        if len(self.inputs) != 2:
-            raise RuntimeError(f"{self.name} has {len(self.inputs)} inputs instead of 2")
+        if len(self.spec.inputs) != 2:
+            raise RuntimeError(f"{self.name} has {len(self.spec.inputs)} inputs instead of 2")
 
         z_input: InputFile
-        for instant, input_file in pantry.get_instants(self.inputs[0]).items():
+        for instant, input_file in pantry.get_instants(self.spec.inputs[0]).items():
             if not instant.step.is_zero():
                 log.warning(
                     "input %s: ignoring input %s with step %s instead of 0",
@@ -874,7 +887,7 @@ class GroundToMSL(GribSetMixin, Derived):
             z /= 9.80665
 
         has_output = False
-        for instant, input_file in pantry.get_instants(self.inputs[1]).items():
+        for instant, input_file in pantry.get_instants(self.spec.inputs[1]).items():
             output_name = pantry.get_basename(self, instant)
             with self._collect_stats(
                 pantry,
@@ -999,8 +1012,8 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
     NAME = "sffraction"
 
     def generate(self, pantry: "pantry.DiskPantry"):
-        if len(self.inputs) != 2:
-            raise RuntimeError(f"{self.name} has {len(self.inputs)} inputs instead of 2")
+        if len(self.spec.inputs) != 2:
+            raise RuntimeError(f"{self.name} has {len(self.spec.inputs)} inputs instead of 2")
 
         available_instants = self.align_instants(pantry)
         if not available_instants:
