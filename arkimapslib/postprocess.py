@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 
 import osgeo
@@ -57,18 +58,18 @@ class Postprocessor:
             ) from e
         return impl_cls(**kwargs)
 
-    def static_path(self, path: str) -> str:
+    def static_path(self, path: Path) -> Path:
         """
         Resolve path into an absolute path
         """
         for static_dir in self.config.static_dir:
-            if not os.path.isdir(static_dir):
+            if not static_dir.is_dir():
                 continue
-            abspath = os.path.abspath(os.path.join(static_dir, path))
-            cp = os.path.commonpath((abspath, static_dir))
-            if not os.path.samefile(cp, static_dir):
+            abspath = (static_dir / path).absolute()
+            cp = Path(os.path.commonpath((abspath, static_dir)))
+            if not cp.samefile(static_dir):
                 raise RuntimeError(f"{path} leads outside the static directory")
-            if not os.path.exists(abspath):
+            if not abspath.exists():
                 continue
             return abspath
         raise RuntimeError(f"{path} does not exist inside {self.config.static_dir}")
@@ -118,7 +119,7 @@ class Watermark(Postprocessor):
     ):
         super().__init__(**kwargs)
         self.message = message
-        self.font = self.static_path(font)
+        self.font: Path = self.static_path(Path(font))
         log.info("%s resolved as %s", font, self.font)
         self.x = x
         self.y = y
@@ -191,7 +192,7 @@ class CutShape(Postprocessor):
 
     def __init__(self, *, shapefile: str, **kwargs):
         super().__init__(**kwargs)
-        self.shapefile = self.static_path(shapefile)
+        self.shapefile: Path = self.static_path(Path(shapefile))
         log.info("%s resolved as %s", shapefile, self.shapefile)
 
     @classmethod

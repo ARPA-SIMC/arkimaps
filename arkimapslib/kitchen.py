@@ -2,6 +2,7 @@
 import contextlib
 import datetime
 import os
+from pathlib import Path
 import tempfile
 from typing import Any, Dict, List, Optional, Set, Union
 
@@ -54,28 +55,30 @@ class Kitchen:
         Load recipes from the given list of directories
         """
         for path in paths:
-            self.load_recipe_dir(path, lint=lint)
+            self.load_recipe_dir(Path(path), lint=lint)
 
         self.recipes.resolve_derived(lint=lint)
 
-    def load_recipe_dir(self, path: str, *, lint: Optional[Lint] = None):
+    def load_recipe_dir(self, path: Path, *, lint: Optional[Lint] = None):
         """
         Load recipes from the given directory
         """
         from .inputs import Input
 
-        path = os.path.abspath(path)
-        if path not in self.config.static_dir:
-            self.config.static_dir.insert(0, os.path.join(path, "static"))
+        path = path.absolute()
+        static_path = path / "static"
+        if static_path not in self.config.static_dir:
+            self.config.static_dir.insert(0, static_path)
 
-        for dirpath, dirnames, fnames in os.walk(path):
-            relpath = os.path.relpath(dirpath, start=path)
+        for dirpath_str, dirnames, fnames in os.walk(path):
+            dirpath = Path(dirpath_str)
+            relpath = dirpath.relative_to(path)
             for fn in fnames:
                 if not fn.endswith(".yaml"):
                     continue
-                with open(os.path.join(dirpath, fn), "rt") as fd:
+                with (dirpath / fn).open("rt") as fd:
                     recipe = yaml.load(fd, Loader=yaml.SafeLoader)
-                if relpath == ".":
+                if relpath == Path("."):
                     relfn = fn
                 else:
                     relfn = os.path.join(relpath, fn)
