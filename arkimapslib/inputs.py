@@ -417,7 +417,7 @@ class Source(Input):
 
 class DerivedInputSpec(InputSpec):
     """
-    Data model for Source inputs
+    Data model for Derived inputs
     """
 
     inputs: List[str] = pydantic.Field(default_factory=list, min_items=1)
@@ -487,31 +487,35 @@ class Derived(Input):
         super().document(file, indent)
 
 
-class VG6DStatProcMixin:
-    def __init__(
-        self,
-        *,
-        step: int = None,
-        comp_stat_proc: str,
-        comp_frac_valid: float = 0,
-        comp_full_steps: Optional[bool] = None,
-        **kw,
-    ):
-        if step is None:
-            raise RuntimeError("step must be present for 'decumulate' inputs")
-        super().__init__(**kw)
-        self.step = int(step)
-        if len(self.spec.inputs) != 1:
-            raise RuntimeError(
-                f"input {self.name}: {self.NAME} has inputs {', '.join(self.spec.inputs)} and should have only one"
-            )
-        self.comp_stat_proc = comp_stat_proc
-        self.comp_frac_valid = comp_frac_valid
-        self.comp_full_steps: bool
-        if comp_full_steps is not None:
-            self.comp_full_steps = bool(comp_full_steps)
+class VG6DStatProDerivedcInputSpec(DerivedInputSpec):
+    """
+    Data model for VG6DStatProc inputs
+    """
+
+    step: int
+    comp_stat_proc: str
+    comp_frac_valid: float = 0.0
+    comp_full_steps: bool
+
+    @pydantic.root_validator(pre=True)
+    def default_comp_full_steps(cls, values):
+        val = values.get("comp_full_steps")
+        if val is None:
+            val = int(values["step"]) != 24
         else:
-            self.comp_full_steps = self.step != 24
+            val = bool(val)
+        values["comp_full_steps"] = val
+        return values
+
+    @pydantic.validator("inputs")
+    def only_one_input(cls, value):
+        if len(value) != 1:
+            raise RuntimeError(f"only one source in put allowed")
+        return value
+
+
+class VG6DStatProcMixin(Derived):
+    Spec = VG6DStatProDerivedcInputSpec
 
     @classmethod
     def lint(
@@ -528,7 +532,7 @@ class VG6DStatProcMixin:
 
     def to_dict(self):
         res = super().to_dict()
-        res["step"] = self.step
+        res["step"] = self.spec.step
         return res
 
     def generate(self, pantry: "pantry.DiskPantry"):
@@ -563,15 +567,18 @@ class VG6DStatProcMixin:
 
         cmd = [
             "vg6d_transform",
-            f"--comp-step=0 {self.step:02d}",
-            f"--comp-stat-proc={self.comp_stat_proc}",
-            f"--comp-frac-valid={self.comp_frac_valid}",
+            f"--comp-step=0 {self.spec.step:02d}",
+            f"--comp-stat-proc={self.spec.comp_stat_proc}",
+            f"--comp-frac-valid={self.spec.comp_frac_valid:g}",
         ]
-        if self.comp_full_steps:
+        if self.spec.comp_full_steps:
             cmd.append("--comp-full-steps")
         cmd += ["-", str(decumulated_data)]
         with self._collect_stats(pantry, " ".join(shlex.quote(c) for c in cmd)):
             v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
+            # With the above invocation stdin should always be set, this lets
+            # mypy know
+            assert v6t.stdin is not None
             for input_file in source_instants.values():
                 with open(input_file.pathname, "rb") as src:
                     shutil.copyfileobj(src, v6t.stdin)
@@ -614,16 +621,16 @@ class VG6DStatProcMixin:
 
 
 @input_types.register
-class Decumulate(VG6DStatProcMixin, Derived):
+class Decumulate(VG6DStatProcMixin):
     """
     Decumulate inputs
     """
 
     NAME = "decumulate"
 
-    def __init__(self, **kw):
-        kw.setdefault("comp_stat_proc", "1")
-        super().__init__(**kw)
+    def __init__(self, **kwargs):
+        kwargs.setdefault("comp_stat_proc", "1")
+        super().__init__(**kwargs)
 
     @classmethod
     def lint(cls, lint: Lint, **kwargs):
@@ -632,21 +639,21 @@ class Decumulate(VG6DStatProcMixin, Derived):
 
     def document(self, file, indent=4):
         ind = " " * indent
-        print(f"{ind}* **Decumulation step**: {self.step}", file=file)
+        print(f"{ind}* **Decumulation step**: {self.spec.step}", file=file)
         super().document(file, indent)
 
 
 @input_types.register
-class Average(VG6DStatProcMixin, Derived):
+class Average(VG6DStatProcMixin):
     """
     Average inputs
     """
 
     NAME = "average"
 
-    def __init__(self, **kw):
-        kw.setdefault("comp_stat_proc", "254:0")
-        super().__init__(**kw)
+    def __init__(self, **kwargs):
+        kwargs.setdefault("comp_stat_proc", "254:0")
+        super().__init__(**kwargs)
 
     @classmethod
     def lint(cls, lint: Lint, **kwargs):
@@ -655,7 +662,7 @@ class Average(VG6DStatProcMixin, Derived):
 
     def document(self, file, indent=4):
         ind = " " * indent
-        print(f"{ind}* **Averaging step**: {self.step}", file=file)
+        print(f"{ind}* **Averaging step**: {self.spec.step}", file=file)
         super().document(file, indent)
 
 
@@ -688,6 +695,20 @@ class AlignInstantsMixin:
         return available_instants
 
 
+class VG6DTransformInputSpec(DerivedInputSpec):
+    """
+    Data model for VG6DTransform inputs
+    """
+
+    args: List[str] = pydantic.Field(default_factory=list, min_items=1)
+
+    @pydantic.validator("args", pre=True)
+    def args_string_to_list(cls, value):
+        if isinstance(value, str):
+            return [value]
+        return value
+
+
 @input_types.register
 class VG6DTransform(AlignInstantsMixin, Derived):
     """
@@ -695,12 +716,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
     """
 
     NAME = "vg6d_transform"
-
-    def __init__(self, *, args: Union[str, List[str]] = None, **kw):
-        if args is None:
-            raise RuntimeError(f"args must be present for '{self.NAME}' inputs")
-        super().__init__(**kw)
-        self.args = [args] if isinstance(args, str) else [str(x) for x in args]
+    Spec = VG6DTransformInputSpec
 
     @classmethod
     def lint(cls, lint: Lint, *, args: Union[str, List[str]] = None, **kwargs):
@@ -708,7 +724,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
 
     def to_dict(self):
         res = super().to_dict()
-        res["args"] = self.args
+        res["args"] = self.spec.args
         return res
 
     def generate(self, pantry: "pantry.DiskPantry"):
@@ -725,7 +741,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
                 log.info("input %s: generating from %s", self.name, f.pathname)
 
             output_pathname = os.path.join(pantry.data_root, output_name)
-            cmd = ["vg6d_transform"] + self.args + ["-", output_pathname]
+            cmd = ["vg6d_transform"] + self.spec.args + ["-", output_pathname]
             log.debug("running %s", " ".join(shlex.quote(x) for x in cmd))
 
             with self._collect_stats(pantry, " ".join(shlex.quote(c) for c in cmd)):
@@ -749,7 +765,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
 
     def document(self, file, indent=4):
         ind = " " * indent
-        print(f"{ind}* **vg6d_transform arguments**: {' '.join(shlex.quote(arg) for arg in self.args)}", file=file)
+        print(f"{ind}* **vg6d_transform arguments**: {' '.join(shlex.quote(arg) for arg in self.spec.args)}", file=file)
         super().document(file, indent)
 
 
@@ -807,16 +823,27 @@ class Or(Derived):
             self.add_instant(instant)
 
 
-class GribSetMixin:
+class GribSetInputSpec(DerivedInputSpec):
+    """
+    Data model for GribSet inputs
+    """
+
+    grib_set: Dict[str, Any] = pydantic.Field(default_factory=dict)
+    clip: Optional[str] = None
+
+
+class GribSetMixin(Derived):
     """
     Mixin used for inputs that take a `grib_set` argument
     """
 
-    def __init__(self, *, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kw):
-        super().__init__(**kw)
-        self.grib_set = grib_set if grib_set is not None else {}
-        self.clip = clip
-        self.clip_fn = compile(clip, filename=self.defined_in, mode="exec") if clip is not None else None
+    Spec = GribSetInputSpec
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.clip_fn = (
+            compile(self.spec.clip, filename=self.defined_in, mode="exec") if self.spec.clip is not None else None
+        )
 
     @classmethod
     def lint(cls, lint: Lint, *, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kwargs):
@@ -824,8 +851,8 @@ class GribSetMixin:
 
     def to_dict(self):
         res = super().to_dict()
-        res["grib_set"] = self.grib_set
-        res["clip"] = self.clip
+        res["grib_set"] = self.spec.grib_set
+        res["clip"] = self.spec.clip
         return res
 
     def apply_grib_set(self, grib: GRIB):
@@ -833,7 +860,7 @@ class GribSetMixin:
         Set key=value entries in the given grib from the `grib_set` input
         definition
         """
-        for k, v in self.grib_set.items():
+        for k, v in self.spec.grib_set.items():
             grib[k] = v
 
     def apply_clip(self, values: Dict[str, numpy.array]) -> numpy.array:
@@ -920,6 +947,14 @@ class GroundToMSL(GribSetMixin, Derived):
             log.info("input %s: missing source data", self.name)
 
 
+class ExprInputSpec(GribSetInputSpec):
+    """
+    Data model for Expr inputs
+    """
+
+    expr: str
+
+
 @input_types.register
 class Expr(AlignInstantsMixin, GribSetMixin, Derived):
     """
@@ -931,11 +966,11 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
     """
 
     NAME = "expr"
+    Spec = ExprInputSpec
 
-    def __init__(self, *, expr: str, **kw):
-        super().__init__(**kw)
-        self.expr = expr
-        self.expr_fn = compile(expr, filename=self.defined_in, mode="exec")
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.expr_fn = compile(self.spec.expr, filename=self.defined_in, mode="exec")
 
     @classmethod
     def lint(cls, lint: Lint, **kwargs):
@@ -948,7 +983,7 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
 
     def to_dict(self):
         res = super().to_dict()
-        res["expr"] = self.expr
+        res["expr"] = self.spec.expr
         return res
 
     def generate(self, pantry: "pantry.DiskPantry"):

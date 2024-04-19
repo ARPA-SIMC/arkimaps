@@ -122,9 +122,7 @@ class TestInputs(unittest.TestCase):
     def test_apply_clip(self):
         class Tester(arkimapslib.inputs.GribSetMixin):
             def __init__(self, clip: str):
-                self.name = "hzero"
-                self.defined_in = __file__
-                super().__init__(clip=clip)
+                super().__init__(config=None, name="hzero", defined_in=__file__, clip=clip)
 
         o = Tester(clip="hzero[hzero < z] = -999")
         hzero = numpy.array([1, 2, 3, 4])
