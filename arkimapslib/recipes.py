@@ -117,10 +117,10 @@ class RecipeStep:
     integrated with Step class defaults and step overrides from the flavour
     """
 
-    def __init__(self, name: str, step_class: Type[steps.Step], args: dict[str, Any], id: Optional[str] = None):
+    def __init__(self, name: str, step_class: Type[steps.Step], args: Dict[str, Any], id: Optional[str] = None):
         self.name: str = name
         self.step_class: Type[steps.Step] = step_class
-        self.args: dict[str, Any] = args
+        self.args: Dict[str, Any] = args
         self.id: Optional[str] = id
 
     def create_step(self, flavour: "flavours.Flavour", input_files: Dict[str, "inputs.InputFile"]) -> steps.Step:
@@ -139,7 +139,7 @@ class RecipeStep:
         args = self.compile_args(flavour)
         return self.step_class.get_input_names(args)
 
-    def compile_args(self, flavour: "flavours.Flavour") -> dict[str, Any]:
+    def compile_args(self, flavour: "flavours.Flavour") -> Dict[str, Any]:
         """
         Compute the set of arguments for this step, based on flavour
         information, arguments defined in the recipe, and step class defaults

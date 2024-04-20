@@ -44,8 +44,8 @@ class FlavourSpec(BaseDataModel):
     Data model for Flavours
     """
 
-    steps: dict[str, Any] = pydantic.Field(default_factory=dict)
-    postprocess: list[dict[str, Any]] = pydantic.Field(default_factory=list)
+    steps: Dict[str, Any] = pydantic.Field(default_factory=dict)
+    postprocess: list[Dict[str, Any]] = pydantic.Field(default_factory=list)
     recipes_filter: List[str] = pydantic.Field(default_factory=list)
 
 

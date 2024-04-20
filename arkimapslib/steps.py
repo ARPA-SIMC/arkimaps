@@ -16,7 +16,7 @@ class Step:
 
     defaults: Optional[Kwargs] = None
 
-    def __init__(self, step: str, params: dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
+    def __init__(self, step: str, params: Dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
         self.name = step
         self.params = params
 
@@ -56,7 +56,7 @@ class Step:
                 data[name] = value
 
     @classmethod
-    def get_input_names(cls, args: dict[str, Any]) -> Set[str]:
+    def get_input_names(cls, args: Dict[str, Any]) -> Set[str]:
         """
         Return the list of input names used by this step
         """
@@ -256,7 +256,7 @@ class AddGrib(Step):
         return "mgrib", params
 
     @classmethod
-    def get_input_names(cls, args: dict[str, Any]) -> Set[str]:
+    def get_input_names(cls, args: Dict[str, Any]) -> Set[str]:
         res = super().get_input_names(args)
         grib_name = args.get("grib")
         if grib_name is not None:
@@ -305,7 +305,7 @@ class AddUserBoundaries(Step):
         return "mcoast", params
 
     @classmethod
-    def get_input_names(cls, args: dict[str, Any]) -> Set[str]:
+    def get_input_names(cls, args: Dict[str, Any]) -> Set[str]:
         res = super().get_input_names(args)
         shape = args.get("shape")
         if shape is not None:
@@ -350,7 +350,7 @@ class AddGeopoints(Step):
         return "mgeo", params
 
     @classmethod
-    def get_input_names(cls, args: dict[str, Any]) -> Set[str]:
+    def get_input_names(cls, args: Dict[str, Any]) -> Set[str]:
         res = super().get_input_names(args)
         points = args.get("points")
         if points is not None:
