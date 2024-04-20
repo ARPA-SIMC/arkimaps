@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, Text
 from . import steps, toposort
 from .config import Config
 from .lint import Lint
+from .models import BaseDataModel, pydantic
 
 if TYPE_CHECKING:
     from . import pantry
@@ -158,21 +159,35 @@ class RecipeStep:
             print("```", file=file)
 
 
+class RecipeSpec(BaseDataModel):
+    """
+    Data model for Recipes
+    """
+
+    #: Optional notes for the documentation
+    notes: Optional[str] = None
+    #: Long description for the recipe
+    description: str = "Unnamed recipe"
+    #: Name of the mixer to use
+    mixer: str = "default"
+    #: Informational fields about the recipe
+    info: Optional[Dict[str, Any]] = None
+    #: Unparsed recipe steps
+    recipe: List[Dict[str, Any]] = pydantic.Field(default_factory=list)
+
+
 class Recipe:
     """
     A parsed and validated recipe
     """
+
+    Spec = RecipeSpec
 
     def __init__(
         self,
         *,
         name: str,
         defined_in: str,
-        notes: Optional[str] = None,
-        description: str = "Unnamed recipe",
-        mixer: str = "default",
-        info: Optional[Dict[str, Any]] = None,
-        recipe: Sequence[Dict[str, Any]] = (),
         **kwargs,
     ):
         from .mixers import mixers
@@ -181,32 +196,22 @@ class Recipe:
         self.name = name
         # File where the recipe was defined
         self.defined_in = defined_in
-        # Optional notes for the documentation
-        self.notes = notes
-
-        # Get the recipe description
-        self.description: str = description
-
-        # Name of the mixer to use
-        self.mixer: str = mixer
-
-        # Informational fields about the recipe
-        self.info: Dict[str, Any] = info if info is not None else {}
+        # Input data as specified in the recipe
+        self.spec = self.Spec(**kwargs)
 
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []
-        step_collection = mixers.get_steps(self.mixer)
-        for s in recipe:
-            if not isinstance(s, dict):
-                raise RuntimeError("recipe step is not a dict")
-            step = s.pop("step", None)
+        step_collection = mixers.get_steps(self.spec.mixer)
+        for s in self.spec.recipe:
+            args = s.copy()
+            step = args.pop("step", None)
             if step is None:
                 raise RuntimeError("recipe step does not contain a 'step' name")
             step_cls = step_collection.get(step)
             if step_cls is None:
-                raise RuntimeError(f"step {step} not found in mixer {self.mixer}")
-            id = s.pop("id", None)
-            self.steps.append(RecipeStep(name=step, step=step_cls, args=s, id=id))
+                raise RuntimeError(f"step {step} not found in mixer {self.spec.mixer}")
+            id = args.pop("id", None)
+            self.steps.append(RecipeStep(name=step, step=step_cls, args=args, id=id))
 
     @classmethod
     def lint(
@@ -259,9 +264,9 @@ class Recipe:
         changes = change if change is not None else {}
 
         # If elements aren't specified, use those from the parent recipe
-        kwargs.setdefault("notes", parent.notes)
-        kwargs.setdefault("description", parent.description)
-        kwargs.setdefault("mixer", parent.mixer)
+        kwargs.setdefault("notes", parent.spec.notes)
+        kwargs.setdefault("description", parent.spec.description)
+        kwargs.setdefault("mixer", parent.spec.mixer)
 
         # Build the new list of steps, based on the parent list
         steps: List[Dict[str, Any]] = []
@@ -276,10 +281,10 @@ class Recipe:
         kwargs["defined_in"] = defined_in
         return kwargs
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.name
 
     def summarize(self) -> Dict[str, Any]:
@@ -290,8 +295,8 @@ class Recipe:
         return {
             "name": self.name,
             "defined_in": self.defined_in,
-            "description": self.description,
-            "info": self.info,
+            "description": self.spec.description,
+            "info": self.spec.info,
         }
 
     def document(self, pantry: "pantry.Pantry", dest: str):
@@ -300,14 +305,14 @@ class Recipe:
         empty_flavour = Flavour(config=Config(), name="default", defined_in=__file__)
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "wt") as fd:
-            print(f"# {self.name}: {self.description}", file=fd)
+            print(f"# {self.name}: {self.spec.description}", file=fd)
             print(file=fd)
-            print(f"Mixer: **{self.mixer}**", file=fd)
+            print(f"Mixer: **{self.spec.mixer}**", file=fd)
             print(file=fd)
-            if self.notes:
+            if self.spec.notes:
                 print("## Notes", file=fd)
                 print(file=fd)
-                print(self.notes, file=fd)
+                print(self.spec.notes, file=fd)
                 print(file=fd)
             print("## Inputs", file=fd)
             print(file=fd)

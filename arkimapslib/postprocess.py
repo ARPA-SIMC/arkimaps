@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple, Union
 import osgeo
 from osgeo import osr
 
-from .models import BaseDataModel, pydantic
+from .models import BaseDataModel
 from .utils import TypeRegistry
 
 if TYPE_CHECKING:
