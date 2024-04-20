@@ -363,7 +363,7 @@ class DumpRecipes(RecipesMixin, FlavoursMixin, Command):
             self.dump_recipes()
 
 
-class LintCmd(RecipesMixin, Command):
+class LintCmd(RecipesMixin, FlavoursMixin, Command):
     """
     Validate contents of recipes
     """
@@ -376,10 +376,23 @@ class LintCmd(RecipesMixin, Command):
         from arkimapslib.kitchen import EccodesEmptyKitchen
 
         self.kitchen = EccodesEmptyKitchen()
+        self.load_recipes()
 
     def run(self):
-        lint = Lint()
-        self.load_recipes(lint=lint)
+        for flavour in self.parse_flavours():
+            log.info("%s: checking flavour", flavour.name)
+            lint = Lint(flavour)
+            flavour.lint(lint)
+
+            for inputs in self.kitchen.pantry.inputs.values():
+                for inp in inputs:
+                    log.info("%s (%s): checking input", inp.name, inp.spec.model)
+                    inp.lint(lint)
+
+            for recipe in self.kitchen.recipes:
+                if not flavour.allows_recipe(recipe):
+                    continue
+                recipe.lint(lint)
 
 
 class Dispatch(RecipesMixin, WorkingKitchenMixin, FlavoursMixin, Command):

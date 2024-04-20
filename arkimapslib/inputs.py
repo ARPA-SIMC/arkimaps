@@ -66,7 +66,7 @@ class InputSpec(BaseDataModel):
     #: model, identifying this instance among other alternatives for this input
     model: Optional[str] = None
     #: Extra arguments passed to mgrib on loading
-    mgrib: Optional[Dict[str, Any]] = None
+    mgrib: Dict[str, Any] = pydantic.Field(default_factory=dict)
     #: Optional notes for the documentation
     notes: Optional[str] = None
 
@@ -116,24 +116,11 @@ class Input:
             impl_cls.lint(lint, **kw)
         return impl_cls(**kw)
 
-    @classmethod
-    def lint(
-        cls,
-        lint: Lint,
-        *,
-        config: Config,
-        name: str,
-        defined_in: str,
-        model: Optional[str] = None,
-        mgrib: Optional["Kwargs"] = None,
-        notes: Optional[str] = None,
-        **kwargs,
-    ):
+    def lint(self, lint: Lint) -> None:
         """
-        Consistency check the given input arguments
+        Expensive consistency checks of the input configuration
         """
-        for k, v in kwargs.items():
-            lint.warn_input(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
+        pass
 
     @contextlib.contextmanager
     def _collect_stats(self, pantry: "pantry.Pantry", what: str) -> Generator[None, None, None]:
@@ -251,10 +238,6 @@ class Static(Input):
         self.abspath = abspath
         self.spec.path = path
 
-    @classmethod
-    def lint(cls, lint: Lint, *, path: str, **kwargs):
-        super().lint(lint, **kwargs)
-
     def to_dict(self):
         res = super().to_dict()
         res["abspath"] = self.abspath
@@ -339,7 +322,7 @@ class Source(Input):
     NAME = "default"
     Spec = SourceInputSpec
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         # Compiled arkimet matcher, when available/used
         self.arkimet_matcher: Optional[arkimet.Matcher] = None
@@ -349,15 +332,16 @@ class Source(Input):
         # elements and needs to be truncated
         self.instants_to_truncate: Set[Instant] = set()
 
-    @classmethod
-    def lint(cls, lint: Lint, *, arkimet: Optional[str] = None, eccodes: Optional[str] = None, **kwargs):
-        super().lint(lint, **kwargs)
-        if not arkimet and not eccodes:
-            lint.warn_input("neither `arkimet` nor `eccodes` were defined for the input", **kwargs)
+    def lint(self, lint: Lint):
+        super().lint(lint)
+        if not self.spec.arkimet and not self.spec.eccodes:
+            lint.warn_input(
+                "neither `arkimet` nor `eccodes` were defined for the input", defined_in=self.defined_in, name=self.name
+            )
 
-        if eccodes:
+        if self.spec.eccodes:
             with tempfile.NamedTemporaryFile(mode="wt") as tf:
-                print(f"if ({eccodes}) {{", file=tf)
+                print(f"if ({self.spec.eccodes}) {{", file=tf)
                 print('print "";', file=tf)
                 print("}", file=tf)
                 tf.flush()
@@ -369,7 +353,11 @@ class Source(Input):
                     for line in res.stderr.decode().splitlines():
                         if line.startswith(header):
                             errors.append(line[len(header) :])
-                    lint.warn_input(f"eccodes match {eccodes!r} cannot be parsed: {errors}", **kwargs)
+                    lint.warn_input(
+                        f"eccodes match {self.spec.eccodes!r} cannot be parsed: {errors}",
+                        defined_in=self.defined_in,
+                        name=self.name,
+                    )
 
     def __repr__(self):
         return f"Source:{self.spec.model}:{self.name}"
@@ -440,10 +428,6 @@ class Derived(Input):
         super().__init__(**kwargs)
         # set of available steps
         self.instants: Set[Instant] = set()
-
-    @classmethod
-    def lint(cls, lint: Lint, *, inputs: Union[str, List[str]] = None, **kwargs):
-        super().lint(lint, **kwargs)
 
     def to_dict(self):
         res = super().to_dict()
@@ -516,19 +500,6 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec):
 
 class VG6DStatProcMixin(Derived):
     Spec = VG6DStatProDerivedcInputSpec
-
-    @classmethod
-    def lint(
-        cls,
-        lint: Lint,
-        *,
-        step: int = None,
-        comp_stat_proc: str,
-        comp_frac_valid: float = 0,
-        comp_full_steps: Optional[bool] = None,
-        **kwargs,
-    ):
-        super().lint(lint, **kwargs)
 
     def to_dict(self):
         res = super().to_dict()
@@ -632,11 +603,6 @@ class Decumulate(VG6DStatProcMixin):
         kwargs.setdefault("comp_stat_proc", "1")
         super().__init__(**kwargs)
 
-    @classmethod
-    def lint(cls, lint: Lint, **kwargs):
-        kwargs.setdefault("comp_stat_proc", "1")
-        super().lint(lint, **kwargs)
-
     def document(self, file, indent=4):
         ind = " " * indent
         print(f"{ind}* **Decumulation step**: {self.spec.step}", file=file)
@@ -654,11 +620,6 @@ class Average(VG6DStatProcMixin):
     def __init__(self, **kwargs):
         kwargs.setdefault("comp_stat_proc", "254:0")
         super().__init__(**kwargs)
-
-    @classmethod
-    def lint(cls, lint: Lint, **kwargs):
-        kwargs.setdefault("comp_stat_proc", "254:0")
-        super().lint(lint, **kwargs)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -717,10 +678,6 @@ class VG6DTransform(AlignInstantsMixin, Derived):
 
     NAME = "vg6d_transform"
     Spec = VG6DTransformInputSpec
-
-    @classmethod
-    def lint(cls, lint: Lint, *, args: Union[str, List[str]] = None, **kwargs):
-        super().lint(lint, **kwargs)
 
     def to_dict(self):
         res = super().to_dict()
@@ -845,10 +802,6 @@ class GribSetMixin(Derived):
             compile(self.spec.clip, filename=self.defined_in, mode="exec") if self.spec.clip is not None else None
         )
 
-    @classmethod
-    def lint(cls, lint: Lint, *, grib_set: Optional[Dict[str, Any]] = None, clip: Optional[str] = None, **kwargs):
-        super().lint(lint, **kwargs)
-
     def to_dict(self):
         res = super().to_dict()
         res["grib_set"] = self.spec.grib_set
@@ -971,15 +924,6 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.expr_fn = compile(self.spec.expr, filename=self.defined_in, mode="exec")
-
-    @classmethod
-    def lint(cls, lint: Lint, **kwargs):
-        expr = kwargs.pop("expr", None)
-        if expr is None:
-            lint.warn_input("missing 'expr'", **kwargs)
-        if not isinstance(expr, str):
-            lint.warn_input("'expr' is not a string", **kwargs)
-        super().lint(lint, **kwargs)
 
     def to_dict(self):
         res = super().to_dict()

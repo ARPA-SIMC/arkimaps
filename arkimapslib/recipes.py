@@ -117,20 +117,35 @@ class RecipeStep:
     integrated with Step class defaults and step overrides from the flavour
     """
 
-    def __init__(self, name: str, step_class: Type[steps.Step], args: Dict[str, Any], id: Optional[str] = None):
+    def __init__(
+        self,
+        *,
+        name: str,
+        defined_in: str,
+        step_class: Type[steps.Step],
+        args: Dict[str, Any],
+        id: Optional[str] = None,
+    ):
         self.name: str = name
+        self.defined_in: str = defined_in
         self.step_class: Type[steps.Step] = step_class
         self.args: Dict[str, Any] = args
         self.id: Optional[str] = id
+
+    def lint(self, lint: Lint) -> None:
+        args = self.compile_args(lint.flavour)
+        if bool(args.pop("skip", False)):
+            return
+        self.step_class.lint(lint, defined_in=self.defined_in, name=self.name, step=self.name, args=args)
 
     def create_step(self, flavour: "flavours.Flavour", input_files: Dict[str, "inputs.InputFile"]) -> steps.Step:
         """
         Instantiate the Step
         """
         args = self.compile_args(flavour)
-        if bool(args.get("skip", False)):
+        if bool(args.pop("skip", False)):
             raise RecipeStepSkipped()
-        return self.step_class(self.name, args, input_files)
+        return self.step_class(name=self.name, args=args, sources=input_files)
 
     def get_input_names(self, flavour: "flavours.Flavour") -> Set[str]:
         """
@@ -154,8 +169,8 @@ class RecipeStep:
             res.setdefault(k, v)
 
         # Add missing bits from step class defaults
-        if self.step_class.defaults is not None:
-            for k, v in self.step_class.defaults.items():
+        if self.step_class.DEFAULTS is not None:
+            for k, v in self.step_class.DEFAULTS.items():
                 res.setdefault(k, v)
 
         return res
@@ -213,6 +228,14 @@ class RecipeSpec(BaseDataModel):
     #: Unparsed recipe steps
     recipe: List[Dict[str, Any]] = pydantic.Field(default_factory=list)
 
+    @pydantic.validator("mixer")
+    def mixer_in_registry(cls, value):
+        from .mixers import mixers
+
+        if value not in mixers.registry:
+            raise ValueError(f"Unknown mixer: {value!r}. Use one of {', '.join(sorted(mixers.registry))}")
+        return value
+
 
 class Recipe:
     """
@@ -221,13 +244,7 @@ class Recipe:
 
     Spec = RecipeSpec
 
-    def __init__(
-        self,
-        *,
-        name: str,
-        defined_in: str,
-        **kwargs,
-    ):
+    def __init__(self, *, name: str, defined_in: str, **kwargs: Any) -> None:
         from .mixers import mixers
 
         # Name of the recipe
@@ -249,47 +266,14 @@ class Recipe:
             if step_class is None:
                 raise RuntimeError(f"step {step} not found in mixer {self.spec.mixer}")
             id = args.pop("id", None)
-            self.steps.append(RecipeStep(name=step, step_class=step_class, args=args, id=id))
+            self.steps.append(RecipeStep(name=step, defined_in=defined_in, step_class=step_class, args=args, id=id))
 
-    @classmethod
-    def lint(
-        cls,
-        lint: Lint,
-        *,
-        name: str,
-        defined_in: str,
-        notes: Optional[str] = None,
-        description: str = "Unnamed recipe",
-        mixer: str = "default",
-        info: Optional[Dict[str, Any]] = None,
-        recipe: Sequence[Dict[str, Any]] = (),
-        **kwargs: Any,
-    ):
-        for k, v in kwargs.items():
-            lint.warn_recipe(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
-
-        from .mixers import mixers
-
-        if mixer not in mixers.registry:
-            lint.warn_recipe(f"Unknown mixer: {mixer!r}", defined_in=defined_in, name=name)
-        else:
-            step_collection = mixers.get_steps(mixer)
-            for s in recipe:
-                if not isinstance(s, dict):
-                    lint.warn_recipe(f"Recipe step {s!r} is not a dict", defined_in=defined_in, name=name)
-                    continue
-                s = s.copy()
-                step = s.pop("step", None)
-                if step is None:
-                    lint.warn_recipe(f"Recipe step {s!r} does not contain 'step'", defined_in=defined_in, name=name)
-                    continue
-                step_cls = step_collection.get(step)
-                if step_cls is None:
-                    lint.warn_recipe(
-                        f"Recipe step {s!r} contains invalid step={step!r}", defined_in=defined_in, name=name
-                    )
-                    continue
-                step_cls.lint(lint, defined_in=defined_in, name=name, step=step, **s)
+    def lint(self, lint: Lint) -> None:
+        """
+        Consistency check the recipe configuration
+        """
+        for recipe_step in self.steps:
+            recipe_step.lint(lint)
 
     @classmethod
     def inherit(

@@ -26,12 +26,7 @@ class Postprocessors(TypeRegistry["Postprocessor"]):
     Registry of available Postprocessor implementations
     """
 
-    def lint(self, *, lint: "Lint", name: str, defined_in: str, **kwargs):
-        cls = self.registry.get(name)
-        if cls is None:
-            lint.warn_postprocessor(f"postprocessor {name!r} not found", defined_in=defined_in, name=name)
-            return
-        cls.lint(lint=lint, name=name, defined_in=defined_in, **kwargs)
+    pass
 
 
 postprocessors = Postprocessors()
@@ -58,13 +53,11 @@ class Postprocessor(ABC):
         # Input data as specified in the recipe
         self.spec = self.Spec(**kwargs)
 
-    @classmethod
-    def lint(cls, lint: "Lint", *, name: str, defined_in: str, type: Optional[str] = None, **kwargs):
+    def lint(self, lint: "Lint") -> None:
         """
-        Consistency check the given input arguments
+        Consistency check the postprocessor configuration
         """
-        for k, v in kwargs.items():
-            lint.warn_input(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
+        pass
 
     @classmethod
     def create(cls, name: str, **kwargs):
@@ -147,37 +140,6 @@ class Watermark(Postprocessor):
         self.font: Path = self.static_path(self.spec.font)
         log.info("%s resolved as %s", self.spec.font, self.font)
 
-    @classmethod
-    def lint(
-        cls,
-        lint: "Lint",
-        *,
-        message: str,
-        font: str,
-        size: int = 10,
-        x: int,
-        y: int,
-        anchor: str = "la",
-        color: Union[str, List[str]] = "#fff0",
-        **kwargs,
-    ):
-        super().lint(lint, **kwargs)
-        if not isinstance(message, str):
-            lint.warn_input(f"message is not a string: {message!r}", **kwargs)
-        if not isinstance(font, str):
-            # TODO: try to resolve it?
-            lint.warn_input(f"font is not a string: {font!r}", **kwargs)
-        if not isinstance(size, int):
-            lint.warn_input(f"size is not an integer: {size!r}", **kwargs)
-        if not isinstance(x, int):
-            lint.warn_input(f"x is not an integer: {x!r}", **kwargs)
-        if not isinstance(y, int):
-            lint.warn_input(f"y is not an integer: {y!r}", **kwargs)
-        if not isinstance(anchor, str):
-            lint.warn_input(f"anchor is not a string: {anchor!r}", **kwargs)
-        if not isinstance(color, str):
-            lint.warn_input(f"color is not a string: {color!r}", **kwargs)
-
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         gen.import_("Image", "ImageDraw", "ImageFont", from_="PIL")
         gen.line(f"with Image.open(os.path.join(workdir, {full_relpath!r})) as im:")
@@ -223,14 +185,6 @@ class CutShape(Postprocessor):
         super().__init__(**kwargs)
         self.shapefile: Path = self.static_path(self.spec.shapefile)
         log.info("%s resolved as %s", self.spec.shapefile, self.shapefile)
-
-    @classmethod
-    def lint(cls, lint: "Lint", **kwargs):
-        shapefile = kwargs.pop("shapefile", None)
-        if not isinstance(shapefile, str):
-            # TODO: try to resolve it?
-            lint.warn_input(f"shapefile is not a string: {shapefile!r}", **kwargs)
-        super().lint(lint, **kwargs)
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         georef = order.georeference()

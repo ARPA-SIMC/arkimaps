@@ -87,35 +87,12 @@ class Flavour:
                 raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
             self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
 
-    @classmethod
-    def lint(
-        cls,
-        lint: Lint,
-        *,
-        config: Config,
-        name: str,
-        defined_in: str,
-        steps: Optional[Kwargs] = None,
-        postprocess: Optional[Kwargs] = None,
-        recipes_filter: Optional[List[str]] = None,
-        **kwargs,
-    ):
+    def lint(self, lint: Lint) -> None:
         """
         Consistency check the given input arguments
         """
-        for k, v in kwargs.items():
-            lint.warn_flavour(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
-
-        if postprocess is not None:
-            if not isinstance(postprocess, list):
-                lint.warn_flavour("`postprocess` is not a list", defined_in=defined_in, name=name)
-            else:
-                for desc in postprocess:
-                    name = desc.get("type")
-                    if name is None:
-                        lint.warn_flavour("Postprocessor listed without 'type'", defined_in=defined_in, name=name)
-                        continue
-                    postprocessors.lint(lint=lint, name=name, defined_in=defined_in, **desc)
+        for postproc in self.postprocessors:
+            postproc.lint(lint=lint)
 
     def __str__(self):
         return self.name
@@ -328,10 +305,6 @@ class TiledFlavour(Flavour):
     """
 
     Spec = TiledFlavourSpec
-
-    @classmethod
-    def lint(cls, lint: Lint, *, tile: Dict[str, Any], **kwargs):
-        super().lint(lint, **kwargs)
 
     def summarize(self) -> Dict[str, Any]:
         res = super().summarize()
