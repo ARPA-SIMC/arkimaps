@@ -13,10 +13,6 @@ from .models import BaseDataModel, pydantic
 if TYPE_CHECKING:
     from . import pantry
 
-# if TYPE_CHECKING:
-# Used for kwargs-style dicts
-Kwargs = Dict[str, Any]
-
 log = logging.getLogger("arkimaps.recipes")
 
 
@@ -107,16 +103,19 @@ class Recipes:
 
 class RecipeStep:
     """
-    A step of a recipe
+    A step of a recipe, as defined in the recipe file.
+
+    This does not contain the full information for the step, as it can be
+    integrated with Step class defaults and step overrides from the flavour
     """
 
-    def __init__(self, name: str, step: Type[steps.Step], args: Kwargs, id: Optional[str] = None):
-        self.name = name
-        self.step = step
-        self.args = args
-        self.id = id
+    def __init__(self, name: str, step: Type[steps.Step], args: dict[str, Any], id: Optional[str] = None):
+        self.name: str = name
+        self.step: Type[steps.Step] = step
+        self.args: dict[str, Any] = args
+        self.id: Optional[str] = id
 
-    def get_input_names(self, step_config: steps.StepConfig) -> Set[str]:
+    def get_input_names(self, step_config: steps.FlavourStep) -> Set[str]:
         """
         Get the names of inputs needed by this step
         """
@@ -148,7 +147,7 @@ class RecipeStep:
         """
         Document this recipe step
         """
-        args = self.step.compile_args(steps.StepConfig(self.name), self.args)
+        args = self.step.compile_args(steps.FlavourStep(self.name), self.args)
         print(inspect.getdoc(self.step), file=file)
         print(file=file)
         if args:

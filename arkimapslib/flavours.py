@@ -4,15 +4,15 @@ import logging
 import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
 
-from . import inputs, orders, recipes
+from . import inputs, orders
 from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor, postprocessors
-from .steps import Step, StepConfig, StepSkipped
+from .steps import Step, FlavourStep, StepSkipped
 
 if TYPE_CHECKING:
-    from . import pantry
+    from . import pantry, recipes
     from .inputs import InputFile, Instant
 
 # Used for kwargs-style dicts
@@ -58,9 +58,9 @@ class Flavour:
         for expr in self.spec.recipes_filter:
             self.recipes_filter.append(re.compile(fnmatch.translate(expr)))
 
-        self.steps: Dict[str, StepConfig] = {}
+        self.steps: Dict[str, FlavourStep] = {}
         for name, options in self.spec.steps.items():
-            self.steps[name] = StepConfig(name, options)
+            self.steps[name] = FlavourStep(name, options)
 
         self.postprocessors: List[Postprocessor] = []
         for desc in self.spec.postprocess:
@@ -135,13 +135,13 @@ class Flavour:
                 return True
         return False
 
-    def step_config(self, name: str) -> StepConfig:
+    def step_config(self, name: str) -> FlavourStep:
         """
-        Return a StepConfig object for the given step name
+        Return a FlavourStep object for the given step name
         """
         res = self.steps.get(name)
         if res is None:
-            res = StepConfig(name)
+            res = FlavourStep(name)
         return res
 
     def list_inputs_recursive(self, recipe: "recipes.Recipe", pantry: "pantry.Pantry") -> List[str]:

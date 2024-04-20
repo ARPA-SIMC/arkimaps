@@ -11,7 +11,7 @@ from PIL import Image
 
 from . import outputbundle
 from .inputs import ModelStep
-from .steps import StepSkipped, StepConfig, AddBasemap
+from .steps import StepSkipped, FlavourStep, AddBasemap
 from .pygen import PyGen
 
 if TYPE_CHECKING:
@@ -458,7 +458,7 @@ class LegendOrder(Order):
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
 
         # Configure the basemap to be just a canvas for the legend
-        basemap_config = StepConfig(
+        basemap_config = FlavourStep(
             "add_basemap",
             options={
                 "params": {
