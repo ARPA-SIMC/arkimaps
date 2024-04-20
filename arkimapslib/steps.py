@@ -9,14 +9,6 @@ if TYPE_CHECKING:
 Kwargs = Dict[str, Any]
 
 
-class StepSkipped(Exception):
-    """
-    Exception raised in Step constructor to signal that the step should be skipped
-    """
-
-    pass
-
-
 class Step:
     """
     One recipe step provided by a Mixer
@@ -24,11 +16,9 @@ class Step:
 
     defaults: Optional[Kwargs] = None
 
-    def __init__(self, step: str, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]):
+    def __init__(self, step: str, params: dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
         self.name = step
-        self.params = params if params is not None else {}
-        if bool(self.params.get("skip")):
-            raise StepSkipped()
+        self.params = params
 
     @classmethod
     def lint(cls, lint: "Lint", *, defined_in: str, name: str, step: str, **kwargs):

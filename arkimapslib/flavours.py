@@ -9,11 +9,11 @@ from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor, postprocessors
-from .steps import Step, StepSkipped
 
 if TYPE_CHECKING:
     from . import pantry, recipes
     from .inputs import InputFile, Instant
+    from .steps import Step
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -347,10 +347,11 @@ class TiledFlavour(Flavour):
         Create an order to generate the legend for a tileset
         """
         from .mixers import mixers
+        from .recipes import RecipeStepSkipped
 
         # Identify relevant steps for legend generation
-        grib_step: Optional[Step] = None
-        contour_step: Optional[Step] = None
+        grib_step: Optional["Step"] = None
+        contour_step: Optional["Step"] = None
 
         for recipe_step in recipe.steps:
             try:
@@ -368,7 +369,7 @@ class TiledFlavour(Flavour):
                 else:
                     # Ignore all other steps
                     pass
-            except StepSkipped:
+            except RecipeStepSkipped:
                 continue
 
         if not contour_step:

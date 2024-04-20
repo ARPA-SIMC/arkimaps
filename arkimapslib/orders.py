@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Option
 from PIL import Image
 
 from . import outputbundle
-from .steps import StepSkipped
 from .pygen import PyGen
+from .recipes import RecipeStepSkipped
 
 if TYPE_CHECKING:
     from . import inputs, steps
@@ -172,7 +172,7 @@ class MapOrder(Order):
         for recipe_step in recipe.steps:
             try:
                 s = recipe_step.create_step(flavour, input_files)
-            except StepSkipped:
+            except RecipeStepSkipped:
                 log.debug("%s: %s (skipped)", self, recipe_step.name)
                 continue
             self.order_steps.append(s)
@@ -284,7 +284,7 @@ class TileOrder(Order):
                     params = compiled_step.params.get("params")
                     if params is not None:
                         compiled_step.params["params"] = {k: v for k, v in params.items() if not k.startswith("legend")}
-            except StepSkipped:
+            except RecipeStepSkipped:
                 log.debug("%s: %s (skipped)", self, compiled_step.name)
                 continue
             self.order_steps.append(compiled_step)

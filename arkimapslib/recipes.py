@@ -101,6 +101,14 @@ class Recipes:
         return res
 
 
+class RecipeStepSkipped(Exception):
+    """
+    Exception raised constructor to signal that the step should be skipped
+    """
+
+    pass
+
+
 class RecipeStep:
     """
     A step of a recipe, as defined in the recipe file.
@@ -120,6 +128,8 @@ class RecipeStep:
         Instantiate the Step
         """
         args = self.compile_args(flavour)
+        if bool(args.get("skip", False)):
+            raise RecipeStepSkipped()
         return self.step_class(self.name, args, input_files)
 
     def get_input_names(self, flavour: "flavours.Flavour") -> Set[str]:
