@@ -262,9 +262,9 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         self.assertCountEqual(by_zoom.keys(), (6, 7))
 
-        for z in range(flavour.zoom_min, flavour.zoom_max + 1):
+        for z in range(flavour.spec.tile.zoom_min, flavour.spec.tile.zoom_max + 1):
             bbox = by_zoom[z]
-            self.assertLessEqual(bbox.lat_min, flavour.lat_min)
-            self.assertLessEqual(bbox.lon_min, flavour.lon_min)
-            self.assertGreaterEqual(bbox.lat_max, flavour.lat_max)
-            self.assertGreaterEqual(bbox.lon_max, flavour.lon_max)
+            self.assertLessEqual(bbox.lat_min, flavour.spec.tile.lat_min)
+            self.assertLessEqual(bbox.lon_min, flavour.spec.tile.lon_min)
+            self.assertGreaterEqual(bbox.lat_max, flavour.spec.tile.lat_max)
+            self.assertGreaterEqual(bbox.lon_max, flavour.spec.tile.lon_max)

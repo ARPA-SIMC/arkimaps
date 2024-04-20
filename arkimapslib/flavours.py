@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
 from . import inputs, orders, recipes
 from .config import Config
 from .lint import Lint
+from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor, postprocessors
 from .steps import Step, StepConfig, StepSkipped
 
@@ -21,10 +22,22 @@ Kwargs = Dict[str, Any]
 log = logging.getLogger("arkimaps.flavours")
 
 
+class FlavourSpec(BaseDataModel):
+    """
+    Data model for Flavours
+    """
+
+    steps: dict[str, Any] = pydantic.Field(default_factory=dict)
+    postprocess: list[dict[str, Any]] = pydantic.Field(default_factory=list)
+    recipes_filter: List[str] = pydantic.Field(default_factory=list)
+
+
 class Flavour:
     """
     Set of default settings used for generating a product
     """
+
+    Spec = FlavourSpec
 
     def __init__(
         self,
@@ -32,34 +45,30 @@ class Flavour:
         config: Config,
         name: str,
         defined_in: str,
-        steps: Optional[Kwargs] = None,
-        postprocess: Optional[Kwargs] = None,
-        recipes_filter: Optional[List[str]] = None,
-        **kw,
+        **kwargs,
     ):
         self.config = config
         self.name = name
         self.defined_in = defined_in
 
+        # Input data as specified in YAML
+        self.spec = self.Spec(**kwargs)
+
         self.recipes_filter: List[re.Pattern] = []
-        if recipes_filter is not None:
-            if not isinstance(recipes_filter, list):
-                raise ValueError(f"{defined_in}: recipes_filter is {type(recipes_filter).__name__} instead of list")
-            for expr in recipes_filter:
-                self.recipes_filter.append(re.compile(fnmatch.translate(expr)))
+        for expr in self.spec.recipes_filter:
+            self.recipes_filter.append(re.compile(fnmatch.translate(expr)))
 
         self.steps: Dict[str, StepConfig] = {}
-        if steps is not None:
-            for name, options in steps.items():
-                self.steps[name] = StepConfig(name, options)
+        for name, options in self.spec.steps.items():
+            self.steps[name] = StepConfig(name, options)
 
         self.postprocessors: List[Postprocessor] = []
-        if postprocess is not None:
-            for desc in postprocess:
-                name = desc.pop("type", None)
-                if name is None:
-                    raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
-                self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
+        for desc in self.spec.postprocess:
+            desc = desc.copy()
+            name = desc.pop("type", None)
+            if name is None:
+                raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
+            self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
 
     @classmethod
     def lint(
@@ -269,28 +278,41 @@ class SimpleFlavour(Flavour):
         return res
 
 
+class TileSpec(BaseDataModel):
+    """
+    Tile definition for TiledFlavourSpec
+    """
+
+    #: minimum zoom level to generate
+    zoom_min: int = 3
+    #: maximum zoom level to generate
+    zoom_max: int = 5
+    #: minimum latitude
+    lat_min: float
+    #: maximum latitude
+    lat_max: float
+    #: minimum longitude
+    lon_min: float
+    #: maximum longitude
+    lon_max: float
+
+
+class TiledFlavourSpec(FlavourSpec):
+    """
+    Data model for Flavours
+    """
+
+    #: Definition of the tiling requested
+    tile: TileSpec
+
+
 class TiledFlavour(Flavour):
     """
     Flavour that generates tiled output.
 
-    ``tile`` in the flavour is a dictionary defining the requested tiling, with
-    these fields:
-     * ``zoom_min: Int = 3``: minimum zoom level to generate
-     * ``zoom_max: Int = 5``: maximum zoom level to generate
-     * ``lat_min: Float``: minimum latitude
-     * ``lat_max: Float``: maximum latitude
-     * ``lon_min: Float``: minimum longitude
-     * ``lon_max: Float``: maximum longitude
     """
 
-    def __init__(self, *, tile: Dict[str, Any], **kw):
-        super().__init__(**kw)
-        self.zoom_min = int(tile.get("zoom_min", 3))
-        self.zoom_max = int(tile.get("zoom_max", 5))
-        self.lat_min = float(tile["lat_min"])
-        self.lat_max = float(tile["lat_max"])
-        self.lon_min = float(tile["lon_min"])
-        self.lon_max = float(tile["lon_max"])
+    Spec = TiledFlavourSpec
 
     @classmethod
     def lint(cls, lint: Lint, *, tile: Dict[str, Any], **kwargs):
@@ -299,8 +321,8 @@ class TiledFlavour(Flavour):
     def summarize(self) -> Dict[str, Any]:
         res = super().summarize()
         for name in ("zoom", "lat", "lon"):
-            res[f"{name}_min"] = getattr(self, f"{name}_min")
-            res[f"{name}_max"] = getattr(self, f"{name}_max")
+            res[f"{name}_min"] = getattr(self.spec.tile, f"{name}_min")
+            res[f"{name}_max"] = getattr(self.spec.tile, f"{name}_max")
         return res
 
     def make_order_for_legend(
@@ -365,12 +387,12 @@ class TiledFlavour(Flavour):
                         recipe=recipe,
                         input_files=input_files,
                         instant=output_instant,
-                        lat_min=self.lat_min,
-                        lat_max=self.lat_max,
-                        lon_min=self.lon_min,
-                        lon_max=self.lon_max,
-                        zoom_min=self.zoom_min,
-                        zoom_max=self.zoom_max,
+                        lat_min=self.spec.tile.lat_min,
+                        lat_max=self.spec.tile.lat_max,
+                        lon_min=self.spec.tile.lon_min,
+                        lon_max=self.spec.tile.lon_max,
+                        zoom_min=self.spec.tile.zoom_min,
+                        zoom_max=self.spec.tile.zoom_max,
                     )
                 )
 
