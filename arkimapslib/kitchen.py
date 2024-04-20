@@ -142,9 +142,10 @@ class Kitchen:
 
         Write documentation to the given path
         """
+        empty_flavour = Flavour(config=self.config, name="documentation", defined_in=__file__)
         for recipe in self.recipes:
             dest = os.path.join(path, recipe.name) + ".md"
-            recipe.document(self.pantry, dest)
+            recipe.document(empty_flavour, self.pantry, dest)
 
 
 class WorkingKitchen(Kitchen):

@@ -17,19 +17,6 @@ class StepSkipped(Exception):
     pass
 
 
-class FlavourStep:
-    """
-    Flavour configuration for a step
-    """
-
-    def __init__(self, name: str, options: Optional[Kwargs] = None, **kw):
-        self.name = name
-        self.options: Kwargs = options if options is not None else {}
-
-    def get_param(self, name: str) -> Any:
-        return self.options.get(name)
-
-
 class Step:
     """
     One recipe step provided by a Mixer
@@ -37,11 +24,9 @@ class Step:
 
     defaults: Optional[Kwargs] = None
 
-    def __init__(
-        self, step: str, step_config: FlavourStep, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]
-    ):
+    def __init__(self, step: str, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]):
         self.name = step
-        self.params = self.compile_args(step_config, params if params is not None else {})
+        self.params = params if params is not None else {}
         if bool(self.params.get("skip")):
             raise StepSkipped()
 
@@ -81,27 +66,7 @@ class Step:
                 data[name] = value
 
     @classmethod
-    def compile_args(cls, step_config: FlavourStep, args: Kwargs) -> Kwargs:
-        """
-        Compute the set of arguments for this step, based on flavour
-        information and arguments defined in the recipe
-        """
-        # take args
-        res = dict(args)
-
-        # add missing bits from step_config
-        for k, v in step_config.options.items():
-            res.setdefault(k, v)
-
-        # add missing bits from class config
-        if cls.defaults is not None:
-            for k, v in cls.defaults.items():
-                res.setdefault(k, v)
-
-        return res
-
-    @classmethod
-    def get_input_names(cls, step_config: FlavourStep, args: Kwargs) -> Set[str]:
+    def get_input_names(cls, args: dict[str, Any]) -> Set[str]:
         """
         Return the list of input names used by this step
         """
@@ -263,10 +228,8 @@ class AddGrib(Step):
     Add a grib file
     """
 
-    def __init__(
-        self, step: str, step_config: FlavourStep, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]
-    ):
-        super().__init__(step, step_config, params, sources)
+    def __init__(self, step: str, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]):
+        super().__init__(step, params, sources)
         input_name = self.params.get("grib")
         if input_name is None:
             raise KeyError(f"{self.name}: missing 'grib' key")
@@ -303,9 +266,8 @@ class AddGrib(Step):
         return "mgrib", params
 
     @classmethod
-    def get_input_names(cls, step_config: FlavourStep, args: Kwargs) -> Set[str]:
-        res = super().get_input_names(step_config, args)
-        args = cls.compile_args(step_config, args)
+    def get_input_names(cls, args: dict[str, Any]) -> Set[str]:
+        res = super().get_input_names(args)
         grib_name = args.get("grib")
         if grib_name is not None:
             res.add(grib_name)
@@ -317,10 +279,8 @@ class AddUserBoundaries(Step):
     Add user-defined boundaries from a shapefile
     """
 
-    def __init__(
-        self, step: str, step_config: FlavourStep, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]
-    ):
-        super().__init__(step, step_config, params, sources)
+    def __init__(self, step: str, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]):
+        super().__init__(step, params, sources)
         input_name = self.params.get("shape")
         if input_name is None:
             raise KeyError(f"{self.name}: missing 'shape'")
@@ -355,9 +315,8 @@ class AddUserBoundaries(Step):
         return "mcoast", params
 
     @classmethod
-    def get_input_names(cls, step_config: FlavourStep, args: Kwargs) -> Set[str]:
-        res = super().get_input_names(step_config, args)
-        args = cls.compile_args(step_config, args)
+    def get_input_names(cls, args: dict[str, Any]) -> Set[str]:
+        res = super().get_input_names(args)
         shape = args.get("shape")
         if shape is not None:
             res.add(shape)
@@ -373,10 +332,8 @@ class AddGeopoints(Step):
     Add geopoints
     """
 
-    def __init__(
-        self, step: str, step_config: FlavourStep, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]
-    ):
-        super().__init__(step, step_config, params, sources)
+    def __init__(self, step: str, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]):
+        super().__init__(step, params, sources)
         input_name = self.params.get("points")
         if input_name is None:
             raise KeyError(f"{self.name}: missing 'points'")
@@ -403,9 +360,8 @@ class AddGeopoints(Step):
         return "mgeo", params
 
     @classmethod
-    def get_input_names(cls, step_config: FlavourStep, args: Kwargs) -> Set[str]:
-        res = super().get_input_names(step_config, args)
-        args = cls.compile_args(step_config, args)
+    def get_input_names(cls, args: dict[str, Any]) -> Set[str]:
+        res = super().get_input_names(args)
         points = args.get("points")
         if points is not None:
             res.add(points)

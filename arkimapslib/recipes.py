@@ -119,15 +119,36 @@ class RecipeStep:
         """
         Instantiate the Step
         """
-        flavour_step = flavour.step_config(self.name)
-        return self.step_class(self.name, flavour_step, self.args, input_files)
+        args = self.compile_args(flavour)
+        return self.step_class(self.name, args, input_files)
 
     def get_input_names(self, flavour: "flavours.Flavour") -> Set[str]:
         """
         Get the names of inputs needed by this step
         """
-        step_config = flavour.step_config(self.name)
-        return self.step_class.get_input_names(step_config, self.args)
+        args = self.compile_args(flavour)
+        return self.step_class.get_input_names(args)
+
+    def compile_args(self, flavour: "flavours.Flavour") -> dict[str, Any]:
+        """
+        Compute the set of arguments for this step, based on flavour
+        information, arguments defined in the recipe, and step class defaults
+        """
+        flavour_step = flavour.step_config(self.name)
+
+        # Take recipe-defined args
+        res = self.args.copy()
+
+        # Add missing bits from flavour
+        for k, v in flavour_step.options.items():
+            res.setdefault(k, v)
+
+        # Add missing bits from step class defaults
+        if self.step_class.defaults is not None:
+            for k, v in self.step_class.defaults.items():
+                res.setdefault(k, v)
+
+        return res
 
     def derive(self) -> Dict[str, Any]:
         """
@@ -151,11 +172,11 @@ class RecipeStep:
             res["id"] = self.id
         return res
 
-    def document(self, file: TextIO):
+    def document(self, flavour: "flavours.Flavour", file: TextIO):
         """
         Document this recipe step
         """
-        args = self.step_class.compile_args(steps.FlavourStep(self.name), self.args)
+        args = self.compile_args(flavour)
         print(inspect.getdoc(self.step_class), file=file)
         print(file=file)
         if args:
@@ -306,10 +327,7 @@ class Recipe:
             "info": self.spec.info,
         }
 
-    def document(self, pantry: "pantry.Pantry", dest: str):
-        from .flavours import Flavour
-
-        empty_flavour = Flavour(config=Config(), name="default", defined_in=__file__)
+    def document(self, flavour: "flavours.Flavour", pantry: "pantry.Pantry", dest: str):
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "wt") as fd:
             print(f"# {self.name}: {self.spec.description}", file=fd)
@@ -324,7 +342,7 @@ class Recipe:
             print("## Inputs", file=fd)
             print(file=fd)
             # TODO: list only inputs explicitly required by the recipe
-            for name in empty_flavour.list_inputs_recursive(self, pantry):
+            for name in flavour.list_inputs_recursive(self, pantry):
                 inputs = pantry.inputs.get(name)
                 if inputs is None:
                     print(f"* **{name}** (input details are missing)", file=fd)
@@ -342,5 +360,5 @@ class Recipe:
             for step in self.steps:
                 print(f"### {step.name}", file=fd)
                 print(file=fd)
-                step.document(file=fd)
+                step.document(flavour, file=fd)
                 print(file=fd)

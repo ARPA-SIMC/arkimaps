@@ -4,26 +4,21 @@ import logging
 import math
 import os
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Tuple
 
 from PIL import Image
 
 from . import outputbundle
-from .inputs import ModelStep
-from .steps import StepSkipped, FlavourStep, AddBasemap
+from .steps import StepSkipped
 from .pygen import PyGen
 
 if TYPE_CHECKING:
     from . import inputs, steps
     from .flavours import Flavour
-    from .kitchen import Kitchen
     from .recipes import Recipe
 
 log = logging.getLogger("orders")
 
-LEGEND_WIDTH_CM = 3
-LEGEND_HEIGHT_CM = 21
 TILE_WIDTH_CM = 256 / 40.0
 TILE_HEIGHT_CM = 256 / 40.0
 TILE_WIDTH_PX = 256
@@ -450,50 +445,10 @@ class LegendOrder(Order):
         recipe: "Recipe",
         input_files: Dict[str, "inputs.InputFile"],
         instant: "inputs.Instant",
-        grib_step: Optional["steps.Step"],
-        contour_step: "steps.Step",
+        order_steps: list["steps.Step"],
     ):
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
-
-        # Configure the basemap to be just a canvas for the legend
-        basemap_config = FlavourStep(
-            "add_basemap",
-            options={
-                "params": {
-                    "subpage_frame": "off",
-                    "page_x_length": LEGEND_WIDTH_CM,
-                    "page_y_length": LEGEND_HEIGHT_CM,
-                    "super_page_x_length": LEGEND_WIDTH_CM,
-                    "super_page_y_length": LEGEND_HEIGHT_CM,
-                    "subpage_x_length": LEGEND_WIDTH_CM,
-                    "subpage_y_length": LEGEND_HEIGHT_CM,
-                    "subpage_x_position": 0.0,
-                    "subpage_y_position": 0.0,
-                    "subpage_gutter_percentage": 20.0,
-                    "page_frame": "off",
-                    "page_id_line": "off",
-                },
-            },
-        )
-        self.order_steps.append(AddBasemap("add_basemap", basemap_config, {}, input_files))
-
-        if grib_step is not None:
-            self.order_steps.append(grib_step)
-
-        params = contour_step.params["params"]
-        params["legend"] = "on"
-        params["legend_text_font_size"] = "25%"
-        params["legend_border_thickness"] = 4
-        params["legend_only"] = "on"
-        params["legend_box_mode"] = "positional"
-        params["legend_box_x_position"] = 0.00
-        params["legend_box_y_position"] = 0.00
-        params["legend_box_x_length"] = LEGEND_WIDTH_CM
-        params["legend_box_y_length"] = LEGEND_HEIGHT_CM
-        params["legend_box_blanking"] = False
-        params.pop("legend_title_font_size", None)
-        params.pop("legend_automatic_position", None)
-        self.order_steps.append(contour_step)
+        self.order_steps.extend(order_steps)
 
     def __str__(self):
         return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/legend"

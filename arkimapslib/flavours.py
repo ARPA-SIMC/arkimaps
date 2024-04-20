@@ -9,7 +9,7 @@ from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor, postprocessors
-from .steps import Step, FlavourStep, StepSkipped
+from .steps import Step, StepSkipped
 
 if TYPE_CHECKING:
     from . import pantry, recipes
@@ -20,6 +20,23 @@ Kwargs = Dict[str, Any]
 
 
 log = logging.getLogger("arkimaps.flavours")
+
+# TODO: move these to flavour arguments
+LEGEND_WIDTH_CM = 3
+LEGEND_HEIGHT_CM = 21
+
+
+class FlavourStep:
+    """
+    Flavour configuration for a step
+    """
+
+    def __init__(self, name: str, options: Optional[Kwargs] = None, **kw):
+        self.name = name
+        self.options: Kwargs = options if options is not None else {}
+
+    def get_param(self, name: str) -> Any:
+        return self.options.get(name)
 
 
 class FlavourSpec(BaseDataModel):
@@ -329,6 +346,8 @@ class TiledFlavour(Flavour):
         """
         Create an order to generate the legend for a tileset
         """
+        from .mixers import mixers
+
         # Identify relevant steps for legend generation
         grib_step: Optional[Step] = None
         contour_step: Optional[Step] = None
@@ -355,13 +374,64 @@ class TiledFlavour(Flavour):
         if not contour_step:
             return None
 
+        order_steps = []
+
+        step_collection = mixers.get_steps(recipe.spec.mixer)
+        add_basemap_class = step_collection.get("add_basemap")
+        if add_basemap_class is None:
+            raise RuntimeError(f"step add_basemap not found in mixer {recipe.spec.mixer}")
+
+        # Configure the basemap to be just a canvas for the legend
+        order_steps.append(
+            add_basemap_class(
+                # Allow to configure add_legend_basemap in flavour differently from
+                # add_basemap
+                # TODO: document this
+                step="add_legend_basemap",
+                params={
+                    "params": {
+                        "subpage_frame": "off",
+                        "page_x_length": LEGEND_WIDTH_CM,
+                        "page_y_length": LEGEND_HEIGHT_CM,
+                        "super_page_x_length": LEGEND_WIDTH_CM,
+                        "super_page_y_length": LEGEND_HEIGHT_CM,
+                        "subpage_x_length": LEGEND_WIDTH_CM,
+                        "subpage_y_length": LEGEND_HEIGHT_CM,
+                        "subpage_x_position": 0.0,
+                        "subpage_y_position": 0.0,
+                        "subpage_gutter_percentage": 20.0,
+                        "page_frame": "off",
+                        "page_id_line": "off",
+                    }
+                },
+                sources=input_files,
+            )
+        )
+
+        if grib_step is not None:
+            order_steps.append(grib_step)
+
+        params = contour_step.params["params"]
+        params["legend"] = "on"
+        params["legend_text_font_size"] = "25%"
+        params["legend_border_thickness"] = 4
+        params["legend_only"] = "on"
+        params["legend_box_mode"] = "positional"
+        params["legend_box_x_position"] = 0.00
+        params["legend_box_y_position"] = 0.00
+        params["legend_box_x_length"] = LEGEND_WIDTH_CM
+        params["legend_box_y_length"] = LEGEND_HEIGHT_CM
+        params["legend_box_blanking"] = False
+        params.pop("legend_title_font_size", None)
+        params.pop("legend_automatic_position", None)
+        order_steps.append(contour_step)
+
         return orders.LegendOrder(
             flavour=self,
             recipe=recipe,
             input_files=input_files,
             instant=output_instant,
-            grib_step=grib_step,
-            contour_step=contour_step,
+            order_steps=order_steps,
         )
 
     def inputs_to_orders(

@@ -11,11 +11,7 @@ from arkimapslib.unittest import scan_python_order
 
 
 def flavour(name: str, steps: Optional[Dict[str, Any]] = None, **kw) -> Dict[str, Any]:
-    return {
-        "name": name,
-        "steps": steps if steps is not None else {},
-        **kw
-    }
+    return {"name": name, "steps": steps if steps is not None else {}, **kw}
 
 
 class TestFlavour(unittest.TestCase):
@@ -34,19 +30,22 @@ class TestFlavour(unittest.TestCase):
 
             # Write inputs definition
             with open(os.path.join(recipe_dir, "inputs.yaml"), "wt") as fd:
-                yaml.dump({
-                    "inputs": {
-                        "t2m": [
-                            {
-                                "model": "cosmo",
-                                "arkimet": "product:GRIB1,,2,11;level:GRIB1,105,2",
-                                "eccodes": 'shortName is "2t" and indicatorOfTypeOfLevel == 105'
-                                           ' and timeRangeIndicator == 0 and level == 2',
-                            }
-                        ],
-                        **inputs,
+                yaml.dump(
+                    {
+                        "inputs": {
+                            "t2m": [
+                                {
+                                    "model": "cosmo",
+                                    "arkimet": "product:GRIB1,,2,11;level:GRIB1,105,2",
+                                    "eccodes": 'shortName is "2t" and indicatorOfTypeOfLevel == 105'
+                                    " and timeRangeIndicator == 0 and level == 2",
+                                }
+                            ],
+                            **inputs,
+                        },
                     },
-                }, fd)
+                    fd,
+                )
 
             # Write recipes definitions
             for name, steps in recipes.items():
@@ -86,41 +85,48 @@ class TestFlavour(unittest.TestCase):
             "map_coastline_colour": "#000000",
             "map_coastline_resolution": "medium",
         }
-        with self.kitchen(flavours=[flavour("test", {"add_coastlines_fg": {"params": test_params}})],
-                          recipes={"test": [
-                              {"step": "add_coastlines_fg"},
-                              {"step": "add_grib", "grib": "t2m"},
-                          ]}) as kitchen:
+        with self.kitchen(
+            flavours=[flavour("test", {"add_coastlines_fg": {"params": test_params}})],
+            recipes={
+                "test": [
+                    {"step": "add_coastlines_fg"},
+                    {"step": "add_grib", "grib": "t2m"},
+                ]
+            },
+        ) as kitchen:
             order = self.make_order(kitchen, "test", "test")
             add_coastlines_fg = self.get_step(order, "add_coastlines_fg")
             self.assertEqual(add_coastlines_fg.params["params"], test_params)
 
     def test_default_shape(self):
-        with self.kitchen(flavours=[
-                              flavour("test", steps={"add_user_boundaries": {"shape": "test"}}),
-                          ],
-                          recipes={
-                              "t2m": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}],
-                          },
-                          inputs={
-                              "test": {
-                                  "type": "shape",
-                                  "path": "shapes/Sottozone_allerta_ER",
-                              }
-                          }) as kitchen:
+        with self.kitchen(
+            flavours=[
+                flavour("test", steps={"add_user_boundaries": {"shape": "test"}}),
+            ],
+            recipes={
+                "t2m": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}],
+            },
+            inputs={
+                "test": {
+                    "type": "shape",
+                    "path": "shapes/Sottozone_allerta_ER",
+                }
+            },
+        ) as kitchen:
             order = self.make_order(kitchen, "test", "t2m")
             add_user_boundaries = self.get_step(order, "add_user_boundaries")
             self.assertEqual(add_user_boundaries.params["shape"], "test")
 
     def test_step_filter(self):
-        with self.kitchen(flavours=[
-                              flavour("default"),
-                              flavour("test", steps={"add_contour": {"skip": True}}),
-                          ],
-                          recipes={
-                              "t2m": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_contour"}],
-                          }) as kitchen:
-
+        with self.kitchen(
+            flavours=[
+                flavour("default"),
+                flavour("test", steps={"add_contour": {"skip": True}}),
+            ],
+            recipes={
+                "t2m": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_contour"}],
+            },
+        ) as kitchen:
             order = self.make_order(kitchen, "default", "t2m")
             self.assertEqual([x.name for x in order.order_steps], ["add_grib", "add_contour"])
 
@@ -128,42 +134,38 @@ class TestFlavour(unittest.TestCase):
             self.assertEqual([x.name for x in order.order_steps], ["add_grib"])
 
     def test_recipe_filter(self):
-        with self.kitchen(flavours=[
-                              flavour("default"),
-                              flavour("test", recipes_filter=["t2m"]),
-                          ],
-                          recipes={
-                              "t2m": [{"step": "add_grib", "grib": "t2m"}],
-                              "tcc": [{"step": "add_grib", "grib": "t2m"}],
-                          }) as kitchen:
+        with self.kitchen(
+            flavours=[
+                flavour("default"),
+                flavour("test", recipes_filter=["t2m"]),
+            ],
+            recipes={
+                "t2m": [{"step": "add_grib", "grib": "t2m"}],
+                "tcc": [{"step": "add_grib", "grib": "t2m"}],
+            },
+        ) as kitchen:
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
-            self.assertCountEqual(
-                    [(o.recipe.name, o.instant.step) for o in orders],
-                    [("t2m", 12), ("tcc", 12)])
+            self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("t2m", 12), ("tcc", 12)])
 
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
-            self.assertCountEqual(
-                    [(o.recipe.name, o.instant.step) for o in orders],
-                    [("t2m", 12)])
+            self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("t2m", 12)])
 
     def test_recipe_filter_subdir(self):
-        with self.kitchen(flavours=[
-                              flavour("default"),
-                              flavour("test", recipes_filter=["test/t2m"]),
-                          ],
-                          recipes={
-                              "test/t2m": [{"step": "add_grib", "grib": "t2m"}],
-                              "tcc": [{"step": "add_grib", "grib": "t2m"}],
-                          }) as kitchen:
+        with self.kitchen(
+            flavours=[
+                flavour("default"),
+                flavour("test", recipes_filter=["test/t2m"]),
+            ],
+            recipes={
+                "test/t2m": [{"step": "add_grib", "grib": "t2m"}],
+                "tcc": [{"step": "add_grib", "grib": "t2m"}],
+            },
+        ) as kitchen:
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
-            self.assertCountEqual(
-                    [(o.recipe.name, o.instant.step) for o in orders],
-                    [("test/t2m", 12), ("tcc", 12)])
+            self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("test/t2m", 12), ("tcc", 12)])
 
             orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
-            self.assertCountEqual(
-                    [(o.recipe.name, o.instant.step) for o in orders],
-                    [("test/t2m", 12)])
+            self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("test/t2m", 12)])
 
     def assertTileSize(self, params, size_x: int, size_y):
         self.assertAlmostEqual(params["page_x_length"], 6.4 * size_x)
@@ -177,13 +179,15 @@ class TestFlavour(unittest.TestCase):
         self.assertEqual(params["output_width"], 256 * size_x)
 
     def test_tiled(self):
-        with self.kitchen(flavours=[flavour("test", tile={
-                                                "lat_min": 30.0, "lat_max": 50.0,
-                                                "lon_min": 0.0, "lon_max": 20.0})],
-                          recipes={"test": [
-                              {"step": "add_basemap", "params": {"test": True}},
-                              {"step": "add_grib", "grib": "t2m"},
-                          ]}) as kitchen:
+        with self.kitchen(
+            flavours=[flavour("test", tile={"lat_min": 30.0, "lat_max": 50.0, "lon_min": 0.0, "lon_max": 20.0})],
+            recipes={
+                "test": [
+                    {"step": "add_basemap", "params": {"test": True}},
+                    {"step": "add_grib", "grib": "t2m"},
+                ]
+            },
+        ) as kitchen:
             self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
             orders = kitchen.make_orders("test", recipe="test")
             self.assertEqual(len(orders), 3)
@@ -227,15 +231,28 @@ class TestFlavour(unittest.TestCase):
             self.assertTileSize(params, 2, 4)
 
     def test_tiled1(self):
-        with self.kitchen(flavours=[flavour("test", tile={
-                                                "zoom_min": 3, "zoom_max": 5,
-                                                "lat_min": 43.4, "lat_max": 45.2,
-                                                "lon_min": 9.0, "lon_max": 13.2})],
-                          recipes={"test": [
-                              {"step": "add_basemap"},
-                              {"step": "add_contour", 'params': {"legend": True}},
-                              {"step": "add_grib", "grib": "t2m"},
-                          ]}) as kitchen:
+        with self.kitchen(
+            flavours=[
+                flavour(
+                    "test",
+                    tile={
+                        "zoom_min": 3,
+                        "zoom_max": 5,
+                        "lat_min": 43.4,
+                        "lat_max": 45.2,
+                        "lon_min": 9.0,
+                        "lon_max": 13.2,
+                    },
+                )
+            ],
+            recipes={
+                "test": [
+                    {"step": "add_basemap"},
+                    {"step": "add_contour", "params": {"legend": True}},
+                    {"step": "add_grib", "grib": "t2m"},
+                ]
+            },
+        ) as kitchen:
             self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
             orders = kitchen.make_orders("test", recipe="test")
             self.assertEqual(len(orders), 4)
@@ -275,7 +292,7 @@ class TestFlavour(unittest.TestCase):
 
             # Legend for tiles
 
-            contour = self.get_step(orders[3], "add_basemap")
+            contour = self.get_step(orders[3], "add_legend_basemap")
             params = contour.params["params"]
             self.assertEqual(params["subpage_frame"], "off")
             self.assertEqual(params["page_frame"], "off")
