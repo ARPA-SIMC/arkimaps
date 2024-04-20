@@ -56,7 +56,7 @@ class Flavour:
         self.postprocessors: List[Postprocessor] = []
         if postprocess is not None:
             for desc in postprocess:
-                name = desc.get("type")
+                name = desc.pop("type", None)
                 if name is None:
                     raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
                 self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
