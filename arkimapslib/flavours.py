@@ -164,8 +164,7 @@ class Flavour:
 
         # Collect the inputs needed for all steps
         for recipe_step in recipe.steps:
-            step_config = self.step_config(recipe_step.name)
-            for input_name in recipe_step.get_input_names(step_config):
+            for input_name in recipe_step.get_input_names(self):
                 if input_name in input_names:
                     continue
                 input_names.append(input_name)
@@ -178,8 +177,7 @@ class Flavour:
         """
         input_names: Set[str] = set()
         for recipe_step in recipe.steps:
-            step_config = self.step_config(recipe_step.name)
-            for input_name in recipe_step.get_input_names(step_config):
+            for input_name in recipe_step.get_input_names(self):
                 input_names.add(input_name)
         return input_names
 

@@ -122,10 +122,11 @@ class RecipeStep:
         flavour_step = flavour.step_config(self.name)
         return self.step_class(self.name, flavour_step, self.args, input_files)
 
-    def get_input_names(self, step_config: steps.FlavourStep) -> Set[str]:
+    def get_input_names(self, flavour: "flavours.Flavour") -> Set[str]:
         """
         Get the names of inputs needed by this step
         """
+        step_config = flavour.step_config(self.name)
         return self.step_class.get_input_names(step_config, self.args)
 
     def derive(self) -> Dict[str, Any]:
