@@ -338,11 +338,9 @@ class TiledFlavour(Flavour):
         for recipe_step in recipe.steps:
             try:
                 if recipe_step.name == "add_grib":
-                    step_config = self.step_config(recipe_step.name)
-                    grib_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                    grib_step = recipe_step.create_step(self, input_files)
                 elif recipe_step.name == "add_contour":
-                    step_config = self.step_config(recipe_step.name)
-                    step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                    step = recipe_step.create_step(self, input_files)
                     params = step.params.get("params")
                     if params is None:
                         params = {}

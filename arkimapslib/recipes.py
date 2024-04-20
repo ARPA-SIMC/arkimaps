@@ -11,7 +11,7 @@ from .lint import Lint
 from .models import BaseDataModel, pydantic
 
 if TYPE_CHECKING:
-    from . import pantry
+    from . import flavours, inputs, pantry
 
 log = logging.getLogger("arkimaps.recipes")
 
@@ -109,17 +109,24 @@ class RecipeStep:
     integrated with Step class defaults and step overrides from the flavour
     """
 
-    def __init__(self, name: str, step: Type[steps.Step], args: dict[str, Any], id: Optional[str] = None):
+    def __init__(self, name: str, step_class: Type[steps.Step], args: dict[str, Any], id: Optional[str] = None):
         self.name: str = name
-        self.step: Type[steps.Step] = step
+        self.step_class: Type[steps.Step] = step_class
         self.args: dict[str, Any] = args
         self.id: Optional[str] = id
+
+    def create_step(self, flavour: "flavours.Flavour", input_files: Dict[str, "inputs.InputFile"]) -> steps.Step:
+        """
+        Instantiate the Step
+        """
+        flavour_step = flavour.step_config(self.name)
+        return self.step_class(self.name, flavour_step, self.args, input_files)
 
     def get_input_names(self, step_config: steps.FlavourStep) -> Set[str]:
         """
         Get the names of inputs needed by this step
         """
-        return self.step.get_input_names(step_config, self.args)
+        return self.step_class.get_input_names(step_config, self.args)
 
     def derive(self) -> Dict[str, Any]:
         """
@@ -137,7 +144,7 @@ class RecipeStep:
         changeset
         """
         res = dict(self.args)
-        self.step.apply_change(res, change)
+        self.step_class.apply_change(res, change)
         res["step"] = self.name
         if self.id is not None:
             res["id"] = self.id
@@ -147,8 +154,8 @@ class RecipeStep:
         """
         Document this recipe step
         """
-        args = self.step.compile_args(steps.FlavourStep(self.name), self.args)
-        print(inspect.getdoc(self.step), file=file)
+        args = self.step_class.compile_args(steps.FlavourStep(self.name), self.args)
+        print(inspect.getdoc(self.step_class), file=file)
         print(file=file)
         if args:
             print("With arguments:", file=file)
@@ -206,11 +213,11 @@ class Recipe:
             step = args.pop("step", None)
             if step is None:
                 raise RuntimeError("recipe step does not contain a 'step' name")
-            step_cls = step_collection.get(step)
-            if step_cls is None:
+            step_class = step_collection.get(step)
+            if step_class is None:
                 raise RuntimeError(f"step {step} not found in mixer {self.spec.mixer}")
             id = args.pop("id", None)
-            self.steps.append(RecipeStep(name=step, step=step_cls, args=args, id=id))
+            self.steps.append(RecipeStep(name=step, step_class=step_class, args=args, id=id))
 
     @classmethod
     def lint(

@@ -176,8 +176,7 @@ class MapOrder(Order):
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
             try:
-                step_config = flavour.step_config(recipe_step.name)
-                s = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                s = recipe_step.create_step(flavour, input_files)
             except StepSkipped:
                 log.debug("%s: %s (skipped)", self, recipe_step.name)
                 continue
@@ -257,8 +256,7 @@ class TileOrder(Order):
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
             try:
-                step_config = flavour.step_config(recipe_step.name)
-                compiled_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                compiled_step = recipe_step.create_step(flavour, input_files)
                 if recipe_step.name == "add_basemap":
                     params = compiled_step.params.get("params")
                     if params is None:
