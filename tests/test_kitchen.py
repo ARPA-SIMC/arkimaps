@@ -35,5 +35,6 @@ class TestArkimetEmptyKitchen(TestCase):
     def test_merged_arki_query(self):
         kitchen = ArkimetEmptyKitchen()
         kitchen.load_recipes(["recipes"])
-        merged = kitchen.get_merged_arki_query()
+        default_flavour = kitchen.flavours["default"]
+        merged = kitchen.get_merged_arki_query([default_flavour])
         self.assertIsNotNone(merged)

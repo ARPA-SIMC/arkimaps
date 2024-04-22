@@ -114,12 +114,12 @@ class Order(ABC):
         for step in self.order_steps:
             if step.name == "add_basemap":
                 try:
-                    params = step.params["params"]
-                    projection = params["subpage_map_projection"]
-                    lllon = params["subpage_lower_left_longitude"]
-                    lllat = params["subpage_lower_left_latitude"]
-                    urlon = params["subpage_upper_right_longitude"]
-                    urlat = params["subpage_upper_right_latitude"]
+                    params = step.spec.params
+                    projection = params.subpage_map_projection
+                    lllon = params.subpage_lower_left_longitude
+                    lllat = params.subpage_lower_left_latitude
+                    urlon = params.subpage_upper_right_longitude
+                    urlat = params.subpage_upper_right_latitude
                 except KeyError:
                     continue
                 break
@@ -231,6 +231,8 @@ class TileOrder(Order):
         w: int = 1,
         h: int = 1,
     ):
+        from .steps import AddBasemap, AddContour
+
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
         self.x = x
         self.y = y
@@ -252,38 +254,30 @@ class TileOrder(Order):
         for recipe_step in recipe.steps:
             try:
                 compiled_step = recipe_step.create_step(flavour, input_files)
-                if recipe_step.name == "add_basemap":
-                    params = compiled_step.params.get("params")
-                    if params is None:
-                        params = {}
-                    else:
-                        params = params.copy()
-                    compiled_step.params["params"] = params
-                    params.update(
-                        subpage_map_projection="EPSG:3857",
-                        subpage_lower_left_latitude=min_lat,
-                        subpage_lower_left_longitude=min_lon,
-                        subpage_upper_right_latitude=max_lat,
-                        subpage_upper_right_longitude=max_lon,
-                        page_x_length=TILE_WIDTH_CM * self.width,
-                        page_y_length=TILE_HEIGHT_CM * self.height,
-                        super_page_x_length=TILE_WIDTH_CM * self.width,
-                        super_page_y_length=TILE_HEIGHT_CM * self.height,
-                        subpage_x_length=TILE_WIDTH_CM * self.width,
-                        subpage_y_length=TILE_HEIGHT_CM * self.height,
-                        subpage_x_position=0.0,
-                        subpage_y_position=0.0,
-                        subpage_frame="off",
-                        output_width=TILE_WIDTH_PX * self.width,
-                        page_frame="off",
-                        skinny_mode="on",
-                        page_id_line="off",
-                    )
-                elif recipe_step.name == "add_contour":
+                if recipe_step.step_class is AddBasemap:
+                    # Adjust basemap area
+                    params = compiled_step.spec.params
+                    params.subpage_map_projection = "EPSG:3857"
+                    params.subpage_lower_left_latitude = min_lat
+                    params.subpage_lower_left_longitude = min_lon
+                    params.subpage_upper_right_latitude = max_lat
+                    params.subpage_upper_right_longitude = max_lon
+                    params.page_x_length = TILE_WIDTH_CM * self.width
+                    params.page_y_length = TILE_HEIGHT_CM * self.height
+                    params.super_page_x_length = TILE_WIDTH_CM * self.width
+                    params.super_page_y_length = TILE_HEIGHT_CM * self.height
+                    params.subpage_x_length = TILE_WIDTH_CM * self.width
+                    params.subpage_y_length = TILE_HEIGHT_CM * self.height
+                    params.subpage_x_position = 0.0
+                    params.subpage_y_position = 0.0
+                    params.subpage_frame = False
+                    params.output_width = TILE_WIDTH_PX * self.width
+                    params.page_frame = False
+                    params.skinny_mode = True
+                    params.page_id_line = False
+                elif recipe_step.step_class is AddContour:
                     # Strip legend from add_contour
-                    params = compiled_step.params.get("params")
-                    if params is not None:
-                        compiled_step.params["params"] = {k: v for k, v in params.items() if not k.startswith("legend")}
+                    compiled_step.spec.params.legend = False
             except RecipeStepSkipped:
                 log.debug("%s: %s (skipped)", self, compiled_step.name)
                 continue

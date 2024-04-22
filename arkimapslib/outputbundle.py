@@ -210,7 +210,7 @@ class RecipeOrders(Serializable):
         if self.legend_info is None:
             for step in order.order_steps:
                 if isinstance(step, steps.AddContour):
-                    self.legend_info = step.params["params"]
+                    self.legend_info = step.spec.params.dict(exclude_unset=True)
 
     def to_jsonable(self) -> Dict[str, Any]:
         return {

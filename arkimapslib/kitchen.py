@@ -141,7 +141,14 @@ class Kitchen:
         Create an empty default flavour to use as a default to generate
         documentation and lint
         """
-        return Flavour(config=self.config, name="documentation", defined_in=__file__)
+        return Flavour(
+            config=self.config,
+            name="documentation",
+            defined_in=__file__,
+            steps={
+                "add_user_boundaries": {"shape": "example.shp"},
+            },
+        )
 
     def document_recipes(self, path: str):
         """
@@ -225,7 +232,7 @@ class WorkingKitchen(Kitchen):
         return selected[0]
 
 
-class ArkimetRecipesMixin:
+class ArkimetRecipesMixin(Kitchen):
     def __init__(self, *args, **kw):
         # Arkimet session
         #
@@ -236,12 +243,13 @@ class ArkimetRecipesMixin:
             raise RuntimeError("Arkimet processing functionality is needed, but arkimet is not installed")
         self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
 
-    def get_merged_arki_query(self):
-        empty_flavour = Flavour(config=self.config, name="default", defined_in=__file__)
-        merged = None
+    def get_merged_arki_query(self, flavours: List[Flavour]):
         input_names = set()
-        for recipe in self.recipes:
-            input_names.update(empty_flavour.list_inputs_recursive(recipe, self.pantry))
+        for flavour in flavours:
+            for recipe in self.recipes:
+                input_names.update(flavour.list_inputs_recursive(recipe, self.pantry))
+
+        merged = None
         for input_name in input_names:
             for inp in self.pantry.inputs[input_name]:
                 matcher = getattr(inp, "arkimet_matcher", None)

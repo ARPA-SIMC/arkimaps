@@ -1,6 +1,6 @@
 # from __future__ import annotations
 from abc import ABC
-from typing import Dict, Any, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING
 
 from .models import BaseDataModel, pydantic
 
@@ -136,7 +136,7 @@ class LegendParamsSpec(BaseMagicsParamsSpec):
     legend_automatic_position: str = "top"
     legend_text_font: str = "sansserif"
     legend_text_font_style: str = "normal"
-    legend_text_font_size: float = 0.3
+    legend_text_font_size: Union[float, str] = 0.3
     legend_text_orientation: int = 0
     legend_user_lines: List[str] = pydantic.Field(default_factory=list)
     legend_column_count: int = 1
@@ -157,6 +157,8 @@ class LegendParamsSpec(BaseMagicsParamsSpec):
     legend_entry_text_width: float = 60
     legend_entry_border: bool = True
     legend_entry_border_colour: str = "black"
+    # Undocumented
+    legend_only: bool = False
 
 
 class McoastParamsSpec(BaseMagicsParamsSpec):
@@ -318,6 +320,7 @@ class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
 
     # I could not find documentation yet
     skinny_mode: bool = False
+    subpage_gutter_percentage: float = 0.0
 
 
 class AddBasemapSpec(MagicsMacroSpec):
@@ -456,7 +459,7 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_akima_y_resolution: float = 1.5
     contour_interpolation_floor: float = -2147483648
     contour_interpolation_ceiling: float = 2147483647
-    contour_automatic_setting: bool = False
+    contour_automatic_setting: str = "off"
     contour_hilo: bool = False
     contour_hilo_type: str = "text"
     contour_hilo_height: float = 0.4
@@ -801,7 +804,7 @@ class AddGeopoints(Step):
         self.points = inp
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        params = self.spec.params.as_dict(exclude_unset=True)
+        params = self.spec.params.dict(exclude_unset=True)
         params["geo_input_file_name"] = str(self.points.pathname)
         return "mgeo", params
 

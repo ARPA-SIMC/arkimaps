@@ -257,7 +257,7 @@ class WorkingKitchenMixin(Command):
 #
 
 
-class PrintArkiQuery(RecipesMixin, Command):
+class PrintArkiQuery(RecipesMixin, FlavoursMixin, Command):
     """
     print an arkimet query to query data that can be used by the recipes found
     """
@@ -274,7 +274,8 @@ class PrintArkiQuery(RecipesMixin, Command):
         self.load_recipes()
 
     def run(self):
-        merged = self.kitchen.get_merged_arki_query()
+        flavours = self.parse_flavours()
+        merged = self.kitchen.get_merged_arki_query(flavours)
         print(merged)
 
 

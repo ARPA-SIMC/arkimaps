@@ -2,7 +2,7 @@
 import fnmatch
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type, cast
 
 from . import inputs, orders
 from .config import Config
@@ -321,24 +321,20 @@ class TiledFlavour(Flavour):
         """
         from .mixers import mixers
         from .recipes import RecipeStepSkipped
+        from .steps import AddGrib, AddContour
 
         # Identify relevant steps for legend generation
-        grib_step: Optional["Step"] = None
-        contour_step: Optional["Step"] = None
+        grib_step: Optional[AddGrib] = None
+        contour_step: Optional[AddContour] = None
 
         for recipe_step in recipe.steps:
             try:
                 if recipe_step.name == "add_grib":
-                    grib_step = recipe_step.create_step(self, input_files)
+                    grib_step = cast(AddGrib, recipe_step.create_step(self, input_files))
                 elif recipe_step.name == "add_contour":
-                    step = recipe_step.create_step(self, input_files)
-                    params = step.params.get("params")
-                    if params is None:
-                        params = {}
-                        step.params["params"] = params
-                    if params.get("legend", False):
+                    step = cast(AddContour, recipe_step.create_step(self, input_files))
+                    if step.spec.params.legend:
                         contour_step = step
-                        break
                 else:
                     # Ignore all other steps
                     pass
@@ -361,8 +357,8 @@ class TiledFlavour(Flavour):
                 # Allow to configure add_legend_basemap in flavour differently from
                 # add_basemap
                 # TODO: document this
-                step="add_legend_basemap",
-                params={
+                name="add_legend_basemap",
+                args={
                     "params": {
                         "subpage_frame": "off",
                         "page_x_length": LEGEND_WIDTH_CM,
@@ -385,19 +381,19 @@ class TiledFlavour(Flavour):
         if grib_step is not None:
             order_steps.append(grib_step)
 
-        params = contour_step.params["params"]
-        params["legend"] = "on"
-        params["legend_text_font_size"] = "25%"
-        params["legend_border_thickness"] = 4
-        params["legend_only"] = "on"
-        params["legend_box_mode"] = "positional"
-        params["legend_box_x_position"] = 0.00
-        params["legend_box_y_position"] = 0.00
-        params["legend_box_x_length"] = LEGEND_WIDTH_CM
-        params["legend_box_y_length"] = LEGEND_HEIGHT_CM
-        params["legend_box_blanking"] = False
-        params.pop("legend_title_font_size", None)
-        params.pop("legend_automatic_position", None)
+        params = contour_step.spec.params
+        params.legend = "on"
+        params.legend_text_font_size = "25%"
+        params.legend_border_thickness = 4
+        params.legend_only = "on"
+        params.legend_box_mode = "positional"
+        params.legend_box_x_position = 0.00
+        params.legend_box_y_position = 0.00
+        params.legend_box_x_length = LEGEND_WIDTH_CM
+        params.legend_box_y_length = LEGEND_HEIGHT_CM
+        params.legend_box_blanking = False
+        params.legend_title_font_size = -1
+        params.legend_automatic_position = "top"
         order_steps.append(contour_step)
 
         return orders.LegendOrder(
