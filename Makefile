@@ -1,4 +1,4 @@
-check: pyupgrade black
+check: mypy pyupgrade black
 
 
 pyupgrade:
@@ -6,3 +6,6 @@ pyupgrade:
 
 black:
 	black arkimaps arkimapslib/
+
+mypy:
+	mypy arkimaps arkimapslib tests
