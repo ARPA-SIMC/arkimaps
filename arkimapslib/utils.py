@@ -18,6 +18,7 @@ class TypeRegistry(Generic[T]):
     """
     Registry of type objects by name
     """
+
     def __init__(self) -> None:
         self.registry: Dict[str, Type[T]] = {}
 
