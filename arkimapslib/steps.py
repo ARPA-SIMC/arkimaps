@@ -36,9 +36,10 @@ class Step(ABC):
         defined_in: str,
         args: Dict[str, Any],
         sources: Dict[str, "inputs.InputFile"],
-    ):
+    ) -> None:
         self.name = name
         self.spec = self.Spec(**args)
+        self.sources = sources
 
     @classmethod
     def lint(cls, lint: "Lint", *, defined_in: str, name: str, step: str, args: Dict[str, Any]) -> Optional[StepSpec]:
@@ -715,19 +716,13 @@ class AddGrib(Step):
 
     Spec = AddGribSpec
 
-    def __init__(
-        self,
-        *,
-        config: "Config",
-        name: str,
-        defined_in: str,
-        args: dict[str, Any],
-        sources: Dict[str, "inputs.InputFile"],
-    ):
-        super().__init__(config=config, name=name, defined_in=defined_in, args=args, sources=sources)
-        inp = sources.get(self.spec.grib)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        inp = self.sources.get(self.spec.grib)
         if inp is None:
-            raise KeyError(f"{self.name}: input {self.spec.grib} not found. Available: {', '.join(sources.keys())}")
+            raise KeyError(
+                f"{self.name}: input {self.spec.grib} not found. Available: {', '.join(self.sources.keys())}"
+            )
         self.grib_input = inp
 
         for k, v in self.grib_input.info.spec.mgrib.items():
@@ -768,17 +763,9 @@ class AddUserBoundaries(Step):
         }
     }
 
-    def __init__(
-        self,
-        *,
-        config: "Config",
-        name: str,
-        defined_in: str,
-        args: Dict[str, Any],
-        sources: Dict[str, "inputs.InputFile"],
-    ):
-        super().__init__(config=config, name=name, defined_in=defined_in, args=args, sources=sources)
-        inp = sources.get(self.spec.shape)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        inp = self.sources.get(self.spec.shape)
         if inp is None:
             raise KeyError(f"{self.name}: input {self.spec.name} not found. Available: {', '.join(sources.keys())}")
         self.shape = inp
@@ -821,17 +808,9 @@ class AddGeopoints(Step):
 
     Spec = AddGeopointsSpec
 
-    def __init__(
-        self,
-        *,
-        config: "Config",
-        name: str,
-        defined_in: str,
-        args: Dict[str, Any],
-        sources: Dict[str, "inputs.InputFile"],
-    ):
-        super().__init__(config=config, name=name, defined_in=defined_in, args=args, sources=sources)
-        inp = sources.get(self.spec.points)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        inp = self.sources.get(self.spec.points)
         if inp is None:
             raise KeyError(f"{self.name}: input {self.spec.points} not found. Available: {', '.join(sources.keys())}")
         self.points = inp
