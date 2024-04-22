@@ -195,7 +195,16 @@ class McoastParamsSpec(BaseMagicsParamsSpec):
     map_rivers_style: str = "solid"
     map_rivers_colour: str = "blue"
     map_rivers_thickness: int = 1
-    # ...
+    map_efas: str = "off"
+    map_efas_domain: str = "current"
+    map_efas_style: str = "solid"
+    map_efas_colour: str = "blue"
+    map_efas_thickness: float = 1
+    map_user_layer: str = "off"
+    map_user_layer_name: str = ""
+    map_user_layer_style: str = "solid"
+    map_user_layer_colour: str = "blue"
+    map_user_layer_thickness: float = 1
     map_coastline_colour: str = "black"
     map_coastline_style: str = "solid"
     map_coastline_thickness: int = 1
@@ -306,6 +315,9 @@ class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
     output_cairo_antialias: str = "on"
     output_cairo_palette: str = "off"
     output_geotiff_quality: int = 1
+
+    # I could not find documentation yet
+    skinny_mode: str = "off"
 
 
 class AddBasemapSpec(MagicsMacroSpec):
@@ -451,7 +463,41 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_hilo_quality: str = "low"
     contour_hi_colour: str = "blue"
     contour_lo_colour: str = "blue"
-    # ...
+    contour_hilo_format: str = "(automatic)"
+    contour_hi_text: str = "H"
+    contour_lo_text: str = "K"
+    contour_hilo_blanking: str = "off"
+    contour_hilo_window_size: int = 3
+    contour_hilo_reduction_radius: float = 0.0
+    contour_hilo_suppress_radius: float = 15.0
+    contour_hilo_max_value: float = 1.0e21
+    contour_hilo_min_value: float = -1.0e21
+    contour_hi_max_value: float = 1.0e21
+    contour_hi_min_value: float = -1.0e21
+    contour_lo_max_value: float = 1.0e21
+    contour_lo_min_value: float = -1.0e21
+    contour_hilo_marker: str = "off"
+    contour_hilo_marker_height: float = 0.1
+    contour_hilo_marker_index: int = 3
+    contour_hilo_marker_colour: str = "red"
+    contour_grid_value_plot: str = "off"
+    contour_grid_value_type: str = "normal"
+    contour_grid_value_plot_type: str = "value"
+    contour_grid_value_min: float = -1.0e21
+    contour_grid_value_max: float = 1.0e21
+    contour_grid_value_lat_frequency: int = 1
+    contour_grid_value_lon_frequency: int = 1
+    contour_grid_value_height: float = 0.25
+    contour_grid_value_colour: str = "blue"
+    contour_grid_value_format: str = "(automatic)"
+    contour_grid_value_quality: str = "loa"
+    contour_grid_value_justification: str = "centre"
+    contour_grid_value_vertical_align: str = "base"
+    contour_grid_value_marker_height: float = 0.25
+    contour_grid_value_marker_colour: str = "red"
+    contour_grid_value_marker_qual: str = "low"
+    contour_grid_value_marker_index: int = 3
+    contour_grid_value_position: str = "top"
 
     @pydantic.root_validator
     def list_sync(cls, values):
@@ -680,7 +726,7 @@ class AddGrib(Step):
         return res
 
 
-class AddUserBoundariesParamsSpec(BaseMagicsParamsSpec):
+class AddUserBoundariesParamsSpec(McoastParamsSpec):
     pass
 
 
@@ -696,8 +742,10 @@ class AddUserBoundaries(Step):
 
     Spec = AddUserBoundariesSpec
     DEFAULTS = {
-        "map_user_layer": "on",
-        "map_user_layer_colour": "blue",
+        "params": {
+            "map_user_layer": "on",
+            "map_user_layer_colour": "blue",
+        }
     }
 
     def __init__(self, *, name: str, args: Dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
