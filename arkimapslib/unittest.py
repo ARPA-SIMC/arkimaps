@@ -93,7 +93,7 @@ class RecipeTestMixin:
         super().setUpClass()
         magic_crashes: List[Dict[str, Any]]
         try:
-            with open(".magics-crashes.yaml", "rt") as fd:
+            with open(".magics-crashes.yaml") as fd:
                 magics_crashes = yaml.load(fd, Loader=yaml.SafeLoader)
         except FileNotFoundError:
             magics_crashes = {}
