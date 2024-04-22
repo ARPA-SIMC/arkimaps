@@ -113,15 +113,12 @@ class Order(ABC):
         """
         for step in self.order_steps:
             if step.name == "add_basemap":
-                try:
-                    params = step.spec.params
-                    projection = params.subpage_map_projection
-                    lllon = params.subpage_lower_left_longitude
-                    lllat = params.subpage_lower_left_latitude
-                    urlon = params.subpage_upper_right_longitude
-                    urlat = params.subpage_upper_right_latitude
-                except KeyError:
-                    continue
+                params = step.spec.params
+                projection = params.subpage_map_projection
+                lllon = params.subpage_lower_left_longitude
+                lllat = params.subpage_lower_left_latitude
+                urlon = params.subpage_upper_right_longitude
+                urlat = params.subpage_upper_right_latitude
                 break
         else:
             log.info("%s: Order has no add_basemap step", self)

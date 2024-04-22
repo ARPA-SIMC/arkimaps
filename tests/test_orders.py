@@ -21,7 +21,6 @@ class TestTypes(unittest.TestCase):
             name="recipe",
             defined_in="recipe.yaml",
             recipe=[
-                {"step": "add_basemap"},
                 {
                     "step": "add_basemap",
                     "params": params,
@@ -33,10 +32,13 @@ class TestTypes(unittest.TestCase):
             flavour=self.flavour,
             instant=self.instant,
             recipe=recipe,
-            input_files=[],
+            input_files={},
         )
 
-        return order.georeference()
+        res = order.georeference()
+        self.assertIsNotNone(res)
+        assert res is not None  # This one is for mypy
+        return res
 
     def test_georef_map_epsg(self):
         georef = self._compute_georef(
