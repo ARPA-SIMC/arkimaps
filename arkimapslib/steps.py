@@ -159,51 +159,6 @@ class LegendParamsSpec(BaseMagicsParamsSpec):
     legend_entry_border_colour: str = "black"
 
 
-class AddBasemapParamsSpec(BaseMagicsParamsSpec):
-    subpage_x_position: float = -1
-    subpage_y_position: float = -1
-    subpage_x_length: float = -1
-    subpage_y_length: float = -1
-    subpage_map_library_area: str = "off"
-    subpage_map_area_name: str = "off"
-    subpage_map_projection: str = "cylindrical"
-    subpage_lower_left_latitude: float = -90.0
-    subpage_lower_left_longitude: float = -180.0
-    subpage_upper_right_latitude: float = 90.0
-    subpage_upper_right_longitude: float = 180.0
-    subpage_map_area_definition_polar: str = "corners"
-    subpage_map_hemisphere: str = "north"
-    subpage_map_vertical_longitude: float = 0.0
-    subpage_map_centre_latitude: float = 90.0
-    subpage_map_centre_longitude: float = 0.0
-    subpage_map_scale: float = 50.0e6
-    subpage_x_axis_type: str = "regular"
-    subpage_y_axis_type: str = "regular"
-    subpage_clipping: str = "off"
-    subpage_background_colour: str = "white"
-    subpage_frame: str = "on"
-    subpage_frame_colour: str = "charcoal"
-    subpage_frame_line_style: str = "solid"
-    subpage_frame_thickness: float = 2
-    subpage_vertical_axis_width: float = 1
-    subpage_horizontal_axis_height: float = 0.5
-    subpage_align_horizontal: str = "left"
-    subpage_align_vertical: str = "bottom"
-
-
-class AddBasemapSpec(MagicsMacroSpec):
-    params: AddBasemapParamsSpec = pydantic.Field(default_factory=AddBasemapParamsSpec)
-
-
-class AddBasemap(MagicsMacro):
-    """
-    Add a base map
-    """
-
-    MACRO_NAME = "mmap"
-    Spec = AddBasemapSpec
-
-
 class McoastParamsSpec(BaseMagicsParamsSpec):
     map_coastline_general_style: str = ""
     map_coastline: str = "on"
@@ -268,6 +223,102 @@ class McoastParamsSpec(BaseMagicsParamsSpec):
     map_label_right: str = "on"
     map_label_top: str = "on"
     map_label_bottom: str = "on"
+
+
+class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
+    subpage_x_position: float = -1
+    subpage_y_position: float = -1
+    subpage_x_length: float = -1
+    subpage_y_length: float = -1
+    subpage_map_library_area: str = "off"
+    subpage_map_area_name: str = "off"
+    subpage_map_projection: str = "cylindrical"
+    subpage_lower_left_latitude: float = -90.0
+    subpage_lower_left_longitude: float = -180.0
+    subpage_upper_right_latitude: float = 90.0
+    subpage_upper_right_longitude: float = 180.0
+    subpage_map_area_definition_polar: str = "corners"
+    subpage_map_hemisphere: str = "north"
+    subpage_map_vertical_longitude: float = 0.0
+    subpage_map_centre_latitude: float = 90.0
+    subpage_map_centre_longitude: float = 0.0
+    subpage_map_scale: float = 50.0e6
+    subpage_x_axis_type: str = "regular"
+    subpage_y_axis_type: str = "regular"
+    subpage_clipping: str = "off"
+    subpage_background_colour: str = "white"
+    subpage_frame: str = "on"
+    subpage_frame_colour: str = "charcoal"
+    subpage_frame_line_style: str = "solid"
+    subpage_frame_thickness: float = 2
+    subpage_vertical_axis_width: float = 1
+    subpage_horizontal_axis_height: float = 0.5
+    subpage_align_horizontal: str = "left"
+    subpage_align_vertical: str = "bottom"
+
+    # From macro pnew
+    page_x_position: float = 0
+    page_y_position: float = 0
+    page_x_length: float = 29.7
+    page_y_length: float = 21
+    page_frame: str = "off"
+    page_frame_colour: str = "charcoal"
+    page_frame_line_style: str = "solid"
+    page_frame_thickness: float = 2
+    page_id_line: str = "on"
+    page_id_line_height: float = 0.25
+    page_id_line_colour: str = "blue"
+    page_id_line_magics: str = "on"
+    page_id_line_user_text: str = ""
+    page_id_line_system_plot: str = "on"
+    page_id_line_date_plot: str = "on"
+    page_id_line_errors_plot: str = "on"
+    page_id_line_user_text_plot: str = "on"
+    page_id_line_logo_plot: str = "on"
+    page_id_line_logo_name: str = "ecmwf"
+    page_id_line_font: str = "sansserif"
+    page_id_line_font_style: str = "normal"
+    page_x_gap: float = 0.0
+    page_y_gap: float = 0.0
+    layout: str = "automatic"
+    plot_start: str = "bottom"
+    plot_direction: str = "vertical"
+    page_theme: str = "super_page_theme"
+
+    # From Superpage documentation
+    super_page_x_length: float = 29.7
+    super_page_y_length: float = 21.0
+    super_page_frame: str = "off"
+    super_page_frame_colour: str = "blue"
+    super_page_theme: str = "dark"
+    super_page_frame_line_style: str = "solid"
+    super_page_frame_thickness: float = 1
+    # layout: str = "automatic"
+    # plot_start: str = "bottom"
+    # plot_direction: str = "vertical"
+
+    # From macro output
+    output_title: str = "Magics plot"
+    output_name_first_page_number: str = "on"
+    output_name_first_page_number_value: int = 1
+    output_width: int = 800
+    output_cairo_transparent_background: str = "off"
+    output_cairo_antialias: str = "on"
+    output_cairo_palette: str = "off"
+    output_geotiff_quality: int = 1
+
+
+class AddBasemapSpec(MagicsMacroSpec):
+    params: AddBasemapParamsSpec = pydantic.Field(default_factory=AddBasemapParamsSpec)
+
+
+class AddBasemap(MagicsMacro):
+    """
+    Add a base map
+    """
+
+    MACRO_NAME = "mmap"
+    Spec = AddBasemapSpec
 
 
 class AddCoastlinesBgSpec(MagicsMacroSpec):
@@ -391,8 +442,8 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_method: str = "automatic"
     contour_akima_x_resolution: float = 1.5
     contour_akima_y_resolution: float = 1.5
-    # contour_interpolation_floor
-    # contour_interpolation_ceiling
+    contour_interpolation_floor: float = -2147483648
+    contour_interpolation_ceiling: float = 2147483647
     contour_automatic_setting: str = "off"
     contour_hilo: str = "off"
     contour_hilo_type: str = "text"
@@ -492,6 +543,10 @@ class AddWindParamsSpec(LegendParamsSpec):
     wind_arrow_fixed_velocity: float = 0.0
     wind_thinning_factor: float = 2.0
 
+    # Could not find documentation for these
+    wind_thinning_method: str = "automatic"
+    wind_flag_cross_boundary: str = "off"
+
 
 class AddWindSpec(MagicsMacroSpec):
     params: AddWindParamsSpec = pydantic.Field(default_factory=AddWindParamsSpec)
@@ -574,7 +629,20 @@ class AddBoundaries(MagicsMacro):
 
 
 class AddGribParamsSpec(BaseMagicsParamsSpec):
-    pass
+    # grib_input_file_name
+    grib_id: str = ""
+    grib_automatic_scaling: str = "on"
+    grib_automatic_derived_scaling: str = "off"
+    grib_scaling_factor: float = 1
+    grib_scaling_offset: float = 0
+    grib_interpolation_method: str = "interpolate"
+    grib_interpolation_method_missing_fill_count: int = 1
+    grib_file_address_mode: str = "record"
+    grib_wind_mode: str = "uv"
+    grib_field_position: int = 1
+    grib_wind_position_1: int = 1
+    grib_wind_position_2: int = 2
+    grib_wind_position_colour: int = 3
 
 
 class AddGribSpec(MagicsMacroSpec):
