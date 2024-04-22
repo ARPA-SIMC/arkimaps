@@ -152,6 +152,8 @@ class RecipeStep:
         Get the names of inputs needed by this step
         """
         args = self.compile_args(flavour)
+        if bool(args.pop("skip", False)):
+            return set()
         return self.step_class.get_input_names(args)
 
     def compile_args(self, flavour: "flavours.Flavour") -> Dict[str, Any]:

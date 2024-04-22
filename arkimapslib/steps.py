@@ -105,9 +105,9 @@ class MagicsMacro(Step, ABC):
 
 
 class LegendParamsSpec(BaseMagicsParamsSpec):
-    legend: str = "off"
+    legend: bool = False
     legend_text_colour: str = "blue"
-    legend_title: str = "off"
+    legend_title: bool = False
     legend_title_text: str = "legend"
     legend_title_orientation: str = "vertical"
     legend_title_font_size: float = -1
@@ -115,19 +115,19 @@ class LegendParamsSpec(BaseMagicsParamsSpec):
     legend_title_position: str = "automatic"
     legend_title_position_ratio: float = 25
     legend_units_text: str = ""
-    legend_user_minimum: str = "off"
+    legend_user_minimum: bool = False
     legend_user_minimum_text: str = ""
-    legend_user_maximum: str = "off"
+    legend_user_maximum: bool = False
     legend_user_maximum_text: str = ""
     legend_display_type: str = "disjoint"
     legend_label_frequency: int = 1
-    legend_histogram_border: str = "on"
+    legend_histogram_border: bool = True
     legend_histogram_border_colour: str = "black"
-    legend_histogram_mean_value: str = "off"
+    legend_histogram_mean_value: bool = False
     legend_histogram_mean_value_marker: int = 15
     legend_histogram_mean_value_marker_colour: str = "black"
     legend_histogram_mean_value_marker_size: float = 0.5
-    legend_histogram_max_value: str = "on"
+    legend_histogram_max_value: bool = True
     legend_histogram_grid_colour: str = "black"
     legend_histogram_grid_line_style: str = "solid"
     legend_histogram_grid_thickness: float = 1
@@ -149,58 +149,58 @@ class LegendParamsSpec(BaseMagicsParamsSpec):
     legend_box_y_position: float = -1
     legend_box_x_length: float = -1
     legend_box_y_length: float = 0
-    legend_box_blanking: str = "off"
-    legend_border: str = "off"
+    legend_box_blanking: bool = False
+    legend_border: bool = False
     legend_border_line_style: str = "solid"
     legend_border_colour: str = "blue"
     legend_border_thickness: float = 1
     legend_entry_text_width: float = 60
-    legend_entry_border: str = "on"
+    legend_entry_border: bool = True
     legend_entry_border_colour: str = "black"
 
 
 class McoastParamsSpec(BaseMagicsParamsSpec):
     map_coastline_general_style: str = ""
-    map_coastline: str = "on"
+    map_coastline: bool = True
     map_coastline_resolution: str = "automatic"
-    map_coastline_land_shade: str = "off"
+    map_coastline_land_shade: bool = False
     map_coastline_land_shade_colour: str = "green"
-    map_coastline_sea_shade: str = "off"
+    map_coastline_sea_shade: bool = False
     map_coastline_sea_shade_colour: str = "blue"
-    map_boundaries: str = "off"
+    map_boundaries: bool = False
     map_boundaries_style: str = "solid"
     map_boundaries_colour: str = "grey"
     map_boundaries_thickness: int = 1
-    map_disputed_boundaries: str = "on"
+    map_disputed_boundaries: bool = True
     map_disputed_boundaries_style: str = "dash"
     map_disputed_boundaries_colour: str = "automatic"
     map_disputed_boundaries_thickness: int = 1
-    map_administrative_boundaries: str = "off"
+    map_administrative_boundaries: bool = False
     map_administrative_boundaries_countries_list: List[str] = pydantic.Field(default_factory=list)
     map_administrative_boundaries_style: str = "dash"
     map_administrative_boundaries_colour: str = "automatic"
     map_administrative_boundaries_thickness: int = 1
-    map_cities: str = "off"
+    map_cities: bool = False
     map_cities_unit_system: str = "percent"
     map_cities_font: str = "sansserif"
     map_cities_font_style: str = "normal"
-    map_cities_text_blanking: str = "on"
+    map_cities_text_blanking: bool = True
     map_cities_font_size: float = 2.5
     map_cities_font_colour: str = "navy"
     map_cities_name_position: str = "above"
     map_cities_marker: str = "plus"
     map_cities_marker_height: float = 0.7
     map_cities_marker_colour: str = "evergreen"
-    map_rivers: str = "off"
+    map_rivers: bool = False
     map_rivers_style: str = "solid"
     map_rivers_colour: str = "blue"
     map_rivers_thickness: int = 1
-    map_efas: str = "off"
+    map_efas: bool = False
     map_efas_domain: str = "current"
     map_efas_style: str = "solid"
     map_efas_colour: str = "blue"
     map_efas_thickness: float = 1
-    map_user_layer: str = "off"
+    map_user_layer: bool = False
     map_user_layer_name: str = ""
     map_user_layer_style: str = "solid"
     map_user_layer_colour: str = "blue"
@@ -208,7 +208,7 @@ class McoastParamsSpec(BaseMagicsParamsSpec):
     map_coastline_colour: str = "black"
     map_coastline_style: str = "solid"
     map_coastline_thickness: int = 1
-    map_grid: str = "on"
+    map_grid: bool = True
     map_grid_latitude_reference: float = 0.0
     map_grid_latitude_increment: float = 10.0
     map_grid_longitude_reference: float = 0.0
@@ -216,22 +216,22 @@ class McoastParamsSpec(BaseMagicsParamsSpec):
     map_grid_line_style: str = "solid"
     map_grid_thickness: int = 1
     map_grid_colour: str = "black"
-    map_grid_frame: str = "off"
+    map_grid_frame: bool = False
     map_grid_frame_line_style: str = "solid"
     map_grid_frame_thickness: int = 1
     map_grid_frame_colour: str = "black"
-    map_label: str = "on"
+    map_label: bool = True
     map_label_font: str = "sansserif"
     map_label_font_style: str = "normal"
     map_label_colour: str = "black"
     map_label_height: float = 0.25
-    map_label_blanking: str = "on"
+    map_label_blanking: bool = True
     map_label_latitude_frequency: float = 1.0
     map_label_longitude_frequency: float = 1.0
-    map_label_left: str = "on"
-    map_label_right: str = "on"
-    map_label_top: str = "on"
-    map_label_bottom: str = "on"
+    map_label_left: bool = True
+    map_label_right: bool = True
+    map_label_top: bool = True
+    map_label_bottom: bool = True
 
 
 class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
@@ -239,8 +239,8 @@ class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
     subpage_y_position: float = -1
     subpage_x_length: float = -1
     subpage_y_length: float = -1
-    subpage_map_library_area: str = "off"
-    subpage_map_area_name: str = "off"
+    subpage_map_library_area: bool = False
+    subpage_map_area_name: bool = False
     subpage_map_projection: str = "cylindrical"
     subpage_lower_left_latitude: float = -90.0
     subpage_lower_left_longitude: float = -180.0
@@ -254,9 +254,9 @@ class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
     subpage_map_scale: float = 50.0e6
     subpage_x_axis_type: str = "regular"
     subpage_y_axis_type: str = "regular"
-    subpage_clipping: str = "off"
+    subpage_clipping: bool = False
     subpage_background_colour: str = "white"
-    subpage_frame: str = "on"
+    subpage_frame: bool = True
     subpage_frame_colour: str = "charcoal"
     subpage_frame_line_style: str = "solid"
     subpage_frame_thickness: float = 2
@@ -270,20 +270,20 @@ class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
     page_y_position: float = 0
     page_x_length: float = 29.7
     page_y_length: float = 21
-    page_frame: str = "off"
+    page_frame: bool = False
     page_frame_colour: str = "charcoal"
     page_frame_line_style: str = "solid"
     page_frame_thickness: float = 2
-    page_id_line: str = "on"
+    page_id_line: bool = True
     page_id_line_height: float = 0.25
     page_id_line_colour: str = "blue"
-    page_id_line_magics: str = "on"
+    page_id_line_magics: bool = True
     page_id_line_user_text: str = ""
-    page_id_line_system_plot: str = "on"
-    page_id_line_date_plot: str = "on"
-    page_id_line_errors_plot: str = "on"
-    page_id_line_user_text_plot: str = "on"
-    page_id_line_logo_plot: str = "on"
+    page_id_line_system_plot: bool = True
+    page_id_line_date_plot: bool = True
+    page_id_line_errors_plot: bool = True
+    page_id_line_user_text_plot: bool = True
+    page_id_line_logo_plot: bool = True
     page_id_line_logo_name: str = "ecmwf"
     page_id_line_font: str = "sansserif"
     page_id_line_font_style: str = "normal"
@@ -297,7 +297,7 @@ class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
     # From Superpage documentation
     super_page_x_length: float = 29.7
     super_page_y_length: float = 21.0
-    super_page_frame: str = "off"
+    super_page_frame: bool = False
     super_page_frame_colour: str = "blue"
     super_page_theme: str = "dark"
     super_page_frame_line_style: str = "solid"
@@ -308,16 +308,16 @@ class AddBasemapParamsSpec(LegendParamsSpec, McoastParamsSpec):
 
     # From macro output
     output_title: str = "Magics plot"
-    output_name_first_page_number: str = "on"
+    output_name_first_page_number: bool = True
     output_name_first_page_number_value: int = 1
     output_width: int = 800
-    output_cairo_transparent_background: str = "off"
-    output_cairo_antialias: str = "on"
-    output_cairo_palette: str = "off"
+    output_cairo_transparent_background: bool = False
+    output_cairo_antialias: bool = True
+    output_cairo_palette: bool = False
     output_geotiff_quality: int = 1
 
     # I could not find documentation yet
-    skinny_mode: str = "off"
+    skinny_mode: bool = False
 
 
 class AddBasemapSpec(MagicsMacroSpec):
@@ -384,10 +384,10 @@ class AddSymbols(MagicsMacro):
 
 
 class AddContourParamsSpec(LegendParamsSpec):
-    contour: str = "on"
+    contour: bool = True
     contour_line_style: str = "solid"
     contour_line_thickness: float = 1.0
-    contour_line_colour_rainbow: str = "off"
+    contour_line_colour_rainbow: bool = False
     contour_line_colour: str = "blue"
     contour_line_colour_rainbow_method: str = "calculate"
     contour_line_colour_rainbow_max_level_colour: str = "blue"
@@ -399,7 +399,7 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_line_thickness_rainbow_list_policy: str = "lastone"
     contour_line_style_rainbow_list: List[str] = pydantic.Field(default_factory=list)
     contour_line_style_rainbow_list_policy: str = "lastone"
-    contour_highlight: str = "on"
+    contour_highlight: bool = True
     contour_highlight_style: str = "solid"
     contour_reference_level: float = 0.0
     contour_highlight_colour: str = "blue"
@@ -414,18 +414,18 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_level_tolerance: int = 2
     contour_interval: float = 8.0
     contour_level_list: List[float] = pydantic.Field(default_factory=list)
-    contour_label: str = "on"
+    contour_label: bool = True
     contour_label_type: str = "number"
     contour_label_text: str = ""
     contour_label_height: float = 0.3
     contour_label_format: str = "(automatic)"
-    contour_label_blanking: str = "on"
+    contour_label_blanking: bool = True
     contour_label_quality: str = "log"
     contour_label_font: str = "sansserif"
     contour_label_font_style: str = "normal"
     contour_label_colour: str = "contour_line_colour"
     contour_label_frequency: int = 2
-    contour_shade: str = "off"
+    contour_shade: bool = False
     contour_shade_technique: str = "polygon_shading"
     contour_shade_method: str = "dot"
     contour_shade_dot_size: float = 0.02
@@ -450,14 +450,14 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_shade_colour_list: List[str] = pydantic.Field(default_factory=list)
     contour_shade_palette_name: str = ""
     contour_shade_palette_policy: str = "lastone"
-    contour_legend_only: str = "off"
+    contour_legend_only: bool = False
     contour_method: str = "automatic"
     contour_akima_x_resolution: float = 1.5
     contour_akima_y_resolution: float = 1.5
     contour_interpolation_floor: float = -2147483648
     contour_interpolation_ceiling: float = 2147483647
-    contour_automatic_setting: str = "off"
-    contour_hilo: str = "off"
+    contour_automatic_setting: bool = False
+    contour_hilo: bool = False
     contour_hilo_type: str = "text"
     contour_hilo_height: float = 0.4
     contour_hilo_quality: str = "low"
@@ -466,7 +466,7 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_hilo_format: str = "(automatic)"
     contour_hi_text: str = "H"
     contour_lo_text: str = "K"
-    contour_hilo_blanking: str = "off"
+    contour_hilo_blanking: bool = False
     contour_hilo_window_size: int = 3
     contour_hilo_reduction_radius: float = 0.0
     contour_hilo_suppress_radius: float = 15.0
@@ -476,11 +476,11 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_hi_min_value: float = -1.0e21
     contour_lo_max_value: float = 1.0e21
     contour_lo_min_value: float = -1.0e21
-    contour_hilo_marker: str = "off"
+    contour_hilo_marker: bool = False
     contour_hilo_marker_height: float = 0.1
     contour_hilo_marker_index: int = 3
     contour_hilo_marker_colour: str = "red"
-    contour_grid_value_plot: str = "off"
+    contour_grid_value_plot: bool = False
     contour_grid_value_type: str = "normal"
     contour_grid_value_plot_type: str = "value"
     contour_grid_value_min: float = -1.0e21
@@ -532,7 +532,7 @@ class AddContour(MagicsMacro):
 class AddWindParamsSpec(LegendParamsSpec):
     wind_field_type: str = "arrows"
     wind_legend_text: str = "vector"
-    wind_advanced_method: str = "off"
+    wind_advanced_method: bool = False
     wind_advanced_colour_parameter: str = "speed"
     wind_advanced_colour_selection_type: str = "count"
     contour_max_level: float = 1.0e21
@@ -560,7 +560,7 @@ class AddWindParamsSpec(LegendParamsSpec):
     wind_advanced_colour_direction: str = "anti_clockwise"
     wind_advanced_colour_list: list[str] = pydantic.Field(default_factory=list)
     wind_advanced_colour_list_policy: str = "lastone"
-    wind_flag_calm_indicator: str = "on"
+    wind_flag_calm_indicator: bool = True
     wind_flag_calm_indicator_size: float = 0.3
     wind_flag_calm_below: float = 0.5
     wind_flag_colour: str = "blue"
@@ -572,11 +572,11 @@ class AddWindParamsSpec(LegendParamsSpec):
     wind_flag_origin_marker: str = "circle"
     wind_flag_origin_marker_: float = 0.3
     wind_flag_thickness: int = 1
-    wind_arrow_calm_indicator: str = "off"
+    wind_arrow_calm_indicator: bool = False
     wind_arrow_calm_indicator_size: float = 0.3
     wind_arrow_calm_below: float = 0.5
     wind_arrow_colour: str = "blue"
-    wind_arrow_cross_boundary: str = "on"
+    wind_arrow_cross_boundary: bool = True
     wind_arrow_head_shape: int = 0
     wind_arrow_head_ratio: float = 0.3
     wind_arrow_max_speed: float = 1.0e21
@@ -591,7 +591,7 @@ class AddWindParamsSpec(LegendParamsSpec):
 
     # Could not find documentation for these
     wind_thinning_method: str = "automatic"
-    wind_flag_cross_boundary: str = "off"
+    wind_flag_cross_boundary: bool = False
 
 
 class AddWindSpec(MagicsMacroSpec):
@@ -677,8 +677,8 @@ class AddBoundaries(MagicsMacro):
 class AddGribParamsSpec(BaseMagicsParamsSpec):
     # grib_input_file_name
     grib_id: str = ""
-    grib_automatic_scaling: str = "on"
-    grib_automatic_derived_scaling: str = "off"
+    grib_automatic_scaling: bool = True
+    grib_automatic_derived_scaling: bool = False
     grib_scaling_factor: float = 1
     grib_scaling_offset: float = 0
     grib_interpolation_method: str = "interpolate"
@@ -703,18 +703,18 @@ class AddGrib(Step):
 
     Spec = AddGribSpec
 
-    def __init__(self, step: str, params: Optional[Kwargs], sources: Dict[str, "inputs.InputFile"]):
-        super().__init__(step, params, sources)
+    def __init__(self, name: str, args: dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
+        super().__init__(name=name, args=args, sources=sources)
         inp = sources.get(self.spec.grib)
         if inp is None:
-            raise KeyError(f"{self.name}: input {input_name} not found. Available: {', '.join(sources.keys())}")
+            raise KeyError(f"{self.name}: input {self.spec.grib} not found. Available: {', '.join(sources.keys())}")
         self.grib_input = inp
 
         for k, v in self.grib_input.info.spec.mgrib.items():
             setattr(self.spec.params, k, v)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        params = self.spec.as_dict(exclude_unset=True)
+        params = self.spec.dict(exclude_unset=True)
         params["grib_input_file_name"] = str(self.grib_input.pathname)
         return "mgrib", params
 
