@@ -104,7 +104,7 @@ class TestTypes(BaseFixture, unittest.TestCase):
         self.assertEqual(
             val.legend_info,
             {
-                "legend": "on",
+                "legend": True,
             },
         )
 
