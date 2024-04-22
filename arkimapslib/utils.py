@@ -15,7 +15,7 @@ else:
         return int(time.perf_counter() * 1000000000)
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound="Component[Any]")
 
 
 class TypeRegistry(Generic[T]):
@@ -51,6 +51,7 @@ class Component(Generic[T], ABC):
     YAML, from a registry of subclass types.
     """
 
+    NAME: str
     __component_label__: str
     __registry__: TypeRegistry[T]
 
@@ -87,5 +88,5 @@ class Component(Generic[T], ABC):
         self.config = config
         # Name of the input in the recipe
         self.name = name
-        # file name where this input was defined
+        # File name where this input was defined
         self.defined_in = defined_in
