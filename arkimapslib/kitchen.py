@@ -136,20 +136,6 @@ class Kitchen:
                 all_inputs.update(flavour.list_inputs_recursive(recipe, self.pantry))
         return all_inputs
 
-    def make_empty_flavour(self) -> Flavour:
-        """
-        Create an empty default flavour to use as a default to generate
-        documentation and lint
-        """
-        return Flavour(
-            config=self.config,
-            name="documentation",
-            defined_in=__file__,
-            steps={
-                "add_user_boundaries": {"shape": "example.shp"},
-            },
-        )
-
     def document_recipes(self, flavour: Flavour, path: str):
         """
         Generate markdown documentation for all the recipes found.
