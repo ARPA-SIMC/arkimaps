@@ -150,16 +150,15 @@ class Kitchen:
             },
         )
 
-    def document_recipes(self, path: str):
+    def document_recipes(self, flavour: Flavour, path: str):
         """
         Generate markdown documentation for all the recipes found.
 
         Write documentation to the given path
         """
-        empty_flavour = self.make_empty_flavour()
         for recipe in self.recipes:
             dest = os.path.join(path, recipe.name) + ".md"
-            recipe.document(empty_flavour, self.pantry, dest)
+            recipe.document(flavour, self.pantry, dest)
 
 
 class WorkingKitchen(Kitchen):

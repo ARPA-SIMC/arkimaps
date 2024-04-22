@@ -279,7 +279,7 @@ class PrintArkiQuery(RecipesMixin, FlavoursMixin, Command):
         print(merged)
 
 
-class DocumentRecipes(RecipesMixin, Command):
+class DocumentRecipes(RecipesMixin, FlavoursMixin, Command):
     """
     generate recipes documentation
     """
@@ -312,7 +312,11 @@ class DocumentRecipes(RecipesMixin, Command):
             dest = self.args.recipes
         if not os.path.isdir(dest):
             os.makedirs(dest)
-        self.kitchen.document_recipes(dest)
+        flavours = self.parse_flavours()
+        if len(flavours) != 1:
+            raise Fail(f"One flavour needed, {len(flavours)} provided")
+
+        self.kitchen.document_recipes(flavours[0], dest)
 
 
 class DumpRecipes(RecipesMixin, FlavoursMixin, Command):

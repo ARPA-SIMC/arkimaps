@@ -27,8 +27,9 @@ class TestEmptyKitchen(TestCase):
         kitchen = Kitchen()
         kitchen.pantry = pantry.EmptyPantry()
         kitchen.load_recipes(["recipes"])
+        default_flavour = kitchen.flavours["default"]
         with tempfile.TemporaryDirectory() as workdir:
-            kitchen.document_recipes(workdir)
+            kitchen.document_recipes(default_flavour, workdir)
 
 
 class TestArkimetEmptyKitchen(TestCase):
