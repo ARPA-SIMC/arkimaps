@@ -5,6 +5,7 @@ from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING
 from .models import BaseDataModel, pydantic
 
 if TYPE_CHECKING:
+    from .config import Config
     from . import inputs
     from .lint import Lint
 
@@ -27,7 +28,15 @@ class Step(ABC):
 
     DEFAULTS: Optional[Dict[str, Any]] = None
 
-    def __init__(self, *, name: str, args: Dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
+    def __init__(
+        self,
+        *,
+        config: "Config",
+        name: str,
+        defined_in: str,
+        args: Dict[str, Any],
+        sources: Dict[str, "inputs.InputFile"],
+    ):
         self.name = name
         self.spec = self.Spec(**args)
 
@@ -706,8 +715,16 @@ class AddGrib(Step):
 
     Spec = AddGribSpec
 
-    def __init__(self, name: str, args: dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
-        super().__init__(name=name, args=args, sources=sources)
+    def __init__(
+        self,
+        *,
+        config: "Config",
+        name: str,
+        defined_in: str,
+        args: dict[str, Any],
+        sources: Dict[str, "inputs.InputFile"],
+    ):
+        super().__init__(config=config, name=name, defined_in=defined_in, args=args, sources=sources)
         inp = sources.get(self.spec.grib)
         if inp is None:
             raise KeyError(f"{self.name}: input {self.spec.grib} not found. Available: {', '.join(sources.keys())}")
@@ -751,8 +768,16 @@ class AddUserBoundaries(Step):
         }
     }
 
-    def __init__(self, *, name: str, args: Dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
-        super().__init__(name=name, args=args, sources=sources)
+    def __init__(
+        self,
+        *,
+        config: "Config",
+        name: str,
+        defined_in: str,
+        args: Dict[str, Any],
+        sources: Dict[str, "inputs.InputFile"],
+    ):
+        super().__init__(config=config, name=name, defined_in=defined_in, args=args, sources=sources)
         inp = sources.get(self.spec.shape)
         if inp is None:
             raise KeyError(f"{self.name}: input {self.spec.name} not found. Available: {', '.join(sources.keys())}")
@@ -796,8 +821,16 @@ class AddGeopoints(Step):
 
     Spec = AddGeopointsSpec
 
-    def __init__(self, *, name: str, args: Dict[str, Any], sources: Dict[str, "inputs.InputFile"]):
-        super().__init__(name=name, args=args, sources=sources)
+    def __init__(
+        self,
+        *,
+        config: "Config",
+        name: str,
+        defined_in: str,
+        args: Dict[str, Any],
+        sources: Dict[str, "inputs.InputFile"],
+    ):
+        super().__init__(config=config, name=name, defined_in=defined_in, args=args, sources=sources)
         inp = sources.get(self.spec.points)
         if inp is None:
             raise KeyError(f"{self.name}: input {self.spec.points} not found. Available: {', '.join(sources.keys())}")

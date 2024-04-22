@@ -10,7 +10,7 @@ import osgeo
 from osgeo import osr
 
 from .models import BaseDataModel
-from .utils import TypeRegistry
+from .utils import Component
 
 if TYPE_CHECKING:
     from .config import Config
@@ -21,24 +21,13 @@ if TYPE_CHECKING:
 log = logging.getLogger("postprocess")
 
 
-class Postprocessors(TypeRegistry["Postprocessor"]):
-    """
-    Registry of available Postprocessor implementations
-    """
-
-    pass
-
-
-postprocessors = Postprocessors()
-
-
 class PostprocessorSpec(BaseDataModel):
     """
     Data model common for all postprocessors
     """
 
 
-class Postprocessor(ABC):
+class Postprocessor(Component["Postprocessor"], ABC):
     """
     Base class for postprocessors.
 
@@ -48,8 +37,8 @@ class Postprocessor(ABC):
 
     Spec = PostprocessorSpec
 
-    def __init__(self, *, config: "Config", **kwargs):
-        self.config = config
+    def __init__(self, *, config: "Config", name: str, defined_in: str, **kwargs):
+        super().__init__(config=config, name=name, defined_in=defined_in)
         # Input data as specified in the recipe
         self.spec = self.Spec(**kwargs)
 
@@ -61,14 +50,8 @@ class Postprocessor(ABC):
 
     @classmethod
     def create(cls, name: str, **kwargs):
-        try:
-            impl_cls = postprocessors.by_name(name)
-        except KeyError as e:
-            raise KeyError(
-                f"flavour requires unknown postprocessor {name}."
-                f" Available: {', '.join(postprocessors.registry.keys())}"
-            ) from e
-        return impl_cls(**kwargs)
+        impl_cls = cls.lookup(name)
+        return impl_cls(name=name, **kwargs)
 
     def static_path(self, path: Path) -> Path:
         """
@@ -127,7 +110,6 @@ class WatermarkPostprocessorSpec(BaseDataModel):
     # TODO: text angle?
 
 
-@postprocessors.register
 class Watermark(Postprocessor):
     """
     Write a string on the image.
@@ -173,7 +155,6 @@ class CutShapePostprocessorSpec(BaseDataModel):
     shapefile: Path
 
 
-@postprocessors.register
 class CutShape(Postprocessor):
     """
     Make the image transparent when outside a given shapefile

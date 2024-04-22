@@ -40,7 +40,7 @@ class Kitchen:
         else:
             self.config = config
         self.pantry: "pantry.Pantry"
-        self.recipes = Recipes()
+        self.recipes = Recipes(config=self.config)
         self.flavours: Dict[str, Flavour] = {}
         self.context_stack = contextlib.ExitStack()
 

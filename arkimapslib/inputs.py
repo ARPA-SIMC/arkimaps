@@ -7,6 +7,7 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+from abc import ABC
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple, Type, Union
 
@@ -18,7 +19,7 @@ from .grib import GRIB
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .outputbundle import InputProcessingStats
-from .utils import perf_counter_ns, TypeRegistry
+from .utils import perf_counter_ns, Component
 from .types import ModelStep, Instant
 
 if TYPE_CHECKING:
@@ -47,17 +48,6 @@ def keep_only_first_grib(fname: Path):
             eccodes.codes_release(gid)
 
 
-class InputTypes(TypeRegistry["Input"]):
-    """
-    Registry of available Input implementations
-    """
-
-    pass
-
-
-input_types = InputTypes()
-
-
 class InputSpec(BaseDataModel):
     """
     Data model common for all inputs
@@ -71,7 +61,7 @@ class InputSpec(BaseDataModel):
     notes: Optional[str] = None
 
 
-class Input:
+class Input(Component["Input"], ABC):
     """
     An input element to a recipe.
 
@@ -90,31 +80,22 @@ class Input:
         defined_in: str,
         **kwargs,
     ):
-        # Configuration for this run
-        self.config = config
-        # Name of the input in the recipe
-        self.name = name
-        # file name where this input was defined
-        self.defined_in = defined_in
+        super().__init__(config=config, name=name, defined_in=defined_in)
         # Input data as specified in the recipe
         self.spec = self.Spec(**kwargs)
         # Processing statistics
         self.stats = InputProcessingStats()
 
     @classmethod
-    def create(cls, *, lint: Optional[Lint] = None, type: str = "default", **kw):
+    def create(cls, *, lint: Optional[Lint] = None, type: str = "default", **kwargs):
         """
         Instantiate an input by the ``type`` key in its recipe definition
         """
-        try:
-            impl_cls = input_types.by_name(type)
-        except KeyError as e:
-            raise KeyError(
-                f"recipe requires unknown input {type}. Available: {', '.join(input_types.registry.keys())}"
-            ) from e
+        impl_cls = cls.lookup(type)
+        res = impl_cls(**kwargs)
         if lint:
-            impl_cls.lint(lint, **kw)
-        return impl_cls(**kw)
+            res.lint(lint)
+        return res
 
     def lint(self, lint: Lint) -> None:
         """
@@ -221,7 +202,6 @@ class StaticInputSpec(InputSpec):
     path: Path
 
 
-@input_types.register
 class Static(Input):
     """
     An input that refers to static files distributed with arkimaps
@@ -272,7 +252,6 @@ class Static(Input):
         return {None: InputFile(self.abspath, self, None)}
 
 
-@input_types.register
 class Shape(Static):
     """
     A special instance of static that deals with shapefiles
@@ -313,7 +292,6 @@ class SourceInputSpec(InputSpec):
     eccodes: Optional[str] = None
 
 
-@input_types.register
 class Source(Input):
     """
     An input that is data straight out of a model
@@ -417,7 +395,7 @@ class DerivedInputSpec(InputSpec):
         return value
 
 
-class Derived(Input):
+class Derived(Input, ABC):
     """
     Base class for inputs derives from other inputs
     """
@@ -471,7 +449,7 @@ class Derived(Input):
         super().document(file, indent)
 
 
-class VG6DStatProDerivedcInputSpec(DerivedInputSpec):
+class VG6DStatProDerivedcInputSpec(DerivedInputSpec, ABC):
     """
     Data model for VG6DStatProc inputs
     """
@@ -498,7 +476,7 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec):
         return value
 
 
-class VG6DStatProcMixin(Derived):
+class VG6DStatProcMixin(Derived, ABC):
     Spec = VG6DStatProDerivedcInputSpec
 
     def to_dict(self):
@@ -591,7 +569,6 @@ class VG6DStatProcMixin(Derived):
                 os.unlink(decumulated_data)
 
 
-@input_types.register
 class Decumulate(VG6DStatProcMixin):
     """
     Decumulate inputs
@@ -609,7 +586,6 @@ class Decumulate(VG6DStatProcMixin):
         super().document(file, indent)
 
 
-@input_types.register
 class Average(VG6DStatProcMixin):
     """
     Average inputs
@@ -670,7 +646,6 @@ class VG6DTransformInputSpec(DerivedInputSpec):
         return value
 
 
-@input_types.register
 class VG6DTransform(AlignInstantsMixin, Derived):
     """
     Process inputs with vg6d_transform
@@ -726,7 +701,6 @@ class VG6DTransform(AlignInstantsMixin, Derived):
         super().document(file, indent)
 
 
-@input_types.register
 class Cat(AlignInstantsMixin, Derived):
     """
     Concatenate inputs
@@ -756,7 +730,6 @@ class Cat(AlignInstantsMixin, Derived):
             self.add_instant(instant)
 
 
-@input_types.register
 class Or(Derived):
     """
     Represents the first of the inputs listed that has data for a step
@@ -789,7 +762,7 @@ class GribSetInputSpec(DerivedInputSpec):
     clip: Optional[str] = None
 
 
-class GribSetMixin(Derived):
+class GribSetMixin(Derived, ABC):
     """
     Mixin used for inputs that take a `grib_set` argument
     """
@@ -829,7 +802,6 @@ class GribSetMixin(Derived):
         return values[self.name]
 
 
-@input_types.register
 class GroundToMSL(GribSetMixin, Derived):
     """
     Convert heights above ground to heights above mean sea level, by adding
@@ -908,7 +880,6 @@ class ExprInputSpec(GribSetInputSpec):
     expr: str
 
 
-@input_types.register
 class Expr(AlignInstantsMixin, GribSetMixin, Derived):
     """
     Compute the result using a Python expression of the input values, as numpy
@@ -979,7 +950,6 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
                     self.add_instant(instant)
 
 
-@input_types.register
 class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
     """
     Compute snow fraction percentage based on formulas documented in #38

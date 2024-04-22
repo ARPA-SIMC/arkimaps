@@ -189,7 +189,7 @@ class TestFlavour(unittest.TestCase):
                 ]
             },
         ) as kitchen:
-            self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
+            self.assertIsInstance(kitchen.flavours["test"], flavours.Tiled)
             orders = kitchen.make_orders("test", recipe="test")
             self.assertEqual(len(orders), 3)
 
@@ -254,7 +254,7 @@ class TestFlavour(unittest.TestCase):
                 ]
             },
         ) as kitchen:
-            self.assertIsInstance(kitchen.flavours["test"], flavours.TiledFlavour)
+            self.assertIsInstance(kitchen.flavours["test"], flavours.Tiled)
             orders = kitchen.make_orders("test", recipe="test")
             self.assertEqual(len(orders), 4)
 

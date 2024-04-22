@@ -9,6 +9,7 @@ from . import steps, toposort
 from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
+from .utils import Component
 
 if TYPE_CHECKING:
     from . import flavours, inputs, pantry
@@ -21,7 +22,8 @@ class Recipes:
     Repository of all known recipes
     """
 
-    def __init__(self) -> None:
+    def __init__(self, config: Config) -> None:
+        self.config = config
         self.recipes: Dict[str, "Recipe"] = {}
         # Temporary storage for derived recipes not yet instantiated
         self.new_derived: Dict[str, Dict[str, Any]] = {}
@@ -35,7 +37,7 @@ class Recipes:
         """
         if lint:
             Recipe.lint(lint, **kwargs)
-        recipe = Recipe(**kwargs)
+        recipe = Recipe(config=self.config, **kwargs)
         old = self.recipes.get(recipe.name)
         if old is not None:
             raise RuntimeError(f"{recipe.name} is defined both in {old.defined_in!r} and in {recipe.defined_in!r}")
@@ -89,7 +91,7 @@ class Recipes:
             kwargs = Recipe.inherit(name=name, parent=parent, **info)
             if lint:
                 Recipe.lint(lint, **kwargs)
-            self.recipes[name] = Recipe(**kwargs)
+            self.recipes[name] = Recipe(config=self.config, **kwargs)
 
     def get(self, name: str):
         """
@@ -120,12 +122,14 @@ class RecipeStep:
     def __init__(
         self,
         *,
+        config: Config,
         name: str,
         defined_in: str,
         step_class: Type[steps.Step],
         args: Dict[str, Any],
         id: Optional[str] = None,
     ):
+        self.config = Config
         self.name: str = name
         self.defined_in: str = defined_in
         self.step_class: Type[steps.Step] = step_class
@@ -145,7 +149,9 @@ class RecipeStep:
         args = self.compile_args(flavour)
         if bool(args.pop("skip", False)):
             raise RecipeStepSkipped()
-        return self.step_class(name=self.name, args=args, sources=input_files)
+        return self.step_class(
+            config=self.config, name=self.name, defined_in=self.defined_in, args=args, sources=input_files
+        )
 
     def get_input_names(self, flavour: "flavours.Flavour") -> Set[str]:
         """
@@ -239,20 +245,18 @@ class RecipeSpec(BaseDataModel):
         return value
 
 
-class Recipe:
+class Recipe(Component["Recipe"]):
     """
     A parsed and validated recipe
     """
 
     Spec = RecipeSpec
 
-    def __init__(self, *, name: str, defined_in: str, **kwargs: Any) -> None:
+    def __init__(self, *, config: Config, name: str, defined_in: str, **kwargs: Any) -> None:
         from .mixers import mixers
 
-        # Name of the recipe
-        self.name = name
-        # File where the recipe was defined
-        self.defined_in = defined_in
+        super().__init__(config=config, name=name, defined_in=defined_in)
+
         # Input data as specified in the recipe
         self.spec = self.Spec(**kwargs)
 
@@ -268,7 +272,11 @@ class Recipe:
             if step_class is None:
                 raise RuntimeError(f"step {step} not found in mixer {self.spec.mixer}")
             id = args.pop("id", None)
-            self.steps.append(RecipeStep(name=step, defined_in=defined_in, step_class=step_class, args=args, id=id))
+            self.steps.append(
+                RecipeStep(
+                    config=self.config, name=step, defined_in=defined_in, step_class=step_class, args=args, id=id
+                )
+            )
 
     def lint(self, lint: Lint) -> None:
         """

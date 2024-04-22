@@ -18,8 +18,10 @@ class BaseFixture:
     def setUp(self):
         super().setUp()
         self.config = Config()
-        self.flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
-        self.recipe = Recipe(name="recipe", defined_in="recipe.yaml", recipe=[{"step": "add_basemap"}])
+        self.flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml")
+        self.recipe = Recipe(
+            config=self.config, name="recipe", defined_in="recipe.yaml", recipe=[{"step": "add_basemap"}]
+        )
         self.input = inputs.Static(
             config=self.config,
             name="test",
@@ -82,6 +84,7 @@ class TestTypes(BaseFixture, unittest.TestCase):
         self.assertIsNone(val.legend_info)
 
         recipe = Recipe(
+            config=self.config,
             name="recipe",
             defined_in="recipe.yaml",
             recipe=[
@@ -127,8 +130,8 @@ class TestTypes(BaseFixture, unittest.TestCase):
         # TODO: inspect val1
 
     def test_add_unrendered_products(self):
-        flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
-        recipe = Recipe(name="recipe", defined_in="recipe.yaml")
+        flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml")
+        recipe = Recipe(config=self.config, name="recipe", defined_in="recipe.yaml")
         order = orders.MapOrder(
             flavour=flavour,
             recipe=recipe,

@@ -8,7 +8,8 @@ from . import inputs, orders
 from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
-from .postprocess import Postprocessor, postprocessors
+from .postprocess import Postprocessor
+from .utils import Component
 
 if TYPE_CHECKING:
     from . import pantry, recipes
@@ -49,7 +50,7 @@ class FlavourSpec(BaseDataModel):
     recipes_filter: List[str] = pydantic.Field(default_factory=list)
 
 
-class Flavour:
+class Flavour(Component["Flavour"]):
     """
     Set of default settings used for generating a product
     """
@@ -64,9 +65,7 @@ class Flavour:
         defined_in: str,
         **kwargs,
     ):
-        self.config = config
-        self.name = name
-        self.defined_in = defined_in
+        super().__init__(config=config, name=name, defined_in=defined_in)
 
         # Input data as specified in YAML
         self.spec = self.Spec(**kwargs)
@@ -85,7 +84,7 @@ class Flavour:
             name = desc.pop("type", None)
             if name is None:
                 raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
-            self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
+            self.postprocessors.append(Postprocessor.create(name=name, config=config, defined_in=defined_in, **desc))
 
     def lint(self, lint: Lint) -> None:
         """
@@ -111,12 +110,13 @@ class Flavour:
     def create(cls, *, lint: Optional[Lint] = None, **kwargs):
         tile_cls: Type[Flavour]
         if "tile" in kwargs:
-            tile_cls = TiledFlavour
+            tile_cls = cls.lookup("tiled")
         else:
-            tile_cls = SimpleFlavour
+            tile_cls = cls.lookup("simple")
+        res = tile_cls(**kwargs)
         if lint:
-            tile_cls.lint(lint, **kwargs)
-        return tile_cls(**kwargs)
+            res.lint(lint, **kwargs)
+        return res
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """
@@ -243,7 +243,7 @@ class Flavour:
         raise NotImplementedError(f"{self.__class__}.inputs_to_orders not implemented")
 
 
-class SimpleFlavour(Flavour):
+class Simple(Flavour):
     def inputs_to_orders(
         self,
         recipe: "recipes.Recipe",
@@ -272,7 +272,7 @@ class SimpleFlavour(Flavour):
 
 class TileSpec(BaseDataModel):
     """
-    Tile definition for TiledFlavourSpec
+    Tile definition for TiledSpec
     """
 
     #: minimum zoom level to generate
@@ -289,7 +289,7 @@ class TileSpec(BaseDataModel):
     lon_max: float
 
 
-class TiledFlavourSpec(FlavourSpec):
+class TiledSpec(FlavourSpec):
     """
     Data model for Flavours
     """
@@ -298,13 +298,13 @@ class TiledFlavourSpec(FlavourSpec):
     tile: TileSpec
 
 
-class TiledFlavour(Flavour):
+class Tiled(Flavour):
     """
     Flavour that generates tiled output.
 
     """
 
-    Spec = TiledFlavourSpec
+    Spec = TiledSpec
 
     def summarize(self) -> Dict[str, Any]:
         res = super().summarize()
@@ -354,10 +354,12 @@ class TiledFlavour(Flavour):
         # Configure the basemap to be just a canvas for the legend
         order_steps.append(
             add_basemap_class(
+                config=self.config,
                 # Allow to configure add_legend_basemap in flavour differently from
                 # add_basemap
                 # TODO: document this
                 name="add_legend_basemap",
+                defined_in=self.defined_in,
                 args={
                     "params": {
                         "subpage_frame": "off",

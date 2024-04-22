@@ -1,7 +1,11 @@
 # from __future__ import annotations
 
+from abc import ABC
 import time
-from typing import Dict, Generic, Type, TypeVar
+from typing import Any, Dict, Generic, Type, TypeVar, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .config import Config
 
 if hasattr(time, "perf_counter_ns"):
     perf_counter_ns = time.perf_counter_ns
@@ -37,3 +41,51 @@ class TypeRegistry(Generic[T]):
         Lookup a class by name
         """
         return self.registry[name.lower()]
+
+
+class Component(Generic[T], ABC):
+    """
+    Base class for components class hierarchies.
+
+    Components support being defined by a dict structure parsed from JSON or
+    YAML, from a registry of subclass types.
+    """
+
+    __component_label__: str
+    __registry__: TypeRegistry[T]
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """
+        Maintain the subclass registry
+        """
+        # The first subclass found defines the root registry for that type
+        if not hasattr(cls, "__registry__"):
+            cls.__registry__ = TypeRegistry[T]()
+            cls.__component_label__ = cls.__name__.lower()
+
+        if ABC in cls.__bases__:
+            # Do not register abstract classes
+            return
+
+        cls.__registry__.register(cls)
+
+    @classmethod
+    def lookup(cls, name: str) -> Type[T]:
+        """
+        Lookup a component class by name
+        """
+        try:
+            return cls.__registry__.by_name(name)
+        except KeyError as e:
+            raise KeyError(f"unknown input {name}. Available: {', '.join(cls.__registry__.registry.keys())}") from e
+
+    def __init__(self, *, config: "Config", name: str, defined_in: str) -> None:
+        """
+        Common initialization for all components
+        """
+        # Configuration for this run
+        self.config = config
+        # Name of the input in the recipe
+        self.name = name
+        # file name where this input was defined
+        self.defined_in = defined_in
