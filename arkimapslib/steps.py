@@ -104,6 +104,61 @@ class MagicsMacro(Step, ABC):
         return self.MACRO_NAME, self.spec.params.dict(exclude_unset=True)
 
 
+class LegendParamsSpec(BaseMagicsParamsSpec):
+    legend: str = "off"
+    legend_text_colour: str = "blue"
+    legend_title: str = "off"
+    legend_title_text: str = "legend"
+    legend_title_orientation: str = "vertical"
+    legend_title_font_size: float = -1
+    legend_title_font_colour: str = "automatic"
+    legend_title_position: str = "automatic"
+    legend_title_position_ratio: float = 25
+    legend_units_text: str = ""
+    legend_user_minimum: str = "off"
+    legend_user_minimum_text: str = ""
+    legend_user_maximum: str = "off"
+    legend_user_maximum_text: str = ""
+    legend_display_type: str = "disjoint"
+    legend_label_frequency: int = 1
+    legend_histogram_border: str = "on"
+    legend_histogram_border_colour: str = "black"
+    legend_histogram_mean_value: str = "off"
+    legend_histogram_mean_value_marker: int = 15
+    legend_histogram_mean_value_marker_colour: str = "black"
+    legend_histogram_mean_value_marker_size: float = 0.5
+    legend_histogram_max_value: str = "on"
+    legend_histogram_grid_colour: str = "black"
+    legend_histogram_grid_line_style: str = "solid"
+    legend_histogram_grid_thickness: float = 1
+    legend_text_format: str = "(automatic)"
+    legend_box_mode: str = "automatic"
+    legend_automatic_position: str = "top"
+    legend_text_font: str = "sansserif"
+    legend_text_font_style: str = "normal"
+    legend_text_font_size: float = 0.3
+    legend_text_orientation: int = 0
+    legend_user_lines: List[str] = pydantic.Field(default_factory=list)
+    legend_column_count: int = 1
+    legend_entry_plot_direction: str = "automatic"
+    legend_entry_plot_orientation: str = "bottom_top"
+    legend_text_composition: str = "automatic_text_only"
+    legend_values_list: List[float] = pydantic.Field(default_factory=list)
+    legend_symbol_height_factor: float = 1
+    legend_box_x_position: float = -1
+    legend_box_y_position: float = -1
+    legend_box_x_length: float = -1
+    legend_box_y_length: float = 0
+    legend_box_blanking: str = "off"
+    legend_border: str = "off"
+    legend_border_line_style: str = "solid"
+    legend_border_colour: str = "blue"
+    legend_border_thickness: float = 1
+    legend_entry_text_width: float = 60
+    legend_entry_border: str = "on"
+    legend_entry_border_colour: str = "black"
+
+
 class AddBasemapParamsSpec(BaseMagicsParamsSpec):
     subpage_x_position: float = -1
     subpage_y_position: float = -1
@@ -235,10 +290,9 @@ class AddCoastlinesBg(MagicsMacro):
     }
 
 
-class AddSymbolsParamsSpec(BaseMagicsParamsSpec):
+class AddSymbolsParamsSpec(LegendParamsSpec):
     symbol_type: str = "marker"
     symbol_marker_index: int = 15
-    legend: str = "off"
     symbol_colour: str = "black"
     symbol_height: float = 0.28
 
@@ -266,8 +320,7 @@ class AddSymbols(MagicsMacro):
     }
 
 
-class AddContourParamsSpec(BaseMagicsParamsSpec):
-    legend: str = "off"
+class AddContourParamsSpec(LegendParamsSpec):
     contour: str = "on"
     contour_line_style: str = "solid"
     contour_line_thickness: float = 1.0
@@ -379,9 +432,8 @@ class AddContour(MagicsMacro):
     }
 
 
-class AddWindParamsSpec(BaseMagicsParamsSpec):
+class AddWindParamsSpec(LegendParamsSpec):
     wind_field_type: str = "arrows"
-    legend: str = "off"
     wind_legend_text: str = "vector"
     wind_advanced_method: str = "off"
     wind_advanced_colour_parameter: str = "speed"
