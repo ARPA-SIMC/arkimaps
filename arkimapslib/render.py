@@ -174,7 +174,7 @@ class Renderer:
 
         return list(orders)
 
-    def render_one(self, order: "Order") -> Optional["Order"]:
+    def render_one(self, order: "Order") -> "Order":
         script_file = self.write_render_script([order])
 
         # Run the render script

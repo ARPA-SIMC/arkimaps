@@ -118,7 +118,7 @@ class RecipeTestMixin(unittest.TestCase):
         self.kitchen.__exit__(None, None, None)
         delattr(self, "kitchen")
 
-    def make_orders(self, flavour_name=None, recipe_name=None):
+    def make_orders(self, flavour_name=None, recipe_name=None) -> List["Order"]:
         """
         Create all satisfiable orders from the currently tested recipe
         """
@@ -132,7 +132,7 @@ class RecipeTestMixin(unittest.TestCase):
         orders = flavour.make_orders(recipe, self.kitchen.pantry)
         return orders
 
-    def load_recipes(self, recipe_dirs: Optional[Path] = None):
+    def load_recipes(self, recipe_dirs: Optional[Path] = None) -> None:
         """
         Load recipes in the kitchen.
 
@@ -157,7 +157,7 @@ class RecipeTestMixin(unittest.TestCase):
         flavour_name: Optional[str] = None,
         exclude=None,
         extra_sample_dirs: Sequence[Union[str, Path]] = (),
-    ):
+    ) -> None:
         """
         Load recipes if needed, then fill the pantry with the inputs they require
         """
@@ -207,7 +207,7 @@ class RecipeTestMixin(unittest.TestCase):
         for fn in expected:
             self.assertIn(fn, os.listdir(self.kitchen.pantry.data_root))
 
-    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), step=12):
+    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), step=12) -> None:
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
@@ -242,17 +242,6 @@ class RecipeTestMixin(unittest.TestCase):
             f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}/"
             f"{os.path.basename(self.recipe_name)}+{step:03d}.png",
         )
-
-    def order_to_python(self, order) -> str:
-        """
-        Render an order to a Python trace file only.
-
-        This is useful to reproduce a test case if Magics aborts on it.
-
-        Returns the name of the file with the Python trace>
-        """
-        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
-        return renderer.render_one_to_python(order)
 
     def assertProcessLogEqual(self, log: List[str]):
         """
