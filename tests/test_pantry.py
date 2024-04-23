@@ -24,8 +24,8 @@ class PantryTestMixin:
         else:
             yield workdir
 
-    def get_test_data(self, model, recipe, input_name, step: int):
-        return os.path.join("testdata", recipe, f"{model}_{input_name}_2021_1_10_0_0_0+{step:02d}.arkimet")
+    def get_test_data(self, model: str, recipe: str, input_name: str, step: int) -> Path:
+        return Path("testdata") / recipe / f"{model}_{input_name}_2021_1_10_0_0_0+{step:02d}.arkimet"
 
     def test_dispatch(self):
         with self.pantry() as pantry:

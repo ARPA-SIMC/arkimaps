@@ -269,7 +269,9 @@ class ProductInfo(Serializable):
         self.step = instant.step
 
     def to_jsonable(self) -> Dict[str, Any]:
-        res = {
+        if self.recipe is None or self.reftime is None or self.step is None:
+            raise RuntimeError("Cannot write ProductInfo without filling it first")
+        res: Dict[str, Any] = {
             "recipe": self.recipe,
             "reftime": self.reftime.strftime("%Y-%m-%d %H:%M:%S"),
             "step": str(self.step),
@@ -462,6 +464,7 @@ class TarReader(Reader):
         Read an existing output bundle
         """
         self.tarfile = tarfile.open(path, mode="r")
+        self.path = path
 
     def __enter__(self):
         return self
@@ -469,16 +472,22 @@ class TarReader(Reader):
     def __exit__(self, *args):
         self.tarfile.close()
 
+    def _extract(self, path: str) -> IO[bytes]:
+        reader = self.tarfile.extractfile(path)
+        if reader is None:
+            raise ValueError(f"{path} does not identify a valid file in {self.path}")
+        return reader
+
     def _load_json(self, path: str) -> Dict[str, Any]:
-        with self.tarfile.extractfile(path) as fd:
+        with self._extract(path) as fd:
             return json.load(fd)
 
     def version(self) -> str:
-        with self.tarfile.extractfile("version.txt") as fd:
+        with self._extract("version.txt") as fd:
             return fd.read().strip().decode()
 
     def load_product(self, bundle_path: str) -> bytes:
-        with self.tarfile.extractfile(bundle_path) as fd:
+        with self._extract(bundle_path) as fd:
             return fd.read()
 
     def load_artifact(self, bundle_path: str) -> bytes:

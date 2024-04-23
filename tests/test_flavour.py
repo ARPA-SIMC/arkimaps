@@ -2,13 +2,16 @@
 import contextlib
 import os
 import tempfile
-from typing import Dict, Any, Optional, List
 import unittest
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 import yaml
-from arkimapslib.kitchen import ArkimetKitchen
+
 from arkimapslib import flavours
-from arkimapslib.unittest import scan_python_order
+from arkimapslib.kitchen import ArkimetKitchen
 from arkimapslib.steps import AddBasemapParamsSpec
+from arkimapslib.unittest import scan_python_order
 
 
 def flavour(name: str, steps: Optional[Dict[str, Any]] = None, **kw) -> Dict[str, Any]:
@@ -16,21 +19,19 @@ def flavour(name: str, steps: Optional[Dict[str, Any]] = None, **kw) -> Dict[str
 
 
 class TestFlavour(unittest.TestCase):
-    recipe_name = "t2m"
-    expected_basemap_args = {}
-
     @contextlib.contextmanager
     def kitchen(self, flavours: List[Dict[str, Any]], recipes: Dict[str, Any], inputs: Optional[Dict[str, Any]] = None):
         if inputs is None:
             inputs = {}
 
-        with tempfile.TemporaryDirectory() as recipe_dir:
+        with tempfile.TemporaryDirectory() as tempdir:
+            recipe_dir = Path(tempdir)
             # Write flavours definition
-            with open(os.path.join(recipe_dir, "flavours.yaml"), "wt") as fd:
+            with (recipe_dir / "flavours.yaml").open("wt") as fd:
                 yaml.dump({"flavours": flavours}, fd)
 
             # Write inputs definition
-            with open(os.path.join(recipe_dir, "inputs.yaml"), "wt") as fd:
+            with (recipe_dir / "inputs.yaml").open("wt") as fd:
                 yaml.dump(
                     {
                         "inputs": {
@@ -51,13 +52,13 @@ class TestFlavour(unittest.TestCase):
             # Write recipes definitions
             for name, steps in recipes.items():
                 if "/" in name:
-                    os.makedirs(os.path.join(recipe_dir, os.path.dirname(name)), exist_ok=True)
-                with open(os.path.join(recipe_dir, f"{name}.yaml"), "wt") as fd:
+                    (recipe_dir / os.path.dirname(name)).mkdir(parents=True, exist_ok=True)
+                with (recipe_dir / f"{name}.yaml").open("wt") as fd:
                     yaml.dump({"recipe": steps}, fd)
 
             with ArkimetKitchen() as kitchen:
                 kitchen.load_recipes([recipe_dir])
-                kitchen.pantry.fill(path="testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
+                kitchen.pantry.fill(path=Path("testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet"))
                 yield kitchen
 
     def get_step(self, order, step_name: str):

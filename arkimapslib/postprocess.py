@@ -2,9 +2,9 @@
 
 import logging
 import os
-from abc import ABC
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
 
 import osgeo
 from osgeo import osr
@@ -69,13 +69,14 @@ class Postprocessor(Component["Postprocessor"], ABC):
             return abspath
         raise RuntimeError(f"{path} does not exist inside {self.config.static_dir}")
 
+    @abstractmethod
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         """
         Add a python function to postprocess the image at ``full_relpath``.
 
         Return the new value for ``full_relpath`` after the postprocessing
         """
-        pass
+        ...
 
 
 class WatermarkPostprocessorSpec(BaseDataModel):
@@ -117,7 +118,7 @@ class Watermark(Postprocessor):
 
     Spec = WatermarkPostprocessorSpec
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.font: Path = self.static_path(self.spec.font)
         log.info("%s resolved as %s", self.spec.font, self.font)
@@ -133,7 +134,7 @@ class Watermark(Postprocessor):
                 x = str(self.spec.x)
             else:
                 x = f"im.width - {-self.spec.x}"
-            if self.y >= 0:
+            if self.spec.y >= 0:
                 y = str(self.spec.y)
             else:
                 y = f"im.height - {-self.spec.y}"
@@ -162,7 +163,7 @@ class CutShape(Postprocessor):
 
     Spec = CutShapePostprocessorSpec
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.shapefile: Path = self.static_path(self.spec.shapefile)
         log.info("%s resolved as %s", self.spec.shapefile, self.shapefile)

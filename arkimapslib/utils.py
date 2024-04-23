@@ -4,6 +4,8 @@ from abc import ABC
 import time
 from typing import Any, Dict, Generic, Type, TypeVar, TYPE_CHECKING
 
+from .models import BaseDataModel
+
 if TYPE_CHECKING:
     from .config import Config
 
@@ -16,6 +18,7 @@ else:
 
 
 T = TypeVar("T", bound="Component[Any]")
+SPEC = TypeVar("SPEC", bound=BaseDataModel)
 
 
 class TypeRegistry(Generic[T]):

@@ -17,7 +17,7 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
     recipe_name = "t2m"
     model_name = "ifs"
 
-    def test_tessellate(self):
+    def test_tessellate(self) -> None:
         self.assertCountEqual(TileOrder.tessellate(0, 0, 0, 0, 1), [])
 
         self.assertCountEqual(
@@ -73,7 +73,7 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
             ],
         )
 
-    def test_render(self):
+    def test_render(self) -> None:
         self.kitchen.config.tile_group_width = 2
         self.kitchen.config.tile_group_height = 2
 
@@ -155,7 +155,7 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
         product_info = products_info.by_path["2021-01-10T00:00:00/t2m_ita_small_tiles+012/6/34/24.png"]
         self.assertIn("projection", product_info.georef)
 
-    def test_render_twice(self):
+    def test_render_twice(self) -> None:
         self.kitchen.config.tile_group_width = 2
         self.kitchen.config.tile_group_height = 2
         self.fill_pantry()
@@ -207,7 +207,7 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
             self.assertEqual(o1.output.relpath, o2.output.relpath)
 
-    def test_tile_coords(self):
+    def test_tile_coords(self) -> None:
         self.assertEqual(deg2num(11.25, 41.0, 6), (34, 23))
         self.assertEqual(deg2num(-11.25, 41.0, 6), (30, 23))
 
@@ -223,7 +223,7 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
         self.assertAlmostEqual(lat, 45.089034, 4)
         self.assertAlmostEqual(lon, -11.25, 2)
 
-    def test_bounding_box(self):
+    def test_bounding_box(self) -> None:
         # see issue #139
 
         # ita_small_tiles defines a domain of (35, 5) - (40, 20)
@@ -234,13 +234,13 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
 
         # Make orders and compute the area bounding box for each zoom level
         class BBox:
-            def __init__(self):
+            def __init__(self) -> None:
                 self.lat_min: Optional[float] = None
                 self.lat_max: Optional[float] = None
                 self.lon_min: Optional[float] = None
                 self.lon_max: Optional[float] = None
 
-            def add(self, oder: Order):
+            def add(self, order: Order) -> None:
                 lon_min, lat_max = num2deg(order.x, order.y, order.z)
                 lon_max, lat_min = num2deg(order.x + order.width + 1, order.y + order.height + 1, order.z)
                 if self.lat_min is None or self.lat_min > lat_min:

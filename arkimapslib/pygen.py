@@ -6,7 +6,7 @@ import os
 import re
 import time
 from collections import defaultdict
-from typing import IO, TYPE_CHECKING, Generator, Optional, List
+from typing import IO, TYPE_CHECKING, Dict, Generator, List, Optional
 
 if TYPE_CHECKING:
     from .orders import Order

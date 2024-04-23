@@ -12,10 +12,10 @@ class Mixers:
     Registry of available Mixer implementations (collection of named steps)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.registry: Dict[str, Dict[str, Type["steps.Step"]]] = {}
 
-    def register(self, name: str, steps: Dict[str, Type["steps.Step"]]):
+    def register(self, name: str, steps: Dict[str, Type["steps.Step"]]) -> None:
         """
         Add a named set of steps to the mixers collection
         """

@@ -19,10 +19,12 @@ from .grib import GRIB
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .outputbundle import InputProcessingStats
-from .utils import perf_counter_ns, Component
-from .types import ModelStep, Instant
+from .types import Instant, ModelStep
+from .utils import Component, perf_counter_ns
 
 if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
     from . import pantry
     from .recipes import Recipe
 
@@ -175,7 +177,7 @@ class Input(Component["Input"], ABC):
         """
         return {}
 
-    def compile_arkimet_matcher(self, session: "arkimet.Session"):
+    def compile_arkimet_matcher(self, session: "arkimet.dataset.Session"):
         """
         Hook to allow inputs to compile arkimet matchers
         """
@@ -261,7 +263,7 @@ class Shape(Static):
     # workdir in get_instants
     NAME = "shape"
 
-    def clean_path(self, path: str):
+    def clean_path(self, path: Path):
         """
         Resolve path into an absolute path, and turn it into a clean relative
         path inside it.
@@ -269,15 +271,15 @@ class Shape(Static):
         Also perform any validation expected on this kind of static input paths
         """
         for static_dir in self.config.static_dir:
-            if not os.path.isdir(static_dir):
+            if not static_dir.is_dir():
                 continue
-            abspath = os.path.abspath(os.path.join(static_dir, path))
-            cp = os.path.commonpath((abspath, static_dir))
-            if not os.path.samefile(cp, static_dir):
+            abspath = (static_dir / path).absolute()
+            cp = Path(os.path.commonpath((abspath, static_dir)))
+            if not cp.samefile(static_dir):
                 raise RuntimeError(f"{path} leads outside the static directory")
-            if not os.path.exists(abspath + ".shp"):
+            if not abspath.with_suffix(".shp").exists():
                 continue
-            return abspath, os.path.relpath(abspath, static_dir)
+            return abspath, abspath.relative_to(static_dir)
         raise RuntimeError(f"{path}.shp does not exist inside {self.config.static_dir}")
 
 
@@ -368,7 +370,7 @@ class Source(Input):
             res[instant] = pantry.get_input_file(self, instant)
         return res
 
-    def compile_arkimet_matcher(self, session: "arkimet.Session"):
+    def compile_arkimet_matcher(self, session: "arkimet.dataset.Session"):
         if self.spec.arkimet is None or self.spec.arkimet == "skip":
             self.arkimet_matcher = None
         else:
@@ -388,7 +390,7 @@ class DerivedInputSpec(InputSpec):
 
     inputs: List[str] = pydantic.Field(default_factory=list, min_items=1)
 
-    @pydantic.validator("inputs", pre=True)
+    @pydantic.validator("inputs", pre=True, allow_reuse=True)
     def string_to_list(cls, value):
         if isinstance(value, str):
             return [value]
@@ -402,7 +404,7 @@ class Derived(Input, ABC):
 
     Spec = DerivedInputSpec
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         # set of available steps
         self.instants: Set[Instant] = set()
@@ -459,7 +461,7 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec, ABC):
     comp_frac_valid: float = 0.0
     comp_full_steps: bool
 
-    @pydantic.root_validator(pre=True)
+    @pydantic.root_validator(pre=True, allow_reuse=True)
     def default_comp_full_steps(cls, values):
         val = values.get("comp_full_steps")
         if val is None:
@@ -469,7 +471,7 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec, ABC):
         values["comp_full_steps"] = val
         return values
 
-    @pydantic.validator("inputs")
+    @pydantic.validator("inputs", allow_reuse=True)
     def only_one_input(cls, value):
         if len(value) != 1:
             raise RuntimeError(f"only one source in put allowed")
@@ -603,7 +605,7 @@ class Average(VG6DStatProcMixin):
         super().document(file, indent)
 
 
-class AlignInstantsMixin:
+class AlignInstants(Derived):
     def align_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], List["InputFile"]]:
         # Get the steps for each of our inputs
         available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
@@ -639,14 +641,14 @@ class VG6DTransformInputSpec(DerivedInputSpec):
 
     args: List[str] = pydantic.Field(default_factory=list, min_items=1)
 
-    @pydantic.validator("args", pre=True)
+    @pydantic.validator("args", pre=True, allow_reuse=True)
     def args_string_to_list(cls, value):
         if isinstance(value, str):
             return [value]
         return value
 
 
-class VG6DTransform(AlignInstantsMixin, Derived):
+class VG6DTransform(AlignInstants):
     """
     Process inputs with vg6d_transform
     """
@@ -667,6 +669,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
 
         # For each step, run vg6d_transform to generate its output
         for instant, input_files in available_instants.items():
+            assert instant is not None
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             for f in input_files:
@@ -678,6 +681,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
 
             with self._collect_stats(pantry, " ".join(shlex.quote(c) for c in cmd)):
                 v6t = subprocess.Popen(cmd, stdin=subprocess.PIPE, env={"LOG4C_PRIORITY": "debug"})
+                assert v6t.stdin is not None
                 for input_file in input_files:
                     with open(input_file.pathname, "rb") as fd:
                         shutil.copyfileobj(fd, v6t.stdin)
@@ -701,7 +705,7 @@ class VG6DTransform(AlignInstantsMixin, Derived):
         super().document(file, indent)
 
 
-class Cat(AlignInstantsMixin, Derived):
+class Cat(AlignInstants):
     """
     Concatenate inputs
     """
@@ -716,6 +720,7 @@ class Cat(AlignInstantsMixin, Derived):
 
         # For each instant, concatenate all inputs to generate the output
         for instant, input_files in available_instants.items():
+            assert instant is not None
             output_name = pantry.get_basename(self, instant)
             log.info("input %s: generating instant %s as %s", self.name, instant, output_name)
             output_pathname = os.path.join(pantry.data_root, output_name)
@@ -741,6 +746,7 @@ class Or(Derived):
         available_instants: Dict[Instant, InputFile] = {}
         for input_name in self.spec.inputs:
             for instant, input_file in pantry.get_instants(input_name).items():
+                assert instant is not None
                 available_instants.setdefault(instant, input_file)
 
         # For each instant, concatenate all inputs to generate the output
@@ -789,7 +795,7 @@ class GribSetMixin(Derived, ABC):
         for k, v in self.spec.grib_set.items():
             grib[k] = v
 
-    def apply_clip(self, values: Dict[str, numpy.array]) -> numpy.array:
+    def apply_clip(self, values: Dict[str, "NDArray"]) -> "NDArray":
         """
         Evaluate the clip expression using the keyword arguments as locals.
 
@@ -819,6 +825,7 @@ class GroundToMSL(GribSetMixin, Derived):
 
         z_input: InputFile
         for instant, input_file in pantry.get_instants(self.spec.inputs[0]).items():
+            assert instant is not None
             if not instant.step.is_zero():
                 log.warning(
                     "input %s: ignoring input %s with step %s instead of 0",
@@ -840,6 +847,7 @@ class GroundToMSL(GribSetMixin, Derived):
 
         has_output = False
         for instant, input_file in pantry.get_instants(self.spec.inputs[1]).items():
+            assert instant is not None
             output_name = pantry.get_basename(self, instant)
             with self._collect_stats(
                 pantry,
@@ -880,7 +888,7 @@ class ExprInputSpec(GribSetInputSpec):
     expr: str
 
 
-class Expr(AlignInstantsMixin, GribSetMixin, Derived):
+class Expr(GribSetMixin, AlignInstants):
     """
     Compute the result using a Python expression of the input values, as numpy
     arrays.
@@ -908,9 +916,10 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
 
         # For each instant, run the expression
         for instant, input_files in available_instants.items():
+            assert instant is not None
             output_name = pantry.get_basename(self, instant)
             with self._collect_stats(
-                pantry, "expr " + ",".join(shlex.quote(str(i.pathname)) for i in input_files) + " " + output_name
+                pantry, "expr " + ",".join(shlex.quote(str(i.pathname)) for i in input_files) + f" {output_name}"
             ):
                 with contextlib.ExitStack() as stack:
                     # Open all input GRIBs
@@ -921,6 +930,7 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
                         gribs[f.info.name] = grib
                         if template is None:
                             template = grib
+                    assert template is not None
 
                     # Build the variable dict to use to evaluate self.expr_fn
                     values = {name: grib.values for name, grib in gribs.items()}
@@ -950,7 +960,7 @@ class Expr(AlignInstantsMixin, GribSetMixin, Derived):
                     self.add_instant(instant)
 
 
-class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
+class SFFraction(GribSetMixin, AlignInstants):
     """
     Compute snow fraction percentage based on formulas documented in #38
 
@@ -970,6 +980,7 @@ class SFFraction(AlignInstantsMixin, GribSetMixin, Derived):
 
         # For each instant, run the expression
         for instant, input_files in available_instants.items():
+            assert instant is not None
             output_name = pantry.get_basename(self, instant)
             with self._collect_stats(
                 pantry,

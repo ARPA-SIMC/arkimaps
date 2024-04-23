@@ -3,7 +3,7 @@ import inspect
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Set, TextIO, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Set, TextIO, Tuple, Type
 
 from . import steps, toposort
 from .config import Config
@@ -35,9 +35,9 @@ class Recipes:
         """
         Add a recipe to this recipes collection
         """
-        if lint:
-            Recipe.lint(lint, **kwargs)
         recipe = Recipe(config=self.config, **kwargs)
+        if lint is not None:
+            recipe.lint(lint)
         old = self.recipes.get(recipe.name)
         if old is not None:
             raise RuntimeError(f"{recipe.name} is defined both in {old.defined_in!r} and in {recipe.defined_in!r}")
@@ -75,7 +75,7 @@ class Recipes:
         # in dependency order
 
         # Start with the existing recipes, that have no dependencies
-        deps = {name: {} for name in self.recipes}
+        deps: Dict[str, Iterable[str]] = {name: () for name in self.recipes}
 
         # Add the derived recipes in the queue
         for name, info in self.new_derived.items():
@@ -89,9 +89,10 @@ class Recipes:
             info = self.new_derived.pop(name)
             parent = self.recipes[info.pop("extends")]
             kwargs = Recipe.inherit(name=name, parent=parent, **info)
+            recipe = Recipe(config=self.config, **kwargs)
             if lint:
-                Recipe.lint(lint, **kwargs)
-            self.recipes[name] = Recipe(config=self.config, **kwargs)
+                recipe.lint(lint)
+            self.recipes[name] = recipe
 
     def get(self, name: str):
         """
@@ -129,7 +130,7 @@ class RecipeStep:
         args: Dict[str, Any],
         id: Optional[str] = None,
     ):
-        self.config = Config
+        self.config = config
         self.name: str = name
         self.defined_in: str = defined_in
         self.step_class: Type[steps.Step] = step_class

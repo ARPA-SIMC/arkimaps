@@ -1,5 +1,6 @@
 # from __future__ import annotations
 import tempfile
+from pathlib import Path
 from unittest import TestCase
 
 from arkimapslib import pantry
@@ -26,7 +27,7 @@ class TestEmptyKitchen(TestCase):
         # nothing raises exceptions
         kitchen = Kitchen()
         kitchen.pantry = pantry.EmptyPantry()
-        kitchen.load_recipes(["recipes"])
+        kitchen.load_recipes([Path("recipes")])
         default_flavour = kitchen.flavours["default"]
         with tempfile.TemporaryDirectory() as workdir:
             kitchen.document_recipes(default_flavour, workdir)
@@ -35,7 +36,7 @@ class TestEmptyKitchen(TestCase):
 class TestArkimetEmptyKitchen(TestCase):
     def test_merged_arki_query(self):
         kitchen = ArkimetEmptyKitchen()
-        kitchen.load_recipes(["recipes"])
+        kitchen.load_recipes([Path("recipes")])
         default_flavour = kitchen.flavours["default"]
         merged = kitchen.get_merged_arki_query([default_flavour])
         self.assertIsNotNone(merged)

@@ -305,6 +305,8 @@ class TileOrder(Order):
         """
         Add render results to a tarball
         """
+        if self.output is None:
+            raise RuntimeError("attempted to summarize an order before using it to produce an output")
         relpath, basename = os.path.split(self.output.relpath)
 
         start_x, start_y, width, height = (int(x) for x in basename[:-4].split("-"))

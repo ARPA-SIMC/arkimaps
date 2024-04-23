@@ -197,7 +197,7 @@ class Flavour(Component["Flavour"]):
             # are valid for all steps, like maps or orography
             any_instant = output_instants.pop(None, None)
             if any_instant is not None:
-                log.debug("flavour %s: recipe %s inputs %s available for any step", self.name, recipe.name, input_name)
+                log.debug("flavour %s: recipe %s input %s available for any step", self.name, recipe.name, input_name)
                 inputs_for_all_instants[input_name] = any_instant
                 # This input is valid for all steps and does not
                 # introduce step limitations
@@ -205,7 +205,7 @@ class Flavour(Component["Flavour"]):
                     continue
             else:
                 log.debug(
-                    "flavour %s: recipe %s inputs %s available for instants %r",
+                    "flavour %s: recipe %s input %s available for instants %r",
                     self.name,
                     recipe.name,
                     input_name,
@@ -218,10 +218,12 @@ class Flavour(Component["Flavour"]):
                 # the `inputs` mapping with all available inputs
                 inputs = {}
                 for output_instant, ifile in output_instants.items():
+                    # None was popped earlier
+                    assert output_instant is not None
                     inputs[output_instant] = {input_name: ifile}
             else:
                 # The subsequent times this output_instant is seen, intersect
-                instants_to_delete: List[int] = []
+                instants_to_delete: List[Instant] = []
                 for output_instant, input_files in inputs.items():
                     if output_instant not in output_instants:
                         # We miss an input for this instant, so we cannot

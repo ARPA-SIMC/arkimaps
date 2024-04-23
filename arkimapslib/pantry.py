@@ -12,8 +12,10 @@ from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple, Optiona
 
 try:
     import arkimet
+
+    HAS_ARKIMET = True
 except ModuleNotFoundError:
-    arkimet = None
+    HAS_ARKIMET = False
 
 from . import inputs
 
@@ -115,7 +117,7 @@ class Pantry:
         pass
 
     @contextlib.contextmanager
-    def open_dispatch_input(self, path: Optional[str] = None):
+    def open_dispatch_input(self, path: Optional[Path] = None):
         """
         Open the binary input stream, from a file, or standard input if path is
         None
@@ -123,7 +125,7 @@ class Pantry:
         if path is None:
             yield sys.stdin.buffer
         else:
-            with open(path, "rb") as fd:
+            with path.open("rb") as fd:
                 yield fd
 
 
@@ -240,7 +242,7 @@ class DiskPantry(Pantry):
             inp.add_instant(inputs.Instant(datetime.datetime.strptime(reftime, "%Y_%m_%d_%H_%M_%S"), step))
 
 
-if arkimet is not None:
+if HAS_ARKIMET:
 
     class ArkimetEmptyPantry(EmptyPantry):
         """
@@ -449,12 +451,14 @@ class EccodesPantry(DiskPantry):
                 )
 
                 def dispatch(md: arkimet.Metadata) -> bool:
+                    assert proc.stdin is not None
                     proc.stdin.write(md.data)
                     return True
 
                 with self.open_dispatch_input(path=path) as infd:
                     arkimet.Metadata.read_bundle(infd, dest=dispatch)
             finally:
+                assert proc.stdin is not None
                 proc.stdin.close()
                 proc.wait()
                 if proc.returncode != 0:

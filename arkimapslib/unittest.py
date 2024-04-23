@@ -8,7 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Sequence, Set, Type, Union
 
 import yaml
 
@@ -42,7 +42,7 @@ class OrderResult:
         raise KeyError(f"Step {step_name} not found in debug trace of order {self.order}")
 
 
-class RecipeTestMixin:
+class RecipeTestMixin(unittest.TestCase):
     expected_basemap_args = {
         "page_id_line": False,
         "page_x_length": 38,
@@ -72,6 +72,10 @@ class RecipeTestMixin:
     }
 
     flavour_name = "default"
+    magics_crashes_skip_tests: ClassVar[Set[str]]
+    kitchen_class: Type[Kitchen]
+    recipe_name: ClassVar[str]
+    model_name: ClassVar[str]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -112,7 +116,7 @@ class RecipeTestMixin:
 
     def tearDown(self) -> None:
         self.kitchen.__exit__(None, None, None)
-        self.kitchen = None
+        delattr(self, "kitchen")
 
     def make_orders(self, flavour_name=None, recipe_name=None):
         """
@@ -128,7 +132,7 @@ class RecipeTestMixin:
         orders = flavour.make_orders(recipe, self.kitchen.pantry)
         return orders
 
-    def load_recipes(self, recipe_dirs=None):
+    def load_recipes(self, recipe_dirs: Optional[Path] = None):
         """
         Load recipes in the kitchen.
 
@@ -138,8 +142,9 @@ class RecipeTestMixin:
         if self.kitchen_recipes_loaded:
             return
         if recipe_dirs is None:
-            recipe_dirs = ["recipes"]
-        self.kitchen.load_recipes(recipe_dirs)
+            self.kitchen.load_recipes([Path("recipes")])
+        else:
+            self.kitchen.load_recipes([recipe_dirs])
         self.kitchen_recipes_loaded = True
 
     def fill_pantry(
@@ -148,8 +153,8 @@ class RecipeTestMixin:
         step=12,
         recipe_dirs: Optional[Path] = None,
         expected=None,
-        recipe_name=None,
-        flavour_name=None,
+        recipe_name: Optional[str] = None,
+        flavour_name: Optional[str] = None,
         exclude=None,
         extra_sample_dirs: Sequence[Union[str, Path]] = (),
     ):
@@ -161,7 +166,7 @@ class RecipeTestMixin:
         if flavour_name is None:
             flavour_name = self.flavour_name
         self.load_recipes(recipe_dirs)
-        flavour = self.kitchen.flavours.get(flavour_name)
+        flavour = self.kitchen.flavours[flavour_name]
         recipe = self.kitchen.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
@@ -409,6 +414,8 @@ class Workdir(contextlib.ExitStack):
             kitchen_class = arkimapslib.kitchen.ArkimetKitchen
         elif kitchen_class == "eccodes":
             kitchen_class = arkimapslib.kitchen.EccodesKitchen
+        elif isinstance(kitchen_class, str):
+            raise ValueError(f"Invalid kitchen_class {kitchen_class!r}")
 
         kitchen = kitchen_class()
         kitchen.load_recipes([self.path])

@@ -767,7 +767,9 @@ class AddUserBoundaries(Step):
         super().__init__(**kwargs)
         inp = self.sources.get(self.spec.shape)
         if inp is None:
-            raise KeyError(f"{self.name}: input {self.spec.name} not found. Available: {', '.join(sources.keys())}")
+            raise KeyError(
+                f"{self.name}: input {self.spec.name} not found. Available: {', '.join(self.sources.keys())}"
+            )
         self.shape = inp
 
     def _run_params(self):
@@ -796,7 +798,6 @@ class AddGeopointsParamsSpec(BaseMagicsParamsSpec):
 
 
 class AddGeopointsSpec(MagicsMacroSpec):
-    params: AddGeopointsParamsSpec
     params: AddGeopointsParamsSpec = pydantic.Field(default_factory=AddGeopointsParamsSpec)
     points: str
 
@@ -812,7 +813,9 @@ class AddGeopoints(Step):
         super().__init__(**kwargs)
         inp = self.sources.get(self.spec.points)
         if inp is None:
-            raise KeyError(f"{self.name}: input {self.spec.points} not found. Available: {', '.join(sources.keys())}")
+            raise KeyError(
+                f"{self.name}: input {self.spec.points} not found. Available: {', '.join(self.sources.keys())}"
+            )
         self.points = inp
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
