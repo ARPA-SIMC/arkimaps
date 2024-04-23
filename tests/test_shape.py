@@ -63,6 +63,7 @@ class TestShape(TestCase):
                 "recipe": [
                     {"step": "add_basemap"},
                     {"step": "add_grib", "grib": "t2m"},
+                    {"step": "add_contour"},
                 ],
             },
         )
