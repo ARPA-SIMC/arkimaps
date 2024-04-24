@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import tempfile
+from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, Dict, List, NamedTuple, Optional, Set, Tuple
 
@@ -17,7 +18,10 @@ try:
 except ModuleNotFoundError:
     HAS_ARKIMET = False
 
-from . import inputs
+import eccodes
+
+from .inputs import Input, InputFile, Inputs, Instant
+from .outputbundle import InputProcessingStats
 from .types import ModelStep
 
 if TYPE_CHECKING:
@@ -26,12 +30,26 @@ if TYPE_CHECKING:
 log = logging.getLogger("arkimaps.pantry")
 
 
+def keep_only_first_grib(fname: Path) -> None:
+    """
+    Truncate a GRIB file so that only the first GRIB is kept
+    """
+    with fname.open("r+b") as infd:
+        gid = eccodes.codes_grib_new_from_file(infd)
+        try:
+            if eccodes.codes_get_message_offset(gid) != 0:
+                raise RuntimeError(f"{fname}: first grib does not start at offset 0")
+            infd.truncate(eccodes.codes_get_message_size(gid))
+        finally:
+            eccodes.codes_release(gid)
+
+
 class ProcessLogEntry(NamedTuple):
     """
     Entry used to trace input processing operations
     """
 
-    input: inputs.Input
+    input: Input
     message: str
 
 
@@ -40,13 +58,31 @@ class Pantry:
     Storage of GRIB files used as inputs to recipes
     """
 
-    def __init__(self, inputs: inputs.Inputs, **kwargs) -> None:
+    def __init__(self, inputs: Inputs, **kwargs) -> None:
         # List of input definitions, indexed by name
         self.inputs = inputs
         # Log of input processing operations performed
         self.process_log: List[ProcessLogEntry] = []
+        # Per-input processing statistics
+        self.input_stats: Dict[Input, InputProcessingStats] = defaultdict(InputProcessingStats)
+        # Set of available steps for each input
+        self.input_instants: Dict[Input, Set[Instant]] = defaultdict(set)
+        # Set of input steps for which the data in the pantry contains multiple
+        # elements and needs to be truncated
+        self.input_instants_to_truncate: Dict[Input, Set[Instant]] = defaultdict(set)
 
-    def log_input_processing(self, input: inputs.Input, message: str):
+    def add_instant(self, inp: Input, instant: Instant) -> None:
+        """
+        Notify that the pantry contains data for this input for the given step
+        """
+        instants = self.input_instants[inp]
+
+        if instant in instants:
+            log.warning("%s: multiple data found for %s", inp.name, instant)
+            self.input_instants_to_truncate[inp].add(instant)
+        instants.add(instant)
+
+    def log_input_processing(self, input: Input, message: str):
         """
         Trace one input processing step
         """
@@ -106,7 +142,7 @@ class DiskPantry(Pantry):
         super().__init__(**kwargs)
         self.data_root: Path = root / "pantry"
 
-    def get_basename(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> Path:
+    def get_basename(self, inp: Input, instant: Instant, fmt="grib") -> Path:
         """
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
@@ -117,14 +153,14 @@ class DiskPantry(Pantry):
             pantry_basename = f"{inp.spec.model}_{inp.name}"
         return Path(pantry_basename + f"{instant.pantry_suffix()}.{fmt}")
 
-    def get_fullname(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> Path:
+    def get_fullname(self, inp: Input, instant: Instant, fmt="grib") -> Path:
         """
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
         """
         return self.data_root / self.get_basename(inp, instant, fmt=fmt)
 
-    def get_accessory_fullname(self, inp: "inputs.Input", suffix: str) -> Path:
+    def get_accessory_fullname(self, inp: Input, suffix: str) -> Path:
         """
         Return the relative name within the pantry of the file corresponding to
         the given input and instant
@@ -135,27 +171,25 @@ class DiskPantry(Pantry):
             pantry_basename = f"{inp.spec.model}_{inp.name}"
         return self.data_root / f"{pantry_basename}-{suffix}"
 
-    def get_input_file(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> "inputs.InputFile":
+    def get_input_file(self, inp: Input, instant: Instant, fmt="grib") -> InputFile:
         """
         Return an InputFile from the pantry corresponding to the given input and instant
         """
-        return inputs.InputFile(self.get_fullname(inp, instant, fmt=fmt), inp, instant)
+        return InputFile(self.get_fullname(inp, instant, fmt=fmt), inp, instant)
 
-    def get_eccodes_fullname(self, inp: "inputs.Input", fmt="grib") -> Path:
+    def get_eccodes_fullname(self, inp: Input, fmt="grib") -> Path:
         if inp.spec.model is None:
             pantry_basename = inp.name
         else:
             pantry_basename = f"{inp.spec.model}_{inp.name}"
         return self.data_root / f"{pantry_basename}_[year]_[month]_[day]_[hour]_[minute]_[second]+[endStep].{fmt}"
 
-    def get_instants(
-        self, input_name: str, model: Optional[str] = None
-    ) -> Dict[Optional[inputs.Instant], "inputs.InputFile"]:
+    def get_instants(self, input_name: str, model: Optional[str] = None) -> Dict[Optional[Instant], InputFile]:
         """
         Return the instants available in the pantry for the input with the given
         name
         """
-        res: Dict[Optional[inputs.Instant], "inputs.InputFile"] = {}
+        res: Dict[Optional[Instant], InputFile] = {}
 
         # Skip inputs for mismatching models (see #114)
         inps = self.inputs.get(input_name, model)
@@ -173,9 +207,11 @@ class DiskPantry(Pantry):
         """
         Let inputs know that we are done filtering initial data
         """
-        for inps in self.inputs.values():
-            for inp in inps:
-                inp.on_pantry_filled(self)
+        for inp, instants in self.input_instants_to_truncate.items():
+            for instant in instants:
+                fname = self.get_fullname(inp, instant)
+                keep_only_first_grib(fname)
+        self.input_instants_to_truncate.clear()
 
     def rescan(self):
         fn_match = re.compile(
@@ -198,7 +234,7 @@ class DiskPantry(Pantry):
 
             reftime = mo.group("reftime")
             step = int(mo.group("step"))
-            inp.add_instant(inputs.Instant(datetime.datetime.strptime(reftime, "%Y_%m_%d_%H_%M_%S"), step))
+            self.add_instant(inp, Instant(datetime.datetime.strptime(reftime, "%Y_%m_%d_%H_%M_%S"), step))
 
 
 if HAS_ARKIMET:
@@ -211,9 +247,9 @@ if HAS_ARKIMET:
         def __init__(self, session: "arkimet.dataset.Session", **kw):
             super().__init__(**kw)
             self.session = session
-            self.cached_matchers: Dict["inputs.Input", arkimet.Matcher] = {}
+            self.cached_matchers: Dict[Input, Optional[arkimet.Matcher]] = {}
 
-        def arkimet_matcher(self, inp: "inputs.Input") -> Optional[arkimet.Matcher]:
+        def arkimet_matcher(self, inp: Input) -> Optional[arkimet.Matcher]:
             """
             If the input has an arkimet match expression, return its compiled
             Matcher
@@ -246,7 +282,7 @@ if HAS_ARKIMET:
             self.data_root.mkdir(parents=True, exist_ok=True)
 
             # Dispatch todo-list
-            todo_list: List[Tuple[Any, "inputs.Input"]] = []
+            todo_list: List[Tuple[Any, Input]] = []
             for inps in self.inputs.values():
                 for inp in inps:
                     if getattr(inp.spec, "arkimet", None) == "skip":
@@ -273,7 +309,7 @@ if HAS_ARKIMET:
         Read a stream of arkimet metadata and store its data into a dataset
         """
 
-        def __init__(self, pantry: "ArkimetPantry", todo_list: List[Tuple[Any, "inputs.Input"]]) -> None:
+        def __init__(self, pantry: "ArkimetPantry", todo_list: List[Tuple[Any, Input]]) -> None:
             self.pantry = pantry
             self.data_root = pantry.data_root
             self.todo_list = todo_list
@@ -309,7 +345,7 @@ if HAS_ARKIMET:
                         continue
 
                     reftime = md.to_python("reftime")["time"]
-                    instant = inputs.Instant(reftime, step)
+                    instant = Instant(reftime, step)
 
                     source = md.to_python("source")
                     if inp.spec.model is None:
@@ -326,7 +362,7 @@ if HAS_ARKIMET:
                         out.write(md.data)
 
                     # Take note of having added one element to this file
-                    inp.add_instant(instant)
+                    self.pantry.add_instant(inp, instant)
             return True
 
         def read(self, infd: BinaryIO):
@@ -397,7 +433,7 @@ class EccodesPantry(DiskPantry):
             model = modelname.decode()
         for inp in self.inputs[name.decode()]:
             if inp.spec.model == model:
-                inp.add_instant(inputs.Instant(reftime, int(step)))
+                self.add_instant(inp, Instant(reftime, int(step)))
 
     def read_grib(self, path: Optional[Path]):
         """

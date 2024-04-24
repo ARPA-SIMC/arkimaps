@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from arkimapslib import flavours
+from arkimapslib.config import Config
+from arkimapslib.definitions import Definitions
 from arkimapslib.kitchen import ArkimetKitchen
 from arkimapslib.steps import AddBasemapParamsSpec
 from arkimapslib.unittest import scan_python_order
@@ -56,8 +58,10 @@ class TestFlavour(unittest.TestCase):
                 with (recipe_dir / f"{name}.yaml").open("wt") as fd:
                     yaml.dump({"recipe": steps}, fd)
 
-            with ArkimetKitchen() as kitchen:
-                kitchen.load_recipes([recipe_dir])
+            definitions = Definitions(config=Config())
+            definitions.load([recipe_dir])
+
+            with ArkimetKitchen(definitions=definitions) as kitchen:
                 kitchen.pantry.fill(path=Path("testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet"))
                 yield kitchen
 
@@ -146,10 +150,10 @@ class TestFlavour(unittest.TestCase):
                 "tcc": [{"step": "add_grib", "grib": "t2m"}],
             },
         ) as kitchen:
-            orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
+            orders = kitchen.make_orders(flavour=kitchen.defs.flavours["default"])
             self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("t2m", 12), ("tcc", 12)])
 
-            orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
+            orders = kitchen.make_orders(flavour=kitchen.defs.flavours["test"])
             self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("t2m", 12)])
 
     def test_recipe_filter_subdir(self):
@@ -163,10 +167,10 @@ class TestFlavour(unittest.TestCase):
                 "tcc": [{"step": "add_grib", "grib": "t2m"}],
             },
         ) as kitchen:
-            orders = kitchen.make_orders(flavour=kitchen.flavours.get("default"))
+            orders = kitchen.make_orders(flavour=kitchen.defs.flavours["default"])
             self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("test/t2m", 12), ("tcc", 12)])
 
-            orders = kitchen.make_orders(flavour=kitchen.flavours.get("test"))
+            orders = kitchen.make_orders(flavour=kitchen.defs.flavours["test"])
             self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("test/t2m", 12)])
 
     def assertTileSize(self, params: AddBasemapParamsSpec, size_x: int, size_y):
@@ -190,7 +194,7 @@ class TestFlavour(unittest.TestCase):
                 ]
             },
         ) as kitchen:
-            self.assertIsInstance(kitchen.flavours["test"], flavours.Tiled)
+            self.assertIsInstance(kitchen.defs.flavours["test"], flavours.Tiled)
             orders = kitchen.make_orders("test", recipe="test")
             self.assertEqual(len(orders), 3)
 
@@ -255,7 +259,7 @@ class TestFlavour(unittest.TestCase):
                 ]
             },
         ) as kitchen:
-            self.assertIsInstance(kitchen.flavours["test"], flavours.Tiled)
+            self.assertIsInstance(kitchen.defs.flavours["test"], flavours.Tiled)
             orders = kitchen.make_orders("test", recipe="test")
             self.assertEqual(len(orders), 4)
 

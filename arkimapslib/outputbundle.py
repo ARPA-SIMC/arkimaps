@@ -126,8 +126,8 @@ class InputSummary(Serializable):
     def __init__(self) -> None:
         self.inputs = {}
 
-    def add(self, inp: "Input"):
-        self.inputs[inp.name] = inp.stats
+    def add(self, name: str, stats: InputProcessingStats):
+        self.inputs[name] = stats
 
     def to_jsonable(self) -> Dict[str, Any]:
         # TODO: return {"inputs": self.inputs}

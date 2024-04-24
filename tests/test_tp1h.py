@@ -1,8 +1,9 @@
 # from __future__ import annotations
-from arkimapslib.unittest import add_recipe_test_cases
+from arkimapslib.unittest import recipe_tests
 import unittest
 
 
+@recipe_tests("tiles/tp1h")
 class TP1HMixin:
     def test_dispatch(self):
         # For IFS and Eccodes, we have a problem:
@@ -39,6 +40,3 @@ class TP1HMixin:
         self.assertRenders(orders[0])
 
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
-
-
-add_recipe_test_cases(__name__, "tiles/tp1h")

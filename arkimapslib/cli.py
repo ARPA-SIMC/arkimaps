@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional
 
 from arkimapslib import outputbundle
+from arkimapslib.config import Config
+from arkimapslib.definitions import Definitions
 from arkimapslib.flavours import Flavour
 from arkimapslib.orders import Order
 from arkimapslib.render import Renderer
@@ -40,12 +42,12 @@ class LogCollector(logging.Handler):
         )
 
 
-class KitchenCommand(ABC, Command):
+class DefinitionsCommand(Command):
     """
-    Command that requires a kitchen
+    Command that loads YAML Definitions
     """
 
-    kitchen: Kitchen
+    definitions: Definitions
 
     @classmethod
     def make_subparser(cls, subparsers):
@@ -77,8 +79,9 @@ class KitchenCommand(ABC, Command):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.kitchen = self.create_kitchen()
-        self.kitchen.load_recipes([self.args.recipes])
+        self.config = Config()
+        self.defs = Definitions(self.config)
+        self.defs.load([self.args.recipes])
 
     @abstractmethod
     def create_kitchen(self) -> Kitchen:
@@ -93,11 +96,29 @@ class KitchenCommand(ABC, Command):
         """
         flavours = []
         for flavour_name in self.args.flavours.split(","):
-            flavour = self.kitchen.flavours.get(flavour_name)
+            flavour = self.defs.flavours.get(flavour_name)
             if flavour is None:
                 raise Fail(f'Flavour "{flavour_name}" not found')
             flavours.append(flavour)
         return flavours
+
+
+class KitchenCommand(ABC, DefinitionsCommand):
+    """
+    Command that requires a kitchen
+    """
+
+    kitchen: Kitchen
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self.kitchen = self.create_kitchen()
+
+    @abstractmethod
+    def create_kitchen(self) -> Kitchen:
+        """
+        Instantiate the Kitchen object for this class
+        """
 
 
 class EmptyKitchenCommand(KitchenCommand):
@@ -144,11 +165,11 @@ class WorkingKitchenCommand(KitchenCommand):
         if self.args.grib or self.args.filter == "eccodes":
             from arkimapslib.kitchen import EccodesKitchen
 
-            return EccodesKitchen(workdir, grib_input=self.args.grib)
+            return EccodesKitchen(workdir=workdir, grib_input=self.args.grib)
         elif self.args.filter == "arkimet":
             from arkimapslib.kitchen import ArkimetKitchen
 
-            return ArkimetKitchen(workdir)
+            return ArkimetKitchen(workdir=workdir)
         else:
             raise Fail(f"Unsupported value `{self.args.filter}` for --filter")
 
@@ -261,7 +282,7 @@ class RenderCommand(WorkingKitchenCommand):
 
         # Prepare input summary after we're done with input processing
         input_summary = outputbundle.InputSummary()
-        self.kitchen.inputs.summarize(orders, input_summary)
+        self.kitchen.defs.inputs.summarize(self.kitchen.pantry, orders, input_summary)
 
         renderer = Renderer(
             config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory()

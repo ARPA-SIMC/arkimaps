@@ -9,15 +9,12 @@ import subprocess
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable, List, NamedTuple, Optional, Set, Tuple, Type
-
-import eccodes
+from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable, List, NamedTuple, Optional, Tuple, Type
 
 from .config import Config
 from .grib import GRIB
 from .lint import Lint
 from .models import BaseDataModel, pydantic
-from .outputbundle import InputProcessingStats
 from .types import Instant
 from .utils import Component, perf_counter_ns
 
@@ -27,17 +24,6 @@ if TYPE_CHECKING:
     from . import pantry, outputbundle, orders
 
 log = logging.getLogger("arkimaps.inputs")
-
-
-def keep_only_first_grib(fname: Path):
-    with fname.open("r+b") as infd:
-        gid = eccodes.codes_grib_new_from_file(infd)
-        try:
-            if eccodes.codes_get_message_offset(gid) != 0:
-                raise RuntimeError(f"{fname}: first grib does not start at offset 0")
-            infd.truncate(eccodes.codes_get_message_size(gid))
-        finally:
-            eccodes.codes_release(gid)
 
 
 class Inputs:
@@ -97,19 +83,20 @@ class Inputs:
         # Input for a new model: store it
         old.append(inp)
 
-    def summarize(self, orders: List["orders.Order"], summary: "outputbundle.InputSummary"):
+    def summarize(self, pantry: "pantry.Pantry", orders: List["orders.Order"], summary: "outputbundle.InputSummary"):
         """
         Return a JSON-serializable summary about input processing
         """
         # Collect which inputs have been used by which recipes
         for order in orders:
             for input_file in order.input_files.values():
-                input_file.info.stats.used_by.add(order.recipe.name)
+                pantry.input_stats[input_file.info].used_by.add(order.recipe.name)
 
         for inps in self.inputs.values():
             for inp in inps:
-                if inp.stats.used_by or inp.stats.computation_log:
-                    summary.add(inp)
+                stats = pantry.input_stats[inp]
+                if stats.used_by or stats.computation_log:
+                    summary.add(inp.name, stats)
 
 
 class InputSpec(BaseDataModel):
@@ -147,8 +134,6 @@ class Input(Component["Input"], ABC):
         super().__init__(config=config, name=name, defined_in=defined_in)
         # Input data as specified in the recipe
         self.spec = self.Spec(**kwargs)
-        # Processing statistics
-        self.stats = InputProcessingStats()
 
     @classmethod
     def create(cls, *, type: str = "default", **kwargs):
@@ -174,7 +159,7 @@ class Input(Component["Input"], ABC):
             yield
         finally:
             elapsed = perf_counter_ns() - start
-            self.stats.add_computation_log(elapsed, what)
+            pantry.input_stats[self].add_computation_log(elapsed, what)
             pantry.log_input_processing(self, what)
 
     def __getstate__(self):
@@ -211,21 +196,6 @@ class Input(Component["Input"], ABC):
         for name in self.get_all_inputs():
             for inp in pantry.inputs[name]:
                 inp.add_all_inputs(pantry, res)
-
-    def add_instant(self, instant: Instant):
-        """
-        Notify that the pantry contains data for this input for the given step
-        """
-        pass
-
-    def on_pantry_filled(self, pantry: "pantry.DiskPantry"):
-        """
-        Hook called on all inputs after the pantry is filled with the initial
-        data.
-
-        This is called once for every Pantry.fill() invocation.
-        """
-        pass
 
     def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         """
@@ -354,14 +324,6 @@ class Source(Input):
     NAME = "default"
     Spec = SourceInputSpec
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-        # set of available steps
-        self.instants: Set[Instant] = set()
-        # set of steps for which the data in the pantry contains multiple
-        # elements and needs to be truncated
-        self.instants_to_truncate: Set[Instant] = set()
-
     def lint(self, lint: Lint):
         super().lint(lint)
         if not self.spec.arkimet and not self.spec.eccodes:
@@ -398,25 +360,12 @@ class Source(Input):
         res["eccodes"] = self.spec.eccodes
         return res
 
-    def add_instant(self, instant: Instant):
-        if instant in self.instants:
-            log.warning("%s: multiple data found for %s", self.name, instant)
-            self.instants_to_truncate.add(instant)
-        self.instants.add(instant)
-
-    def on_pantry_filled(self, pantry: "pantry.DiskPantry"):
-        # If some steps had duplicate data, truncate them
-        for instant in self.instants_to_truncate:
-            fname = pantry.get_fullname(self, instant)
-            keep_only_first_grib(fname)
-        self.instants_to_truncate = set()
-
     def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         # FIXME: this hardcodes .grib as extension. We can either rename
         # 'Source' to 'GRIB' and default that, or allow to specify a different
         # extension, leaving '.grib' as a default
         res: Dict[Optional[Instant], "InputFile"] = {}
-        for instant in self.instants:
+        for instant in pantry.input_instants[self]:
             res[instant] = pantry.get_input_file(self, instant)
         return res
 
@@ -448,11 +397,6 @@ class Derived(Input, ABC):
 
     Spec = DerivedInputSpec
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        # set of available steps
-        self.instants: Set[Instant] = set()
-
     def to_dict(self):
         res = super().to_dict()
         res["inputs"] = self.spec.inputs
@@ -462,11 +406,6 @@ class Derived(Input, ABC):
         res = super().get_all_inputs()
         res.extend(self.spec.inputs)
         return res
-
-    def add_instant(self, instant: Instant):
-        if instant in self.instants:
-            log.warning("%s: multiple data generated for instant %s", self.name, instant)
-        self.instants.add(instant)
 
     def generate(self, pantry: "pantry.DiskPantry"):
         """
@@ -484,7 +423,7 @@ class Derived(Input, ABC):
                 pass
 
         res: Dict[Optional[Instant], "InputFile"] = {}
-        for instant in self.instants:
+        for instant in pantry.input_instants[self]:
             res[instant] = pantry.get_input_file(self, instant)
         return res
 
@@ -602,14 +541,14 @@ class VG6DStatProcMixin(Derived, ABC):
                     instant = Instant(
                         datetime.datetime(int(ye), int(mo), int(da), int(ho), int(mi), int(se)), int(step)
                     )
-                    if instant in self.instants:
+                    if instant in pantry.input_instants[self]:
                         log.warning(
                             "%s: vg6d_transform generated multiple GRIB data for instant %s. Note that truncation"
                             " to only the first data produced is not supported yet!",
                             self.name,
                             instant,
                         )
-                    self.add_instant(instant)
+                    pantry.add_instant(self, instant)
         finally:
             if os.path.exists(decumulated_data):
                 os.unlink(decumulated_data)
@@ -741,7 +680,7 @@ class VG6DTransform(AlignInstants):
                 log.warning("input %s: %s is empty after running vg6d_transform", self.name, output_name)
                 os.unlink(output_pathname)
 
-            self.add_instant(instant)
+            pantry.add_instant(self, instant)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -776,7 +715,7 @@ class Cat(AlignInstants):
                         with open(input_file.pathname, "rb") as fd:
                             shutil.copyfileobj(fd, out)
 
-            self.add_instant(instant)
+            pantry.add_instant(self, instant)
 
 
 class Or(Derived):
@@ -800,7 +739,7 @@ class Or(Derived):
             output_pathname = os.path.join(pantry.data_root, output_name)
             with self._collect_stats(pantry, f"{input_file.pathname} as {output_name}"):
                 os.link(input_file.pathname, output_pathname)
-            self.add_instant(instant)
+            pantry.add_instant(self, instant)
 
 
 class GribSetInputSpec(DerivedInputSpec):
@@ -917,7 +856,7 @@ class GroundToMSL(GribSetMixin, Derived):
                     output_pathname = os.path.join(pantry.data_root, output_name)
                     with open(output_pathname, "wb") as out:
                         out.write(val_grib.dumps())
-                    self.add_instant(instant)
+                    pantry.add_instant(self, instant)
                     has_output = True
 
         if not has_output:
@@ -1001,7 +940,7 @@ class Expr(GribSetMixin, AlignInstants):
                     with open(output_pathname, "wb") as out:
                         out.write(template.dumps())
 
-                    self.add_instant(instant)
+                    pantry.add_instant(self, instant)
 
 
 class SFFraction(GribSetMixin, AlignInstants):
@@ -1063,7 +1002,7 @@ class SFFraction(GribSetMixin, AlignInstants):
                     with open(output_pathname, "wb") as out:
                         out.write(template.dumps())
 
-                    self.add_instant(instant)
+                    pantry.add_instant(self, instant)
 
 
 class InputFile(NamedTuple):

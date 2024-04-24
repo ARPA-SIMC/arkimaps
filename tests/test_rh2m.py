@@ -1,7 +1,8 @@
 # from __future__ import annotations
-from arkimapslib.unittest import add_recipe_test_cases
+from arkimapslib.unittest import recipe_tests
 
 
+@recipe_tests("rh2m", models=("IFS", "Cosmo"))
 class RH2MMixin:
     def test_dispatch(self):
         pantry_reftime = "2021_1_10_0_0_0"
@@ -35,6 +36,7 @@ class RH2MMixin:
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
+@recipe_tests("rh2m", models=("ERG5",))
 class RH2MERG5Mixin:
     def test_dispatch(self):
         self.fill_pantry(step=0)
@@ -55,6 +57,3 @@ class RH2MERG5Mixin:
         self.assertRenders(orders[0], step=0)
 
         self.assertMgribArgsEqual(orders[0], erg5={})
-
-
-add_recipe_test_cases(__name__, "rh2m", models=("IFS", "Cosmo", "ERG5"))

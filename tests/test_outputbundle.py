@@ -53,11 +53,12 @@ class TestTypes(BaseFixture, unittest.TestCase):
         # TODO: inspect val1
 
     def test_inputsummary(self):
-        self.input.stats.add_computation_log(100_000_000, "mock processing")
-        self.input.stats.used_by.add(self.recipe.name)
+        stats = ob.InputProcessingStats()
+        stats.add_computation_log(100_000_000, "mock processing")
+        stats.used_by.add(self.recipe.name)
 
         val = ob.InputSummary()
-        val.add(self.input)
+        val.add("test", stats)
 
         as_json = val.to_jsonable()
         val1 = ob.InputSummary.from_jsonable(as_json)
@@ -220,11 +221,12 @@ class BundleTestsMixin(BaseFixture):
         self.assertEqual(p1, artifact)
 
     def test_serialize(self):
-        self.input.stats.add_computation_log(100_000_000, "mock processing")
-        self.input.stats.used_by.add(self.recipe.name)
+        stats = ob.InputProcessingStats()
+        stats.add_computation_log(100_000_000, "mock processing")
+        stats.used_by.add(self.recipe.name)
 
         input_summary = ob.InputSummary()
-        input_summary.add(self.input)
+        input_summary.add("test", stats)
 
         log = ob.Log()
         log.append(ts=1.5, level=2, msg="message", name="logname")

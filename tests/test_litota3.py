@@ -2,9 +2,10 @@
 import datetime
 import os
 import unittest
-from arkimapslib.unittest import add_recipe_test_cases
+from arkimapslib.unittest import recipe_tests
 
 
+@recipe_tests("litota3")
 class LITOTA3Mixin:
     def test_recipe(self):
         self.maxDiff = None
@@ -37,26 +38,27 @@ class LITOTA3Mixin:
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
 
 
+@recipe_tests("litota3")
 class LITOTA3NordMixin:
     flavour_name = "nord"
 
     expected_basemap_args = {
         "page_id_line": False,
         "output_width": 1000,
-        'page_x_length': 38,
-        'page_y_length': 24,
-        'subpage_map_projection': 'mercator',
-        'subpage_lower_left_latitude': 43.0,
-        'subpage_lower_left_longitude': 5.1,
-        'subpage_upper_right_latitude': 47.5,
-        'subpage_upper_right_longitude': 15.0,
+        "page_x_length": 38,
+        "page_y_length": 24,
+        "subpage_map_projection": "mercator",
+        "subpage_lower_left_latitude": 43.0,
+        "subpage_lower_left_longitude": 5.1,
+        "subpage_upper_right_latitude": 47.5,
+        "subpage_upper_right_longitude": 15.0,
         "subpage_map_vertical_longitude": 10.3,
-        'subpage_x_length': 34,
-        'subpage_x_position': 2,
-        'subpage_y_length': 23,
-        'subpage_y_position': 1,
-        'super_page_x_length': 40,
-        'super_page_y_length': 25,
+        "subpage_x_length": 34,
+        "subpage_x_position": 2,
+        "subpage_y_length": 23,
+        "subpage_y_position": 1,
+        "super_page_x_length": 40,
+        "super_page_y_length": 25,
         "map_grid": True,
         "map_grid_latitude_reference": 45.0,
         "map_grid_longitude_reference": 0.0,
@@ -99,7 +101,3 @@ class LITOTA3NordMixin:
         self.assertRenders(orders[0], reftime=datetime.datetime(2021, 3, 4))
 
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
-
-
-add_recipe_test_cases(__name__, "litota3")
-add_recipe_test_cases(__name__, "litota3", test_mixin=LITOTA3NordMixin)

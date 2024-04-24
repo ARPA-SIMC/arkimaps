@@ -229,7 +229,7 @@ class TestTiles(RecipeTestMixin, unittest.TestCase):
         # ita_small_tiles defines a domain of (35, 5) - (40, 20)
 
         self.fill_pantry()
-        flavour = self.kitchen.flavours["ita_small_tiles"]
+        flavour = self.kitchen.defs.flavours["ita_small_tiles"]
         # print(flavour.summarize())
 
         # Make orders and compute the area bounding box for each zoom level

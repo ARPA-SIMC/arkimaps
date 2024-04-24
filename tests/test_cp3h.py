@@ -1,7 +1,8 @@
 # from __future__ import annotations
-from arkimapslib.unittest import add_recipe_test_cases
+from arkimapslib.unittest import recipe_tests
 
 
+@recipe_tests("cp3h")
 class CP3HMixin:
     def test_dispatch(self):
         pantry_reftime = "2021_1_10_0_0_0"
@@ -20,6 +21,3 @@ class CP3HMixin:
         self.assertRenders(orders[0])
 
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
-
-
-add_recipe_test_cases(__name__, "cp3h")

@@ -76,7 +76,7 @@ class TestInputs(unittest.TestCase):
         with open(data_file, "wb") as out:
             out.write(mds[0].data)
 
-        inp.add_instant(instant)
+        pantry.add_instant(inp, instant)
 
     def test_trim(self) -> None:
         test = arkimapslib.inputs.Source(config=Config(), name="test", defined_in=__file__, arkimet="", eccodes="")
@@ -96,15 +96,15 @@ class TestInputs(unittest.TestCase):
                 out.write(mds[0].data)
 
             # Notify one data in the test instant
-            test.add_instant(instant1)
-            self.assertCountEqual(test.instants, [instant1])
-            self.assertCountEqual(test.instants_to_truncate, [])
+            pantry.add_instant(test, instant1)
+            self.assertCountEqual(pantry.input_instants[test], [instant1])
+            self.assertCountEqual(pantry.input_instants_to_truncate[test], [])
             self.assertEqual(os.path.getsize(data_file), len(mds[0].data))
 
             # Notify pantry filled, nothing gets truncated
-            test.on_pantry_filled(pantry)
-            self.assertCountEqual(test.instants, [instant1])
-            self.assertCountEqual(test.instants_to_truncate, [])
+            pantry.notify_pantry_filled()
+            self.assertCountEqual(pantry.input_instants[test], [instant1])
+            self.assertCountEqual(pantry.input_instants_to_truncate[test], [])
             self.assertEqual(os.path.getsize(data_file), len(mds[0].data))
 
             # Append one more GRIB to data_file
@@ -113,21 +113,21 @@ class TestInputs(unittest.TestCase):
 
             # Notify one more data in the test instant: it should notice the duplicate
             with self.assertLogs() as log:
-                test.add_instant(instant1)
+                pantry.add_instant(test, instant1)
             self.assertEqual(
                 log.output,
                 [
-                    "WARNING:arkimaps.inputs:test: multiple data found for 2021-01-10T00:00:00+000",
+                    "WARNING:arkimaps.pantry:test: multiple data found for 2021-01-10T00:00:00+000",
                 ],
             )
-            self.assertCountEqual(test.instants, [instant1])
-            self.assertCountEqual(test.instants_to_truncate, [instant1])
+            self.assertCountEqual(pantry.input_instants[test], [instant1])
+            self.assertCountEqual(pantry.input_instants_to_truncate[test], [instant1])
             self.assertEqual(os.path.getsize(data_file), len(mds[0].data) * 2)
 
             # Notify pantry filled, data_file gets truncated
-            test.on_pantry_filled(pantry)
-            self.assertCountEqual(test.instants, [instant1])
-            self.assertCountEqual(test.instants_to_truncate, [])
+            pantry.notify_pantry_filled()
+            self.assertCountEqual(pantry.input_instants[test], [instant1])
+            self.assertCountEqual(pantry.input_instants_to_truncate[test], [])
             self.assertEqual(os.path.getsize(data_file), len(mds[0].data))
 
     def test_apply_clip(self) -> None:

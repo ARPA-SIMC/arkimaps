@@ -1,7 +1,8 @@
 # from __future__ import annotations
-from arkimapslib.unittest import add_recipe_test_cases
+from arkimapslib.unittest import recipe_tests
 
 
+@recipe_tests("t2m")
 class T2MMixin:
     def test_dispatch(self):
         self.fill_pantry()
@@ -12,6 +13,3 @@ class T2MMixin:
         self.assertRenders(orders[0])
 
         self.assertMgribArgsEqual(orders[0], cosmo={}, ifs={})
-
-
-add_recipe_test_cases(__name__, "t2m")
