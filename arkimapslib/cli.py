@@ -80,7 +80,7 @@ class DefinitionsCommand(Command):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.config = Config()
-        self.defs = Definitions(self.config)
+        self.defs = Definitions(config=self.config)
         self.defs.load([self.args.recipes])
 
     @abstractmethod
@@ -165,11 +165,11 @@ class WorkingKitchenCommand(KitchenCommand):
         if self.args.grib or self.args.filter == "eccodes":
             from arkimapslib.kitchen import EccodesKitchen
 
-            return EccodesKitchen(workdir=workdir, grib_input=self.args.grib)
+            return EccodesKitchen(definitions=self.defs, workdir=workdir, grib_input=self.args.grib)
         elif self.args.filter == "arkimet":
             from arkimapslib.kitchen import ArkimetKitchen
 
-            return ArkimetKitchen(workdir=workdir)
+            return ArkimetKitchen(definitions=self.defs, workdir=workdir)
         else:
             raise Fail(f"Unsupported value `{self.args.filter}` for --filter")
 
@@ -261,7 +261,7 @@ class RenderCommand(WorkingKitchenCommand):
         if self.args.output:
             with self.args.output.open("wb") as out:
                 writer_cls: outputbundle.Writer
-                if self.args.output.endswith(".zip"):
+                if self.args.output.suffix == ".zip":
                     writer_cls = outputbundle.ZipWriter(out=out)
                 else:
                     writer_cls = outputbundle.TarWriter(out=out)
