@@ -33,10 +33,11 @@ class Kitchen:
     Shared context for this arkimaps run
     """
 
+    pantry: "pantry.Pantry"
+
     def __init__(self, *, definitions: Definitions):
         self.config = definitions.config
         self.defs = definitions
-        self.pantry: "pantry.Pantry"
         self.context_stack = contextlib.ExitStack()
 
     def __enter__(self):
@@ -71,12 +72,13 @@ class Kitchen:
 
 
 class WorkingKitchen(Kitchen):
+    pantry: "pantry.DiskPantry"
+
     def __init__(self, *, definitions: Definitions, workdir: Optional[Path] = None):
         """
         If no working directory is provided, it uses a temporary one
         """
         super().__init__(definitions=definitions)
-        self.pantry: "pantry.DiskPantry"
         self.tempdir: Optional[tempfile.TemporaryDirectory]
         self.workdir: Path
 
@@ -141,6 +143,8 @@ class WorkingKitchen(Kitchen):
 
 
 class ArkimetRecipesMixin(Kitchen):
+    pantry: "pantry.ArkimetBasePantry"
+
     def __init__(self, **kwargs):
         # Arkimet session
         #
@@ -181,6 +185,8 @@ class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
 
 
 class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
+    pantry: "pantry.ArkimetPantry"
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         from .pantry import ArkimetPantry
