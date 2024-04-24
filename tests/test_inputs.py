@@ -13,8 +13,9 @@ import numpy
 
 import arkimapslib.inputs
 from arkimapslib.config import Config
-from arkimapslib.inputs import Instant, Input, ModelStep
-from arkimapslib.pantry import Pantry, DiskPantry
+from arkimapslib.inputs import Instant, Input, Inputs
+from arkimapslib.pantry import DiskPantry
+from arkimapslib.types import ModelStep
 
 
 class TestInputs(unittest.TestCase):
@@ -23,12 +24,14 @@ class TestInputs(unittest.TestCase):
         if inputs is None:
             inputs = []
 
+        inputs_ = Inputs()
+        for inp in inputs:
+            inputs_.add(inp)
+
         with tempfile.TemporaryDirectory() as tempdir:
             pantry_dir = Path(tempdir)
             (pantry_dir / "pantry").mkdir(parents=True)
-            pantry = DiskPantry(pantry_dir)
-            for inp in inputs:
-                pantry.add_input(inp)
+            pantry = DiskPantry(root=pantry_dir, inputs=inputs_)
             yield pantry
 
     def add_to_pantry(
@@ -57,7 +60,7 @@ class TestInputs(unittest.TestCase):
             inp = arkimapslib.inputs.Source(
                 config=Config(), model=mo.group("model"), name=name, defined_in=__file__, arkimet="", eccodes=""
             )
-            pantry.add_input(inp)
+            pantry.inputs.add(inp)
         else:
             assert len(old_inputs) == 1
             inp = old_inputs[0]
@@ -150,7 +153,7 @@ class TestInputs(unittest.TestCase):
 
             # Derived input defined for any model
             cat = Input.create(config=Config(), name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
-            pantry.add_input(cat)
+            pantry.inputs.add(cat)
 
             # Derived input prerequisites are not satisfied
             res = cat.get_instants(pantry)
@@ -174,7 +177,7 @@ class TestInputs(unittest.TestCase):
             cat = Input.create(
                 config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__
             )
-            pantry.add_input(cat)
+            pantry.inputs.add(cat)
 
             # Derived input prerequisites are not satisfied
             self.assertEqual(cat.get_instants(pantry), {})
@@ -192,7 +195,7 @@ class TestInputs(unittest.TestCase):
             cat = Input.create(
                 config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__
             )
-            pantry.add_input(cat)
+            pantry.inputs.add(cat)
 
             # Derived input prerequisites are not satisfied
             res = cat.get_instants(pantry)

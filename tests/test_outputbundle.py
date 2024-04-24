@@ -8,10 +8,11 @@ import unittest
 from typing import Type
 
 import arkimapslib.outputbundle as ob
-from arkimapslib import flavours, orders, inputs
+from arkimapslib import flavours, inputs, orders
 from arkimapslib.config import Config
-from arkimapslib.inputs import ModelStep, Instant
+from arkimapslib.inputs import Instant
 from arkimapslib.recipes import Recipe
+from arkimapslib.types import ModelStep
 
 
 class BaseFixture:

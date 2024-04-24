@@ -31,19 +31,17 @@ class Recipes:
     def __iter__(self):
         return self.recipes.values().__iter__()
 
-    def add(self, *, lint: Optional[Lint] = None, **kwargs):
+    def add(self, **kwargs: Any) -> None:
         """
         Add a recipe to this recipes collection
         """
         recipe = Recipe(config=self.config, **kwargs)
-        if lint is not None:
-            recipe.lint(lint)
         old = self.recipes.get(recipe.name)
         if old is not None:
             raise RuntimeError(f"{recipe.name} is defined both in {old.defined_in!r} and in {recipe.defined_in!r}")
         self.recipes[recipe.name] = recipe
 
-    def add_derived(self, *, name: str, extends: str, defined_in: str, lint: Optional[Lint] = None, **kwargs):
+    def add_derived(self, *, name: str, extends: str, defined_in: str, **kwargs: Any) -> None:
         """
         Add the definition of a derived recipe to be instantiated later
         """
@@ -64,7 +62,7 @@ class Recipes:
             **kwargs,
         }
 
-    def resolve_derived(self, *, lint: Optional[Lint] = None):
+    def resolve_derived(self) -> None:
         """
         Instantiate all recipes in new_derived
         """
@@ -90,11 +88,9 @@ class Recipes:
             parent = self.recipes[info.pop("extends")]
             kwargs = Recipe.inherit(name=name, parent=parent, **info)
             recipe = Recipe(config=self.config, **kwargs)
-            if lint:
-                recipe.lint(lint)
             self.recipes[name] = recipe
 
-    def get(self, name: str):
+    def get(self, name: str) -> "Recipe":
         """
         Return a recipe by name
         """

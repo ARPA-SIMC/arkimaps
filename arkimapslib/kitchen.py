@@ -18,9 +18,9 @@ except ModuleNotFoundError:
 from . import orders, pantry
 from .config import Config
 from .flavours import Flavour
-from .lint import Lint
 from .recipes import Recipe
-from .inputs import ModelStep
+from .inputs import Inputs
+from .types import ModelStep
 
 # if TYPE_CHECKING:
 # Used for kwargs-style dicts
@@ -42,6 +42,7 @@ class Kitchen:
         self.pantry: "pantry.Pantry"
         self.recipes = Recipes(config=self.config)
         self.flavours: Dict[str, Flavour] = {}
+        self.inputs: Inputs = Inputs()
         self.context_stack = contextlib.ExitStack()
 
     def __enter__(self):
@@ -50,16 +51,16 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def load_recipes(self, paths: List[Path], *, lint: Optional[Lint] = None):
+    def load_recipes(self, paths: List[Path]):
         """
         Load recipes from the given list of directories
         """
         for path in paths:
-            self.load_recipe_dir(path, lint=lint)
+            self.load_recipe_dir(path)
 
-        self.recipes.resolve_derived(lint=lint)
+        self.recipes.resolve_derived()
 
-    def load_recipe_dir(self, path: Path, *, lint: Optional[Lint] = None):
+    def load_recipe_dir(self, path: Path):
         """
         Load recipes from the given directory
         """
@@ -90,14 +91,10 @@ class Kitchen:
                             raise RuntimeError(f"{relfn}: '_' not allowed in input name {name!r}")
                         if isinstance(input_contents, list):
                             for ic in input_contents:
-                                self.pantry.add_input(
-                                    Input.create(config=self.config, name=name, defined_in=relfn, lint=lint, **ic)
-                                )
+                                self.inputs.add(Input.create(config=self.config, name=name, defined_in=relfn, **ic))
                         else:
-                            self.pantry.add_input(
-                                Input.create(
-                                    config=self.config, name=name, defined_in=relfn, lint=lint, **input_contents
-                                )
+                            self.inputs.add(
+                                Input.create(config=self.config, name=name, defined_in=relfn, **input_contents)
                             )
 
                 flavours = recipe.pop("flavours", None)
@@ -109,18 +106,16 @@ class Kitchen:
                         old = self.flavours.get(name)
                         if old is not None:
                             raise RuntimeError(f"{relfn}: flavour {name} was already defined in {old.defined_in}")
-                        self.flavours[name] = Flavour.create(
-                            config=self.config, name=name, defined_in=relfn, lint=lint, **flavour
-                        )
+                        self.flavours[name] = Flavour.create(config=self.config, name=name, defined_in=relfn, **flavour)
 
                 recipe["name"] = relfn[:-5]
                 recipe["defined_in"] = relfn
 
                 if "recipe" in recipe:
-                    self.recipes.add(lint=lint, **recipe)
+                    self.recipes.add(**recipe)
 
                 if "extends" in recipe:
-                    self.recipes.add_derived(lint=lint, **recipe)
+                    self.recipes.add_derived(**recipe)
 
     def list_inputs(self, flavours: List[Flavour]) -> Set[str]:
         """
@@ -236,8 +231,8 @@ class ArkimetRecipesMixin(Kitchen):
 
         merged = None
         for input_name in input_names:
-            for inp in self.pantry.inputs[input_name]:
-                matcher = getattr(inp, "arkimet_matcher", None)
+            for inp in self.inputs[input_name]:
+                matcher = self.pantry.arkimet_matcher(inp)
                 if matcher is None:
                     continue
                 if merged is None:
@@ -254,7 +249,7 @@ class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.pantry = pantry.ArkimetEmptyPantry(self.session)
+        self.pantry = pantry.ArkimetEmptyPantry(self.session, inputs=self.inputs)
 
 
 class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
@@ -262,7 +257,7 @@ class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
         super().__init__(*args, **kw)
         from .pantry import ArkimetPantry
 
-        self.pantry = ArkimetPantry(root=self.workdir, session=self.session)
+        self.pantry = ArkimetPantry(root=self.workdir, session=self.session, inputs=self.inputs)
 
 
 class EccodesEmptyKitchen(Kitchen):
@@ -272,10 +267,10 @@ class EccodesEmptyKitchen(Kitchen):
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.pantry = pantry.EmptyPantry()
+        self.pantry = pantry.EmptyPantry(inputs=self.inputs)
 
 
 class EccodesKitchen(WorkingKitchen):
     def __init__(self, *args, grib_input=False, **kw):
         super().__init__(*args, **kw)
-        self.pantry = pantry.EccodesPantry(root=self.workdir, grib_input=grib_input)
+        self.pantry = pantry.EccodesPantry(root=self.workdir, grib_input=grib_input, inputs=self.inputs)

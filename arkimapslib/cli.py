@@ -261,7 +261,7 @@ class RenderCommand(WorkingKitchenCommand):
 
         # Prepare input summary after we're done with input processing
         input_summary = outputbundle.InputSummary()
-        self.kitchen.pantry.summarize_inputs(orders, input_summary)
+        self.kitchen.inputs.summarize(orders, input_summary)
 
         renderer = Renderer(
             config=self.kitchen.config, workdir=self.kitchen.workdir, styles_dir=self.get_styles_directory()

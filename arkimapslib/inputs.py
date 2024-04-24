@@ -9,32 +9,22 @@ import subprocess
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable, List, NamedTuple, Optional, Set, Tuple, Type
 
 import eccodes
-import numpy
 
 from .config import Config
 from .grib import GRIB
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .outputbundle import InputProcessingStats
-from .types import Instant, ModelStep
+from .types import Instant
 from .utils import Component, perf_counter_ns
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
-    from . import pantry
-    from .recipes import Recipe
-
-    try:
-        import arkimet
-    except ModuleNotFoundError:
-        pass
-
-# Used for kwargs-style dicts
-Kwargs = Dict[str, Any]
+    from . import pantry, outputbundle, orders
 
 log = logging.getLogger("arkimaps.inputs")
 
@@ -48,6 +38,78 @@ def keep_only_first_grib(fname: Path):
             infd.truncate(eccodes.codes_get_message_size(gid))
         finally:
             eccodes.codes_release(gid)
+
+
+class Inputs:
+    """
+    Repository of all known inputs
+    """
+
+    def __init__(self) -> None:
+        # List of input definitions, indexed by name
+        self.inputs: Dict[str, List["Input"]] = {}
+
+    def __getitem__(self, key: str) -> List["Input"]:
+        """
+        Lookup an input by name
+        """
+        return self.inputs[key]
+
+    def get(self, name: str, model: Optional[str] = None) -> List["Input"]:
+        """
+        Lookup an input by name, optionally filtered by model
+        """
+        inputs = self.inputs.get(name) or []
+        if model is not None:
+            inputs = [inp for inp in inputs if inp.spec.model is None or model == inp.spec.model]
+        return inputs
+
+    def values(self) -> Iterable[List["Input"]]:
+        """
+        Return all the inputs in the repository
+        """
+        return self.inputs.values()
+
+    def add(self, inp: "Input"):
+        """
+        Add an Input definition
+        """
+        old = self.inputs.get(inp.name)
+        if old is None:
+            # First time we see this input: add it
+            self.inputs[inp.name] = [inp]
+            return
+
+        if len(old) == 1 and old[0].spec.model is None:
+            # We had an input for model=None (all models)
+            # so we refuse to add more
+            raise RuntimeError(
+                f"{inp.defined_in}: input {inp.name} for (any model) already defined in {old[0].defined_in}"
+            )
+
+        for i in old:
+            if i.spec.model == inp.spec.model:
+                # We already had an input for this model name
+                raise RuntimeError(
+                    f"{inp.defined_in}: input {inp.name} (model {inp.spec.model}) already defined in {i.defined_in}"
+                )
+
+        # Input for a new model: store it
+        old.append(inp)
+
+    def summarize(self, orders: List["orders.Order"], summary: "outputbundle.InputSummary"):
+        """
+        Return a JSON-serializable summary about input processing
+        """
+        # Collect which inputs have been used by which recipes
+        for order in orders:
+            for input_file in order.input_files.values():
+                input_file.info.stats.used_by.add(order.recipe.name)
+
+        for inps in self.inputs.values():
+            for inp in inps:
+                if inp.stats.used_by or inp.stats.computation_log:
+                    summary.add(inp)
 
 
 class InputSpec(BaseDataModel):
@@ -89,15 +151,12 @@ class Input(Component["Input"], ABC):
         self.stats = InputProcessingStats()
 
     @classmethod
-    def create(cls, *, lint: Optional[Lint] = None, type: str = "default", **kwargs):
+    def create(cls, *, type: str = "default", **kwargs):
         """
         Instantiate an input by the ``type`` key in its recipe definition
         """
         impl_cls = cls.lookup(type)
-        res = impl_cls(**kwargs)
-        if lint:
-            res.lint(lint)
-        return res
+        return impl_cls(**kwargs)
 
     def lint(self, lint: Lint) -> None:
         """
@@ -176,13 +235,6 @@ class Input(Component["Input"], ABC):
         objects
         """
         return {}
-
-    def compile_arkimet_matcher(self, session: "arkimet.dataset.Session"):
-        """
-        Hook to allow inputs to compile arkimet matchers
-        """
-        # Does nothing by default
-        pass
 
     def document(self, file, indent=4):
         """
@@ -304,8 +356,6 @@ class Source(Input):
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        # Compiled arkimet matcher, when available/used
-        self.arkimet_matcher: Optional[arkimet.Matcher] = None
         # set of available steps
         self.instants: Set[Instant] = set()
         # set of steps for which the data in the pantry contains multiple
@@ -369,12 +419,6 @@ class Source(Input):
         for instant in self.instants:
             res[instant] = pantry.get_input_file(self, instant)
         return res
-
-    def compile_arkimet_matcher(self, session: "arkimet.dataset.Session"):
-        if self.spec.arkimet is None or self.spec.arkimet == "skip":
-            self.arkimet_matcher = None
-        else:
-            self.arkimet_matcher = session.matcher(self.spec.arkimet)
 
     def document(self, file, indent=4):
         ind = " " * indent

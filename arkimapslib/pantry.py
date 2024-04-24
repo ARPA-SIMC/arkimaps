@@ -18,6 +18,7 @@ except ModuleNotFoundError:
     HAS_ARKIMET = False
 
 from . import inputs
+from .types import ModelStep
 
 if TYPE_CHECKING:
     from . import orders, outputbundle
@@ -39,58 +40,17 @@ class Pantry:
     Storage of GRIB files used as inputs to recipes
     """
 
-    def __init__(self, *args, **kw) -> None:
+    def __init__(self, inputs: inputs.Inputs, **kwargs) -> None:
         # List of input definitions, indexed by name
-        self.inputs: Dict[str, List[inputs.Input]] = {}
+        self.inputs = inputs
         # Log of input processing operations performed
         self.process_log: List[ProcessLogEntry] = []
-
-    def summarize_inputs(self, orders: List["orders.Order"], summary: "outputbundle.InputSummary"):
-        """
-        Return a JSON-serializable summary about input processing
-        """
-        # Collect which inputs have been used by which recipes
-        for order in orders:
-            for input_file in order.input_files.values():
-                input_file.info.stats.used_by.add(order.recipe.name)
-
-        for inps in self.inputs.values():
-            for inp in inps:
-                if inp.stats.used_by or inp.stats.computation_log:
-                    summary.add(inp)
 
     def log_input_processing(self, input: inputs.Input, message: str):
         """
         Trace one input processing step
         """
         self.process_log.append(ProcessLogEntry(input, message))
-
-    def add_input(self, inp: "inputs.Input"):
-        """
-        Add an Input definition
-        """
-        old = self.inputs.get(inp.name)
-        if old is None:
-            # First time we see this input: add it
-            self.inputs[inp.name] = [inp]
-            return
-
-        if len(old) == 1 and old[0].spec.model is None:
-            # We had an input for model=None (all models)
-            # so we refuse to add more
-            raise RuntimeError(
-                f"{inp.defined_in}: input {inp.name} for (any model) already defined in {old[0].defined_in}"
-            )
-
-        for i in old:
-            if i.spec.model == inp.spec.model:
-                # We already had an input for this model name
-                raise RuntimeError(
-                    f"{inp.defined_in}: input {inp.name} (model {inp.spec.model}) already defined in {i.defined_in}"
-                )
-
-        # Input for a new model: store it
-        old.append(inp)
 
     def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
         """
@@ -142,8 +102,8 @@ class DiskPantry(Pantry):
     Pantry with disk-based storage
     """
 
-    def __init__(self, root: Path, **kw):
-        super().__init__(**kw)
+    def __init__(self, *, root: Path, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.data_root: Path = root / "pantry"
 
     def get_basename(self, inp: "inputs.Input", instant: "inputs.Instant", fmt="grib") -> Path:
@@ -195,15 +155,14 @@ class DiskPantry(Pantry):
         Return the instants available in the pantry for the input with the given
         name
         """
-        inps = self.inputs.get(input_name)
-        if inps is None:
-            return {}
-
         res: Dict[Optional[inputs.Instant], "inputs.InputFile"] = {}
+
+        # Skip inputs for mismatching models (see #114)
+        inps = self.inputs.get(input_name, model)
+        if not inps:
+            return res
+
         for inp in inps:
-            # Skip inputs for mismatching models (see #114)
-            if model is not None and inp.spec.model is not None and model != inp.spec.model:
-                continue
             instants = inp.get_instants(self)
             for instant, input_file in instants.items():
                 # Keep the first available version for each instant
@@ -244,31 +203,40 @@ class DiskPantry(Pantry):
 
 if HAS_ARKIMET:
 
-    class ArkimetEmptyPantry(EmptyPantry):
+    class ArkimetBasePantry(Pantry):
         """
-        Storage-less arkimet pantry only used to load recipes
+        Base for all Arkimet pantries
         """
 
         def __init__(self, session: "arkimet.dataset.Session", **kw):
             super().__init__(**kw)
             self.session = session
+            self.cached_matchers: Dict["inputs.Input", arkimet.Matcher] = {}
 
-        def add_input(self, inp: "inputs.Input"):
-            inp.compile_arkimet_matcher(self.session)
-            super().add_input(inp)
+        def arkimet_matcher(self, inp: "inputs.Input") -> Optional[arkimet.Matcher]:
+            """
+            If the input has an arkimet match expression, return its compiled
+            Matcher
+            """
+            if inp not in self.cached_matchers:
+                cached: Optional[arkimet.Matcher] = None
+                expression: Optional[str] = getattr(inp.spec, "arkimet", None)
+                if expression is not None and expression != "skip":
+                    cached = self.session.matcher(inp.spec.arkimet)
+                self.cached_matchers[inp] = cached
+                return cached
+            else:
+                return self.cached_matchers[inp]
 
-    class ArkimetPantry(DiskPantry):
+    class ArkimetEmptyPantry(ArkimetBasePantry, EmptyPantry):
+        """
+        Storage-less arkimet pantry only used to load recipes
+        """
+
+    class ArkimetPantry(ArkimetBasePantry, DiskPantry):
         """
         Arkimet-based storage of GRIB files to be processed
         """
-
-        def __init__(self, session: arkimet.dataset.Session, **kw):
-            super().__init__(**kw)
-            self.session = session
-
-        def add_input(self, inp: "inputs.Input"):
-            inp.compile_arkimet_matcher(self.session)
-            super().add_input(inp)
 
         def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
             """
@@ -285,7 +253,7 @@ if HAS_ARKIMET:
                         continue
                     if input_filter is not None and inp.name not in input_filter:
                         continue
-                    matcher = getattr(inp, "arkimet_matcher", None)
+                    matcher = self.arkimet_matcher(inp)
                     if matcher is None:
                         if hasattr(inp.spec, "eccodes"):
                             log.info(
@@ -305,7 +273,7 @@ if HAS_ARKIMET:
         Read a stream of arkimet metadata and store its data into a dataset
         """
 
-        def __init__(self, pantry: "ArkimetPantry", todo_list: List[Tuple[Any, "inputs.Input"]]):
+        def __init__(self, pantry: "ArkimetPantry", todo_list: List[Tuple[Any, "inputs.Input"]]) -> None:
             self.pantry = pantry
             self.data_root = pantry.data_root
             self.todo_list = todo_list
@@ -324,7 +292,7 @@ if HAS_ARKIMET:
                             log.warning("unsupported timerange %s: skipping input", trange)
                             continue
                         try:
-                            step = inputs.ModelStep.from_grib1(output_step, trange["unit"])
+                            step = ModelStep.from_grib1(output_step, trange["unit"])
                         except NotImplementedError as e:
                             log.warning("skipping input: %s", e)
                             continue
@@ -332,7 +300,7 @@ if HAS_ARKIMET:
                         output_step = trange["step_len"]
                         output_step_unit = trange["step_unit"]
                         try:
-                            step = inputs.ModelStep.from_timedef(output_step, output_step_unit)
+                            step = ModelStep.from_timedef(output_step, output_step_unit)
                         except NotImplementedError as e:
                             log.warning("skipping input: %s", e)
                             continue
@@ -376,8 +344,8 @@ class EccodesPantry(DiskPantry):
     eccodes-based storage of GRIB files to be processed
     """
 
-    def __init__(self, grib_input=False, **kw):
-        super().__init__(**kw)
+    def __init__(self, grib_input=False, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.grib_input = grib_input
         self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
 
@@ -394,7 +362,7 @@ class EccodesPantry(DiskPantry):
                 for inp in inps:
                     eccodes = getattr(inp.spec, "eccodes", None)
                     if eccodes is None:
-                        if hasattr(inp, "arkimet_matcher"):
+                        if hasattr(inp.spec, "arkimet"):
                             log.info("%s (model=%s): skipping input with no eccodes filter", inp.name, inp.spec.model)
                         continue
                     elif eccodes == "skip":
@@ -435,7 +403,7 @@ class EccodesPantry(DiskPantry):
         """
         Run grib_filter on GRIB input
         """
-        cmd = ["grib_filter", self.grib_filter_rules, ("-" if path is None else path)]
+        cmd = ["grib_filter", self.grib_filter_rules, ("-" if path is None else str(path))]
         res = subprocess.run(cmd, stdin=sys.stdin, stdout=subprocess.PIPE, check=True)
         for line in res.stdout.splitlines():
             self._parse_filter_output(line)

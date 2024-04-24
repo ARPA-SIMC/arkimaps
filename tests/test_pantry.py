@@ -9,7 +9,7 @@ from unittest import TestCase
 
 from arkimapslib import pantry
 from arkimapslib.config import Config
-from arkimapslib.inputs import Input, Instant
+from arkimapslib.inputs import Inputs, Input, Instant
 
 
 class PantryTestMixin:
@@ -29,7 +29,7 @@ class PantryTestMixin:
 
     def test_dispatch(self):
         with self.pantry() as pantry:
-            pantry.add_input(
+            pantry.inputs.add(
                 Input.create(
                     config=Config(),
                     name="test",
@@ -45,7 +45,7 @@ class PantryTestMixin:
 
     def test_separate_steps(self):
         def add_inputs(pantry):
-            pantry.add_input(
+            pantry.inputs.add(
                 Input.create(
                     config=Config(),
                     name="test",
@@ -54,7 +54,7 @@ class PantryTestMixin:
                     eccodes='shortName is "2t" and indicatorOfTypeOfLevel == 105',
                 )
             )
-            pantry.add_input(
+            pantry.inputs.add(
                 Input.create(config=Config(), name="derived", defined_in="memory", type="cat", inputs=["test"])
             )
 
@@ -111,11 +111,11 @@ class TestArkimetPantry(PantryTestMixin, TestCase):
 
         with arkimet.dataset.Session() as session:
             with self.workdir(workdir) as workdir:
-                yield pantry.ArkimetPantry(root=workdir, session=session)
+                yield pantry.ArkimetPantry(root=workdir, session=session, inputs=Inputs())
 
     def test_dispatch_skip_arkimet(self):
         with self.pantry() as pantry:
-            pantry.add_input(
+            pantry.inputs.add(
                 Input.create(
                     config=Config(),
                     name="test",
@@ -132,11 +132,11 @@ class TestEccodesPantry(PantryTestMixin, TestCase):
     @contextlib.contextmanager
     def pantry(self, workdir: Optional[Path] = None):
         with self.workdir(workdir) as workdir:
-            yield pantry.EccodesPantry(root=workdir)
+            yield pantry.EccodesPantry(root=workdir, inputs=Inputs())
 
     def test_dispatch_skip_eccodes(self):
         with self.pantry() as pantry:
-            pantry.add_input(
+            pantry.inputs.add(
                 Input.create(
                     config=Config(),
                     name="test",
