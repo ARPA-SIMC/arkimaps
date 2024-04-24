@@ -390,6 +390,14 @@ class Reader(ABC):
     """
 
     @abstractmethod
+    def __enter__(self):
+        ...
+
+    @abstractmethod
+    def __exit__(self, exc_type, exc_value, traceback):
+        ...
+
+    @abstractmethod
     def version(self) -> str:
         """
         Return the bundle version information
@@ -549,6 +557,14 @@ class Writer(ABC):
     """
     Write functions for output bundles
     """
+
+    @abstractmethod
+    def __enter__(self):
+        ...
+
+    @abstractmethod
+    def __exit__(self, exc_type, exc_value, traceback):
+        ...
 
     @abstractmethod
     def _add_serializable(self, name: str, value: Serializable) -> None:

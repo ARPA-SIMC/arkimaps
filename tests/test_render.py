@@ -2,17 +2,20 @@
 import os
 import tempfile
 import unittest
-from arkimapslib.render import Renderer
+from pathlib import Path
+
 from arkimapslib.config import Config
+from arkimapslib.render import Renderer
 
 
 class TestRender(unittest.TestCase):
     def test_issue83(self) -> None:
-        with tempfile.TemporaryDirectory() as workdir:
+        with tempfile.TemporaryDirectory() as tempdir:
+            workdir = Path(tempdir)
             renderer = Renderer(Config(), workdir)
             with renderer.override_env():
-                from Magics import macro
                 import Magics
+                from Magics import macro
 
                 output = macro.output(output_formats=["png"], output_name=os.path.join(workdir, "issue83"))
                 parts = []
