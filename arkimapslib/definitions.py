@@ -63,14 +63,14 @@ class Definitions:
                 if flavours is not None:
                     self.add_flavours(relfn, flavours)
 
-                recipe["name"] = relfn[:-5]
-                recipe["defined_in"] = relfn
+                name = relfn[:-5]
+                defined_in = relfn
 
                 if "recipe" in recipe:
-                    self.recipes.add(**recipe)
+                    self.recipes.add(name=name, defined_in=defined_in, args=recipe)
 
                 if "extends" in recipe:
-                    self.recipes.add_derived(**recipe)
+                    self.recipes.add_derived(name=name, defined_in=defined_in, **recipe)
 
     def add_inputs(self, defined_in: str, inputs: Dict[str, Any]) -> None:
         from .inputs import Input

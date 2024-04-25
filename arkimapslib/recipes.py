@@ -31,17 +31,17 @@ class Recipes:
     def __iter__(self):
         return self.recipes.values().__iter__()
 
-    def add(self, name: str, defined_in: str, **kwargs: Any) -> None:
+    def add(self, name: str, defined_in: str, args: Dict[str, Any]) -> None:
         """
         Add a recipe to this recipes collection
         """
-        recipe = Recipe(config=self.config, name=name, defined_in=defined_in, args=kwargs)
+        recipe = Recipe(config=self.config, name=name, defined_in=defined_in, args=args)
         old = self.recipes.get(recipe.name)
         if old is not None:
             raise RuntimeError(f"{recipe.name} is defined both in {old.defined_in!r} and in {recipe.defined_in!r}")
         self.recipes[recipe.name] = recipe
 
-    def add_derived(self, *, name: str, extends: str, defined_in: str, **kwargs: Any) -> None:
+    def add_derived(self, *, name: str, defined_in: str, extends: str, **kwargs: Any) -> None:
         """
         Add the definition of a derived recipe to be instantiated later
         """

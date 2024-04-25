@@ -105,7 +105,7 @@ class TestRecipes(unittest.TestCase):
         recipes.add(
             name="test",
             defined_in="test.yaml",
-            recipe=[{"step": "add_grib", "grib": "t2m", "id": "input"}, {"step": "add_user_boundaries"}],
+            args={"recipe": [{"step": "add_grib", "grib": "t2m", "id": "input"}, {"step": "add_user_boundaries"}]},
         )
 
         recipes.add_derived(
