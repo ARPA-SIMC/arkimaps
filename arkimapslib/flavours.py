@@ -9,7 +9,7 @@ from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor
-from .utils import Component
+from .component import Component
 
 if TYPE_CHECKING:
     from . import pantry, recipes

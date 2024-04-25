@@ -10,7 +10,7 @@ import osgeo
 from osgeo import osr
 
 from .models import BaseDataModel
-from .utils import Component
+from .component import Component
 
 if TYPE_CHECKING:
     from .config import Config

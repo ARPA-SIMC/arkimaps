@@ -16,7 +16,8 @@ from .grib import GRIB
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .types import Instant
-from .utils import Component, perf_counter_ns
+from .component import Component
+from .utils import perf_counter_ns
 
 if TYPE_CHECKING:
     from numpy.typing import NDArray
