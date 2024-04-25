@@ -3,6 +3,7 @@ from abc import ABC
 from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING
 
 from .models import BaseDataModel, pydantic
+from .component import Component
 
 if TYPE_CHECKING:
     from .config import Config
@@ -19,7 +20,7 @@ class StepSpec(BaseDataModel):
     """
 
 
-class Step(ABC):
+class Step(Component[StepSpec], ABC):
     """
     One recipe step provided by a Mixer
     """
@@ -31,14 +32,11 @@ class Step(ABC):
     def __init__(
         self,
         *,
-        config: "Config",
-        name: str,
-        defined_in: str,
         args: Dict[str, Any],
         sources: Dict[str, "inputs.InputFile"],
+        **kwargs,
     ) -> None:
-        self.name = name
-        self.spec = self.Spec(**args)
+        super().__init__(**kwargs, **args)
         self.sources = sources
 
     @classmethod

@@ -9,7 +9,7 @@ from . import steps, toposort
 from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
-from .component import Component
+from .component import RootComponent
 
 if TYPE_CHECKING:
     from . import flavours, inputs, pantry
@@ -242,7 +242,7 @@ class RecipeSpec(BaseDataModel):
         return value
 
 
-class Recipe(Component["Recipe"]):
+class Recipe(RootComponent[RecipeSpec, "Recipe"]):
     """
     A parsed and validated recipe
     """
@@ -252,10 +252,7 @@ class Recipe(Component["Recipe"]):
     def __init__(self, *, config: Config, name: str, defined_in: str, **kwargs: Any) -> None:
         from .mixers import mixers
 
-        super().__init__(config=config, name=name, defined_in=defined_in)
-
-        # Input data as specified in the recipe
-        self.spec = self.Spec(**kwargs)
+        super().__init__(config=config, name=name, defined_in=defined_in, **kwargs)
 
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []

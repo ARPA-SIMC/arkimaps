@@ -16,7 +16,7 @@ from .grib import GRIB
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .types import Instant
-from .component import Component
+from .component import RootComponent
 from .utils import perf_counter_ns
 
 if TYPE_CHECKING:
@@ -113,7 +113,7 @@ class InputSpec(BaseDataModel):
     notes: Optional[str] = None
 
 
-class Input(Component["Input"], ABC):
+class Input(RootComponent[InputSpec, "Input"], ABC):
     """
     An input element to a recipe.
 
@@ -123,18 +123,6 @@ class Input(Component["Input"], ABC):
 
     NAME: str
     Spec: Type[InputSpec] = InputSpec
-
-    def __init__(
-        self,
-        *,
-        config: Config,
-        name: str,
-        defined_in: str,
-        **kwargs,
-    ):
-        super().__init__(config=config, name=name, defined_in=defined_in)
-        # Input data as specified in the recipe
-        self.spec = self.Spec(**kwargs)
 
     @classmethod
     def create(cls, *, type: str = "default", **kwargs):

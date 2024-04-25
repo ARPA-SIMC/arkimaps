@@ -8,8 +8,30 @@ if TYPE_CHECKING:
     from .config import Config
 
 
-T = TypeVar("T", bound="Component[Any]")
+T = TypeVar("T", bound="RootComponent[BaseDataModel, Any]")
 SPEC = TypeVar("SPEC", bound=BaseDataModel)
+
+
+class Component(Generic[SPEC], ABC):
+    """
+    Base class for components instantiated from a dict structure parsed from
+    JSON or YAML
+    """
+
+    Spec: Type[SPEC]
+
+    def __init__(self, *, config: "Config", name: str, defined_in: str, **kwargs: Any) -> None:
+        """
+        Common initialization for all components
+        """
+        # Configuration for this run
+        self.config = config
+        # Name of the input in the recipe
+        self.name = name
+        # File name where this input was defined
+        self.defined_in = defined_in
+        # Input data as specified in the recipe
+        self.spec = self.Spec(**kwargs)
 
 
 class TypeRegistry(Generic[T]):
@@ -37,12 +59,9 @@ class TypeRegistry(Generic[T]):
         return self.registry[name.lower()]
 
 
-class Component(Generic[T], ABC):
+class RootComponent(Generic[SPEC, T], Component[SPEC], ABC):
     """
     Base class for components class hierarchies.
-
-    Components support being defined by a dict structure parsed from JSON or
-    YAML, from a registry of subclass types.
     """
 
     NAME: str
@@ -73,14 +92,3 @@ class Component(Generic[T], ABC):
             return cls.__registry__.by_name(name)
         except KeyError as e:
             raise KeyError(f"unknown input {name}. Available: {', '.join(cls.__registry__.registry.keys())}") from e
-
-    def __init__(self, *, config: "Config", name: str, defined_in: str) -> None:
-        """
-        Common initialization for all components
-        """
-        # Configuration for this run
-        self.config = config
-        # Name of the input in the recipe
-        self.name = name
-        # File name where this input was defined
-        self.defined_in = defined_in

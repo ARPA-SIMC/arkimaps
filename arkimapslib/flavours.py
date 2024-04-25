@@ -9,7 +9,7 @@ from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor
-from .component import Component
+from .component import RootComponent
 
 if TYPE_CHECKING:
     from . import pantry, recipes
@@ -50,7 +50,7 @@ class FlavourSpec(BaseDataModel):
     recipes_filter: List[str] = pydantic.Field(default_factory=list)
 
 
-class Flavour(Component["Flavour"]):
+class Flavour(RootComponent[FlavourSpec, "Flavour"]):
     """
     Set of default settings used for generating a product
     """
@@ -65,10 +65,7 @@ class Flavour(Component["Flavour"]):
         defined_in: str,
         **kwargs,
     ):
-        super().__init__(config=config, name=name, defined_in=defined_in)
-
-        # Input data as specified in YAML
-        self.spec = self.Spec(**kwargs)
+        super().__init__(config=config, name=name, defined_in=defined_in, **kwargs)
 
         self.recipes_filter: List[re.Pattern] = []
         for expr in self.spec.recipes_filter:

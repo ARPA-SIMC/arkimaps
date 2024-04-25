@@ -10,7 +10,7 @@ import osgeo
 from osgeo import osr
 
 from .models import BaseDataModel
-from .component import Component
+from .component import RootComponent
 
 if TYPE_CHECKING:
     from .config import Config
@@ -27,7 +27,7 @@ class PostprocessorSpec(BaseDataModel):
     """
 
 
-class Postprocessor(Component["Postprocessor"], ABC):
+class Postprocessor(RootComponent[PostprocessorSpec, "Postprocessor"], ABC):
     """
     Base class for postprocessors.
 
@@ -36,11 +36,6 @@ class Postprocessor(Component["Postprocessor"], ABC):
     """
 
     Spec = PostprocessorSpec
-
-    def __init__(self, *, config: "Config", name: str, defined_in: str, **kwargs):
-        super().__init__(config=config, name=name, defined_in=defined_in)
-        # Input data as specified in the recipe
-        self.spec = self.Spec(**kwargs)
 
     def lint(self, lint: "Lint") -> None:
         """
