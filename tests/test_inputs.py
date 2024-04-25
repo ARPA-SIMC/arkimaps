@@ -58,7 +58,10 @@ class TestInputs(unittest.TestCase):
             old_inputs = [x for x in old_inputs if x.spec.model == mo.group("model")]
         if not old_inputs:
             inp = arkimapslib.inputs.Source(
-                config=Config(), model=mo.group("model"), name=name, defined_in=__file__, arkimet="", eccodes=""
+                config=Config(),
+                name=name,
+                defined_in=__file__,
+                args={"model": mo.group("model"), "arkimet": "", "eccodes": ""},
             )
             pantry.inputs.add(inp)
         else:
@@ -79,7 +82,9 @@ class TestInputs(unittest.TestCase):
         pantry.add_instant(inp, instant)
 
     def test_trim(self) -> None:
-        test = arkimapslib.inputs.Source(config=Config(), name="test", defined_in=__file__, arkimet="", eccodes="")
+        test = arkimapslib.inputs.Source(
+            config=Config(), name="test", defined_in=__file__, args={"arkimet": "", "eccodes": ""}
+        )
         testsource = os.path.join("testdata", "t2m", "cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
         with open(testsource, "rb") as infd:
             mds = arkimet.Metadata.read_bundle(infd)
@@ -133,7 +138,7 @@ class TestInputs(unittest.TestCase):
     def test_apply_clip(self) -> None:
         class Tester(arkimapslib.inputs.GribSetMixin):
             def __init__(self, clip: str):
-                super().__init__(config=None, name="hzero", defined_in=__file__, clip=clip)
+                super().__init__(config=None, name="hzero", defined_in=__file__, args={"clip": clip})
 
         o = Tester(clip="hzero[hzero < z] = -999")
         hzero = numpy.array([1, 2, 3, 4])
@@ -152,7 +157,7 @@ class TestInputs(unittest.TestCase):
             )
 
             # Derived input defined for any model
-            cat = Input.create(config=Config(), name="uv", type="cat", inputs=["u", "v"], defined_in=__file__)
+            cat = Input.create(config=Config(), name="uv", type="cat", args={"inputs": ["u", "v"]}, defined_in=__file__)
             pantry.inputs.add(cat)
 
             # Derived input prerequisites are not satisfied
@@ -175,7 +180,11 @@ class TestInputs(unittest.TestCase):
 
             # Derived input defined only for cosmo
             cat = Input.create(
-                config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__
+                config=Config(),
+                name="uv",
+                type="cat",
+                args={"model": "cosmo", "inputs": ["u", "v"]},
+                defined_in=__file__,
             )
             pantry.inputs.add(cat)
 
@@ -193,7 +202,11 @@ class TestInputs(unittest.TestCase):
 
             # Derived input defined only for cosmo
             cat = Input.create(
-                config=Config(), model="cosmo", name="uv", type="cat", inputs=["u", "v"], defined_in=__file__
+                config=Config(),
+                name="uv",
+                type="cat",
+                args={"model": "cosmo", "inputs": ["u", "v"]},
+                defined_in=__file__,
             )
             pantry.inputs.add(cat)
 
@@ -216,7 +229,7 @@ class TestInputs(unittest.TestCase):
             config.static_dir.insert(0, static_dir)
 
             inp = Input.create(
-                config=config, name="testfile", path=Path("testfile"), type="static", defined_in=__file__
+                config=config, name="testfile", args={"path": Path("testfile")}, type="static", defined_in=__file__
             )
 
             self.assertEqual(inp.abspath, static_dir / "testfile")

@@ -34,8 +34,10 @@ class PantryTestMixin:
                     config=Config(),
                     name="test",
                     defined_in="memory",
-                    arkimet="product:GRIB1,,2,11;level:GRIB1,105,2",
-                    eccodes='shortName is "2t" and indicatorOfTypeOfLevel == 105',
+                    args={
+                        "arkimet": "product:GRIB1,,2,11;level:GRIB1,105,2",
+                        "eccodes": 'shortName is "2t" and indicatorOfTypeOfLevel == 105',
+                    },
                 )
             )
             pantry.fill(self.get_test_data("cosmo", "t2m", "t2m", 12))
@@ -50,12 +52,16 @@ class PantryTestMixin:
                     config=Config(),
                     name="test",
                     defined_in="memory",
-                    arkimet="product:GRIB1,,2,11;level:GRIB1,105,2",
-                    eccodes='shortName is "2t" and indicatorOfTypeOfLevel == 105',
+                    args={
+                        "arkimet": "product:GRIB1,,2,11;level:GRIB1,105,2",
+                        "eccodes": 'shortName is "2t" and indicatorOfTypeOfLevel == 105',
+                    },
                 )
             )
             pantry.inputs.add(
-                Input.create(config=Config(), name="derived", defined_in="memory", type="cat", inputs=["test"])
+                Input.create(
+                    config=Config(), name="derived", defined_in="memory", type="cat", args={"inputs": ["test"]}
+                )
             )
 
         # Processing in a single step
@@ -120,8 +126,10 @@ class TestArkimetPantry(PantryTestMixin, TestCase):
                     config=Config(),
                     name="test",
                     defined_in="memory",
-                    arkimet="skip",
-                    eccodes='shortName is "2t" and indicatorOfTypeOfLevel == 105',
+                    args={
+                        "arkimet": "skip",
+                        "eccodes": 'shortName is "2t" and indicatorOfTypeOfLevel == 105',
+                    },
                 )
             )
             pantry.fill(self.get_test_data("cosmo", "t2m", "t2m", 12))
@@ -141,8 +149,10 @@ class TestEccodesPantry(PantryTestMixin, TestCase):
                     config=Config(),
                     name="test",
                     defined_in="memory",
-                    arkimet="product:GRIB1,,2,11;level:GRIB1,105,2",
-                    eccodes="skip",
+                    args={
+                        "arkimet": "product:GRIB1,,2,11;level:GRIB1,105,2",
+                        "eccodes": "skip",
+                    },
                 )
             )
             pantry.fill(self.get_test_data("cosmo", "t2m", "t2m", 12))

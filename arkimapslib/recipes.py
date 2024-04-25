@@ -252,7 +252,7 @@ class Recipe(RootComponent[RecipeSpec, "Recipe"]):
     def __init__(self, *, config: Config, name: str, defined_in: str, **kwargs: Any) -> None:
         from .mixers import mixers
 
-        super().__init__(config=config, name=name, defined_in=defined_in, **kwargs)
+        super().__init__(config=config, name=name, defined_in=defined_in, args=kwargs)
 
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []

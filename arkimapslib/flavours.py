@@ -65,7 +65,7 @@ class Flavour(RootComponent[FlavourSpec, "Flavour"]):
         defined_in: str,
         **kwargs,
     ):
-        super().__init__(config=config, name=name, defined_in=defined_in, **kwargs)
+        super().__init__(config=config, name=name, defined_in=defined_in, args=kwargs)
 
         self.recipes_filter: List[re.Pattern] = []
         for expr in self.spec.recipes_filter:
@@ -81,7 +81,7 @@ class Flavour(RootComponent[FlavourSpec, "Flavour"]):
             name = desc.pop("type", None)
             if name is None:
                 raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
-            self.postprocessors.append(Postprocessor.create(name=name, config=config, defined_in=defined_in, **desc))
+            self.postprocessors.append(Postprocessor.create(name=name, config=config, defined_in=defined_in, args=desc))
 
     def lint(self, lint: Lint) -> None:
         """

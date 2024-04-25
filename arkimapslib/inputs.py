@@ -125,12 +125,12 @@ class Input(RootComponent[InputSpec, "Input"], ABC):
     Spec: Type[InputSpec] = InputSpec
 
     @classmethod
-    def create(cls, *, type: str = "default", **kwargs):
+    def create(cls, *, config: Config, name: str, defined_in: str, type: str = "default", args: Dict[str, Any]):
         """
         Instantiate an input by the ``type`` key in its recipe definition
         """
         impl_cls = cls.lookup(type)
-        return impl_cls(**kwargs)
+        return impl_cls(config=config, name=name, defined_in=defined_in, args=args)
 
     def lint(self, lint: Lint) -> None:
         """
@@ -550,9 +550,9 @@ class Decumulate(VG6DStatProcMixin):
 
     NAME = "decumulate"
 
-    def __init__(self, **kwargs):
-        kwargs.setdefault("comp_stat_proc", "1")
-        super().__init__(**kwargs)
+    def __init__(self, args: Dict[str, Any], **kwargs):
+        args.setdefault("comp_stat_proc", "1")
+        super().__init__(args=args, **kwargs)
 
     def document(self, file, indent=4):
         ind = " " * indent
@@ -567,9 +567,9 @@ class Average(VG6DStatProcMixin):
 
     NAME = "average"
 
-    def __init__(self, **kwargs):
-        kwargs.setdefault("comp_stat_proc", "254:0")
-        super().__init__(**kwargs)
+    def __init__(self, args: Dict[str, Any], **kwargs):
+        args.setdefault("comp_stat_proc", "254:0")
+        super().__init__(args=args, **kwargs)
 
     def document(self, file, indent=4):
         ind = " " * indent

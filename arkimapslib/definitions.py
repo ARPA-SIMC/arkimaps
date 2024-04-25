@@ -1,7 +1,7 @@
 # from __future__ import annotations
 import os
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Dict, List
 
 import yaml
 
@@ -57,16 +57,7 @@ class Definitions:
 
                 inputs = recipe.pop("inputs", None)
                 if inputs is not None:
-                    for name, input_contents in inputs.items():
-                        if "_" in name:
-                            raise RuntimeError(f"{relfn}: '_' not allowed in input name {name!r}")
-                        if isinstance(input_contents, list):
-                            for ic in input_contents:
-                                self.inputs.add(Input.create(config=self.config, name=name, defined_in=relfn, **ic))
-                        else:
-                            self.inputs.add(
-                                Input.create(config=self.config, name=name, defined_in=relfn, **input_contents)
-                            )
+                    self.add_inputs(relfn, inputs)
 
                 flavours = recipe.pop("flavours", None)
                 if flavours is not None:
@@ -87,3 +78,31 @@ class Definitions:
 
                 if "extends" in recipe:
                     self.recipes.add_derived(**recipe)
+
+    def add_inputs(self, defined_in: str, inputs: Dict[str, Any]) -> None:
+        from .inputs import Input
+
+        for name, input_contents in inputs.items():
+            if "_" in name:
+                raise RuntimeError(f"{defined_in}: '_' not allowed in input name {name!r}")
+            if isinstance(input_contents, list):
+                for ic in input_contents:
+                    self.inputs.add(
+                        Input.create(
+                            config=self.config,
+                            name=name,
+                            defined_in=defined_in,
+                            type=ic.pop("type", "default"),
+                            args=ic,
+                        )
+                    )
+            else:
+                self.inputs.add(
+                    Input.create(
+                        config=self.config,
+                        name=name,
+                        defined_in=defined_in,
+                        type=input_contents.pop("type", "default"),
+                        args=input_contents,
+                    )
+                )

@@ -32,11 +32,10 @@ class Step(Component[StepSpec], ABC):
     def __init__(
         self,
         *,
-        args: Dict[str, Any],
         sources: Dict[str, "inputs.InputFile"],
         **kwargs,
     ) -> None:
-        super().__init__(**kwargs, **args)
+        super().__init__(**kwargs)
         self.sources = sources
 
     @classmethod

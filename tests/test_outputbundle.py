@@ -27,10 +27,12 @@ class BaseFixture:
             config=self.config,
             name="test",
             defined_in="test.yaml",
-            model="testmodel",
-            mgrib={"foo": 1},
-            notes="test notes",
-            path=os.path.join(self.config.static_dir[0], "puntiCitta.geo"),
+            args={
+                "model": "testmodel",
+                "mgrib": {"foo": 1},
+                "notes": "test notes",
+                "path": os.path.join(self.config.static_dir[0], "puntiCitta.geo"),
+            },
         )
         self.instant = Instant(reftime=datetime.datetime(2023, 12, 15), step=12)
         self.order = orders.MapOrder(

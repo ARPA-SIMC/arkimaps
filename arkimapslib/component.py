@@ -20,7 +20,7 @@ class Component(Generic[SPEC], ABC):
 
     Spec: Type[SPEC]
 
-    def __init__(self, *, config: "Config", name: str, defined_in: str, **kwargs: Any) -> None:
+    def __init__(self, *, config: "Config", name: str, defined_in: str, args: Dict[str, Any]) -> None:
         """
         Common initialization for all components
         """
@@ -31,7 +31,7 @@ class Component(Generic[SPEC], ABC):
         # File name where this input was defined
         self.defined_in = defined_in
         # Input data as specified in the recipe
-        self.spec = self.Spec(**kwargs)
+        self.spec = self.Spec(**args)
 
 
 class TypeRegistry(Generic[T]):
