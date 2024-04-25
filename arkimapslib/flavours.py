@@ -63,9 +63,9 @@ class Flavour(RootComponent[FlavourSpec, "Flavour"]):
         config: Config,
         name: str,
         defined_in: str,
-        **kwargs,
+        args: Dict[str, Any],
     ):
-        super().__init__(config=config, name=name, defined_in=defined_in, args=kwargs)
+        super().__init__(config=config, name=name, defined_in=defined_in, args=args)
 
         self.recipes_filter: List[re.Pattern] = []
         for expr in self.spec.recipes_filter:
@@ -104,16 +104,13 @@ class Flavour(RootComponent[FlavourSpec, "Flavour"]):
         }
 
     @classmethod
-    def create(cls, *, lint: Optional[Lint] = None, **kwargs):
+    def create(cls, *, args=Dict[str, Any], **kwargs):
         tile_cls: Type[Flavour]
-        if "tile" in kwargs:
+        if "tile" in args:
             tile_cls = cls.lookup("tiled")
         else:
             tile_cls = cls.lookup("simple")
-        res = tile_cls(**kwargs)
-        if lint:
-            res.lint(lint, **kwargs)
-        return res
+        return tile_cls(args=args, **kwargs)
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """

@@ -13,7 +13,7 @@ class TestTypes(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.config = Config()
-        self.flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml")
+        self.flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
         self.instant = Instant(reftime=datetime.datetime(2023, 12, 15), step=12)
 
     def _compute_georef(self, params: Dict[str, Any]) -> Dict[str, Any]:

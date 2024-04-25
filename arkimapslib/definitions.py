@@ -61,14 +61,7 @@ class Definitions:
 
                 flavours = recipe.pop("flavours", None)
                 if flavours is not None:
-                    for flavour in flavours:
-                        name = flavour.pop("name", None)
-                        if name is None:
-                            raise RuntimeError(f"{relfn}: found flavour without name")
-                        old = self.flavours.get(name)
-                        if old is not None:
-                            raise RuntimeError(f"{relfn}: flavour {name} was already defined in {old.defined_in}")
-                        self.flavours[name] = Flavour.create(config=self.config, name=name, defined_in=relfn, **flavour)
+                    self.add_flavours(relfn, flavours)
 
                 recipe["name"] = relfn[:-5]
                 recipe["defined_in"] = relfn
@@ -106,3 +99,13 @@ class Definitions:
                         args=input_contents,
                     )
                 )
+
+    def add_flavours(self, defined_in: str, flavours: List[Any]) -> None:
+        for flavour in flavours:
+            name = flavour.pop("name", None)
+            if name is None:
+                raise RuntimeError(f"{defined_in}: found flavour without name")
+            old = self.flavours.get(name)
+            if old is not None:
+                raise RuntimeError(f"{defined_in}: flavour {name} was already defined in {old.defined_in}")
+            self.flavours[name] = Flavour.create(config=self.config, name=name, defined_in=defined_in, args=flavour)
