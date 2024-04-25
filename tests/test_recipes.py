@@ -15,7 +15,7 @@ class TestRecipe(unittest.TestCase):
             config=self.config,
             name="test",
             defined_in="test.yaml",
-            recipe=[{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}],
+            args={"recipe": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}]},
         )
         self.assertEqual(r.name, "test")
         self.assertEqual(r.defined_in, "test.yaml")
@@ -28,7 +28,7 @@ class TestRecipe(unittest.TestCase):
             config=self.config,
             name="test",
             defined_in="test.yaml",
-            recipe=[{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}],
+            args={"recipe": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}]},
         )
 
         r2 = Recipe(config=self.config, **Recipe.inherit(name="test1", defined_in="test1.yaml", parent=r1))
@@ -45,7 +45,7 @@ class TestRecipe(unittest.TestCase):
             config=self.config,
             name="test",
             defined_in="test.yaml",
-            recipe=[{"step": "add_grib", "grib": "t2m", "id": "input"}, {"step": "add_user_boundaries"}],
+            args={"recipe": [{"step": "add_grib", "grib": "t2m", "id": "input"}, {"step": "add_user_boundaries"}]},
         )
 
         r2 = Recipe(
@@ -73,7 +73,7 @@ class TestRecipe(unittest.TestCase):
             config=self.config,
             name="test",
             defined_in="test.yaml",
-            recipe=[{"step": "add_basemap", "params": {"a": 1, "b": 2, "c": 3}, "id": "basemap"}],
+            args={"recipe": [{"step": "add_basemap", "params": {"a": 1, "b": 2, "c": 3}, "id": "basemap"}]},
         )
 
         r2 = Recipe(

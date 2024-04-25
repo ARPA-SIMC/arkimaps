@@ -21,7 +21,7 @@ class BaseFixture:
         self.config = Config()
         self.flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
         self.recipe = Recipe(
-            config=self.config, name="recipe", defined_in="recipe.yaml", recipe=[{"step": "add_basemap"}]
+            config=self.config, name="recipe", defined_in="recipe.yaml", args={"recipe": [{"step": "add_basemap"}]}
         )
         self.input = inputs.Static(
             config=self.config,
@@ -91,13 +91,15 @@ class TestTypes(BaseFixture, unittest.TestCase):
             config=self.config,
             name="recipe",
             defined_in="recipe.yaml",
-            recipe=[
-                {"step": "add_basemap"},
-                {
-                    "step": "add_contour",
-                    "params": {"legend": "on"},
-                },
-            ],
+            args={
+                "recipe": [
+                    {"step": "add_basemap"},
+                    {
+                        "step": "add_contour",
+                        "params": {"legend": "on"},
+                    },
+                ]
+            },
         )
         order = orders.MapOrder(
             flavour=self.flavour,
@@ -135,7 +137,7 @@ class TestTypes(BaseFixture, unittest.TestCase):
 
     def test_add_unrendered_products(self):
         flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
-        recipe = Recipe(config=self.config, name="recipe", defined_in="recipe.yaml")
+        recipe = Recipe(config=self.config, name="recipe", defined_in="recipe.yaml", args={})
         order = orders.MapOrder(
             flavour=flavour,
             recipe=recipe,

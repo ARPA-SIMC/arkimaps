@@ -31,11 +31,11 @@ class Recipes:
     def __iter__(self):
         return self.recipes.values().__iter__()
 
-    def add(self, **kwargs: Any) -> None:
+    def add(self, name: str, defined_in: str, **kwargs: Any) -> None:
         """
         Add a recipe to this recipes collection
         """
-        recipe = Recipe(config=self.config, **kwargs)
+        recipe = Recipe(config=self.config, name=name, defined_in=defined_in, args=kwargs)
         old = self.recipes.get(recipe.name)
         if old is not None:
             raise RuntimeError(f"{recipe.name} is defined both in {old.defined_in!r} and in {recipe.defined_in!r}")
@@ -249,10 +249,10 @@ class Recipe(RootComponent[RecipeSpec, "Recipe"]):
 
     Spec = RecipeSpec
 
-    def __init__(self, *, config: Config, name: str, defined_in: str, **kwargs: Any) -> None:
+    def __init__(self, *, config: Config, name: str, defined_in: str, args: Dict[str, Any]) -> None:
         from .mixers import mixers
 
-        super().__init__(config=config, name=name, defined_in=defined_in, args=kwargs)
+        super().__init__(config=config, name=name, defined_in=defined_in, args=args)
 
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []
@@ -305,7 +305,7 @@ class Recipe(RootComponent[RecipeSpec, "Recipe"]):
         kwargs["recipe"] = steps
         kwargs["name"] = name
         kwargs["defined_in"] = defined_in
-        return kwargs
+        return {"name": kwargs.pop("name"), "defined_in": kwargs.pop("defined_in"), "args": kwargs}
 
     def __str__(self) -> str:
         return self.name

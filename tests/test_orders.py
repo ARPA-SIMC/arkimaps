@@ -21,12 +21,14 @@ class TestTypes(unittest.TestCase):
             config=self.config,
             name="recipe",
             defined_in="recipe.yaml",
-            recipe=[
-                {
-                    "step": "add_basemap",
-                    "params": params,
-                },
-            ],
+            args={
+                "recipe": [
+                    {
+                        "step": "add_basemap",
+                        "params": params,
+                    },
+                ]
+            },
         )
 
         order = orders.MapOrder(
