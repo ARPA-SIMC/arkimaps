@@ -104,7 +104,7 @@ class Flavour(RootComponent[FlavourSpec, "Flavour"]):
         }
 
     @classmethod
-    def create(cls, *, args=Dict[str, Any], **kwargs):
+    def create(cls, *, args=Dict[str, Any], **kwargs: Any) -> "Flavour":
         tile_cls: Type[Flavour]
         if "tile" in args:
             tile_cls = cls.lookup("tiled")
