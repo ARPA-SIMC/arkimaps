@@ -7,9 +7,9 @@ import tempfile
 import unittest
 from pathlib import Path
 from typing import Type
+from unittest import mock
 
-from arkimapslib import cli
-from arkimapslib import outputbundle
+from arkimapslib import cli, outputbundle
 
 
 class CLITest:
@@ -126,3 +126,24 @@ class TestRender(CLITest, unittest.TestCase):
                 self.assertEqual(data[:4], b"\x89PNG")
                 data = bundle.load_artifact("version.txt")
                 self.assertEqual(data, b"1\n")
+
+
+class TestPreview(CLITest, unittest.TestCase):
+    def test_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            cmd = self.create(cli.Dispatch, tempdir, "testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    cmd.run()
+
+            workdir = Path(tempdir)
+            output = workdir / "output.tar"
+            cmd = self.create(cli.Preview, tempdir, "t2m")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    with mock.patch("arkimapslib.cli.Preview._display") as mock_run:
+                        cmd.run()
+
+            mock_run.assert_called_with(workdir / "2021-01-10T00:00:00/t2m_default/t2m+012.png")

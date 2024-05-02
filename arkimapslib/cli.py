@@ -503,6 +503,13 @@ class Preview(RenderCommand, WorkdirKitchenCommand):
         super().__init__(*args, **kw)
         self.kitchen.pantry.rescan()
 
+    def _display(self, path: Path) -> None:
+        """
+        Display a product
+        """
+        subprocess.run(["xdg-open", path.as_posix()], check=True)
+        input("Press enter when done> ")
+
     def run(self):
         """
         Generate the given product only, and preview it with xdg-open
@@ -520,13 +527,13 @@ class Preview(RenderCommand, WorkdirKitchenCommand):
         else:
             reftime = None
 
-        flavours = self.parse_flavours()
+        flavours = self.flavours
         if len(flavours) != 1:
             raise Fail("Only 1 flavour is supported for preview")
         flavour = flavours[0]
 
         # Make an order
-        order = self.kitchen.make_order(self.kitchen.recipes.get(name), flavour=flavour, step=step, reftime=reftime)
+        order = self.kitchen.make_order(self.defs.recipes.get(name), flavour=flavour, step=step, reftime=reftime)
 
         # Prepare it
         renderer = Renderer(
@@ -537,8 +544,7 @@ class Preview(RenderCommand, WorkdirKitchenCommand):
 
         # Display it
         output_pathname = self.kitchen.workdir / order.output.relpath
-        subprocess.run(["xdg-open", str(output_pathname)], check=True)
-        input("Press enter when done> ")
+        self._display(output_pathname)
 
         output_pathname.unlink()
 
