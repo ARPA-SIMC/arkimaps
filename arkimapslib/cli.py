@@ -439,11 +439,21 @@ class Dispatch(WorkdirKitchenCommand):
     do not render: dispatch into a working directory
     """
 
+    @classmethod
+    def make_subparser(cls, subparsers):
+        parser = super().make_subparser(subparsers)
+        parser.add_argument(
+            "input",
+            action="store",
+            help="input file to dispatch. Default: stdin",
+        )
+        return parser
+
     def run(self):
         """
         Acquire input data
         """
-        self.kitchen.fill_pantry(flavours=self.flavours)
+        self.kitchen.fill_pantry(path=Path(self.args.input) if self.args.input else None, flavours=self.flavours)
 
 
 class Render(RenderCommand, WorkdirKitchenCommand):

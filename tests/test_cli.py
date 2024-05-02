@@ -76,3 +76,20 @@ class TestLint(CLITest, unittest.TestCase):
 
         self.assertEqual(stderr.getvalue(), "")
         self.assertEqual(stdout.getvalue(), "")
+
+
+class TestDispatch(CLITest, unittest.TestCase):
+    def test_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            cmd = self.create(cli.Dispatch, tempdir, "testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    cmd.run()
+
+            self.assertEqual(stderr.getvalue(), "")
+            self.assertEqual(stdout.getvalue(), "")
+
+            workdir = Path(tempdir)
+            pantry = workdir / "pantry"
+            self.assertIn("cosmo_t2m_2021_1_10_0_0_0+12.grib", [p.name for p in pantry.iterdir()])
