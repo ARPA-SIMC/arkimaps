@@ -7,8 +7,19 @@ omit = *.yaml
 [report]
 # Regexes for lines to exclude from consideration
 exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
     # Don't complain about missing debug-only code:
     def __repr__
+
+    # Don't complain if tests don't hit defensive assertion code:
+    raise AssertionError
+    raise NotImplementedError
+    case _ as unreachable:
+
+    # Don't complain about alternative imports
+    except ImportError:
 
     # Don't complain about code only executed while type-checking:
     if TYPE_CHECKING:
