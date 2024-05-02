@@ -13,9 +13,9 @@ import numpy
 
 import arkimapslib.inputs
 from arkimapslib.config import Config
-from arkimapslib.inputs import Instant, Input, Inputs
+from arkimapslib.inputs import Input, Inputs
 from arkimapslib.pantry import DiskPantry
-from arkimapslib.types import ModelStep
+from arkimapslib.types import Instant
 
 
 class TestInputs(unittest.TestCase):
@@ -234,112 +234,3 @@ class TestInputs(unittest.TestCase):
 
             self.assertEqual(inp.abspath, static_dir / "testfile")
             self.assertEqual(inp.spec.path, Path("testfile"))
-
-
-class TestModelStep(unittest.TestCase):
-    def test_from_int(self) -> None:
-        ms = ModelStep(0)
-        self.assertEqual(str(ms), "0h")
-        ms = ModelStep(12)
-        self.assertEqual(str(ms), "12h")
-
-    def test_from_str(self) -> None:
-        ms = ModelStep("0h")
-        self.assertEqual(str(ms), "0h")
-
-        ms = ModelStep("12h")
-        self.assertEqual(str(ms), "12h")
-
-        with self.assertRaises(ValueError):
-            ModelStep("30m")
-        with self.assertRaises(ValueError):
-            ModelStep("43200s")
-        with self.assertRaises(ValueError):
-            ModelStep("")
-        with self.assertRaises(ValueError):
-            ModelStep("h")
-
-    def test_from_modelstep(self) -> None:
-        ms = ModelStep(ModelStep("0h"))
-        self.assertEqual(str(ms), "0h")
-
-        ms = ModelStep(ModelStep("12h"))
-        self.assertEqual(str(ms), "12h")
-
-    def test_equals(self) -> None:
-        ms = ModelStep(0)
-        self.assertEqual(ms, 0)
-        self.assertEqual(ms, "0h")
-        self.assertEqual(ms, ModelStep("0h"))
-        self.assertTrue(ms.is_zero())
-
-        ms = ModelStep(12)
-        self.assertEqual(ms, 12)
-        self.assertEqual(ms, "12h")
-        self.assertEqual(ms, ModelStep("12h"))
-        self.assertFalse(ms.is_zero())
-
-        with self.assertRaises(ValueError):
-            ms == "720m"
-        with self.assertRaises(ValueError):
-            ms == "43200s"
-        with self.assertRaises(ValueError):
-            ms == ""
-        with self.assertRaises(ValueError):
-            ms == "h"
-
-    def test_lt(self) -> None:
-        ms = ModelStep(0)
-        self.assertLess(ms, 1)
-        self.assertLess(ms, "1h")
-        self.assertLess(ms, ModelStep("1h"))
-
-        ms = ModelStep(12)
-        self.assertLess(ms, 13)
-        self.assertLess(ms, "13h")
-        self.assertLess(ms, ModelStep("13h"))
-
-        with self.assertRaises(ValueError):
-            ms < "721m"
-        with self.assertRaises(ValueError):
-            ms < "43201s"
-        with self.assertRaises(ValueError):
-            ms < ""
-        with self.assertRaises(ValueError):
-            ms < "h"
-
-    def test_suffix(self) -> None:
-        ms = ModelStep(0)
-        self.assertEqual(ms.suffix(), "+000")
-        ms = ModelStep(12)
-        self.assertEqual(ms.suffix(), "+012")
-
-    def test_hashable(self) -> None:
-        steps = {
-            ModelStep(0),
-            ModelStep(12),
-        }
-        self.assertEqual(len(steps), 2)
-        self.assertEqual(
-            steps,
-            {
-                ModelStep(0),
-                ModelStep(12),
-            },
-        )
-
-
-class TestInstant(unittest.TestCase):
-    def test_access(self) -> None:
-        i = Instant(datetime.datetime(2023, 1, 1), 12)
-        self.assertEqual(i.reftime, datetime.datetime(2023, 1, 1))
-        self.assertEqual(i.step, 12)
-
-        self.assertTrue(i == Instant(datetime.datetime(2023, 1, 1), 12))
-        self.assertTrue(i != Instant(datetime.datetime(2023, 1, 1), 11))
-        self.assertTrue(i != Instant(datetime.datetime(2023, 1, 2), 12))
-
-    def test_lt(self) -> None:
-        i = Instant(datetime.datetime(2023, 1, 1), 12)
-        self.assertLess(i, Instant(datetime.datetime(2023, 1, 1), 13))
-        self.assertLess(i, Instant(datetime.datetime(2023, 1, 2), 12))
