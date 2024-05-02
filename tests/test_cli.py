@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Type
 
 from arkimapslib import cli
+from arkimapslib import outputbundle
 
 
 class CLITest:
@@ -93,3 +94,35 @@ class TestDispatch(CLITest, unittest.TestCase):
             workdir = Path(tempdir)
             pantry = workdir / "pantry"
             self.assertIn("cosmo_t2m_2021_1_10_0_0_0+12.grib", [p.name for p in pantry.iterdir()])
+
+
+class TestRender(CLITest, unittest.TestCase):
+    def test_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            cmd = self.create(cli.Dispatch, tempdir, "testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    cmd.run()
+
+            workdir = Path(tempdir)
+            output = workdir / "output.tar"
+            cmd = self.create(cli.Render, tempdir, "--output", output.as_posix())
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    cmd.run()
+
+            self.assertTrue(output.exists())
+
+            with outputbundle.TarReader(output) as bundle:
+                self.assertIn("t2m", bundle.input_summary().inputs)
+                self.assertEqual(len(bundle.log().entries), 334)
+                products = bundle.products()
+                self.assertEquals(products.flavour["name"], "default")
+                self.assertIn("t2m", products.by_recipe)
+                self.assertIn("2021-01-10T00:00:00/t2m_default/t2m+012.png", products.by_path)
+                data = bundle.load_product("2021-01-10T00:00:00/t2m_default/t2m+012.png")
+                self.assertEqual(data[:4], b"\x89PNG")
+                data = bundle.load_artifact("version.txt")
+                self.assertEqual(data, b"1\n")
