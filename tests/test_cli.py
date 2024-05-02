@@ -10,6 +10,7 @@ from typing import Type
 from unittest import mock
 
 from arkimapslib import cli, outputbundle
+from arkimapslib.unittest import system_definitions
 
 
 class CLITest:
@@ -24,6 +25,9 @@ class CLITest:
         args = [cls.NAME]
         args.extend(cmd)
         parsed = parser.parse_args(args=args)
+        patcher = mock.patch("arkimapslib.cli.DefinitionsCommand._create_defs", return_value=system_definitions())
+        patcher.start()
+        self.addCleanup(patcher.stop)
         return cls(args=parsed)
 
 
@@ -73,10 +77,12 @@ class TestLint(CLITest, unittest.TestCase):
 
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
             with contextlib.redirect_stderr(io.StringIO()) as stderr:
-                cmd.run()
+                with self.assertLogs() as log:
+                    cmd.run()
 
         self.assertEqual(stderr.getvalue(), "")
         self.assertEqual(stdout.getvalue(), "")
+        self.assertIn("INFO:arkimaps:tp (cosmo): checking input", log.output)
 
 
 class TestDispatch(CLITest, unittest.TestCase):
@@ -101,8 +107,8 @@ class TestRender(CLITest, unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             cmd = self.create(cli.Dispatch, tempdir, "testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
 
-            with contextlib.redirect_stdout(io.StringIO()) as stdout:
-                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with contextlib.redirect_stdout(io.StringIO()):
+                with contextlib.redirect_stderr(io.StringIO()):
                     cmd.run()
 
             workdir = Path(tempdir)
@@ -111,13 +117,21 @@ class TestRender(CLITest, unittest.TestCase):
 
             with contextlib.redirect_stdout(io.StringIO()) as stdout:
                 with contextlib.redirect_stderr(io.StringIO()) as stderr:
-                    cmd.run()
+                    with self.assertLogs(level="DEBUG") as log:
+                        cmd.run()
 
             self.assertTrue(output.exists())
 
+            self.assertIn(
+                "DEBUG:arkimaps.flavours:flavour default:"
+                " recipe t2m input t2m available for instants 2021-01-10T00:00:00+012",
+                log.output,
+            )
+
             with outputbundle.TarReader(output) as bundle:
                 self.assertIn("t2m", bundle.input_summary().inputs)
-                self.assertEqual(len(bundle.log().entries), 334)
+                # Log is empty here because assertLogs stole it
+                # self.assertEqual(len(bundle.log().entries), 334)
                 products = bundle.products()
                 self.assertEquals(products.flavour["name"], "default")
                 self.assertIn("t2m", products.by_recipe)
@@ -133,17 +147,21 @@ class TestPreview(CLITest, unittest.TestCase):
         with tempfile.TemporaryDirectory() as tempdir:
             cmd = self.create(cli.Dispatch, tempdir, "testdata/t2m/cosmo_t2m_2021_1_10_0_0_0+12.arkimet")
 
-            with contextlib.redirect_stdout(io.StringIO()) as stdout:
-                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with contextlib.redirect_stdout(io.StringIO()):
+                with contextlib.redirect_stderr(io.StringIO()):
                     cmd.run()
 
             workdir = Path(tempdir)
-            output = workdir / "output.tar"
             cmd = self.create(cli.Preview, tempdir, "t2m")
 
             with contextlib.redirect_stdout(io.StringIO()) as stdout:
                 with contextlib.redirect_stderr(io.StringIO()) as stderr:
                     with mock.patch("arkimapslib.cli.Preview._display") as mock_run:
-                        cmd.run()
+                        with self.assertLogs(level="DEBUG") as log:
+                            cmd.run()
 
+            self.assertIn("DEBUG:arkimaps.flavours:flavour default: recipe t2m uses inputs: {'t2m'}", log.output)
+
+            self.assertEqual(stderr.getvalue(), "")
+            self.assertEqual(stdout.getvalue(), "")
             mock_run.assert_called_with(workdir / "2021-01-10T00:00:00/t2m_default/t2m+012.png")

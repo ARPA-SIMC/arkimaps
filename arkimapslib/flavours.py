@@ -197,13 +197,20 @@ class Flavour(RootComponent[FlavourSpec, "Flavour"]):
                 # introduce step limitations
                 if not output_instants:
                     continue
-            else:
+            elif output_instants:
                 log.debug(
-                    "flavour %s: recipe %s input %s available for instants %r",
+                    "flavour %s: recipe %s input %s available for instants %s",
                     self.name,
                     recipe.name,
                     input_name,
-                    output_instants.keys(),
+                    ", ".join(str(i) for i in output_instants.keys()),
+                )
+            else:
+                log.debug(
+                    "flavour %s: recipe %s input %s not available",
+                    self.name,
+                    recipe.name,
+                    input_name,
                 )
 
             # Intersect the output instants for the recipe input list

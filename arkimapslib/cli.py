@@ -81,8 +81,15 @@ class DefinitionsCommand(Command):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self.config = Config()
-        self.defs = Definitions(config=self.config)
-        self.defs.load([self.args.recipes])
+        self.defs = self._create_defs()
+
+    def _create_defs(self) -> Definitions:
+        """
+        Create and load a Definitions object
+        """
+        defs = Definitions(config=self.config)
+        defs.load([self.args.recipes])
+        return defs
 
     @abstractmethod
     def create_kitchen(self) -> Kitchen:
