@@ -522,8 +522,13 @@ class VG6DStatProcMixin(Derived, ABC):
 
             with self._collect_stats(pantry, f"grib_filter {size}b"):
                 res = subprocess.run(
-                    ["grib_filter", grib_filter_rules, decumulated_data], stdout=subprocess.PIPE, check=True
+                    ["grib_filter", grib_filter_rules, decumulated_data],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    check=True,
                 )
+                for line in res.stderr.splitlines():
+                    log.debug("%s: grib_filter stderr: %s", self.name, line)
                 for line in res.stdout.splitlines():
                     if not line.startswith(b"s:"):
                         return

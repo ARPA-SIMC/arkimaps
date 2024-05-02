@@ -438,7 +438,9 @@ class EccodesPantry(DispatchPantry):
         Run grib_filter on GRIB input
         """
         cmd = ["grib_filter", self.grib_filter_rules, ("-" if path is None else str(path))]
-        res = subprocess.run(cmd, stdin=sys.stdin, stdout=subprocess.PIPE, check=True)
+        res = subprocess.run(cmd, stdin=sys.stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        for line in res.stderr.splitlines():
+            log.debug("dispatch: grib_filter stderr: %s", line)
         for line in res.stdout.splitlines():
             self._parse_filter_output(line)
 
@@ -447,28 +449,36 @@ class EccodesPantry(DispatchPantry):
         Run grib_filter on arkimet input
         """
         with tempfile.TemporaryFile("w+b") as outfd:
-            try:
-                proc = subprocess.Popen(
-                    ["grib_filter", self.grib_filter_rules, "-"], stdin=subprocess.PIPE, stdout=outfd
-                )
+            with tempfile.TemporaryFile("w+b") as errfd:
+                try:
+                    proc = subprocess.Popen(
+                        ["grib_filter", self.grib_filter_rules, "-"],
+                        stdin=subprocess.PIPE,
+                        stdout=outfd,
+                        stderr=errfd,
+                    )
 
-                def dispatch(md: arkimet.Metadata) -> bool:
+                    def dispatch(md: arkimet.Metadata) -> bool:
+                        assert proc.stdin is not None
+                        proc.stdin.write(md.data)
+                        return True
+
+                    with self.open_dispatch_input(path=path) as infd:
+                        arkimet.Metadata.read_bundle(infd, dest=dispatch)
+                finally:
                     assert proc.stdin is not None
-                    proc.stdin.write(md.data)
-                    return True
+                    proc.stdin.close()
+                    proc.wait()
+                    if proc.returncode != 0:
+                        raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
 
-                with self.open_dispatch_input(path=path) as infd:
-                    arkimet.Metadata.read_bundle(infd, dest=dispatch)
-            finally:
-                assert proc.stdin is not None
-                proc.stdin.close()
-                proc.wait()
-                if proc.returncode != 0:
-                    raise RuntimeError(f"grib_filter failed with return code {proc.returncode}")
+                errfd.seek(0)
+                for line in errfd:
+                    log.debug("dispatch: grib_filter stderr: %s", line)
 
-            outfd.seek(0)
-            for line in outfd:
-                self._parse_filter_output(line)
+                outfd.seek(0)
+                for line in outfd:
+                    self._parse_filter_output(line)
 
     def store_processing_artifacts(self, bundle: "outputbundle.Writer"):
         """
