@@ -1,10 +1,6 @@
 # from __future__ import annotations
-from typing import Dict, Any, Type
+from typing import Dict, Type
 from . import steps
-
-# if TYPE_CHECKING:
-# Used for kwargs-style dicts
-Kwargs = Dict[str, Any]
 
 
 class Mixers:
