@@ -20,6 +20,7 @@ exclude_lines =
 
     # Don't complain about alternative imports
     except ImportError:
+    except ModuleNotFoundError:
 
     # Don't complain about code only executed while type-checking:
     if TYPE_CHECKING:

@@ -1,4 +1,5 @@
 # from __future__ import annotations
+import abc
 import contextlib
 import datetime
 import logging
@@ -53,7 +54,7 @@ class ProcessLogEntry(NamedTuple):
     message: str
 
 
-class Pantry:
+class Pantry(abc.ABC):
     """
     Storage of GRIB files used as inputs to recipes
     """
@@ -87,24 +88,6 @@ class Pantry:
         Trace one input processing step
         """
         self.process_log.append(ProcessLogEntry(input, message))
-
-    def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
-        """
-        Read data from standard input and acquire it into the pantry.
-
-        If path is given, read dispatching input from the given path. If None,
-        read from stdin
-        """
-        raise NotImplementedError(f"{self.__class__.__name__}.fill() not implemented")
-
-    def rescan(self):
-        """
-        Rescan the contents of an existing working directory.
-
-        Use this method when processing a working directory dispatched by a
-        different Pantry instance
-        """
-        raise NotImplementedError(f"{self.__class__.__name__}.rescan() not implemented")
 
     def store_processing_artifacts(self, tarout):
         """
@@ -237,6 +220,21 @@ class DiskPantry(Pantry):
             self.add_instant(inp, Instant(datetime.datetime.strptime(reftime, "%Y_%m_%d_%H_%M_%S"), step))
 
 
+class DispatchPantry(DiskPantry, abc.ABC):
+    """
+    Pantry with dispatching methods
+    """
+
+    @abc.abstractmethod
+    def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
+        """
+        Read data from standard input and acquire it into the pantry.
+
+        If path is given, read dispatching input from the given path. If None,
+        read from stdin
+        """
+
+
 if HAS_ARKIMET:
 
     class ArkimetBasePantry(Pantry):
@@ -269,7 +267,7 @@ if HAS_ARKIMET:
         Storage-less arkimet pantry only used to load recipes
         """
 
-    class ArkimetPantry(ArkimetBasePantry, DiskPantry):
+    class ArkimetPantry(ArkimetBasePantry, DispatchPantry):
         """
         Arkimet-based storage of GRIB files to be processed
         """
@@ -375,7 +373,7 @@ if HAS_ARKIMET:
             arkimet.Metadata.read_bundle(infd, dest=self.dispatch)
 
 
-class EccodesPantry(DiskPantry):
+class EccodesPantry(DispatchPantry):
     """
     eccodes-based storage of GRIB files to be processed
     """

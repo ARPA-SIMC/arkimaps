@@ -72,7 +72,7 @@ class Kitchen:
 
 
 class WorkingKitchen(Kitchen):
-    pantry: "pantry.DiskPantry"
+    pantry: "pantry.DispatchPantry"
 
     def __init__(self, *, definitions: Definitions, workdir: Optional[Path] = None):
         """

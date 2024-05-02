@@ -30,7 +30,7 @@ class TestModelStep(unittest.TestCase):
 
     def test_from_invalid(self) -> None:
         with self.assertRaises(TypeError):
-            ModelStep(None)
+            ModelStep(None)  # type: ignore
 
     def test_from_modelstep(self) -> None:
         ms = ModelStep(ModelStep("0h"))
@@ -230,4 +230,4 @@ class TestInstant(unittest.TestCase):
         with self.assertRaises(TypeError):
             i <= None
         with self.assertRaises(TypeError):
-            i >= None
+            i >= None  # type: ignore
