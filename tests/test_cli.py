@@ -2,8 +2,12 @@
 import argparse
 import contextlib
 import io
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from typing import Type
+
 from arkimapslib import cli
 
 
@@ -31,3 +35,44 @@ class TestPrintArkiQuery(CLITest, unittest.TestCase):
 
         self.assertEqual(stderr.getvalue(), "")
         self.assertIn("product:", stdout.getvalue())
+
+
+class TestDocumentRecipes(CLITest, unittest.TestCase):
+    def test_run(self) -> None:
+        with tempfile.TemporaryDirectory() as tempdir:
+            cmd = self.create(cli.DocumentRecipes, "--destdir", tempdir)
+
+            with contextlib.redirect_stdout(io.StringIO()) as stdout:
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    cmd.run()
+
+            self.assertEqual(stdout.getvalue(), "")
+            self.assertEqual(stderr.getvalue(), "")
+
+            docdir = Path(tempdir)
+            self.assertIn("t2m.md", [p.name for p in docdir.iterdir()])
+
+
+class TestDumpRecipes(CLITest, unittest.TestCase):
+    def test_run(self) -> None:
+        cmd = self.create(cli.DumpRecipes)
+
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                cmd.run()
+
+        self.assertEqual(stderr.getvalue(), "")
+        output = json.loads(stdout.getvalue())
+        self.assertIn("inputs", output)
+
+
+class TestLint(CLITest, unittest.TestCase):
+    def test_run(self) -> None:
+        cmd = self.create(cli.LintCmd)
+
+        with contextlib.redirect_stdout(io.StringIO()) as stdout:
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                cmd.run()
+
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(stdout.getvalue(), "")

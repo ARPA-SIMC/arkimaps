@@ -163,9 +163,10 @@ class Input(RootComponent[InputSpec, "Input"], ABC):
         return {
             "name": self.name,
             "type": self.NAME,
-            "model": self.model,
+            "model": self.spec.model,
             "defined_in": self.defined_in,
-            "mgrib": self.mgrib,
+            "mgrib": self.spec.mgrib,
+            "notes": self.spec.notes,
         }
 
     def get_all_inputs(self) -> List[str]:
@@ -233,8 +234,8 @@ class Static(Input):
 
     def to_dict(self):
         res = super().to_dict()
-        res["abspath"] = self.abspath
-        res["path"] = self.spec.path
+        res["abspath"] = self.abspath.as_posix()
+        res["path"] = self.spec.path.as_posix()
         return res
 
     def clean_path(self, path: Path) -> Tuple[Path, Path]:

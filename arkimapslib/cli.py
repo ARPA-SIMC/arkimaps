@@ -386,7 +386,7 @@ class DumpRecipes(EmptyKitchenCommand):
 
     def dump_recipes(self):
         res_inputs = {}
-        for name, inputs in self.kitchen.pantry.inputs.items():
+        for name, inputs in self.kitchen.pantry.inputs.inputs.items():
             res_inputs[name] = []
             for idx, inp in enumerate(inputs, start=1):
                 res_inputs[name].append(inp.to_dict())
@@ -428,7 +428,7 @@ class LintCmd(EmptyKitchenCommand):
                     log.info("%s (%s): checking input", inp.name, inp.spec.model)
                     inp.lint(lint)
 
-            for recipe in self.kitchen.recipes:
+            for recipe in self.defs.recipes:
                 if not flavour.allows_recipe(recipe):
                     continue
                 recipe.lint(lint)
