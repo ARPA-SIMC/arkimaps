@@ -1,3 +1,4 @@
+# from __future__ import annotations
 import contextlib
 import datetime
 import json
@@ -131,7 +132,7 @@ class EmptyKitchenCommand(KitchenCommand):
     def create_kitchen(self) -> "ArkimetEmptyKitchen":
         from arkimapslib.kitchen import ArkimetEmptyKitchen
 
-        return ArkimetEmptyKitchen()
+        return ArkimetEmptyKitchen(definitions=self.defs)
 
 
 class WorkingKitchenCommand(KitchenCommand):
