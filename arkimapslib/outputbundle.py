@@ -63,7 +63,6 @@ class Serializable(ABC):
         Return a version of this object that can be serialized to JSON, and
         deserialized with from_jsonable()
         """
-        ...
 
     @classmethod
     @abstractmethod
@@ -72,7 +71,6 @@ class Serializable(ABC):
         Recreate an object serialized by to_jsonable
         """
         # TODO: from 3.11 we can type the return value as Self
-        ...
 
 
 class InputProcessingStats(Serializable):
@@ -126,8 +124,8 @@ class InputSummary(Serializable):
     def __init__(self) -> None:
         self.inputs = {}
 
-    def add(self, inp: "Input"):
-        self.inputs[inp.name] = inp.stats
+    def add(self, name: str, stats: InputProcessingStats):
+        self.inputs[name] = stats
 
     def to_jsonable(self) -> Dict[str, Any]:
         # TODO: return {"inputs": self.inputs}
@@ -210,7 +208,7 @@ class RecipeOrders(Serializable):
         if self.legend_info is None:
             for step in order.order_steps:
                 if isinstance(step, steps.AddContour):
-                    self.legend_info = step.params["params"]
+                    self.legend_info = step.spec.params.dict(exclude_unset=True)
 
     def to_jsonable(self) -> Dict[str, Any]:
         return {
@@ -269,7 +267,9 @@ class ProductInfo(Serializable):
         self.step = instant.step
 
     def to_jsonable(self) -> Dict[str, Any]:
-        res = {
+        if self.recipe is None or self.reftime is None or self.step is None:
+            raise RuntimeError("Cannot write ProductInfo without filling it first")
+        res: Dict[str, Any] = {
             "recipe": self.recipe,
             "reftime": self.reftime.strftime("%Y-%m-%d %H:%M:%S"),
             "step": str(self.step),
@@ -388,18 +388,24 @@ class Reader(ABC):
     """
 
     @abstractmethod
+    def __enter__(self):
+        ...
+
+    @abstractmethod
+    def __exit__(self, exc_type, exc_value, traceback):
+        ...
+
+    @abstractmethod
     def version(self) -> str:
         """
         Return the bundle version information
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.version() not implemented")
 
     @abstractmethod
     def _load_json(self, path: str) -> Dict[str, Any]:
         """
         Load the contents of a JSON file
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.load_json() not implemented")
 
     def input_summary(self) -> InputSummary:
         """
@@ -424,7 +430,6 @@ class Reader(ABC):
         """
         List all paths in the bundle
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.find() not implemented")
 
     @abstractmethod
     def load_product(self, bundle_path: str) -> bytes:
@@ -462,6 +467,7 @@ class TarReader(Reader):
         Read an existing output bundle
         """
         self.tarfile = tarfile.open(path, mode="r")
+        self.path = path
 
     def __enter__(self):
         return self
@@ -469,16 +475,22 @@ class TarReader(Reader):
     def __exit__(self, *args):
         self.tarfile.close()
 
+    def _extract(self, path: str) -> IO[bytes]:
+        reader = self.tarfile.extractfile(path)
+        if reader is None:
+            raise ValueError(f"{path} does not identify a valid file in {self.path}")
+        return reader
+
     def _load_json(self, path: str) -> Dict[str, Any]:
-        with self.tarfile.extractfile(path) as fd:
+        with self._extract(path) as fd:
             return json.load(fd)
 
     def version(self) -> str:
-        with self.tarfile.extractfile("version.txt") as fd:
+        with self._extract("version.txt") as fd:
             return fd.read().strip().decode()
 
     def load_product(self, bundle_path: str) -> bytes:
-        with self.tarfile.extractfile(bundle_path) as fd:
+        with self._extract(bundle_path) as fd:
             return fd.read()
 
     def load_artifact(self, bundle_path: str) -> bytes:
@@ -542,11 +554,18 @@ class Writer(ABC):
     """
 
     @abstractmethod
+    def __enter__(self):
+        ...
+
+    @abstractmethod
+    def __exit__(self, exc_type, exc_value, traceback):
+        ...
+
+    @abstractmethod
     def _add_serializable(self, name: str, value: Serializable) -> None:
         """
         Add a serializable object to the bundle, using the given file name
         """
-        ...
 
     def add_input_summary(self, input_summary: InputSummary):
         """
@@ -575,14 +594,12 @@ class Writer(ABC):
         """
         Add a product
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.add_product() not implemented")
 
     @abstractmethod
     def add_artifact(self, bundle_path: str, data: IO[bytes]):
         """
         Add a processing artifact
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.add_artifact() not implemented")
 
 
 class TarWriter(Writer):

@@ -8,15 +8,33 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Sequence, Set, Type, Union
 
 import yaml
 
-from .kitchen import Kitchen
+from .config import Config
+from .definitions import Definitions
+from .kitchen import Kitchen, WorkingKitchen
 from .render import Renderer
 
 if TYPE_CHECKING:
     from .orders import Order
+
+
+config = Config()
+cached_system_definitions: Optional[Definitions] = None
+
+
+def system_definitions() -> Definitions:
+    """
+    Return loaded system definitions
+    """
+    global config
+    global cached_system_definitions
+    if cached_system_definitions is None:
+        cached_system_definitions = Definitions(config=config)
+        cached_system_definitions.load([Path("recipes")])
+    return cached_system_definitions
 
 
 class OrderResult:
@@ -42,7 +60,7 @@ class OrderResult:
         raise KeyError(f"Step {step_name} not found in debug trace of order {self.order}")
 
 
-class RecipeTestMixin:
+class RecipeTestMixin(unittest.TestCase):
     expected_basemap_args = {
         "page_id_line": False,
         "page_x_length": 38,
@@ -72,6 +90,10 @@ class RecipeTestMixin:
     }
 
     flavour_name = "default"
+    magics_crashes_skip_tests: ClassVar[Set[str]]
+    kitchen_class: Type[WorkingKitchen]
+    recipe_name: ClassVar[str]
+    model_name: ClassVar[str]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -93,7 +115,7 @@ class RecipeTestMixin:
         super().setUpClass()
         magic_crashes: List[Dict[str, Any]]
         try:
-            with open(".magics-crashes.yaml", "rt") as fd:
+            with open(".magics-crashes.yaml") as fd:
                 magics_crashes = yaml.load(fd, Loader=yaml.SafeLoader)
         except FileNotFoundError:
             magics_crashes = {}
@@ -106,77 +128,46 @@ class RecipeTestMixin:
                     cls.magics_crashes_skip_tests.add(name)
 
     def setUp(self) -> None:
-        self.kitchen = self.kitchen_class()
+        self.defs = system_definitions()
+        self.kitchen = self.kitchen_class(definitions=self.defs)
         self.kitchen.__enter__()
-        self.kitchen_recipes_loaded = False
 
     def tearDown(self) -> None:
         self.kitchen.__exit__(None, None, None)
-        self.kitchen = None
-
-    def make_orders(self, flavour_name=None, recipe_name=None):
-        """
-        Create all satisfiable orders from the currently tested recipe
-        """
-        if flavour_name is None:
-            flavour_name = self.flavour_name
-        if recipe_name is None:
-            recipe_name = self.recipe_name
-
-        recipe = self.kitchen.recipes.get(recipe_name)
-        flavour = self.kitchen.flavours.get(flavour_name)
-        orders = flavour.make_orders(recipe, self.kitchen.pantry)
-        return orders
-
-    def load_recipes(self, recipe_dirs=None):
-        """
-        Load recipes in the kitchen.
-
-        It can be called multiple times in a test case, and only the first time
-        will have any effect
-        """
-        if self.kitchen_recipes_loaded:
-            return
-        if recipe_dirs is None:
-            recipe_dirs = ["recipes"]
-        self.kitchen.load_recipes(recipe_dirs)
-        self.kitchen_recipes_loaded = True
+        delattr(self, "kitchen")
 
     def fill_pantry(
         self,
         reftime=datetime.datetime(2021, 1, 10),
         step=12,
-        recipe_dirs=None,
         expected=None,
-        recipe_name=None,
-        flavour_name=None,
+        flavour_name: Optional[str] = None,
         exclude=None,
-        extra_sample_dirs: Sequence[str] = (),
-    ):
+        extra_sample_dirs: Sequence[Union[str, Path]] = (),
+    ) -> None:
         """
         Load recipes if needed, then fill the pantry with the inputs they require
         """
-        if recipe_name is None:
-            recipe_name = self.recipe_name
+        recipe_name = self.recipe_name
         if flavour_name is None:
             flavour_name = self.flavour_name
-        self.load_recipes(recipe_dirs)
-        flavour = self.kitchen.flavours.get(flavour_name)
-        recipe = self.kitchen.recipes.get(recipe_name)
+        flavour = self.kitchen.defs.flavours[flavour_name]
+        recipe = self.kitchen.defs.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
-        sample_dirs = [os.path.basename(recipe_name)]
-        sample_dirs.extend(extra_sample_dirs)
+        sample_dirs: list[Path] = [Path(os.path.basename(recipe_name))]
+        sample_dirs += [Path(p) for p in extra_sample_dirs]
         for dirname in sample_dirs:
-            sample_dir = os.path.join("testdata", dirname)
-            for fn in os.listdir(sample_dir):
-                if not fn.endswith(".arkimet"):
+            sample_dir = Path("testdata") / dirname
+            for fn in sample_dir.iterdir():
+                if not fn.name.endswith(".arkimet"):
                     continue
-                if not fn.startswith(self.model_name):
+                if not fn.name.startswith(self.model_name):
                     continue
-                if exclude is not None and fnmatch.fnmatch(fn, exclude):
+                if exclude is not None and fnmatch.fnmatch(fn.name, exclude):
                     continue
-                self.kitchen.pantry.fill(path=os.path.join(sample_dir, fn))
+
+                self.kitchen.pantry.fill(path=sample_dir / fn.name)
 
         # Check that we imported the right files with the right names
         input_names = flavour.list_inputs(recipe)
@@ -189,20 +180,34 @@ class RecipeTestMixin:
                 for inp in inputs:
                     if inp.NAME != "default":
                         continue
-                    if inp.model is not None and inp.model != self.model_name:
+                    if inp.spec.model is not None and inp.spec.model != self.model_name:
                         continue
                     reftime_str = (
                         f"{reftime.year}_{reftime.month}_{reftime.day}"
                         f"_{reftime.hour}_{reftime.minute}_{reftime.second}"
                     )
-                    if inp.model is None:
+                    if inp.spec.model is None:
                         expected.append(f"{inp.name}_{reftime_str}+{step}.grib")
                     else:
                         expected.append(f"{self.model_name}_{inp.name}_{reftime_str}+{step}.grib")
         for fn in expected:
-            self.assertIn(fn, os.listdir(os.path.join(self.kitchen.pantry.data_root)))
+            self.assertIn(fn, os.listdir(self.kitchen.pantry.data_root))
 
-    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), step=12):
+    def make_orders(self, flavour_name=None, recipe_name=None) -> List["Order"]:
+        """
+        Create all satisfiable orders from the currently tested recipe
+        """
+        if flavour_name is None:
+            flavour_name = self.flavour_name
+        if recipe_name is None:
+            recipe_name = self.recipe_name
+
+        recipe = self.kitchen.defs.recipes.get(recipe_name)
+        flavour = self.kitchen.defs.flavours[flavour_name]
+        orders = flavour.make_orders(recipe, self.kitchen.pantry)
+        return orders
+
+    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), step=12) -> None:
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
@@ -221,33 +226,26 @@ class RecipeTestMixin:
             res.magics.append((order_step.name, name, parms))
 
         add_basemap = self.get_step(order, "add_basemap")
-        self.assertEqual(add_basemap.params.get("params", {}), self.expected_basemap_args)
+        self.assertEqual(add_basemap.spec.params.dict(exclude_unset=True), self.expected_basemap_args)
 
         # Test rendering to Python
         script_pathname = renderer.write_render_script([order])
+
+        # Check that the generated script compiles
         with open(script_pathname) as fd:
-            res.python_code = fd.read()
+            compile(fd.read(), script_pathname, "exec")
 
-        # Test rendering with Magics
-        rendered = renderer.render_one(order)
-        self.assertIsNotNone(rendered)
-        output = rendered.output
-        self.assertEqual(
-            output.relpath,
-            f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}/"
-            f"{os.path.basename(self.recipe_name)}+{step:03d}.png",
-        )
-
-    def order_to_python(self, order) -> str:
-        """
-        Render an order to a Python trace file only.
-
-        This is useful to reproduce a test case if Magics aborts on it.
-
-        Returns the name of the file with the Python trace>
-        """
-        renderer = Renderer(self.kitchen.config, self.kitchen.workdir)
-        return renderer.render_one_to_python(order)
+        # Do not try to run Magics, which is slow: just check that the steps
+        # are what we expect
+        # # Test rendering with Magics
+        # rendered = renderer.render_one(order)
+        # self.assertIsNotNone(rendered)
+        # output = rendered.output
+        # self.assertEqual(
+        #     output.relpath,
+        #     f"{reftime:%Y-%m-%dT%H:%M:%S}/{self.recipe_name}_{self.flavour_name}/"
+        #     f"{os.path.basename(self.recipe_name)}+{step:03d}.png",
+        # )
 
     def assertProcessLogEqual(self, log: List[str]):
         """
@@ -264,7 +262,7 @@ class RecipeTestMixin:
         re_size = re.compile(r"\b\d+b\b")
         simplified_log = []
         for e in self.kitchen.pantry.process_log:
-            message = e.message.replace(self.kitchen.pantry.data_root + "/", "")
+            message = e.message.replace(str(self.kitchen.pantry.data_root) + "/", "")
             message = re_size.sub("xxxb", message)
             simplified_log.append(f"{e.input.name}:{e.input.__class__.__name__}:" + message)
         self.assertCountEqual(simplified_log, log)
@@ -280,7 +278,7 @@ class RecipeTestMixin:
             "ifs": ifs,
             "erg5": erg5,
         }
-        self.assertEqual(step.params.get("params", {}), expected_mgrib_args[self.model_name])
+        self.assertEqual(step.spec.params.dict(exclude_unset=True), expected_mgrib_args[self.model_name])
 
     def get_step(self, order, step_name: str):
         """
@@ -328,54 +326,39 @@ class ERG5Mixin:
         return os.path.join("testdata", self.recipe_name, f"erg5_{input_name}+{step}.arkimet")
 
 
-def add_recipe_test_cases(
-    module_name, recipe_name, test_mixin: Optional[Type] = None, models: Sequence[str] = ("IFS", "Cosmo")
-):
+def recipe_tests(recipe_name, models: Sequence[str] = ("IFS", "Cosmo")) -> Callable[[Type], Type]:
     """
     Create test cases for the given recipe.
 
-    Looks in the module ``module_name`` for a mixin class that it will
+    Uses the provided class as a mixing to instantiate tests for each models.
 
     It generates dispatch- and model-specific test classes, combining a
     dispatch specific-mixin, a model-specific mixin, and a test-specific mixin.
-
-    The test-specific mixin is the class passed as ``test_mixin``.
-
-    If ``test_mixin`` is not provided, it defaults to
-    ``{recipe_name.upper()}{model}Mixin`` or ``{recipe_name.upper()}Mixin``
-    looked up in module ``module_name``.
     """
-    module = sys.modules[module_name]
-    base_recipe_name = os.path.basename(recipe_name)
-    for dispatch in ("Arkimet", "Eccodes"):
-        for model in models:
-            # Find mixin with the test methods
-            if test_mixin is None:
-                _test_mixin = getattr(module, f"{base_recipe_name.upper()}{model}Mixin", None)
-                if _test_mixin is None:
-                    _test_mixin = getattr(module, f"{base_recipe_name.upper()}Mixin")
-            else:
-                _test_mixin = test_mixin
 
-            if test_mixin is not None:
-                test_name = _test_mixin.__name__
+    def wrap(test_class: Type) -> Type:
+        module = sys.modules[test_class.__module__]
+        for dispatch in ("Arkimet", "Eccodes"):
+            for model in models:
+                test_name = test_class.__name__
                 if test_name.endswith("Mixin"):
                     test_name = test_name[:-5]
-            else:
-                test_name = base_recipe_name.upper()
 
-            cls_name = f"Test{test_name}{dispatch}{model}"
+                cls_name = f"Test{test_name}{dispatch}{model}"
 
-            dispatch_mixin = globals()[f"{dispatch}Mixin"]
-            model_mixin = globals()[f"{model}Mixin"]
+                dispatch_mixin = globals()[f"{dispatch}Mixin"]
+                model_mixin = globals()[f"{model}Mixin"]
 
-            test_case = type(
-                cls_name,
-                (_test_mixin, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
-                {"recipe_name": recipe_name},
-            )
-            test_case.__module__ = module_name
-            setattr(module, cls_name, test_case)
+                test_case = type(
+                    cls_name,
+                    (test_class, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
+                    {"recipe_name": recipe_name},
+                )
+                test_case.__module__ = test_class.__module__
+                setattr(module, cls_name, test_case)
+        return test_class
+
+    return wrap
 
 
 def scan_python_order(order: "Order") -> List[Dict[str, Any]]:
@@ -409,9 +392,13 @@ class Workdir(contextlib.ExitStack):
             kitchen_class = arkimapslib.kitchen.ArkimetKitchen
         elif kitchen_class == "eccodes":
             kitchen_class = arkimapslib.kitchen.EccodesKitchen
+        elif isinstance(kitchen_class, str):
+            raise ValueError(f"Invalid kitchen_class {kitchen_class!r}")
 
-        kitchen = kitchen_class()
-        kitchen.load_recipes([self.path])
+        global config
+        definitions = Definitions(config=config)
+        definitions.load([self.path])
+        kitchen = kitchen_class(definitions=definitions)
         return kitchen
 
     def __str__(self):

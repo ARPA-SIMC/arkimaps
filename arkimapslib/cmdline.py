@@ -22,6 +22,7 @@ class Fail(BaseException):
 
     No stack trace is printed.
     """
+
     pass
 
 
@@ -30,6 +31,7 @@ class Success(BaseException):
     Exception raised when a command has been successfully handled, and no
     further processing should happen
     """
+
     pass
 
 

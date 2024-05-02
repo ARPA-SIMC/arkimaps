@@ -43,6 +43,18 @@ class ModelStep:
             return self._value < other._value
         return NotImplemented
 
+    def __le__(self, other):
+        if isinstance(other, int):
+            return self._value <= other
+        if isinstance(other, str):
+            val, unit = self._parse_value(other)
+            if unit != "h":
+                raise ValueError(f"only 'h' currently supported as a time unit (found {unit!r})")
+            return self._value <= val
+        if isinstance(other, ModelStep):
+            return self._value <= other._value
+        return NotImplemented
+
     def __hash__(self) -> int:
         return hash(self._value)
 
@@ -191,6 +203,15 @@ class Instant:
             return self._step < other._step
         return NotImplemented
 
+    def __le__(self, other):
+        if isinstance(other, Instant):
+            if self._reftime < other._reftime:
+                return True
+            if self._reftime > other._reftime:
+                return False
+            return self._step <= other._step
+        return NotImplemented
+
     def __hash__(self) -> int:
         return hash((self._reftime, self._step))
 
@@ -210,13 +231,6 @@ class Instant:
             f"_{self._reftime.hour}_{self._reftime.minute}_{self._reftime.second}"
             f"+{self._step._value}"
         )
-
-    def product_suffix(self) -> str:
-        """
-        Return a suffix that identifies a product for this instance in the
-        output
-        """
-        return f"_{self.reftime:%Y-%m-%dT%H:%M:%S}{self._step.suffix()}"
 
     def step_suffix(self) -> str:
         """

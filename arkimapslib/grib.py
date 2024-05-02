@@ -1,8 +1,9 @@
 # from __future__ import annotations
+from pathlib import Path
 from typing import TYPE_CHECKING, BinaryIO, Optional, Union
 
 if TYPE_CHECKING:
-    import numpy
+    from numpy.typing import NDArray
 
 try:
     import eccodes
@@ -13,7 +14,7 @@ except ModuleNotFoundError:
 
 
 class GRIB:
-    def __init__(self, fname: str):
+    def __init__(self, fname: Path):
         self.fname = fname
         self.fd: Optional[BinaryIO] = None
         self.gid: Optional[int] = None
@@ -22,7 +23,7 @@ class GRIB:
         if not HAVE_ECCODES:
             raise RuntimeError("GRIB processing functionality is needed, but eccodes is not installed")
 
-        self.fd = open(self.fname, "rb")
+        self.fd = self.fname.open("rb")
         self.gid = eccodes.codes_grib_new_from_file(self.fd)
         return self
 
@@ -57,12 +58,12 @@ class GRIB:
             raise RuntimeError(f"Cannot set {k}={v!r} (of type {type(v).__name__} in GRIB file: {e}")
 
     @property
-    def values(self) -> "numpy.array":
+    def values(self) -> "NDArray":
         assert self.gid is not None
         return eccodes.codes_get_values(self.gid)
 
     @values.setter
-    def values(self, val: "numpy.array"):
+    def values(self, val: "NDArray"):
         assert self.gid is not None
         eccodes.codes_set_values(self.gid, val)
 

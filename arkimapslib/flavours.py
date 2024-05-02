@@ -2,17 +2,19 @@
 import fnmatch
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type, cast
 
-from . import inputs, orders, recipes
+from . import inputs, orders
 from .config import Config
 from .lint import Lint
-from .postprocess import Postprocessor, postprocessors
-from .steps import Step, StepConfig, StepSkipped
+from .models import BaseDataModel, pydantic
+from .postprocess import Postprocessor
+from .component import RootComponent
 
 if TYPE_CHECKING:
-    from . import pantry
+    from . import pantry, recipes
     from .inputs import InputFile, Instant
+    from .steps import Step
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -20,11 +22,40 @@ Kwargs = Dict[str, Any]
 
 log = logging.getLogger("arkimaps.flavours")
 
+# TODO: move these to flavour arguments
+LEGEND_WIDTH_CM = 3
+LEGEND_HEIGHT_CM = 21
 
-class Flavour:
+
+class FlavourStep:
+    """
+    Flavour configuration for a step
+    """
+
+    def __init__(self, name: str, options: Optional[Kwargs] = None, **kw):
+        self.name = name
+        self.options: Kwargs = options if options is not None else {}
+
+    def get_param(self, name: str) -> Any:
+        return self.options.get(name)
+
+
+class FlavourSpec(BaseDataModel):
+    """
+    Data model for Flavours
+    """
+
+    steps: Dict[str, Any] = pydantic.Field(default_factory=dict)
+    postprocess: list[Dict[str, Any]] = pydantic.Field(default_factory=list)
+    recipes_filter: List[str] = pydantic.Field(default_factory=list)
+
+
+class Flavour(RootComponent[FlavourSpec, "Flavour"]):
     """
     Set of default settings used for generating a product
     """
+
+    Spec = FlavourSpec
 
     def __init__(
         self,
@@ -32,64 +63,32 @@ class Flavour:
         config: Config,
         name: str,
         defined_in: str,
-        steps: Optional[Kwargs] = None,
-        postprocess: Optional[Kwargs] = None,
-        recipes_filter: Optional[List[str]] = None,
-        **kw,
+        args: Dict[str, Any],
     ):
-        self.config = config
-        self.name = name
-        self.defined_in = defined_in
+        super().__init__(config=config, name=name, defined_in=defined_in, args=args)
 
         self.recipes_filter: List[re.Pattern] = []
-        if recipes_filter is not None:
-            if not isinstance(recipes_filter, list):
-                raise ValueError(f"{defined_in}: recipes_filter is {type(recipes_filter).__name__} instead of list")
-            for expr in recipes_filter:
-                self.recipes_filter.append(re.compile(fnmatch.translate(expr)))
+        for expr in self.spec.recipes_filter:
+            self.recipes_filter.append(re.compile(fnmatch.translate(expr)))
 
-        self.steps: Dict[str, StepConfig] = {}
-        if steps is not None:
-            for name, options in steps.items():
-                self.steps[name] = StepConfig(name, options)
+        self.steps: Dict[str, FlavourStep] = {}
+        for name, options in self.spec.steps.items():
+            self.steps[name] = FlavourStep(name, options)
 
         self.postprocessors: List[Postprocessor] = []
-        if postprocess is not None:
-            for desc in postprocess:
-                name = desc.get("type")
-                if name is None:
-                    raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
-                self.postprocessors.append(Postprocessor.create(name, config=config, **desc))
+        for desc in self.spec.postprocess:
+            desc = desc.copy()
+            name = desc.pop("type", None)
+            if name is None:
+                raise ValueError(f"{defined_in}: postprocessor listed without 'type'")
+            self.postprocessors.append(Postprocessor.create(name=name, config=config, defined_in=defined_in, args=desc))
 
-    @classmethod
-    def lint(
-        cls,
-        lint: Lint,
-        *,
-        config: Config,
-        name: str,
-        defined_in: str,
-        steps: Optional[Kwargs] = None,
-        postprocess: Optional[Kwargs] = None,
-        recipes_filter: Optional[List[str]] = None,
-        **kwargs,
-    ):
+    def lint(self, lint: Lint) -> None:
         """
         Consistency check the given input arguments
         """
-        for k, v in kwargs.items():
-            lint.warn_flavour(f"Unknown parameter: {k!r}", defined_in=defined_in, name=name)
-
-        if postprocess is not None:
-            if not isinstance(postprocess, list):
-                lint.warn_flavour("`postprocess` is not a list", defined_in=defined_in, name=name)
-            else:
-                for desc in postprocess:
-                    name = desc.get("type")
-                    if name is None:
-                        lint.warn_flavour("Postprocessor listed without 'type'", defined_in=defined_in, name=name)
-                        continue
-                    postprocessors.lint(lint=lint, name=name, defined_in=defined_in, **desc)
+        for postproc in self.postprocessors:
+            postproc.lint(lint=lint)
 
     def __str__(self):
         return self.name
@@ -105,15 +104,13 @@ class Flavour:
         }
 
     @classmethod
-    def create(cls, *, lint: Optional[Lint] = None, **kwargs):
+    def create(cls, *, args=Dict[str, Any], **kwargs: Any) -> "Flavour":
         tile_cls: Type[Flavour]
-        if "tile" in kwargs:
-            tile_cls = TiledFlavour
+        if "tile" in args:
+            tile_cls = cls.lookup("tiled")
         else:
-            tile_cls = SimpleFlavour
-        if lint:
-            tile_cls.lint(lint, **kwargs)
-        return tile_cls(**kwargs)
+            tile_cls = cls.lookup("simple")
+        return tile_cls(args=args, **kwargs)
 
     def allows_recipe(self, recipe: "recipes.Recipe"):
         """
@@ -126,13 +123,13 @@ class Flavour:
                 return True
         return False
 
-    def step_config(self, name: str) -> StepConfig:
+    def step_config(self, name: str) -> FlavourStep:
         """
-        Return a StepConfig object for the given step name
+        Return a FlavourStep object for the given step name
         """
         res = self.steps.get(name)
         if res is None:
-            res = StepConfig(name)
+            res = FlavourStep(name)
         return res
 
     def list_inputs_recursive(self, recipe: "recipes.Recipe", pantry: "pantry.Pantry") -> List[str]:
@@ -155,8 +152,7 @@ class Flavour:
 
         # Collect the inputs needed for all steps
         for recipe_step in recipe.steps:
-            step_config = self.step_config(recipe_step.name)
-            for input_name in recipe_step.get_input_names(step_config):
+            for input_name in recipe_step.get_input_names(self):
                 if input_name in input_names:
                     continue
                 input_names.append(input_name)
@@ -169,8 +165,7 @@ class Flavour:
         """
         input_names: Set[str] = set()
         for recipe_step in recipe.steps:
-            step_config = self.step_config(recipe_step.name)
-            for input_name in recipe_step.get_input_names(step_config):
+            for input_name in recipe_step.get_input_names(self):
                 input_names.add(input_name)
         return input_names
 
@@ -196,19 +191,26 @@ class Flavour:
             # are valid for all steps, like maps or orography
             any_instant = output_instants.pop(None, None)
             if any_instant is not None:
-                log.debug("flavour %s: recipe %s inputs %s available for any step", self.name, recipe.name, input_name)
+                log.debug("flavour %s: recipe %s input %s available for any step", self.name, recipe.name, input_name)
                 inputs_for_all_instants[input_name] = any_instant
                 # This input is valid for all steps and does not
                 # introduce step limitations
                 if not output_instants:
                     continue
-            else:
+            elif output_instants:
                 log.debug(
-                    "flavour %s: recipe %s inputs %s available for instants %r",
+                    "flavour %s: recipe %s input %s available for instants %s",
                     self.name,
                     recipe.name,
                     input_name,
-                    output_instants.keys(),
+                    ", ".join(str(i) for i in output_instants.keys()),
+                )
+            else:
+                log.debug(
+                    "flavour %s: recipe %s input %s not available",
+                    self.name,
+                    recipe.name,
+                    input_name,
                 )
 
             # Intersect the output instants for the recipe input list
@@ -217,10 +219,12 @@ class Flavour:
                 # the `inputs` mapping with all available inputs
                 inputs = {}
                 for output_instant, ifile in output_instants.items():
+                    # None was popped earlier
+                    assert output_instant is not None
                     inputs[output_instant] = {input_name: ifile}
             else:
                 # The subsequent times this output_instant is seen, intersect
-                instants_to_delete: List[int] = []
+                instants_to_delete: List[Instant] = []
                 for output_instant, input_files in inputs.items():
                     if output_instant not in output_instants:
                         # We miss an input for this instant, so we cannot
@@ -242,7 +246,7 @@ class Flavour:
         raise NotImplementedError(f"{self.__class__}.inputs_to_orders not implemented")
 
 
-class SimpleFlavour(Flavour):
+class Simple(Flavour):
     def inputs_to_orders(
         self,
         recipe: "recipes.Recipe",
@@ -269,38 +273,47 @@ class SimpleFlavour(Flavour):
         return res
 
 
-class TiledFlavour(Flavour):
+class TileSpec(BaseDataModel):
+    """
+    Tile definition for TiledSpec
+    """
+
+    #: minimum zoom level to generate
+    zoom_min: int = 3
+    #: maximum zoom level to generate
+    zoom_max: int = 5
+    #: minimum latitude
+    lat_min: float
+    #: maximum latitude
+    lat_max: float
+    #: minimum longitude
+    lon_min: float
+    #: maximum longitude
+    lon_max: float
+
+
+class TiledSpec(FlavourSpec):
+    """
+    Data model for Flavours
+    """
+
+    #: Definition of the tiling requested
+    tile: TileSpec
+
+
+class Tiled(Flavour):
     """
     Flavour that generates tiled output.
 
-    ``tile`` in the flavour is a dictionary defining the requested tiling, with
-    these fields:
-     * ``zoom_min: Int = 3``: minimum zoom level to generate
-     * ``zoom_max: Int = 5``: maximum zoom level to generate
-     * ``lat_min: Float``: minimum latitude
-     * ``lat_max: Float``: maximum latitude
-     * ``lon_min: Float``: minimum longitude
-     * ``lon_max: Float``: maximum longitude
     """
 
-    def __init__(self, *, tile: Dict[str, Any], **kw):
-        super().__init__(**kw)
-        self.zoom_min = int(tile.get("zoom_min", 3))
-        self.zoom_max = int(tile.get("zoom_max", 5))
-        self.lat_min = float(tile["lat_min"])
-        self.lat_max = float(tile["lat_max"])
-        self.lon_min = float(tile["lon_min"])
-        self.lon_max = float(tile["lon_max"])
-
-    @classmethod
-    def lint(cls, lint: Lint, *, tile: Dict[str, Any], **kwargs):
-        super().lint(lint, **kwargs)
+    Spec = TiledSpec
 
     def summarize(self) -> Dict[str, Any]:
         res = super().summarize()
         for name in ("zoom", "lat", "lon"):
-            res[f"{name}_min"] = getattr(self, f"{name}_min")
-            res[f"{name}_max"] = getattr(self, f"{name}_max")
+            res[f"{name}_min"] = getattr(self.spec.tile, f"{name}_min")
+            res[f"{name}_max"] = getattr(self.spec.tile, f"{name}_max")
         return res
 
     def make_order_for_legend(
@@ -309,41 +322,91 @@ class TiledFlavour(Flavour):
         """
         Create an order to generate the legend for a tileset
         """
+        from .mixers import mixers
+        from .recipes import RecipeStepSkipped
+        from .steps import AddGrib, AddContour
+
         # Identify relevant steps for legend generation
-        grib_step: Optional[Step] = None
-        contour_step: Optional[Step] = None
+        grib_step: Optional[AddGrib] = None
+        contour_step: Optional[AddContour] = None
 
         for recipe_step in recipe.steps:
             try:
                 if recipe_step.name == "add_grib":
-                    step_config = self.step_config(recipe_step.name)
-                    grib_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
+                    grib_step = cast(AddGrib, recipe_step.create_step(self, input_files))
                 elif recipe_step.name == "add_contour":
-                    step_config = self.step_config(recipe_step.name)
-                    step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
-                    params = step.params.get("params")
-                    if params is None:
-                        params = {}
-                        step.params["params"] = params
-                    if params.get("legend", False):
+                    step = cast(AddContour, recipe_step.create_step(self, input_files))
+                    if step.spec.params.legend:
                         contour_step = step
-                        break
                 else:
                     # Ignore all other steps
                     pass
-            except StepSkipped:
+            except RecipeStepSkipped:
                 continue
 
         if not contour_step:
             return None
+
+        order_steps = []
+
+        step_collection = mixers.get_steps(recipe.spec.mixer)
+        add_basemap_class = step_collection.get("add_basemap")
+        if add_basemap_class is None:
+            raise RuntimeError(f"step add_basemap not found in mixer {recipe.spec.mixer}")
+
+        # Configure the basemap to be just a canvas for the legend
+        order_steps.append(
+            add_basemap_class(
+                config=self.config,
+                # Allow to configure add_legend_basemap in flavour differently from
+                # add_basemap
+                # TODO: document this
+                name="add_legend_basemap",
+                defined_in=self.defined_in,
+                args={
+                    "params": {
+                        "subpage_frame": "off",
+                        "page_x_length": LEGEND_WIDTH_CM,
+                        "page_y_length": LEGEND_HEIGHT_CM,
+                        "super_page_x_length": LEGEND_WIDTH_CM,
+                        "super_page_y_length": LEGEND_HEIGHT_CM,
+                        "subpage_x_length": LEGEND_WIDTH_CM,
+                        "subpage_y_length": LEGEND_HEIGHT_CM,
+                        "subpage_x_position": 0.0,
+                        "subpage_y_position": 0.0,
+                        "subpage_gutter_percentage": 20.0,
+                        "page_frame": "off",
+                        "page_id_line": "off",
+                    }
+                },
+                sources=input_files,
+            )
+        )
+
+        if grib_step is not None:
+            order_steps.append(grib_step)
+
+        params = contour_step.spec.params
+        params.legend = "on"
+        params.legend_text_font_size = "25%"
+        params.legend_border_thickness = 4
+        params.legend_only = "on"
+        params.legend_box_mode = "positional"
+        params.legend_box_x_position = 0.00
+        params.legend_box_y_position = 0.00
+        params.legend_box_x_length = LEGEND_WIDTH_CM
+        params.legend_box_y_length = LEGEND_HEIGHT_CM
+        params.legend_box_blanking = False
+        params.legend_title_font_size = -1
+        params.legend_automatic_position = "top"
+        order_steps.append(contour_step)
 
         return orders.LegendOrder(
             flavour=self,
             recipe=recipe,
             input_files=input_files,
             instant=output_instant,
-            grib_step=grib_step,
-            contour_step=contour_step,
+            order_steps=order_steps,
         )
 
     def inputs_to_orders(
@@ -365,12 +428,12 @@ class TiledFlavour(Flavour):
                         recipe=recipe,
                         input_files=input_files,
                         instant=output_instant,
-                        lat_min=self.lat_min,
-                        lat_max=self.lat_max,
-                        lon_min=self.lon_min,
-                        lon_max=self.lon_max,
-                        zoom_min=self.zoom_min,
-                        zoom_max=self.zoom_max,
+                        lat_min=self.spec.tile.lat_min,
+                        lat_max=self.spec.tile.lat_max,
+                        lon_min=self.spec.tile.lon_min,
+                        lon_max=self.spec.tile.lon_max,
+                        zoom_min=self.spec.tile.zoom_min,
+                        zoom_max=self.spec.tile.zoom_max,
                     )
                 )
 

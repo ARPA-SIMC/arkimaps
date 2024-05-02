@@ -8,26 +8,31 @@ import unittest
 from typing import Type
 
 import arkimapslib.outputbundle as ob
-from arkimapslib import flavours, orders, inputs
+from arkimapslib import flavours, inputs, orders
 from arkimapslib.config import Config
-from arkimapslib.inputs import ModelStep, Instant
+from arkimapslib.inputs import Instant
 from arkimapslib.recipes import Recipe
+from arkimapslib.types import ModelStep
 
 
 class BaseFixture:
     def setUp(self):
         super().setUp()
         self.config = Config()
-        self.flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
-        self.recipe = Recipe(name="recipe", defined_in="recipe.yaml", recipe=[{"step": "add_basemap"}])
+        self.flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
+        self.recipe = Recipe(
+            config=self.config, name="recipe", defined_in="recipe.yaml", args={"recipe": [{"step": "add_basemap"}]}
+        )
         self.input = inputs.Static(
             config=self.config,
             name="test",
             defined_in="test.yaml",
-            model="testmodel",
-            mgrib={"foo": 1},
-            notes="test notes",
-            path=os.path.join(self.config.static_dir[0], "puntiCitta.geo"),
+            args={
+                "model": "testmodel",
+                "mgrib": {"foo": 1},
+                "notes": "test notes",
+                "path": os.path.join(self.config.static_dir[0], "puntiCitta.geo"),
+            },
         )
         self.instant = Instant(reftime=datetime.datetime(2023, 12, 15), step=12)
         self.order = orders.MapOrder(
@@ -50,11 +55,12 @@ class TestTypes(BaseFixture, unittest.TestCase):
         # TODO: inspect val1
 
     def test_inputsummary(self):
-        self.input.stats.add_computation_log(100_000_000, "mock processing")
-        self.input.stats.used_by.add(self.recipe.name)
+        stats = ob.InputProcessingStats()
+        stats.add_computation_log(100_000_000, "mock processing")
+        stats.used_by.add(self.recipe.name)
 
         val = ob.InputSummary()
-        val.add(self.input)
+        val.add("test", stats)
 
         as_json = val.to_jsonable()
         val1 = ob.InputSummary.from_jsonable(as_json)
@@ -82,15 +88,18 @@ class TestTypes(BaseFixture, unittest.TestCase):
         self.assertIsNone(val.legend_info)
 
         recipe = Recipe(
+            config=self.config,
             name="recipe",
             defined_in="recipe.yaml",
-            recipe=[
-                {"step": "add_basemap"},
-                {
-                    "step": "add_contour",
-                    "params": {"legend": "on"},
-                },
-            ],
+            args={
+                "recipe": [
+                    {"step": "add_basemap"},
+                    {
+                        "step": "add_contour",
+                        "params": {"legend": "on"},
+                    },
+                ]
+            },
         )
         order = orders.MapOrder(
             flavour=self.flavour,
@@ -104,7 +113,7 @@ class TestTypes(BaseFixture, unittest.TestCase):
         self.assertEqual(
             val.legend_info,
             {
-                "legend": "on",
+                "legend": True,
             },
         )
 
@@ -127,8 +136,8 @@ class TestTypes(BaseFixture, unittest.TestCase):
         # TODO: inspect val1
 
     def test_add_unrendered_products(self):
-        flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
-        recipe = Recipe(name="recipe", defined_in="recipe.yaml")
+        flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
+        recipe = Recipe(config=self.config, name="recipe", defined_in="recipe.yaml", args={})
         order = orders.MapOrder(
             flavour=flavour,
             recipe=recipe,
@@ -216,11 +225,12 @@ class BundleTestsMixin(BaseFixture):
         self.assertEqual(p1, artifact)
 
     def test_serialize(self):
-        self.input.stats.add_computation_log(100_000_000, "mock processing")
-        self.input.stats.used_by.add(self.recipe.name)
+        stats = ob.InputProcessingStats()
+        stats.add_computation_log(100_000_000, "mock processing")
+        stats.used_by.add(self.recipe.name)
 
         input_summary = ob.InputSummary()
-        input_summary.add(self.input)
+        input_summary.add("test", stats)
 
         log = ob.Log()
         log.append(ts=1.5, level=2, msg="message", name="logname")

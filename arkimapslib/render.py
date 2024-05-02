@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 from collections import deque
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Deque, Dict, Generator, Iterable, List, Optional, Sequence, Set, Tuple, Union
 
 from . import outputbundle
@@ -62,23 +63,24 @@ def groups(orders: Iterable["Order"], count: int) -> Generator[List["Order"], No
 
 
 class Renderer:
-    def __init__(self, config: Config, workdir: str, styles_dir: Optional[str] = None):
+    def __init__(self, config: Config, workdir: Path, styles_dir: Optional[Path] = None):
         self.config = config
         self.workdir = workdir
         if styles_dir is None:
-            styles_dir = "/usr/share/magics/styles/ecmwf"
-        self.styles_dir = styles_dir
+            from .cli import SYSTEM_STYLES_DIR
+
+            styles_dir = SYSTEM_STYLES_DIR
         self.env_overrides = {
             # Tell magics where it should take its default styles from
-            "MAGICS_STYLE_PATH": styles_dir,
+            "MAGICS_STYLE_PATH": str(styles_dir),
             # Tell magics not to print noisy banners
             "MAGPLUS_QUIET": "1",
         }
-        self.orders_by_name: Dict[Tuple[str, str], Order] = {}
-        self.renderer_dir = os.path.join(workdir, "renderers")
-        if os.path.exists(self.renderer_dir):
+        self.orders_by_name: Dict[Tuple[Path, str], Order] = {}
+        self.renderer_dir = workdir / "renderers"
+        if self.renderer_dir.exists():
             shutil.rmtree(self.renderer_dir)
-        os.makedirs(self.renderer_dir)
+        self.renderer_dir.mkdir(parents=True)
         self.renderer_sequence = 0
 
     @contextlib.contextmanager
@@ -99,7 +101,7 @@ class Renderer:
         orders_per_script = self.config.orders_per_script
         log.debug("%d orders to dispatch in groups of %d", len(orders), orders_per_script)
 
-        queue: Deque[str] = deque()
+        queue: Deque[Path] = deque()
         for group in groups(orders, orders_per_script):
             queue.append(self.write_render_script(group))
 
@@ -111,7 +113,7 @@ class Renderer:
             res = loop.run_until_complete(self.render_asyncio(queue, bundle))
             return res
 
-    async def render_asyncio(self, queue: Deque[str], bundle: outputbundle.Writer) -> List["Order"]:
+    async def render_asyncio(self, queue: Deque[Path], bundle: outputbundle.Writer) -> List["Order"]:
         # TODO: hardcoded default to os.cpu_count, can be configurable
         max_tasks = os.cpu_count() or 1
         pending: Set[Any] = set()
@@ -122,7 +124,7 @@ class Renderer:
             # Refill the queue
             while queue and len(pending) < max_tasks:
                 script_file = queue.popleft()
-                pending.add(asyncio_create_task(self.run_render_script(script_file), name=script_file))
+                pending.add(asyncio_create_task(self.run_render_script(script_file), name=str(script_file)))
 
             # Execute the queue
             log.debug("Waiting for %d tasks", len(pending))
@@ -146,7 +148,7 @@ class Renderer:
 
         return rendered
 
-    def _parse_renderer_output(self, script_file: str, stdout: Union[str, bytes]) -> Dict[str, Any]:
+    def _parse_renderer_output(self, script_file: Path, stdout: Union[str, bytes]) -> Dict[str, Any]:
         """
         Parse JSON output from a render script
         """
@@ -158,8 +160,10 @@ class Renderer:
             raise RuntimeError(f"{script_file}: render script produced invalid JSON") from e
         return render_info
 
-    async def run_render_script(self, script_file: str) -> List["Order"]:
-        proc = await asyncio.create_subprocess_exec(sys.executable, script_file, stdout=asyncio.subprocess.PIPE)
+    async def run_render_script(self, script_file: Path) -> List["Order"]:
+        proc = await asyncio.create_subprocess_exec(
+            sys.executable, script_file.as_posix(), stdout=asyncio.subprocess.PIPE
+        )
 
         stdout, stderr = await proc.communicate()
         render_info = self._parse_renderer_output(script_file, stdout)
@@ -174,11 +178,11 @@ class Renderer:
 
         return list(orders)
 
-    def render_one(self, order: "Order") -> Optional["Order"]:
+    def render_one(self, order: "Order") -> "Order":
         script_file = self.write_render_script([order])
 
         # Run the render script
-        res = subprocess.run([sys.executable, script_file], check=True, stdout=subprocess.PIPE)
+        res = subprocess.run([sys.executable, script_file.as_posix()], check=True, stdout=subprocess.PIPE)
         render_info = self._parse_renderer_output(script_file, res.stdout)
         timings = render_info["timings"]
         outputs = [Output(*o) for o in render_info["outputs"]]
@@ -188,13 +192,13 @@ class Renderer:
         order.set_output(output, timing=timings[output.name])
         return order
 
-    def write_render_script(self, orders: Sequence["Order"]) -> str:
+    def write_render_script(self, orders: Sequence["Order"]) -> Path:
         """
         Render one order to a Python renderer script.
 
         Return the name of the file written
         """
-        script_file = os.path.join(self.renderer_dir, f"renderer{self.renderer_sequence:03d}.py")
+        script_file = self.renderer_dir / f"renderer{self.renderer_sequence:03d}.py"
         self.renderer_sequence += 1
 
         gen = PyGen()
@@ -217,7 +221,7 @@ class Renderer:
             gen.empty_line()
 
         for idx, order in enumerate(orders):
-            gen.line(f"order{idx}({self.workdir!r})")
+            gen.line(f"order{idx}({str(self.workdir)!r})")
         gen.empty_line()
         gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
 

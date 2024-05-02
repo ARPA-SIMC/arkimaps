@@ -1,3 +1,9 @@
+# New in version UNRELEASED
+
+* capture and log noisy `grib_filter` stderr
+* detailed validation and linting of recipe definitions, including Magics
+  macro parameters (#165)
+
 # New in version 1.19
 
 * fixed extremes for bic product

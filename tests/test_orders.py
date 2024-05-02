@@ -13,30 +13,35 @@ class TestTypes(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.config = Config()
-        self.flavour = flavours.SimpleFlavour(config=self.config, name="flavour", defined_in="flavour.yaml")
+        self.flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
         self.instant = Instant(reftime=datetime.datetime(2023, 12, 15), step=12)
 
     def _compute_georef(self, params: Dict[str, Any]) -> Dict[str, Any]:
         recipe = Recipe(
+            config=self.config,
             name="recipe",
             defined_in="recipe.yaml",
-            recipe=[
-                {"step": "add_basemap"},
-                {
-                    "step": "add_basemap",
-                    "params": params,
-                },
-            ],
+            args={
+                "recipe": [
+                    {
+                        "step": "add_basemap",
+                        "params": params,
+                    },
+                ]
+            },
         )
 
         order = orders.MapOrder(
             flavour=self.flavour,
             instant=self.instant,
             recipe=recipe,
-            input_files=[],
+            input_files={},
         )
 
-        return order.georeference()
+        res = order.georeference()
+        self.assertIsNotNone(res)
+        assert res is not None  # This one is for mypy
+        return res
 
     def test_georef_map_epsg(self):
         georef = self._compute_georef(

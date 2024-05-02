@@ -4,26 +4,21 @@ import logging
 import math
 import os
 from abc import ABC, abstractmethod
-from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, Generator, List, NamedTuple, Optional, Tuple
 
 from PIL import Image
 
 from . import outputbundle
-from .inputs import ModelStep
-from .steps import StepSkipped, StepConfig, AddBasemap
 from .pygen import PyGen
+from .recipes import RecipeStepSkipped
 
 if TYPE_CHECKING:
     from . import inputs, steps
     from .flavours import Flavour
-    from .kitchen import Kitchen
     from .recipes import Recipe
 
 log = logging.getLogger("orders")
 
-LEGEND_WIDTH_CM = 3
-LEGEND_HEIGHT_CM = 21
 TILE_WIDTH_CM = 256 / 40.0
 TILE_HEIGHT_CM = 256 / 40.0
 TILE_WIDTH_PX = 256
@@ -59,7 +54,7 @@ class Order(ABC):
         # Reference to the recipe to use for summaries
         self.recipe: "Recipe" = recipe
         # Name of the Mixer to use
-        self.mixer = recipe.mixer
+        self.mixer = recipe.spec.mixer
         # Dict mapping source names to pathnames of GRIB files
         self.input_files = input_files
         # Product instant
@@ -118,15 +113,12 @@ class Order(ABC):
         """
         for step in self.order_steps:
             if step.name == "add_basemap":
-                try:
-                    params = step.params["params"]
-                    projection = params["subpage_map_projection"]
-                    lllon = params["subpage_lower_left_longitude"]
-                    lllat = params["subpage_lower_left_latitude"]
-                    urlon = params["subpage_upper_right_longitude"]
-                    urlat = params["subpage_upper_right_latitude"]
-                except KeyError:
-                    continue
+                params = step.spec.params
+                projection = params.subpage_map_projection
+                lllon = params.subpage_lower_left_longitude
+                lllat = params.subpage_lower_left_latitude
+                urlon = params.subpage_upper_right_longitude
+                urlat = params.subpage_upper_right_latitude
                 break
         else:
             log.info("%s: Order has no add_basemap step", self)
@@ -176,9 +168,8 @@ class MapOrder(Order):
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
             try:
-                step_config = flavour.step_config(recipe_step.name)
-                s = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
-            except StepSkipped:
+                s = recipe_step.create_step(flavour, input_files)
+            except RecipeStepSkipped:
                 log.debug("%s: %s (skipped)", self, recipe_step.name)
                 continue
             self.order_steps.append(s)
@@ -237,6 +228,8 @@ class TileOrder(Order):
         w: int = 1,
         h: int = 1,
     ):
+        from .steps import AddBasemap, AddContour
+
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
         self.x = x
         self.y = y
@@ -257,41 +250,32 @@ class TileOrder(Order):
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
             try:
-                step_config = flavour.step_config(recipe_step.name)
-                compiled_step = recipe_step.step(recipe_step.name, step_config, recipe_step.args, input_files)
-                if recipe_step.name == "add_basemap":
-                    params = compiled_step.params.get("params")
-                    if params is None:
-                        params = {}
-                    else:
-                        params = params.copy()
-                    compiled_step.params["params"] = params
-                    params.update(
-                        subpage_map_projection="EPSG:3857",
-                        subpage_lower_left_latitude=min_lat,
-                        subpage_lower_left_longitude=min_lon,
-                        subpage_upper_right_latitude=max_lat,
-                        subpage_upper_right_longitude=max_lon,
-                        page_x_length=TILE_WIDTH_CM * self.width,
-                        page_y_length=TILE_HEIGHT_CM * self.height,
-                        super_page_x_length=TILE_WIDTH_CM * self.width,
-                        super_page_y_length=TILE_HEIGHT_CM * self.height,
-                        subpage_x_length=TILE_WIDTH_CM * self.width,
-                        subpage_y_length=TILE_HEIGHT_CM * self.height,
-                        subpage_x_position=0.0,
-                        subpage_y_position=0.0,
-                        subpage_frame="off",
-                        output_width=TILE_WIDTH_PX * self.width,
-                        page_frame="off",
-                        skinny_mode="on",
-                        page_id_line="off",
-                    )
-                elif recipe_step.name == "add_contour":
+                compiled_step = recipe_step.create_step(flavour, input_files)
+                if recipe_step.step_class is AddBasemap:
+                    # Adjust basemap area
+                    params = compiled_step.spec.params
+                    params.subpage_map_projection = "EPSG:3857"
+                    params.subpage_lower_left_latitude = min_lat
+                    params.subpage_lower_left_longitude = min_lon
+                    params.subpage_upper_right_latitude = max_lat
+                    params.subpage_upper_right_longitude = max_lon
+                    params.page_x_length = TILE_WIDTH_CM * self.width
+                    params.page_y_length = TILE_HEIGHT_CM * self.height
+                    params.super_page_x_length = TILE_WIDTH_CM * self.width
+                    params.super_page_y_length = TILE_HEIGHT_CM * self.height
+                    params.subpage_x_length = TILE_WIDTH_CM * self.width
+                    params.subpage_y_length = TILE_HEIGHT_CM * self.height
+                    params.subpage_x_position = 0.0
+                    params.subpage_y_position = 0.0
+                    params.subpage_frame = False
+                    params.output_width = TILE_WIDTH_PX * self.width
+                    params.page_frame = False
+                    params.skinny_mode = True
+                    params.page_id_line = False
+                elif recipe_step.step_class is AddContour:
                     # Strip legend from add_contour
-                    params = compiled_step.params.get("params")
-                    if params is not None:
-                        compiled_step.params["params"] = {k: v for k, v in params.items() if not k.startswith("legend")}
-            except StepSkipped:
+                    compiled_step.spec.params.legend = False
+            except RecipeStepSkipped:
                 log.debug("%s: %s (skipped)", self, compiled_step.name)
                 continue
             self.order_steps.append(compiled_step)
@@ -321,6 +305,8 @@ class TileOrder(Order):
         """
         Add render results to a tarball
         """
+        if self.output is None:
+            raise RuntimeError("attempted to summarize an order before using it to produce an output")
         relpath, basename = os.path.split(self.output.relpath)
 
         start_x, start_y, width, height = (int(x) for x in basename[:-4].split("-"))
@@ -452,50 +438,10 @@ class LegendOrder(Order):
         recipe: "Recipe",
         input_files: Dict[str, "inputs.InputFile"],
         instant: "inputs.Instant",
-        grib_step: Optional["steps.Step"],
-        contour_step: "steps.Step",
+        order_steps: list["steps.Step"],
     ):
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
-
-        # Configure the basemap to be just a canvas for the legend
-        basemap_config = StepConfig(
-            "add_basemap",
-            options={
-                "params": {
-                    "subpage_frame": "off",
-                    "page_x_length": LEGEND_WIDTH_CM,
-                    "page_y_length": LEGEND_HEIGHT_CM,
-                    "super_page_x_length": LEGEND_WIDTH_CM,
-                    "super_page_y_length": LEGEND_HEIGHT_CM,
-                    "subpage_x_length": LEGEND_WIDTH_CM,
-                    "subpage_y_length": LEGEND_HEIGHT_CM,
-                    "subpage_x_position": 0.0,
-                    "subpage_y_position": 0.0,
-                    "subpage_gutter_percentage": 20.0,
-                    "page_frame": "off",
-                    "page_id_line": "off",
-                },
-            },
-        )
-        self.order_steps.append(AddBasemap("add_basemap", basemap_config, {}, input_files))
-
-        if grib_step is not None:
-            self.order_steps.append(grib_step)
-
-        params = contour_step.params["params"]
-        params["legend"] = "on"
-        params["legend_text_font_size"] = "25%"
-        params["legend_border_thickness"] = 4
-        params["legend_only"] = "on"
-        params["legend_box_mode"] = "positional"
-        params["legend_box_x_position"] = 0.00
-        params["legend_box_y_position"] = 0.00
-        params["legend_box_x_length"] = LEGEND_WIDTH_CM
-        params["legend_box_y_length"] = LEGEND_HEIGHT_CM
-        params["legend_box_blanking"] = False
-        params.pop("legend_title_font_size", None)
-        params.pop("legend_automatic_position", None)
-        self.order_steps.append(contour_step)
+        self.order_steps.extend(order_steps)
 
     def __str__(self):
         return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/legend"

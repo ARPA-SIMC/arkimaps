@@ -2,6 +2,7 @@
 import contextlib
 import datetime
 import os
+from pathlib import Path
 import tempfile
 from typing import Any, Dict, List, Optional, Set, Union
 
@@ -17,9 +18,10 @@ except ModuleNotFoundError:
 from . import orders, pantry
 from .config import Config
 from .flavours import Flavour
-from .lint import Lint
 from .recipes import Recipe
-from .inputs import ModelStep
+from .inputs import Inputs
+from .types import ModelStep
+from .definitions import Definitions
 
 # if TYPE_CHECKING:
 # Used for kwargs-style dicts
@@ -31,16 +33,11 @@ class Kitchen:
     Shared context for this arkimaps run
     """
 
-    def __init__(self, config: Optional[Config] = None):
-        from .recipes import Recipes
+    pantry: "pantry.Pantry"
 
-        if config is None:
-            self.config = Config()
-        else:
-            self.config = config
-        self.pantry: "pantry.Pantry"
-        self.recipes = Recipes()
-        self.flavours: Dict[str, Flavour] = {}
+    def __init__(self, *, definitions: Definitions):
+        self.config = definitions.config
+        self.defs = definitions
         self.context_stack = contextlib.ExitStack()
 
     def __enter__(self):
@@ -49,76 +46,6 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def load_recipes(self, paths: List[str], *, lint: Optional[Lint] = None):
-        """
-        Load recipes from the given list of directories
-        """
-        for path in paths:
-            self.load_recipe_dir(path, lint=lint)
-
-        self.recipes.resolve_derived(lint=lint)
-
-    def load_recipe_dir(self, path: str, *, lint: Optional[Lint] = None):
-        """
-        Load recipes from the given directory
-        """
-        from .inputs import Input
-
-        path = os.path.abspath(path)
-        if path not in self.config.static_dir:
-            self.config.static_dir.insert(0, os.path.join(path, "static"))
-
-        for dirpath, dirnames, fnames in os.walk(path):
-            relpath = os.path.relpath(dirpath, start=path)
-            for fn in fnames:
-                if not fn.endswith(".yaml"):
-                    continue
-                with open(os.path.join(dirpath, fn), "rt") as fd:
-                    recipe = yaml.load(fd, Loader=yaml.SafeLoader)
-                if relpath == ".":
-                    relfn = fn
-                else:
-                    relfn = os.path.join(relpath, fn)
-
-                inputs = recipe.pop("inputs", None)
-                if inputs is not None:
-                    for name, input_contents in inputs.items():
-                        if "_" in name:
-                            raise RuntimeError(f"{relfn}: '_' not allowed in input name {name!r}")
-                        if isinstance(input_contents, list):
-                            for ic in input_contents:
-                                self.pantry.add_input(
-                                    Input.create(config=self.config, name=name, defined_in=relfn, lint=lint, **ic)
-                                )
-                        else:
-                            self.pantry.add_input(
-                                Input.create(
-                                    config=self.config, name=name, defined_in=relfn, lint=lint, **input_contents
-                                )
-                            )
-
-                flavours = recipe.pop("flavours", None)
-                if flavours is not None:
-                    for flavour in flavours:
-                        name = flavour.pop("name", None)
-                        if name is None:
-                            raise RuntimeError(f"{relfn}: found flavour without name")
-                        old = self.flavours.get(name)
-                        if old is not None:
-                            raise RuntimeError(f"{relfn}: flavour {name} was already defined in {old.defined_in}")
-                        self.flavours[name] = Flavour.create(
-                            config=self.config, name=name, defined_in=relfn, lint=lint, **flavour
-                        )
-
-                recipe["name"] = relfn[:-5]
-                recipe["defined_in"] = relfn
-
-                if "recipe" in recipe:
-                    self.recipes.add(lint=lint, **recipe)
-
-                if "extends" in recipe:
-                    self.recipes.add_derived(lint=lint, **recipe)
-
     def list_inputs(self, flavours: List[Flavour]) -> Set[str]:
         """
         Filter the available of recipes according the flavours' recipe filters,
@@ -126,42 +53,43 @@ class Kitchen:
         remaining recipes
         """
         all_inputs: Set[str] = set()
-        for recipe in self.recipes:
+        for recipe in self.defs.recipes:
             for flavour in flavours:
                 if not flavour.allows_recipe(recipe):
                     continue
                 all_inputs.update(flavour.list_inputs_recursive(recipe, self.pantry))
         return all_inputs
 
-    def document_recipes(self, path: str):
+    def document_recipes(self, flavour: Flavour, path: str):
         """
         Generate markdown documentation for all the recipes found.
 
         Write documentation to the given path
         """
-        for recipe in self.recipes:
+        for recipe in self.defs.recipes:
             dest = os.path.join(path, recipe.name) + ".md"
-            recipe.document(self.pantry, dest)
+            recipe.document(flavour, self.pantry, dest)
 
 
 class WorkingKitchen(Kitchen):
-    def __init__(self, workdir: Optional[str] = None):
+    pantry: "pantry.DispatchPantry"
+
+    def __init__(self, *, definitions: Definitions, workdir: Optional[Path] = None):
         """
         If no working directory is provided, it uses a temporary one
         """
-        super().__init__()
-        self.pantry: "pantry.DiskPantry"
+        super().__init__(definitions=definitions)
         self.tempdir: Optional[tempfile.TemporaryDirectory]
-        self.workdir: str
+        self.workdir: Path
 
         if workdir is None:
             self.tempdir = tempfile.TemporaryDirectory()
-            self.workdir = self.context_stack.enter_context(self.tempdir)
+            self.workdir = Path(self.context_stack.enter_context(self.tempdir))
         else:
             self.tempdir = None
             self.workdir = workdir
 
-    def fill_pantry(self, path: Optional[str] = None, flavours: Optional[List[Flavour]] = None):
+    def fill_pantry(self, path: Optional[Path] = None, flavours: Optional[List[Flavour]] = None):
         """
         Fill the pantry from the given path or standard input
         """
@@ -176,13 +104,13 @@ class WorkingKitchen(Kitchen):
         Generate all possible orders for all available recipes
         """
         if isinstance(flavour, str):
-            flavour = self.flavours[flavour]
+            flavour = self.defs.flavours[flavour]
 
         recipes: List[Recipe]
         if recipe is None:
-            recipes = list(self.recipes)
+            recipes = list(self.defs.recipes)
         else:
-            recipes = [self.recipes.get(recipe)]
+            recipes = [self.defs.recipes.get(recipe)]
 
         res: List[orders.Order] = []
         for rec in recipes:
@@ -214,26 +142,29 @@ class WorkingKitchen(Kitchen):
         return selected[0]
 
 
-class ArkimetRecipesMixin:
-    def __init__(self, *args, **kw):
+class ArkimetRecipesMixin(Kitchen):
+    pantry: "pantry.ArkimetBasePantry"
+
+    def __init__(self, **kwargs):
         # Arkimet session
         #
         # Force directory segments so we can access each data by filesystem
         # path
-        super().__init__(*args, **kw)
+        super().__init__(**kwargs)
         if HAVE_ARKIMET is False:
             raise RuntimeError("Arkimet processing functionality is needed, but arkimet is not installed")
         self.session = self.context_stack.enter_context(arkimet.dataset.Session(force_dir_segments=True))
 
-    def get_merged_arki_query(self):
-        empty_flavour = Flavour(config=self.config, name="default", defined_in=__file__)
-        merged = None
+    def get_merged_arki_query(self, flavours: List[Flavour]):
         input_names = set()
-        for recipe in self.recipes:
-            input_names.update(empty_flavour.list_inputs_recursive(recipe, self.pantry))
+        for flavour in flavours:
+            for recipe in self.defs.recipes:
+                input_names.update(flavour.list_inputs_recursive(recipe, self.pantry))
+
+        merged = None
         for input_name in input_names:
-            for inp in self.pantry.inputs[input_name]:
-                matcher = getattr(inp, "arkimet_matcher", None)
+            for inp in self.defs.inputs[input_name]:
+                matcher = self.pantry.arkimet_matcher(inp)
                 if matcher is None:
                     continue
                 if merged is None:
@@ -248,17 +179,19 @@ class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
     Arkimet-based kitchen used to load recipes but not prepare products
     """
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.pantry = pantry.ArkimetEmptyPantry(self.session)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.pantry = pantry.ArkimetEmptyPantry(self.session, inputs=self.defs.inputs)
 
 
 class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    pantry: "pantry.ArkimetPantry"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         from .pantry import ArkimetPantry
 
-        self.pantry = ArkimetPantry(root=self.workdir, session=self.session)
+        self.pantry = ArkimetPantry(root=self.workdir, session=self.session, inputs=self.defs.inputs)
 
 
 class EccodesEmptyKitchen(Kitchen):
@@ -266,12 +199,12 @@ class EccodesEmptyKitchen(Kitchen):
     Eccodes-based kitchen used to load recipes but not prepare products
     """
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
-        self.pantry = pantry.EmptyPantry()
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.pantry = pantry.EmptyPantry(inputs=self.defs.inputs)
 
 
 class EccodesKitchen(WorkingKitchen):
-    def __init__(self, *args, grib_input=False, **kw):
-        super().__init__(*args, **kw)
-        self.pantry = pantry.EccodesPantry(root=self.workdir, grib_input=grib_input)
+    def __init__(self, *, grib_input=False, **kwargs):
+        super().__init__(**kwargs)
+        self.pantry = pantry.EccodesPantry(root=self.workdir, grib_input=grib_input, inputs=self.defs.inputs)
