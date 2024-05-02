@@ -63,7 +63,6 @@ class Serializable(ABC):
         Return a version of this object that can be serialized to JSON, and
         deserialized with from_jsonable()
         """
-        ...
 
     @classmethod
     @abstractmethod
@@ -72,7 +71,6 @@ class Serializable(ABC):
         Recreate an object serialized by to_jsonable
         """
         # TODO: from 3.11 we can type the return value as Self
-        ...
 
 
 class InputProcessingStats(Serializable):
@@ -402,14 +400,12 @@ class Reader(ABC):
         """
         Return the bundle version information
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.version() not implemented")
 
     @abstractmethod
     def _load_json(self, path: str) -> Dict[str, Any]:
         """
         Load the contents of a JSON file
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.load_json() not implemented")
 
     def input_summary(self) -> InputSummary:
         """
@@ -434,7 +430,6 @@ class Reader(ABC):
         """
         List all paths in the bundle
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.find() not implemented")
 
     @abstractmethod
     def load_product(self, bundle_path: str) -> bytes:
@@ -571,7 +566,6 @@ class Writer(ABC):
         """
         Add a serializable object to the bundle, using the given file name
         """
-        ...
 
     def add_input_summary(self, input_summary: InputSummary):
         """
@@ -600,14 +594,12 @@ class Writer(ABC):
         """
         Add a product
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.add_product() not implemented")
 
     @abstractmethod
     def add_artifact(self, bundle_path: str, data: IO[bytes]):
         """
         Add a processing artifact
         """
-        raise NotImplementedError(f"{self.__class__.__name__}.add_artifact() not implemented")
 
 
 class TarWriter(Writer):
