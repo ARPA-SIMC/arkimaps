@@ -11,6 +11,9 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,136`
         * **grib_filter matcher**: `centre == 98 and shortName is "tcw"`
+    * Model **icon**:
+        * **Arkimet matcher**: `product:GRIB2,,,078,015,,`
+        * **grib_filter matcher**: `centre != 98 and shortName is "h" and editionNumber == 2`
 * **uv500**:
     * **Preprocessing**: cat
     * **Inputs**: u500, v500
