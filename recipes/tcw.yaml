@@ -9,8 +9,8 @@ inputs:
      arkimet: product:GRIB1,98,128,136
      eccodes: centre == 98 and shortName is "tcw"
    - model: icon
-     arkimet: product:GRIB2,,,078,015,,
-     eccodes: centre != 98 and shortName is "h" and editionNumber == 2
+     arkimet: product:GRIB2,,,,078,015,
+     eccodes: centre != 98 and shortName is "twater" and editionNumber == 2
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
