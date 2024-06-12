@@ -27,14 +27,14 @@ Mixer: **default**
     * **Inputs**: snow
 * **snow**:
     * **Preprocessing**: or
-    * **Inputs**: sf, snowsum, snowgsp
+    * **Inputs**: sf, snowsumicon, snowsum, snowgsp
 * **sf**:
     * **Arkimet matcher**: `product:GRIB1,98,128,144`
     * **grib_filter matcher**: `shortName is "sf"`
-* **snowsum**:
-    * **vg6d_transform arguments**: --output-variable-list=B13205
+* **snowsumicon**:
+    * **vg6d_transform arguments**: --output-variable-list=B13237
     * **Preprocessing**: vg6d_transform
-    * **Inputs**: snowcon, snowgsp
+    * **Inputs**: snowcon, snowgsp, graupel
 * **snowcon**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,78`
@@ -49,6 +49,13 @@ Mixer: **default**
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,,001,056,,`
         * **grib_filter matcher**: `shortName is "snow_gsp" and editionNumber == 2 and numberOfTimeRange == 1`
+* **graupel**:
+    * **Arkimet matcher**: `product:GRIB2,,,001,75,,`
+    * **grib_filter matcher**: `shortName is "tgrp" and editionNumber == 2 and numberOfTimeRange == 1`
+* **snowsum**:
+    * **vg6d_transform arguments**: --output-variable-list=B13205
+    * **Preprocessing**: vg6d_transform
+    * **Inputs**: snowcon, snowgsp
 * **uv10m**:
     * Model **cosmo**:
         * **Preprocessing**: cat

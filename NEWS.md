@@ -3,7 +3,8 @@
 * capture and log noisy `grib_filter` stderr
 * detailed validation and linting of recipe definitions, including Magics
   macro parameters (#165)
-* Added TCW product for ICON model
+* added TCW product for ICON model
+* fixed total snowfall calculation for ICON model
 
 # New in version 1.19
 

@@ -20,13 +20,21 @@ inputs:
    - model: icon
      arkimet: product:GRIB2,,,001,056,,
      eccodes: shortName is "snow_gsp" and editionNumber == 2 and numberOfTimeRange == 1
+ graupel:
+   - model: icon
+     arkimet: product:GRIB2,,,001,75,,
+     eccodes: shortName is "tgrp" and editionNumber == 2 and numberOfTimeRange == 1
  snowsum:
    - type: vg6d_transform
      args: ["--output-variable-list=B13205"]
      inputs: [snowcon, snowgsp]
+ snowsumicon:
+   - type: vg6d_transform
+     args: ["--output-variable-list=B13237"]
+     inputs: [snowcon, snowgsp, graupel]
  snow:
    - type: or
-     inputs: [sf, snowsum, snowgsp]
+     inputs: [sf, snowsumicon, snowsum, snowgsp]
  snowdec1h:
    - type: decumulate
      step: 1
