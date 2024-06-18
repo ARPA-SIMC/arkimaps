@@ -1,6 +1,7 @@
 [![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/rocky8.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
 [![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/rocky9.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
 [![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/fedora38.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
+[![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/fedora40.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
 [![Build Status](https://copr.fedorainfracloud.org/coprs/simc/stable/package/arkimaps/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/simc/stable/package/arkimaps/)
 
 # arkimaps

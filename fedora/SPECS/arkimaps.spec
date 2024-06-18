@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.19
+Version:        1.20
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -87,6 +87,13 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Jun 18 2024 Daniele Branchini <dbranchini@arpae.it> - 1.20-1
+- capture and log noisy `grib_filter` stderr
+- detailed validation and linting of recipe definitions, including Magics
+  macro parameters (#165)
+- added TCW product for ICON model
+- fixed total snowfall calculation for ICON model
+
 * Mon Apr  8 2024 Daniele Branchini <dbranchini@arpae.it> - 1.19-1
 - fixed extremes for bic product
 

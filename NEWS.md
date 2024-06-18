@@ -1,4 +1,4 @@
-# New in version UNRELEASED
+# New in version 1.20
 
 * capture and log noisy `grib_filter` stderr
 * detailed validation and linting of recipe definitions, including Magics
