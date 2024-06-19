@@ -17,6 +17,7 @@ BuildRequires:  python3-devel
 BuildRequires:  python3-pyyaml
 BuildRequires:  python3-gdal
 BuildRequires:  python3-pillow
+BuildRequires:  python3-pydantic
 
 # for tests
 BuildRequires:  arkimet
