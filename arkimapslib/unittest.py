@@ -398,7 +398,7 @@ class Workdir(contextlib.ExitStack):
         global config
         definitions = Definitions(config=config)
         definitions.load([self.path])
-        kitchen = kitchen_class(definitions=definitions)
+        kitchen = self.enter_context(kitchen_class(definitions=definitions))
         return kitchen
 
     def __str__(self):
