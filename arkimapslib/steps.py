@@ -160,7 +160,9 @@ class LegendParamsSpec(BaseMagicsParamsSpec):
     legend_border: bool = False
     legend_border_line_style: str = "solid"
     legend_border_colour: str = "blue"
-    legend_border_thickness: float = 1
+    # TODO: this seems to be integer only in rocky8, and accept float later
+    # legend_border_thickness: float = 1
+    legend_border_thickness: int = 1
     legend_entry_text_width: float = 60
     legend_entry_border: bool = True
     legend_entry_border_colour: str = "black"
@@ -235,8 +237,11 @@ class McoastParamsSpec(BaseMagicsParamsSpec):
     map_label_colour: str = "black"
     map_label_height: float = 0.25
     map_label_blanking: bool = True
-    map_label_latitude_frequency: float = 1.0
-    map_label_longitude_frequency: float = 1.0
+    # TODO: this seems to be integer only in rocky8, and accept float later
+    # map_label_latitude_frequency: float = 1.0
+    # map_label_longitude_frequency: float = 1.0
+    map_label_latitude_frequency: int = 1
+    map_label_longitude_frequency: int = 1
     map_label_left: bool = True
     map_label_right: bool = True
     map_label_top: bool = True
@@ -396,7 +401,9 @@ class AddSymbols(MagicsMacro):
 class AddContourParamsSpec(LegendParamsSpec):
     contour: bool = True
     contour_line_style: str = "solid"
-    contour_line_thickness: float = 1.0
+    # TODO: this seems to be integer only in rocky8, and accept float later
+    # contour_line_thickness: float = 1.0
+    contour_line_thickness: int = 1.0
     contour_line_colour_rainbow: bool = False
     contour_line_colour: str = "blue"
     contour_line_colour_rainbow_method: str = "calculate"
@@ -413,8 +420,11 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_highlight_style: str = "solid"
     contour_reference_level: float = 0.0
     contour_highlight_colour: str = "blue"
-    contour_highlight_thickness: float = 3
-    contour_highlight_frequency: float = 4
+    # TODO: this seems to be integer only in rocky8, and accept float later
+    # contour_highlight_thickness: float = 3
+    # contour_highlight_frequency: float = 4
+    contour_highlight_thickness: int = 3
+    contour_highlight_frequency: int = 4
     contour_level_selection_type: str = "count"
     contour_max_level: float = 1.0e21
     contour_min_level: float = -1.0e21
@@ -509,7 +519,7 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_grid_value_marker_index: int = 3
     contour_grid_value_position: str = "top"
 
-    @pydantic.root_validator
+    @pydantic.root_validator(allow_reuse=True)
     def list_sync(cls, values):
         cll = values["contour_level_list"]
         cscl = values["contour_shade_colour_list"]
@@ -568,7 +578,7 @@ class AddWindParamsSpec(LegendParamsSpec):
     wind_advanced_colour_max_level_colour: str = "blue"
     wind_advanced_colour_min_level_colour: str = "red"
     wind_advanced_colour_direction: str = "anti_clockwise"
-    wind_advanced_colour_list: list[str] = pydantic.Field(default_factory=list)
+    wind_advanced_colour_list: List[str] = pydantic.Field(default_factory=list)
     wind_advanced_colour_list_policy: str = "lastone"
     wind_flag_calm_indicator: bool = True
     wind_flag_calm_indicator_size: float = 0.3

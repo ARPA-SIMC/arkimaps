@@ -8,7 +8,12 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from functools import cached_property
+
+# FIXME: not needed from python 3.8
+try:
+    from functools import cached_property
+except ImportError:
+    from arkimapslib.polyfill.cached_property import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterator, List, Optional
 

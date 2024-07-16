@@ -438,7 +438,7 @@ class LegendOrder(Order):
         recipe: "Recipe",
         input_files: Dict[str, "inputs.InputFile"],
         instant: "inputs.Instant",
-        order_steps: list["steps.Step"],
+        order_steps: List["steps.Step"],
     ):
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
         self.order_steps.extend(order_steps)
