@@ -148,14 +148,22 @@ class Renderer:
 
         return rendered
 
-    def _parse_renderer_output(self, script_file: Path, stdout: Union[str, bytes]) -> Dict[str, Any]:
+    def _parse_renderer_output(self, script_file: Path, stdout: bytes) -> Dict[str, Any]:
         """
         Parse JSON output from a render script
         """
         if len(stdout.strip()) == 0:
             raise RuntimeError(f"{script_file}: render script produced an empty output")
+        payload: Optional[bytes] = None
+        for line in stdout.splitlines():
+            if not line.startswith(b"{"):
+                log.warning("%s: spurious output: %s", script_file, line.rstrip().decode())
+            else:
+                payload = line
+        if payload is None:
+            raise RuntimeError(f"{script_file}: render script did not produce any JSON")
         try:
-            render_info = json.loads(stdout)
+            render_info = json.loads(payload)
         except json.decoder.JSONDecodeError as e:
             raise RuntimeError(f"{script_file}: render script produced invalid JSON") from e
         return render_info

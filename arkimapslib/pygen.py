@@ -176,6 +176,8 @@ class PyGen:
                 py_parms.append(f"{k}={v!r}")
             self.line(f"parts.append(macro.{name}({', '.join(py_parms)}))")
 
+        # TODO: this catches stdout printed from python, but not stdout printed
+        # from the C++ part of Magics
         self.line("with contextlib.redirect_stdout(io.StringIO()) as out:")
         with self.nested() as sub:
             sub.line("macro.plot(*parts)")
