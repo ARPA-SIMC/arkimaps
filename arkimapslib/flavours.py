@@ -46,7 +46,7 @@ class FlavourSpec(BaseDataModel):
     """
 
     steps: Dict[str, Any] = pydantic.Field(default_factory=dict)
-    postprocess: list[Dict[str, Any]] = pydantic.Field(default_factory=list)
+    postprocess: List[Dict[str, Any]] = pydantic.Field(default_factory=list)
     recipes_filter: List[str] = pydantic.Field(default_factory=list)
 
 

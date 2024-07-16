@@ -509,7 +509,7 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_grid_value_marker_index: int = 3
     contour_grid_value_position: str = "top"
 
-    @pydantic.root_validator
+    @pydantic.root_validator(allow_reuse=True)
     def list_sync(cls, values):
         cll = values["contour_level_list"]
         cscl = values["contour_shade_colour_list"]
@@ -568,7 +568,7 @@ class AddWindParamsSpec(LegendParamsSpec):
     wind_advanced_colour_max_level_colour: str = "blue"
     wind_advanced_colour_min_level_colour: str = "red"
     wind_advanced_colour_direction: str = "anti_clockwise"
-    wind_advanced_colour_list: list[str] = pydantic.Field(default_factory=list)
+    wind_advanced_colour_list: List[str] = pydantic.Field(default_factory=list)
     wind_advanced_colour_list_policy: str = "lastone"
     wind_flag_calm_indicator: bool = True
     wind_flag_calm_indicator_size: float = 0.3

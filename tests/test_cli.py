@@ -133,7 +133,7 @@ class TestRender(CLITest, unittest.TestCase):
                 # Log is empty here because assertLogs stole it
                 # self.assertEqual(len(bundle.log().entries), 334)
                 products = bundle.products()
-                self.assertEquals(products.flavour["name"], "default")
+                self.assertEqual(products.flavour["name"], "default")
                 self.assertIn("t2m", products.by_recipe)
                 self.assertIn("2021-01-10T00:00:00/t2m_default/t2m+012.png", products.by_path)
                 data = bundle.load_product("2021-01-10T00:00:00/t2m_default/t2m+012.png")
