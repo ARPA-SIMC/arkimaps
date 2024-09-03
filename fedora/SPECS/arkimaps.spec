@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -88,6 +88,10 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Sep  3 2024 Daniele Branchini <dbranchini@arpae.it> - 1.20-2
+- fixed build errors (#170)
+- improved linting process via pydantic (#164)
+
 * Tue Jun 18 2024 Daniele Branchini <dbranchini@arpae.it> - 1.20-1
 - capture and log noisy `grib_filter` stderr
 - detailed validation and linting of recipe definitions, including Magics
