@@ -1,4 +1,4 @@
-%global releaseno 2
+%global releaseno 3
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -33,6 +33,8 @@ Requires:       python3-eccodes
 Requires:       python3-pyyaml
 Requires:       python3-gdal
 Requires:       python3-pillow
+Requires:       python3-pydantic
+
 
 %description
 Automated framework to render GRIB1/2 data with ECMWF's Magics,
@@ -88,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed Sep  4 2024 Daniele Branchini <dbranchini@arpae.it> - 1.20-3
+- added pydantic dependency
+
 * Tue Sep  3 2024 Daniele Branchini <dbranchini@arpae.it> - 1.20-2
 - fixed build errors (#170)
 - improved linting process via pydantic (#164)
