@@ -1,9 +1,9 @@
-%global releaseno 3
+%global releaseno 1
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.20
+Version:        1.21
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,11 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Sep  5 2024 Daniele Branchini <dbranchini@arpae.it> - 1.21-1
+- restored stdin (#171)
+- fixed errors in contour lists in cape/capecin/thetae925 recipes
+- added tsnowp variable for ICON model
+
 * Wed Sep  4 2024 Daniele Branchini <dbranchini@arpae.it> - 1.20-3
 - added pydantic dependency
 

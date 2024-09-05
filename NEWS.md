@@ -1,3 +1,9 @@
+# New in version 1.21
+
+* restored stdin (#171)
+* fixed errors in contour lists in cape/capecin/thetae925 recipes
+* added tsnowp variable for ICON model
+
 # New in version 1.20
 
 * capture and log noisy `grib_filter` stderr
@@ -5,6 +11,7 @@
   macro parameters (#165)
 * added TCW product for ICON model
 * fixed total snowfall calculation for ICON model
+* improved linting process via pydantic (#164)
 
 # New in version 1.19
 
