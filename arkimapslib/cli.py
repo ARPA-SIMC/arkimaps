@@ -457,6 +457,7 @@ class Dispatch(WorkdirKitchenCommand):
         parser.add_argument(
             "input",
             action="store",
+            nargs="?",
             help="input file to dispatch. Default: stdin",
         )
         return parser
