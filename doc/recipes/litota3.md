@@ -14,6 +14,38 @@ Mixer: **default**
 
 Add a base map
 
+With arguments:
+```
+{
+  "params": {
+    "page_id_line": false,
+    "output_width": 1280,
+    "subpage_map_projection": "cylindrical",
+    "subpage_lower_left_longitude": 2.5,
+    "subpage_lower_left_latitude": 35.0,
+    "subpage_upper_right_longitude": 20.0,
+    "subpage_upper_right_latitude": 50.0,
+    "page_x_length": 38,
+    "page_y_length": 31,
+    "super_page_x_length": 40,
+    "super_page_y_length": 32,
+    "subpage_x_length": 34,
+    "subpage_y_length": 30,
+    "subpage_x_position": 2,
+    "subpage_y_position": 1,
+    "map_grid": true,
+    "map_grid_latitude_reference": 45.0,
+    "map_grid_longitude_reference": 0.0,
+    "map_grid_longitude_increment": 2.5,
+    "map_grid_latitude_increment": 2.5,
+    "map_grid_colour": "grey",
+    "map_grid_line_style": "dash",
+    "map_label_colour": "black",
+    "map_label_height": 0.4,
+    "map_label_latitude_frequency": 1
+  }
+}
+```
 
 ### add_coastlines_bg
 
@@ -127,14 +159,15 @@ With arguments:
 ```
 {
   "params": {
-    "map_boundaries": "on",
-    "map_boundaries_colour": "#504040",
+    "map_boundaries": true,
+    "map_boundaries_colour": "#000000",
     "map_administrative_boundaries_countries_list": [
       "ITA"
     ],
-    "map_administrative_boundaries_colour": "#504040",
+    "map_administrative_boundaries_colour": "#000000",
     "map_administrative_boundaries_style": "solid",
-    "map_administrative_boundaries": "on"
+    "map_administrative_boundaries": true,
+    "map_coastline_thickness": 2
   }
 }
 ```
@@ -143,11 +176,27 @@ With arguments:
 
 Add user-defined boundaries from a shapefile
 
+With arguments:
+```
+{
+  "skip": true,
+  "params": {
+    "map_user_layer": "on",
+    "map_user_layer_colour": "blue"
+  }
+}
+```
 
 ### add_geopoints
 
 Add geopoints
 
+With arguments:
+```
+{
+  "skip": true
+}
+```
 
 ### add_symbols
 
@@ -156,6 +205,7 @@ Add symbols settings
 With arguments:
 ```
 {
+  "skip": true,
   "params": {
     "symbol_type": "marker",
     "symbol_marker_index": 15,
