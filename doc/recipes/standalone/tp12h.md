@@ -27,7 +27,7 @@ Mixer: **default**
     * **Inputs**: snow
 * **snow**:
     * **Preprocessing**: or
-    * **Inputs**: sf, snowsumicon, snowsum, snowgsp
+    * **Inputs**: sf, snowsumicon, snowsum, snowgsp, tsnowp
 * **sf**:
     * **Arkimet matcher**: `product:GRIB1,98,128,144`
     * **grib_filter matcher**: `shortName is "sf"`
@@ -56,6 +56,9 @@ Mixer: **default**
     * **vg6d_transform arguments**: --output-variable-list=B13205
     * **Preprocessing**: vg6d_transform
     * **Inputs**: snowcon, snowgsp
+* **tsnowp**:
+    * **Arkimet matcher**: `PRODUCT:GRIB2,,,001,66,,`
+    * **grib_filter matcher**: `shortname is "tsnowp" and editionNumber == 2`
 
 ## Steps
 
