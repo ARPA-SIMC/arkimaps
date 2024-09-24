@@ -29,19 +29,19 @@ if version is None:
     raise RuntimeError("VERSION not found in arkimaps")
 
 setup(
-    name='arkimaps',
+    name="arkimaps",
     version=version,
     python_requires=">= 3.6",
     description="Render maps from model output",
-    author='Enrico Zini',
-    author_email='enrico@enricozini.org',
-    url='https://github.com/ARPA-SIMC/arkimaps/',
+    author="Enrico Zini",
+    author_email="enrico@enricozini.org",
+    url="https://github.com/ARPA-SIMC/arkimaps/",
     license="http://www.gnu.org/licenses/gpl-3.0.html",
     requires=["Magics", "yaml", "PIL"],
     extras_require={
         "arkimet": ["arkimet"],
     },
-    packages=['arkimapslib'],
-    scripts=['arkimaps'],
+    packages=["arkimapslib", "arkimapslib.polyfill"],
+    scripts=["arkimaps"],
     include_package_data=True,
 )
