@@ -462,11 +462,15 @@ class Dispatch(WorkdirKitchenCommand):
         )
         return parser
 
-    def run(self):
+    def run(self) -> None:
         """
         Acquire input data
         """
-        self.kitchen.fill_pantry(path=Path(self.args.input) if self.args.input else None, flavours=self.flavours)
+        path: Optional[Path] = None
+        if self.args.input and self.args.input != "-":
+            path = Path(self.args.input)
+
+        self.kitchen.fill_pantry(path=path, flavours=self.flavours)
 
 
 class Render(RenderCommand, WorkdirKitchenCommand):
