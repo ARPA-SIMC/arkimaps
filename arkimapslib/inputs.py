@@ -3,6 +3,7 @@ import contextlib
 import datetime
 import logging
 import os
+import re
 import shlex
 import shutil
 import subprocess
@@ -329,17 +330,19 @@ class Source(Input):
                 tf.flush()
                 cmd = ["grib_filter", tf.name, "-", "/dev/null"]
                 res = subprocess.run(cmd, input=b"GRIB7777", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                if res.stderr != b"no messages found in /dev/null\n":
-                    errors: List[str] = []
-                    header = "ECCODES ERROR   :  "
-                    for line in res.stderr.decode().splitlines():
-                        if line.startswith(header):
-                            errors.append(line[len(header) :])
-                    lint.warn_input(
-                        f"eccodes match {self.spec.eccodes!r} cannot be parsed: {errors}",
-                        defined_in=self.defined_in,
-                        name=self.name,
-                    )
+                stderr = res.stderr.decode()
+                if re.match(r"^(?:grib_filter:\s*)?[Nn]o messages found in /dev/null\s*$", stderr):
+                    return
+                errors: List[str] = []
+                header = "ECCODES ERROR   :  "
+                for line in stderr.splitlines():
+                    if line.startswith(header):
+                        errors.append(line[len(header) :])
+                lint.warn_input(
+                    f"eccodes match {self.spec.eccodes!r} cannot be parsed: {errors}",
+                    defined_in=self.defined_in,
+                    name=self.name,
+                )
 
     def __repr__(self):
         return f"Source:{self.spec.model}:{self.name}"
