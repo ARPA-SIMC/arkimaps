@@ -1,3 +1,7 @@
+# New in version 1.22
+
+* added arkimapslib.polyfill to the packaged modules (#173)
+
 # New in version 1.21
 
 * restored stdin (#171)

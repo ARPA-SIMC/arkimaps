@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.21
+Version:        1.22
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Sep 24 2024 Daniele Branchini <dbranchini@arpae.it> - 1.22-1
+- added arkimapslib.polyfill to the packaged modules (#173)
+
 * Thu Sep  5 2024 Daniele Branchini <dbranchini@arpae.it> - 1.21-1
 - restored stdin (#171)
 - fixed errors in contour lists in cape/capecin/thetae925 recipes
