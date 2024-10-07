@@ -381,7 +381,7 @@ class EccodesPantry(DispatchPantry):
     def __init__(self, grib_input=False, **kwargs) -> None:
         super().__init__(**kwargs)
         self.grib_input = grib_input
-        self.grib_filter_rules = os.path.join(self.data_root, "grib_filter_rules")
+        self.grib_filter_rules = self.data_root / "grib_filter_rules"
 
     def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
         """
@@ -391,7 +391,7 @@ class EccodesPantry(DispatchPantry):
         self.data_root.mkdir(parents=True, exist_ok=True)
 
         # Build grib_filter rules
-        with open(self.grib_filter_rules, "w") as f:
+        with self.grib_filter_rules.open("w") as f:
             for inps in self.inputs.values():
                 for inp in inps:
                     eccodes = getattr(inp.spec, "eccodes", None)
@@ -437,7 +437,7 @@ class EccodesPantry(DispatchPantry):
         """
         Run grib_filter on GRIB input
         """
-        cmd = ["grib_filter", self.grib_filter_rules, ("-" if path is None else str(path))]
+        cmd = ["grib_filter", self.grib_filter_rules.as_posix(), ("-" if path is None else str(path))]
         res = subprocess.run(cmd, stdin=sys.stdin, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
         for line in res.stderr.splitlines():
             log.debug("dispatch: grib_filter stderr: %s", line)
@@ -452,7 +452,7 @@ class EccodesPantry(DispatchPantry):
             with tempfile.TemporaryFile("w+b") as errfd:
                 try:
                     proc = subprocess.Popen(
-                        ["grib_filter", self.grib_filter_rules, "-"],
+                        ["grib_filter", self.grib_filter_rules.as_posix(), "-"],
                         stdin=subprocess.PIPE,
                         stdout=outfd,
                         stderr=errfd,
@@ -484,5 +484,5 @@ class EccodesPantry(DispatchPantry):
         """
         Store relevant processing artifacts in the output tarball
         """
-        with open(self.grib_filter_rules, "rb") as data:
+        with self.grib_filter_rules.open("rb") as data:
             bundle.add_artifact("grib_filter_rules", data)
