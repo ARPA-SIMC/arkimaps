@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.22
+Version:        1.23
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,11 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Mon Oct  7 2024 Daniele Branchini <dbranchini@arpae.it> - 1.23-1
+- support `-` to represent stdin in arkimaps dispatch (#171)
+- fixed tests on new eccodes versions (#174)
+- fixed matching eccodes output when no problems have been found
+
 * Tue Sep 24 2024 Daniele Branchini <dbranchini@arpae.it> - 1.22-1
 - added arkimapslib.polyfill to the packaged modules (#173)
 

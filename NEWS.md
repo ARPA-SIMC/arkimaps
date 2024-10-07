@@ -1,3 +1,9 @@
+# New in version 1.23
+
+* support `-` to represent stdin in arkimaps dispatch (#171)
+* fixed tests on new eccodes versions (#174)
+* fixed matching eccodes output when no problems have been found
+
 # New in version 1.22
 
 * added arkimapslib.polyfill to the packaged modules (#173)
