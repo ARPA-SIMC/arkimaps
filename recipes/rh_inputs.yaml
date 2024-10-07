@@ -52,7 +52,7 @@ inputs:
     inputs: [t2m, 2d]
   - model: erg5
     arkimet: product:GRIB2,00200,000,001,001,004,;level:GRIB2S,103,003,0000001800
-    eccodes: shortName is "r" and level == 2
+    eccodes: ( shortName is "r" or shortName is "avg_r" ) and level == 2
   - model: icon
     type: vg6d_transform
     args: ["--output-variable-list=B13003"]

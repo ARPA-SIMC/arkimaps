@@ -15,7 +15,7 @@ Mixer: **default**
         * **Inputs**: t2m, 2d
     * Model **erg5**:
         * **Arkimet matcher**: `product:GRIB2,00200,000,001,001,004,;level:GRIB2S,103,003,0000001800`
-        * **grib_filter matcher**: `shortName is "r" and level == 2`
+        * **grib_filter matcher**: `( shortName is "r" or shortName is "avg_r" ) and level == 2`
     * Model **icon**:
         * **vg6d_transform arguments**: --output-variable-list=B13003
         * **Preprocessing**: vg6d_transform
