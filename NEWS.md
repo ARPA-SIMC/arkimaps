@@ -1,3 +1,7 @@
+# New in version 1.24
+
+* added `snowlmt` product
+
 # New in version 1.23
 
 * support `-` to represent stdin in arkimaps dispatch (#171)
