@@ -1,7 +1,6 @@
 # from __future__ import annotations
 
 import time
-from collections.abc import MutableMapping
 from typing import Any, Dict, Tuple
 
 if hasattr(time, "perf_counter_ns"):
@@ -12,13 +11,13 @@ else:  # pragma: no cover
         return int(time.perf_counter() * 1000000000)
 
 
-def setdefault_deep(target: MutableMapping[Any, Any], source: MutableMapping[Any, Any], path: Tuple[Any, ...] = ()):
+def setdefault_deep(target: Dict[Any, Any], source: Dict[Any, Any], path: Tuple[Any, ...] = ()):
     """Use source as defaults for target, recursing into dicts."""
     for k, v in source.items():
         if k in target:
             old = target[k]
-            if isinstance(old, MutableMapping):
-                if isinstance(v, MutableMapping):
+            if isinstance(old, Dict):
+                if isinstance(v, Dict):
                     setdefault_deep(old, v, path + (k,))
                 else:
                     fmt_path = "/".join(str(p) for p in path)
