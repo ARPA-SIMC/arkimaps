@@ -736,7 +736,7 @@ class AddGrib(Step):
             setattr(self.spec.params, k, v)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        params = self.spec.dict(exclude_unset=True)
+        params = self.spec.params.dict(exclude_unset=True)
         params["grib_input_file_name"] = str(self.grib_input.pathname)
         return "mgrib", params
 
