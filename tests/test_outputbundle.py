@@ -113,6 +113,7 @@ class TestTypes(BaseFixture, unittest.TestCase):
         self.assertEqual(
             val.legend_info,
             {
+                "contour_automatic_setting": "ecmwf",
                 "legend": True,
             },
         )
