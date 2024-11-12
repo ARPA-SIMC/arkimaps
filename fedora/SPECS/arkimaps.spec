@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.24
+Version:        1.25
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,10 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Nov 12 2024 Daniele Branchini <dbranchini@arpae.it> - 1.25-1
+- Merge step values recursing into dicts (#175)
+- Fix building magics command for add_grib (#176)
+
 * Fri Nov  8 2024 Daniele Branchini <dbranchini@arpae.it> - 1.24-1
 - Added snowlmt product
 

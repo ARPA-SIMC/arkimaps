@@ -1,3 +1,8 @@
+# New in version 1.25
+
+* Merge step values recursing into dicts (#175)
+* Fix building magics command for add_grib (#176)
+
 # New in version 1.24
 
 * added `snowlmt` product
