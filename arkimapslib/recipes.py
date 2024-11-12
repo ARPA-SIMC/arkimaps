@@ -10,6 +10,7 @@ from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .component import RootComponent
+from .utils import setdefault_deep
 
 if TYPE_CHECKING:
     from . import flavours, inputs, pantry
@@ -170,13 +171,11 @@ class RecipeStep:
         res = self.args.copy()
 
         # Add missing bits from flavour
-        for k, v in flavour_step.options.items():
-            res.setdefault(k, v)
+        setdefault_deep(res, flavour_step.options)
 
         # Add missing bits from step class defaults
         if self.step_class.DEFAULTS is not None:
-            for k, v in self.step_class.DEFAULTS.items():
-                res.setdefault(k, v)
+            setdefault_deep(res, self.step_class.DEFAULTS)
 
         return res
 

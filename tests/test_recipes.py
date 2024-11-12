@@ -2,8 +2,34 @@
 
 import unittest
 
-from arkimapslib.recipes import Recipe, Recipes
+from arkimapslib import flavours, steps
+from arkimapslib.recipes import Recipe, RecipeStep, Recipes
 from arkimapslib.config import Config
+
+
+class TestRecipeStep(unittest.TestCase):
+    def setUp(self):
+        self.config = Config()
+
+    def test_compile_args(self):
+        flavour = flavours.Simple(config=self.config, name="test", defined_in="test.yaml", args={})
+        step = RecipeStep(
+            config=self.config,
+            name="test",
+            defined_in="test.yaml",
+            step_class=steps.AddUserBoundaries,
+            args={"params": {"map_user_layer_colour": "red"}},
+        )
+        compiled = step.compile_args(flavour)
+        self.assertEqual(
+            compiled,
+            {
+                "params": {
+                    "map_user_layer": "on",
+                    "map_user_layer_colour": "red",
+                }
+            },
+        )
 
 
 class TestRecipe(unittest.TestCase):
