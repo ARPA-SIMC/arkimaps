@@ -1,3 +1,7 @@
+# New in version 1.26
+
+* Fixed contouring inheritance from recipes
+
 # New in version 1.25
 
 * Merge step values recursing into dicts (#175)
