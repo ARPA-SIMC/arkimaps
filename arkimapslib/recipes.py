@@ -171,11 +171,16 @@ class RecipeStep:
         res = self.args.copy()
 
         # Add missing bits from flavour
-        setdefault_deep(res, flavour_step.options)
+        for k, v in flavour_step.options.items():
+            res.setdefault(k, v)
 
         # Add missing bits from step class defaults
         if self.step_class.DEFAULTS is not None:
-            setdefault_deep(res, self.step_class.DEFAULTS)
+            for k, v in self.step_class.DEFAULTS.items():
+                res.setdefault(k, v)
+
+        if self.step_class.DEEP_DEFAULTS is not None:
+            setdefault_deep(res, self.step_class.DEEP_DEFAULTS)
 
         return res
 

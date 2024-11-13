@@ -28,6 +28,7 @@ class Step(Component[StepSpec], ABC):
     Spec = StepSpec
 
     DEFAULTS: Optional[Dict[str, Any]] = None
+    DEEP_DEFAULTS: Optional[Dict[str, Any]] = None
 
     def __init__(
         self,
@@ -764,6 +765,12 @@ class AddUserBoundaries(Step):
 
     Spec = AddUserBoundariesSpec
     DEFAULTS = {
+        "params": {
+            "map_user_layer": "on",
+            "map_user_layer_colour": "blue",
+        }
+    }
+    DEEP_DEFAULTS = {
         "params": {
             "map_user_layer": "on",
             "map_user_layer_colour": "blue",
