@@ -1,3 +1,7 @@
+# New in version 1.27
+
+* Removed deprecated test functions
+
 # New in version 1.26
 
 * Fixed contouring inheritance from recipes

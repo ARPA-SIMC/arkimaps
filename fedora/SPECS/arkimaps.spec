@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.26
+Version:        1.27
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Fri Dec 06 2024 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.27-1
+- Removed deprecated test functions
+
 * Wed Nov 13 2024 Daniele Branchini <dbranchini@arpae.it> - 1.26-1
 - Fixed contouring inheritance from recipes
 
