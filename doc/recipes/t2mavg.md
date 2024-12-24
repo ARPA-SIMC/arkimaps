@@ -11,16 +11,16 @@ Mixer: **default**
 * **t2m**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,11;level:GRIB1,105,2`
-        * **grib_filter matcher**: `centre != 98 and shortName is "2t" and levelType == 105 and timeRangeIndicator == 0 and level == 2 and editionNumber == 1`
+        * **grib_filter matcher**: `centre != 98 and (shortName is "2t" or shortName is "t_2m_cl") and levelType == 105 and level == 2 and (timeRangeIndicator == 0 or timeRangeIndicator == 3) and editionNumber == 1`
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,167;level:GRIB1,1`
-        * **grib_filter matcher**: `centre == 98 and shortName is "2t" and levelType == 1 and level == 0 and timeRangeIndicator == 0`
+        * **grib_filter matcher**: `centre == 98 and shortName is "2t" and levelType == 1 and level == 0 and (timeRangeIndicator == 0 or timeRangeIndicator == 1)`
     * Model **erg5**:
         * **Arkimet matcher**: `product:GRIB2,00200,000,000,000,004,;level:GRIB2S,103,003,0000001800`
-        * **grib_filter matcher**: `shortName is "t" and level == 2`
+        * **grib_filter matcher**: `shortName is "t" and level == 2 and typeOfProcessedData == 0 and typeOfGeneratingProcess == 8`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,000,000,,;level:GRIB2S,103,000,0000000002;timerange:Timedef,,254,`
-        * **grib_filter matcher**: `centre != 98 and shortName is "2t" and level == 2 and editionNumber == 2`
+        * **grib_filter matcher**: `centre != 98 and (shortName is "2t" or shortName is "t") and level == 2 and editionNumber == 2 and typeOfGeneratingProcess == 2`
 
 ## Steps
 

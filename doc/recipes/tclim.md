@@ -6,7 +6,7 @@ Mixer: **default**
 
 * **tclim**:
     * **Arkimet matcher**: `skip`
-    * **grib_filter matcher**: `parameterCategory == 0 and discipline == 0 and (parameterNumber == 0 or parameterNumber == 4 or parameterNumber == 5) and typeOfStatisticalProcessing != 11`
+    * **grib_filter matcher**: `parameterCategory == 0 and discipline == 0 and (parameterNumber == 0 or parameterNumber == 4 or parameterNumber == 5) and typeOfStatisticalProcessing != 11 and typeOfGeneratingProcess == 0`
     * **mgrib {k}**: `False`
     * **mgrib {k}**: `-273.15`
 

@@ -6,7 +6,7 @@ Mixer: **default**
 
 * **tpclim**:
     * **Arkimet matcher**: `product:GRIB2,,,001,008,,;timerange:Timedef,0s,11,,`
-    * **grib_filter matcher**: `parameterCategory == 1 and parameterNumber == 8 and discipline == 0 and typeOfStatisticalProcessing != 10 and indicatorOfUnitOfTimeRange == 2`
+    * **grib_filter matcher**: `parameterCategory == 1 and parameterNumber == 8 and discipline == 0 and typeOfGeneratingProcess == 0`
 
 ## Steps
 

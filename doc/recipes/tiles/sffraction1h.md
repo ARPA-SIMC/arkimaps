@@ -20,7 +20,7 @@ Mixer: **default**
         * **grib_filter matcher**: `centre == 98 and shortName is "tp"`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,,001,052,, or GRIB2,,,001,008,,`
-        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2 and numberOfTimeRange == 1`
+        * **grib_filter matcher**: `centre != 98 and shortName is "tp" and editionNumber == 2 and numberOfTimeRange == 1 and typeOfGeneratingProcess == 2`
 * **snowdec1h**:
     * **Decumulation step**: 1
     * **Preprocessing**: decumulate
