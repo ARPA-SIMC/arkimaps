@@ -1,3 +1,7 @@
+# New in version 1.28
+
+* Improved t_inputs and tp_inputs definitions for praga and icon models
+
 # New in version 1.27
 
 * Removed deprecated test functions

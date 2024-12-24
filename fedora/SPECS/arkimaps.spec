@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.27
+Version:        1.28
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Dec 24 2024 Daniele Branchini <dbranchini@arpae.it> - 1.28-1
+- Improved t_inputs and tp_inputs definitions for praga and icon models
+
 * Fri Dec 06 2024 Emanuele Di Giacomo <edigiacomo@arpae.it> - 1.27-1
 - Removed deprecated test functions
 
