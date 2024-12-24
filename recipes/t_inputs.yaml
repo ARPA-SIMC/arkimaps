@@ -4,16 +4,16 @@ inputs:
  t2m:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,105,2
-    eccodes: centre != 98 and shortName is "2t" and levelType == 105 and timeRangeIndicator == 0 and level == 2 and editionNumber == 1
+    eccodes: centre != 98 and (shortName is "2t" or shortName is "t_2m_cl") and levelType == 105 and level == 2 and (timeRangeIndicator == 0 or timeRangeIndicator == 3) and editionNumber == 1
   - model: ifs 
     arkimet: product:GRIB1,98,128,167;level:GRIB1,1
-    eccodes: centre == 98 and shortName is "2t" and levelType == 1 and level == 0 and timeRangeIndicator == 0
+    eccodes: centre == 98 and shortName is "2t" and levelType == 1 and level == 0 and (timeRangeIndicator == 0 or timeRangeIndicator == 1)
   - model: erg5
     arkimet: product:GRIB2,00200,000,000,000,004,;level:GRIB2S,103,003,0000001800
-    eccodes: shortName is "t" and level == 2
+    eccodes: shortName is "t" and level == 2 and typeOfProcessedData == 0 and typeOfGeneratingProcess == 8
   - model: icon
     arkimet: product:GRIB2,,000,000,000,,;level:GRIB2S,103,000,0000000002;timerange:Timedef,,254,
-    eccodes: centre != 98 and shortName is "2t" and level == 2 and editionNumber == 2
+    eccodes: centre != 98 and (shortName is "2t" or shortName is "t") and level == 2 and editionNumber == 2 and typeOfGeneratingProcess == 2
  tground:
   - model: cosmo
     arkimet: product:GRIB1,,2,11;level:GRIB1,1
@@ -30,7 +30,7 @@ inputs:
  tclim:
   - model: praga
     arkimet: skip
-    eccodes: parameterCategory == 0 and discipline == 0 and (parameterNumber == 0 or parameterNumber == 4 or parameterNumber == 5) and typeOfStatisticalProcessing != 11
+    eccodes: parameterCategory == 0 and discipline == 0 and (parameterNumber == 0 or parameterNumber == 4 or parameterNumber == 5) and typeOfStatisticalProcessing != 11 and typeOfGeneratingProcess == 0
     mgrib:
        grib_automatic_scaling: off
        grib_scaling_offset: -273.15
