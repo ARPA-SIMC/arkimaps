@@ -10,11 +10,11 @@ inputs:
      eccodes: centre == 98 and shortName is "tp"
    - model: icon
      arkimet: product:GRIB2,,,001,052,, or GRIB2,,,001,008,,
-     eccodes: centre != 98 and shortName is "tp" and editionNumber == 2 and numberOfTimeRange == 1
+     eccodes: centre != 98 and shortName is "tp" and editionNumber == 2 and numberOfTimeRange == 1 and typeOfGeneratingProcess == 2
  tpclim:
    - model: praga
      arkimet: product:GRIB2,,,001,008,,;timerange:Timedef,0s,11,,
-     eccodes: parameterCategory == 1 and parameterNumber == 8 and discipline == 0 and typeOfStatisticalProcessing != 10 and indicatorOfUnitOfTimeRange == 2
+     eccodes: parameterCategory == 1 and parameterNumber == 8 and discipline == 0 and typeOfGeneratingProcess == 0
  tpdec1h:
    - type: decumulate
      step: 1
