@@ -73,10 +73,22 @@ class InputSummaryTests(BaseFixture, unittest.TestCase):
         self.assertEqual(val1, val)
 
 
-class ReftimeOrdersTests(BaseFixture, unittest.TestCase):
-    def test_reftimeorders(self):
-        val = ob.ReftimeOrders()
-        val.add(self.order)
+class LogTests(BaseFixture, unittest.TestCase):
+    def test_log(self):
+        val = ob.Log()
+        val.append(ts=12345.67, level=logging.INFO, msg="test message", name="test.logger")
+
+        as_json = val.to_jsonable()
+        self.assertEqual(as_json, [{"level": 20, "msg": "test message", "name": "test.logger", "ts": 12345.67}])
+
+        val1 = ob.Log.from_jsonable(as_json)
+        self.assertEqual(val1, val)
+
+
+class ReftimeProductTests(BaseFixture, unittest.TestCase):
+    def test_reftimeproduct(self):
+        val = ob.ReftimeProduct()
+        val.add_order(self.order)
 
         as_json = val.to_jsonable()
         self.assertEqual(
@@ -84,30 +96,15 @@ class ReftimeOrdersTests(BaseFixture, unittest.TestCase):
             {
                 "inputs": ["test"],
                 "steps": {"12h": 1},
-                "render_time_ns": 0,
+                "legend_info": None,
+                "render_stats": {"time_ns": 0},
             },
         )
 
-        val1 = ob.ReftimeOrders.from_jsonable(as_json)
+        val1 = ob.ReftimeProduct.from_jsonable(as_json)
         self.assertEqual(val1, val)
 
-
-class RecipeOrdersTests(BaseFixture, unittest.TestCase):
-    def test_recipeorders(self):
-        val = ob.RecipeOrders()
-        val.add(self.order)
-
-        as_json = val.to_jsonable()
-        self.assertEqual(as_json, {})
-
-        val1 = ob.RecipeOrders.from_jsonable(as_json)
-        self.assertEqual(val1, val)
-
-    def test_recipeorders_legend(self):
-        val = ob.RecipeOrders()
-        val.add(self.order)
-        self.assertIsNone(val.legend_info)
-
+    def test_legend(self) -> None:
         recipe = Recipe(
             config=self.config,
             name="recipe",
@@ -128,40 +125,78 @@ class RecipeOrdersTests(BaseFixture, unittest.TestCase):
             input_files={"test": self.input},
             instant=self.instant,
         )
+        order.output = ...
 
-        val = ob.RecipeOrders()
-        val.add(order)
+        val = ob.ReftimeProduct()
+        val.add_order(order)
+
+        as_json = val.to_jsonable()
         self.assertEqual(
-            val.legend_info,
+            as_json,
             {
-                "legend": True,
+                "inputs": ["test"],
+                "steps": {"12h": 1},
+                "legend_info": {"legend": True},
+                "render_stats": {"time_ns": 0},
             },
         )
 
-
-class ProductInfoTests(BaseFixture, unittest.TestCase):
-    def test_productinfo(self):
-        val = ob.ProductInfo()
-        val.add_recipe(self.recipe)
-        val.add_instant(self.instant)
-        val.add_georef({"lat": 45.0, "lon": 11.0})
-
-        as_json = val.to_jsonable()
-        self.assertEqual(as_json, {})
-
-        val1 = ob.ProductInfo.from_jsonable(as_json)
+        val1 = ob.ReftimeProduct.from_jsonable(as_json)
         self.assertEqual(val1, val)
 
 
-class LogTests(BaseFixture, unittest.TestCase):
-    def test_log(self):
-        val = ob.Log()
-        val.append(ts=12345.67, level=logging.INFO, msg="test message", name="test.logger")
+#             "images": {
+#                 "test/product": {"georef": {}},
+#             },
+
+# class RecipeOrdersTests(BaseFixture, unittest.TestCase):
+#     def test_recipeorders(self):
+#         val = ob.RecipeOrders()
+#         val.add(self.order)
+#
+#         as_json = val.to_jsonable()
+#         self.assertEqual(as_json, {})
+#
+#         val1 = ob.RecipeOrders.from_jsonable(as_json)
+#         self.assertEqual(val1, val)
+#
+
+
+# class ProductInfoTests(BaseFixture, unittest.TestCase):
+#     def test_productinfo(self):
+#         val = ob.ProductInfo()
+#         val.add_recipe(self.recipe)
+#         val.add_instant(self.instant)
+#         val.add_georef({"lat": 45.0, "lon": 11.0})
+#
+#         as_json = val.to_jsonable()
+#         self.assertEqual(as_json, {})
+#
+#         val1 = ob.ProductInfo.from_jsonable(as_json)
+#         self.assertEqual(val1, val)
+
+
+class RecipeProductsTests(BaseFixture, unittest.TestCase):
+    def test_recipeproducts(self) -> None:
+        val = ob.RecipeProducts()
+        val.add_order(self.order)
 
         as_json = val.to_jsonable()
-        self.assertEqual(as_json, [{"level": 20, "msg": "test message", "name": "test.logger", "ts": 12345.67}])
+        self.assertEqual(
+            as_json,
+            {
+                "flavour": {"defined_in": "flavour.yaml", "name": "flavour"},
+                "recipe": {
+                    "defined_in": "recipe.yaml",
+                    "description": "Unnamed recipe",
+                    "info": None,
+                    "name": "recipe",
+                },
+                "reftimes": {"2023-12-15 00:00:00": val.reftimes["2023-12-15 00:00:00"].to_jsonable()},
+            },
+        )
 
-        val1 = ob.Log.from_jsonable(as_json)
+        val1 = ob.RecipeProducts.from_jsonable(as_json)
         self.assertEqual(val1, val)
 
 
@@ -184,41 +219,8 @@ class ProductsTests(BaseFixture, unittest.TestCase):
         val = ob.Products()
         val.add_order(self.order)
 
-        # products = ob.Products(
-        #     summary=[
-        #         {
-        #             "flavour": {
-        #                 "name": "flavour",
-        #                 "defined_in": "flavour.yaml",
-        #             },
-        #             "recipe": {
-        #                 "name": "recipe",
-        #                 "defined_in": "recipe.yaml",
-        #                 "description": "recipe description",
-        #                 "info": {},
-        #             },
-        #             "reftimes": {
-        #                 "2023-06-01 12:00:00": {
-        #                     "inputs": ["input1", "input2"],
-        #                     "steps": {
-        #                         str(ModelStep(12)): 3,
-        #                     },
-        #                     "legend_info": {},
-        #                     "render_stats": {
-        #                         "time_ns": 123_456_789_012,
-        #                     },
-        #                 }
-        #             },
-        #             "images": {
-        #                 "test/product": {"georef": {}},
-        #             },
-        #         },
-        #     ]
-        # )
-
-        self.maxDiff = None
         as_json = val.to_jsonable()
-        self.assertEqual(as_json, {})
+        self.assertEqual(as_json, [val.products[("flavour", "recipe")].to_jsonable()])
 
         val1 = ob.Products.from_jsonable(as_json)
         self.assertEqual(val1, val)

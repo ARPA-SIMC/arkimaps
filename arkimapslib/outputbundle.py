@@ -76,7 +76,9 @@ class Serializable(BaseDataModel):
 
 class InputProcessingStats(Serializable):
     """
-    Statistics collected while processing inputs
+    Statistics collected while processing inputs.
+
+    Used in inputs.json.
     """
 
     #: List of strings describing computation steps, and the time they took in nanoseconds
@@ -108,7 +110,9 @@ class InputProcessingStats(Serializable):
 
 class InputSummary(Serializable):
     """
-    Summary about inputs useed in processing
+    Summary about inputs useed in processing.
+
+    Used in inputs.json.
     """
 
     #: Per-input processing information indexed by input name
@@ -126,7 +130,13 @@ class InputSummary(Serializable):
         return {"inputs": values}
 
 
-class ReftimeOrders(Serializable):
+class RenderStats(Serializable):
+    """Rendering statistics."""
+
+    time_ns: int = 0
+
+
+class ReftimeProduct(Serializable):
     """
     Information and statistics for all orders for a given reftime
     """
@@ -135,13 +145,20 @@ class ReftimeOrders(Serializable):
     inputs: Set[str] = pydantic.Field(default_factory=set)
     #: Numer of products produced for each step
     steps: Dict[ModelStep, int] = pydantic.Field(default_factory=Counter)
-    #: Total processing time in nanoseconds
-    render_time_ns: int = 0
+    #: Legend information for products produced from this recipe
+    legend_info: Optional[Dict[str, Any]] = None
+    #: Rendering statistics
+    render_stats: RenderStats = pydantic.Field(default_factory=RenderStats)
 
-    def add(self, order: "Order"):
+    def add_order(self, order: "Order"):
+        assert order.output is not None
         self.inputs.update(order.input_files.keys())
         self.steps[order.instant.step] += 1
-        self.render_time_ns += order.render_time_ns
+        if self.legend_info is None:
+            for step in order.order_steps:
+                if isinstance(step, steps.AddContour):
+                    self.legend_info = step.spec.params.dict(exclude_unset=True)
+        self.render_stats.time_ns += order.render_time_ns
 
     def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         res = super().dict(*args, **kwargs)
@@ -149,89 +166,96 @@ class ReftimeOrders(Serializable):
         res["steps"] = {str(k): v for k, v in res["steps"].items()}
         return res
 
+    # #: Georeferencing information
+    # georef: Dict[str, Any] = pydantic.Field(default_factory=dict)
 
-class RecipeOrders(Serializable):
+    # def add_georef(self, georef: Dict[str, Any]):
+    #     self.georef = georef
+
+    # order.summarize_outputs(self)
+
+    # #: Georeferencing information
+    # georef: Dict[str, Any] = pydantic.Field(default_factory=dict)
+
+
+# class RecipeOrders(Serializable):
+#     """
+#     Information and statistics for all orders generated from one recipe
+#     """
+#
+#     #: Summary of all products produced for this recipe at this reference time
+#     by_reftime: Dict[datetime.datetime, ReftimeOrders] = pydantic.Field(
+#         default_factory=lambda: defaultdict(ReftimeOrders)
+#     )
+#     #: Legend information for products produced from this recipe
+#     legend_info: Optional[Dict[str, Any]] = None
+#
+#     def add(self, order: "Order"):
+#         self.by_reftime[order.instant.reftime].add(order)
+#         if self.legend_info is None:
+#             for step in order.order_steps:
+#                 if isinstance(step, steps.AddContour):
+#                     self.legend_info = step.spec.params.dict(exclude_unset=True)
+#
+#     def to_jsonable(self) -> Dict[str, Any]:
+#         return {
+#             "reftimes": {
+#                 reftime.strftime("%Y-%m-%d %H:%M:%S"): stats.to_jsonable() for reftime, stats in self.by_reftime.items()
+#             },
+#             "legend_info": self.legend_info,
+#         }
+#
+#     @classmethod
+#     def from_jsonable(cls, data: Dict[str, Any]):
+#         res = cls()
+#         res.by_reftime = {
+#             datetime.datetime.strptime(k, "%Y-%m-%d %H:%M:%S"): ReftimeOrders.from_jsonable(v)
+#             for k, v in data["reftimes"].items()
+#         }
+#         res.legend_info = data.get("legend_info")
+#         return res
+
+
+class RecipeProducts(Serializable):
     """
-    Information and statistics for all orders generated from one recipe
+    Information about all products generated for a recipe
     """
 
-    #: Summary of all products produced for this recipe at this reference time
-    by_reftime: Dict[datetime.datetime, ReftimeOrders] = pydantic.Field(
-        default_factory=lambda: defaultdict(ReftimeOrders)
-    )
-    #: Legend information for products produced from this recipe
-    legend_info: Optional[Dict[str, Any]] = None
-
-    def add(self, order: "Order"):
-        self.by_reftime[order.instant.reftime].add(order)
-        if self.legend_info is None:
-            for step in order.order_steps:
-                if isinstance(step, steps.AddContour):
-                    self.legend_info = step.spec.params.dict(exclude_unset=True)
-
-    def to_jsonable(self) -> Dict[str, Any]:
-        return {
-            "reftimes": {
-                reftime.strftime("%Y-%m-%d %H:%M:%S"): stats.to_jsonable() for reftime, stats in self.by_reftime.items()
-            },
-            "legend_info": self.legend_info,
-        }
-
-    @classmethod
-    def from_jsonable(cls, data: Dict[str, Any]):
-        res = cls()
-        res.by_reftime = {
-            datetime.datetime.strptime(k, "%Y-%m-%d %H:%M:%S"): ReftimeOrders.from_jsonable(v)
-            for k, v in data["reftimes"].items()
-        }
-        res.legend_info = data.get("legend_info")
-        return res
-
-
-class ProductInfo(Serializable):
-    """
-    Information about a generated product image
-    """
-
+    #: Flavour used for this product
+    flavour: Optional[Dict[str, Any]] = None
     #: Name of the recipe used for this product
-    recipe: Optional[str] = None
-    #: Reference time
-    reftime: Optional[datetime.datetime] = None
-    #: Step
-    step: Optional[ModelStep]
-    #: Georeferencing information
-    georef: Dict[str, Any] = pydantic.Field(default_factory=dict)
+    recipe: Optional[Dict[str, Any]] = None
+    #: Product information by reference time
+    reftimes: Dict[str, ReftimeProduct] = pydantic.Field(default_factory=dict)
 
-    def add_recipe(self, recipe: "Recipe"):
-        self.recipe = recipe.name
+    def add_order(self, order: "Order") -> None:
+        """
+        Add information from this order
+        """
+        assert order.output is not None
+        # Add flavour information
+        if self.flavour is None:
+            self.flavour = order.flavour.summarize()
+        elif self.flavour["name"] != order.flavour.name:
+            log.error("Found different flavours %s and %s", self.flavour["name"], order.flavour.name)
 
-    def add_georef(self, georef: Dict[str, Any]):
-        self.georef = georef
+        # Add recipe information
+        if self.recipe is None:
+            self.recipe = order.recipe.summarize()
+        elif self.recipe["name"] != order.recipe.name:
+            log.error("Found different recipe names s and %s", self.recipe["name"], order.recipe.name)
 
-    def add_instant(self, instant: "Instant"):
-        self.reftime = instant.reftime
-        self.step = instant.step
+        # Add per-reftime information
+        reftime = order.instant.reftime.strftime("%Y-%m-%d %H:%M:%S")
+        add_to = self.reftimes.get(reftime)
+        if add_to is None:
+            self.reftimes[reftime] = add_to = ReftimeProduct()
+        add_to.add_order(order)
 
-    def to_jsonable(self) -> Dict[str, Any]:
-        if self.recipe is None or self.reftime is None or self.step is None:
-            raise RuntimeError("Cannot write ProductInfo without filling it first")
-        res: Dict[str, Any] = {
-            "recipe": self.recipe,
-            "reftime": self.reftime.strftime("%Y-%m-%d %H:%M:%S"),
-            "step": str(self.step),
-        }
-        if self.georef:
-            res["georef"] = self.georef
-        return res
 
-    @classmethod
-    def from_jsonable(cls, data: Dict[str, Any]):
-        return cls(
-            recipe=data["recipe"],
-            reftime=datetime.datetime.strptime(data["reftime"], "%Y-%m-%d %H:%M:%S"),
-            step=data["step"],
-            georef=data.get("georef", None),
-        )
+class ProductKey(NamedTuple):
+    flavour: str
+    recipe: str
 
 
 class Products(Serializable):
@@ -239,45 +263,46 @@ class Products(Serializable):
     Information about the products present in the bundle
     """
 
-    #: Information about the flavour used
-    flavour: Optional[Dict[str, Any]] = None
-    #: Recipes used, indexed by name
-    by_recipe: Dict[str, RecipeOrders] = pydantic.Field(default_factory=lambda: defaultdict(RecipeOrders))
-    #: Products generated, indexed by their path
-    by_path: Dict[str, ProductInfo] = pydantic.Field(default_factory=lambda: defaultdict(ProductInfo))
+    products: Dict[ProductKey, RecipeProducts] = pydantic.Field(default_factory=dict)
 
     def add_order(self, order: "Order") -> None:
         """
-        Add information from this order to the products summary
+        Add information from this order to the products list
         """
-        # Add flavour information
-        if self.flavour is None:
-            self.flavour = order.flavour.summarize()
-        elif self.flavour["name"] != order.flavour.name:
-            log.error("Found different flavours %s and %s", self.flavour["name"], order.flavour.name)
+        if order.output is None:
+            raise AssertionError(f"{order}: product has not been rendered")
+        key = ProductKey(order.flavour.name, order.recipe.name)
+        add_to = self.products.get(key)
+        if add_to is None:
+            self.products[key] = add_to = RecipeProducts()
+        add_to.add_order(order)
 
-        order.summarize_outputs(self)
-        self.by_recipe[order.recipe.name].add(order)
+    def dict(self, *args: Any, **kwargs: Any) -> Any:
+        res = super().dict(*args, **kwargs)
+        return [x[1] for x in sorted(res["products"].items())]
 
-    def to_jsonable(self) -> Dict[str, Any]:
-        return {
-            "flavour": self.flavour,
-            "recipes": {k: v.to_jsonable() for k, v in self.by_recipe.items()},
-            "products": {k: v.to_jsonable() for k, v in self.by_path.items()},
-        }
+    @pydantic.root_validator(pre=True)
+    def fix_layout(cls, values: Any) -> Any:
+        if not values:
+            return {"products": []}
+        if isinstance(values, dict):
+            return values
+        return {"products": {ProductKey(val["flavour"]["name"], val["recipe"]["name"]): val for val in values}}
 
     @classmethod
-    def from_jsonable(cls, data: Dict[str, Any]):
-        res = cls()
-        res.flavour = data["flavour"]
-        res.by_recipe = {k: RecipeOrders.from_jsonable(v) for k, v in data["recipes"].items()}
-        res.by_path = {k: ProductInfo.from_jsonable(v) for k, v in data["products"].items()}
-        return res
+    def parse_obj(cls, obj: Any) -> "Products":
+        if isinstance(obj, list):
+            return super().parse_obj(
+                {"products": {ProductKey(val["flavour"]["name"], val["recipe"]["name"]): val for val in obj}}
+            )
+        return super().parse_obj(obj)
 
 
 class LogEntry(Serializable):
     """
-    One serializable log entry
+    One serializable log entry.
+
+    Used in log.json.
     """
 
     #: Timestamp in seconds
@@ -296,6 +321,8 @@ class Log(Serializable):
 
     Iterate :py:attr:`Log.entries` for a list of all log entries generated
     during processing.
+
+    Used in log.json.
     """
 
     #: List of all log entries
@@ -307,7 +334,7 @@ class Log(Serializable):
         """
         self.entries.append(LogEntry(ts=ts, level=level, msg=msg, name=name))
 
-    def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
+    def dict(self, *args: Any, **kwargs: Any) -> Any:
         res = super().dict(*args, **kwargs)
         return res["entries"]
 
