@@ -331,7 +331,7 @@ class Recipe(RootComponent[RecipeSpec, "Recipe"]):
 
     def document(self, flavour: "flavours.Flavour", pantry: "pantry.Pantry", dest: str):
         os.makedirs(os.path.dirname(dest), exist_ok=True)
-        with open(dest, "wt") as fd:
+        with open(dest, "w") as fd:
             print(f"# {self.name}: {self.spec.description}", file=fd)
             print(file=fd)
             print(f"Mixer: **{self.spec.mixer}**", file=fd)

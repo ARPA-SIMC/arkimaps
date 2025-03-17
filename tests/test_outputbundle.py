@@ -44,16 +44,20 @@ class BaseFixture:
         self.order.output = orders.Output(name="output", relpath="test/output.png", magics_output="test/magics.png")
 
 
-class TestTypes(BaseFixture, unittest.TestCase):
+class InputProcessingStatsTests(BaseFixture, unittest.TestCase):
     def test_inputprocessingstats(self):
         val = ob.InputProcessingStats()
         val.add_computation_log(100_000_000, "mock processing")
         val.used_by.add(self.recipe.name)
 
         as_json = val.to_jsonable()
-        val1 = ob.InputProcessingStats.from_jsonable(as_json)
-        # TODO: inspect val1
+        self.assertEqual(as_json, {"computation": [(100000000, "mock processing")], "used_by": ["recipe"]})
 
+        val1 = ob.InputProcessingStats.from_jsonable(as_json)
+        self.assertEqual(val1, val)
+
+
+class InputSummaryTests(BaseFixture, unittest.TestCase):
     def test_inputsummary(self):
         stats = ob.InputProcessingStats()
         stats.add_computation_log(100_000_000, "mock processing")
@@ -63,24 +67,41 @@ class TestTypes(BaseFixture, unittest.TestCase):
         val.add("test", stats)
 
         as_json = val.to_jsonable()
-        val1 = ob.InputSummary.from_jsonable(as_json)
-        # TODO: inspect val1
+        self.assertEqual(as_json, {"test": stats.to_jsonable()})
 
+        val1 = ob.InputSummary.from_jsonable(as_json)
+        self.assertEqual(val1, val)
+
+
+class ReftimeOrdersTests(BaseFixture, unittest.TestCase):
     def test_reftimeorders(self):
         val = ob.ReftimeOrders()
         val.add(self.order)
 
         as_json = val.to_jsonable()
-        val1 = ob.ReftimeOrders.from_jsonable(as_json)
-        # TODO: inspect val1
+        self.assertEqual(
+            as_json,
+            {
+                "inputs": ["test"],
+                "steps": {"12h": 1},
+                "render_time_ns": 0,
+            },
+        )
 
+        val1 = ob.ReftimeOrders.from_jsonable(as_json)
+        self.assertEqual(val1, val)
+
+
+class RecipeOrdersTests(BaseFixture, unittest.TestCase):
     def test_recipeorders(self):
         val = ob.RecipeOrders()
         val.add(self.order)
 
         as_json = val.to_jsonable()
+        self.assertEqual(as_json, {})
+
         val1 = ob.RecipeOrders.from_jsonable(as_json)
-        # TODO: inspect val1
+        self.assertEqual(val1, val)
 
     def test_recipeorders_legend(self):
         val = ob.RecipeOrders()
@@ -117,6 +138,8 @@ class TestTypes(BaseFixture, unittest.TestCase):
             },
         )
 
+
+class ProductInfoTests(BaseFixture, unittest.TestCase):
     def test_productinfo(self):
         val = ob.ProductInfo()
         val.add_recipe(self.recipe)
@@ -124,17 +147,25 @@ class TestTypes(BaseFixture, unittest.TestCase):
         val.add_georef({"lat": 45.0, "lon": 11.0})
 
         as_json = val.to_jsonable()
-        val1 = ob.ProductInfo.from_jsonable(as_json)
-        # TODO: inspect val1
+        self.assertEqual(as_json, {})
 
+        val1 = ob.ProductInfo.from_jsonable(as_json)
+        self.assertEqual(val1, val)
+
+
+class LogTests(BaseFixture, unittest.TestCase):
     def test_log(self):
         val = ob.Log()
         val.append(ts=12345.67, level=logging.INFO, msg="test message", name="test.logger")
 
         as_json = val.to_jsonable()
-        val1 = ob.Log.from_jsonable(as_json)
-        # TODO: inspect val1
+        self.assertEqual(as_json, [{"level": 20, "msg": "test message", "name": "test.logger", "ts": 12345.67}])
 
+        val1 = ob.Log.from_jsonable(as_json)
+        self.assertEqual(val1, val)
+
+
+class ProductsTests(BaseFixture, unittest.TestCase):
     def test_add_unrendered_products(self):
         flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
         recipe = Recipe(config=self.config, name="recipe", defined_in="recipe.yaml", args={})
@@ -185,9 +216,12 @@ class TestTypes(BaseFixture, unittest.TestCase):
         #     ]
         # )
 
+        self.maxDiff = None
         as_json = val.to_jsonable()
+        self.assertEqual(as_json, {})
+
         val1 = ob.Products.from_jsonable(as_json)
-        # TODO: inspect val1
+        self.assertEqual(val1, val)
 
 
 class BundleTestsMixin(BaseFixture):

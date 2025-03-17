@@ -233,7 +233,7 @@ class Renderer:
         gen.empty_line()
         gen.line("print(json.dumps({'timings': timings, 'outputs': outputs}))")
 
-        with open(script_file, "wt") as code:
+        with open(script_file, "w") as code:
             gen.write(code)
 
         return script_file
