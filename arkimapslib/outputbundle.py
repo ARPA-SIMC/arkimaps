@@ -28,16 +28,16 @@ Example program to show all products in a zip bundle::
         print(json.dumps({"path": path, "georef": georef, "legend": legend_info}, indent=1))
 """
 
-import datetime
 import io
 import json
 import logging
 import tarfile
 import zipfile
 from abc import ABC, abstractmethod
-from collections import Counter, defaultdict
+from collections import Counter
+from functools import cached_property
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from . import steps
 from .models import BaseDataModel, pydantic
@@ -101,7 +101,7 @@ class InputProcessingStats(Serializable):
         res["computation"] = res.pop("computation_log")
         return res
 
-    @pydantic.root_validator(pre=True)
+    @pydantic.root_validator(pre=True, allow_reuse=True)
     def fix_layout(cls, values: Any) -> Any:
         if isinstance(values, dict) and "computation" in values:
             values["computation_log"] = values.pop("computation")
@@ -125,7 +125,7 @@ class InputSummary(Serializable):
         res = super().dict(*args, **kwargs)
         return res["inputs"]
 
-    @pydantic.root_validator(pre=True)
+    @pydantic.root_validator(pre=True, allow_reuse=True)
     def fix_layout(cls, values: Any) -> Any:
         return {"inputs": values}
 
@@ -136,7 +136,14 @@ class RenderStats(Serializable):
     time_ns: int = 0
 
 
-class ReftimeProduct(Serializable):
+class ProductInfo(Serializable):
+    """Information about a single product."""
+
+    #: Georeferencing information
+    georef: Optional[Dict[str, Any]] = None
+
+
+class ReftimeProducts(Serializable):
     """
     Information and statistics for all orders for a given reftime
     """
@@ -149,6 +156,8 @@ class ReftimeProduct(Serializable):
     legend_info: Optional[Dict[str, Any]] = None
     #: Rendering statistics
     render_stats: RenderStats = pydantic.Field(default_factory=RenderStats)
+    #: Products indexed by relative path
+    products: Dict[str, ProductInfo] = pydantic.Field(default_factory=dict)
 
     def add_order(self, order: "Order"):
         assert order.output is not None
@@ -159,23 +168,20 @@ class ReftimeProduct(Serializable):
                 if isinstance(step, steps.AddContour):
                     self.legend_info = step.spec.params.dict(exclude_unset=True)
         self.render_stats.time_ns += order.render_time_ns
+        order.summarize_outputs(self)
+
+    def add_product(self, relpath: str, georef: Optional[Dict[str, Any]] = None) -> None:
+        """Add information for a product."""
+        product = self.products.get(relpath)
+        if product is None:
+            self.products[relpath] = product = ProductInfo()
+        product.georef = georef
 
     def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         res = super().dict(*args, **kwargs)
         res["inputs"] = sorted(res["inputs"])
         res["steps"] = {str(k): v for k, v in res["steps"].items()}
         return res
-
-    # #: Georeferencing information
-    # georef: Dict[str, Any] = pydantic.Field(default_factory=dict)
-
-    # def add_georef(self, georef: Dict[str, Any]):
-    #     self.georef = georef
-
-    # order.summarize_outputs(self)
-
-    # #: Georeferencing information
-    # georef: Dict[str, Any] = pydantic.Field(default_factory=dict)
 
 
 # class RecipeOrders(Serializable):
@@ -226,7 +232,7 @@ class RecipeProducts(Serializable):
     #: Name of the recipe used for this product
     recipe: Optional[Dict[str, Any]] = None
     #: Product information by reference time
-    reftimes: Dict[str, ReftimeProduct] = pydantic.Field(default_factory=dict)
+    reftimes: Dict[str, ReftimeProducts] = pydantic.Field(default_factory=dict)
 
     def add_order(self, order: "Order") -> None:
         """
@@ -249,7 +255,7 @@ class RecipeProducts(Serializable):
         reftime = order.instant.reftime.strftime("%Y-%m-%d %H:%M:%S")
         add_to = self.reftimes.get(reftime)
         if add_to is None:
-            self.reftimes[reftime] = add_to = ReftimeProduct()
+            self.reftimes[reftime] = add_to = ReftimeProducts()
         add_to.add_order(order)
 
 
@@ -276,12 +282,22 @@ class Products(Serializable):
         if add_to is None:
             self.products[key] = add_to = RecipeProducts()
         add_to.add_order(order)
+        # del self.by_path
+
+    @property
+    def by_path(self) -> dict[str, Any]:
+        res: dict[str, Any] = {}
+        for rp in self.products.values():
+            for prods in rp.reftimes.values():
+                for path, info in prods.products.items():
+                    res[path] = info
+        return res
 
     def dict(self, *args: Any, **kwargs: Any) -> Any:
         res = super().dict(*args, **kwargs)
         return [x[1] for x in sorted(res["products"].items())]
 
-    @pydantic.root_validator(pre=True)
+    @pydantic.root_validator(pre=True, allow_reuse=True)
     def fix_layout(cls, values: Any) -> Any:
         if not values:
             return {"products": []}
@@ -338,7 +354,7 @@ class Log(Serializable):
         res = super().dict(*args, **kwargs)
         return res["entries"]
 
-    @pydantic.root_validator(pre=True)
+    @pydantic.root_validator(pre=True, allow_reuse=True)
     def fix_layout(cls, values: Any) -> Any:
         if not values:
             return {"entries": []}

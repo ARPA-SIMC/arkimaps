@@ -30,6 +30,10 @@ Each information record is in the form:
       "render_stats": {
           "time_ns": time it took to generate all products for this step, in nanoseconds
       },
+      "products": {
+          relative_path: {
+          }
+      },
     }
   }
 }

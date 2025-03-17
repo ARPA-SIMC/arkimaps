@@ -85,9 +85,9 @@ class LogTests(BaseFixture, unittest.TestCase):
         self.assertEqual(val1, val)
 
 
-class ReftimeProductTests(BaseFixture, unittest.TestCase):
+class ReftimeProductsTests(BaseFixture, unittest.TestCase):
     def test_reftimeproduct(self):
-        val = ob.ReftimeProduct()
+        val = ob.ReftimeProducts()
         val.add_order(self.order)
 
         as_json = val.to_jsonable()
@@ -98,10 +98,15 @@ class ReftimeProductTests(BaseFixture, unittest.TestCase):
                 "steps": {"12h": 1},
                 "legend_info": None,
                 "render_stats": {"time_ns": 0},
+                "products": {
+                    "test/output.png": {
+                        "georef": {"bbox": [-180.0, -90.0, 180.0, 90.0], "epsg": 4326, "projection": "EPSG"}
+                    }
+                },
             },
         )
 
-        val1 = ob.ReftimeProduct.from_jsonable(as_json)
+        val1 = ob.ReftimeProducts.from_jsonable(as_json)
         self.assertEqual(val1, val)
 
     def test_legend(self) -> None:
@@ -125,9 +130,9 @@ class ReftimeProductTests(BaseFixture, unittest.TestCase):
             input_files={"test": self.input},
             instant=self.instant,
         )
-        order.output = ...
+        order.output = orders.Output("legend", "test/legend.png", "")
 
-        val = ob.ReftimeProduct()
+        val = ob.ReftimeProducts()
         val.add_order(order)
 
         as_json = val.to_jsonable()
@@ -138,42 +143,16 @@ class ReftimeProductTests(BaseFixture, unittest.TestCase):
                 "steps": {"12h": 1},
                 "legend_info": {"legend": True},
                 "render_stats": {"time_ns": 0},
+                "products": {
+                    "test/legend.png": {
+                        "georef": {"bbox": [-180.0, -90.0, 180.0, 90.0], "epsg": 4326, "projection": "EPSG"}
+                    }
+                },
             },
         )
 
-        val1 = ob.ReftimeProduct.from_jsonable(as_json)
+        val1 = ob.ReftimeProducts.from_jsonable(as_json)
         self.assertEqual(val1, val)
-
-
-#             "images": {
-#                 "test/product": {"georef": {}},
-#             },
-
-# class RecipeOrdersTests(BaseFixture, unittest.TestCase):
-#     def test_recipeorders(self):
-#         val = ob.RecipeOrders()
-#         val.add(self.order)
-#
-#         as_json = val.to_jsonable()
-#         self.assertEqual(as_json, {})
-#
-#         val1 = ob.RecipeOrders.from_jsonable(as_json)
-#         self.assertEqual(val1, val)
-#
-
-
-# class ProductInfoTests(BaseFixture, unittest.TestCase):
-#     def test_productinfo(self):
-#         val = ob.ProductInfo()
-#         val.add_recipe(self.recipe)
-#         val.add_instant(self.instant)
-#         val.add_georef({"lat": 45.0, "lon": 11.0})
-#
-#         as_json = val.to_jsonable()
-#         self.assertEqual(as_json, {})
-#
-#         val1 = ob.ProductInfo.from_jsonable(as_json)
-#         self.assertEqual(val1, val)
 
 
 class RecipeProductsTests(BaseFixture, unittest.TestCase):
@@ -224,6 +203,18 @@ class ProductsTests(BaseFixture, unittest.TestCase):
 
         val1 = ob.Products.from_jsonable(as_json)
         self.assertEqual(val1, val)
+
+    def test_by_path(self):
+        val = ob.Products()
+        val.add_order(self.order)
+        self.assertEqual(
+            val.by_path,
+            {
+                "test/output.png": ob.ProductInfo(
+                    georef={"projection": "EPSG", "epsg": 4326, "bbox": [-180.0, -90.0, 180.0, 90.0]}
+                )
+            },
+        )
 
 
 class BundleTestsMixin(BaseFixture):
