@@ -184,44 +184,6 @@ class ReftimeProducts(Serializable):
         return res
 
 
-# class RecipeOrders(Serializable):
-#     """
-#     Information and statistics for all orders generated from one recipe
-#     """
-#
-#     #: Summary of all products produced for this recipe at this reference time
-#     by_reftime: Dict[datetime.datetime, ReftimeOrders] = pydantic.Field(
-#         default_factory=lambda: defaultdict(ReftimeOrders)
-#     )
-#     #: Legend information for products produced from this recipe
-#     legend_info: Optional[Dict[str, Any]] = None
-#
-#     def add(self, order: "Order"):
-#         self.by_reftime[order.instant.reftime].add(order)
-#         if self.legend_info is None:
-#             for step in order.order_steps:
-#                 if isinstance(step, steps.AddContour):
-#                     self.legend_info = step.spec.params.dict(exclude_unset=True)
-#
-#     def to_jsonable(self) -> Dict[str, Any]:
-#         return {
-#             "reftimes": {
-#                 reftime.strftime("%Y-%m-%d %H:%M:%S"): stats.to_jsonable() for reftime, stats in self.by_reftime.items()
-#             },
-#             "legend_info": self.legend_info,
-#         }
-#
-#     @classmethod
-#     def from_jsonable(cls, data: Dict[str, Any]):
-#         res = cls()
-#         res.by_reftime = {
-#             datetime.datetime.strptime(k, "%Y-%m-%d %H:%M:%S"): ReftimeOrders.from_jsonable(v)
-#             for k, v in data["reftimes"].items()
-#         }
-#         res.legend_info = data.get("legend_info")
-#         return res
-
-
 class RecipeProducts(Serializable):
     """
     Information about all products generated for a recipe
@@ -264,6 +226,11 @@ class ProductKey(NamedTuple):
     recipe: str
 
 
+class PathInfo(NamedTuple):
+    recipe: str
+    georef: Optional[Dict[str, Any]] = None
+
+
 class Products(Serializable):
     """
     Information about the products present in the bundle
@@ -285,12 +252,15 @@ class Products(Serializable):
         # del self.by_path
 
     @property
-    def by_path(self) -> dict[str, Any]:
-        res: dict[str, Any] = {}
-        for rp in self.products.values():
+    def by_path(self) -> dict[str, PathInfo]:
+        """
+        Return a standard layout of information for each image file in the output.
+        """
+        res: dict[str, PathInfo] = {}
+        for (flavour, recipe), rp in self.products.items():
             for prods in rp.reftimes.values():
                 for path, info in prods.products.items():
-                    res[path] = info
+                    res[path] = PathInfo(recipe=recipe, georef=info.georef)
         return res
 
     def dict(self, *args: Any, **kwargs: Any) -> Any:

@@ -210,8 +210,9 @@ class ProductsTests(BaseFixture, unittest.TestCase):
         self.assertEqual(
             val.by_path,
             {
-                "test/output.png": ob.ProductInfo(
-                    georef={"projection": "EPSG", "epsg": 4326, "bbox": [-180.0, -90.0, 180.0, 90.0]}
+                "test/output.png": ob.PathInfo(
+                    georef={"projection": "EPSG", "epsg": 4326, "bbox": [-180.0, -90.0, 180.0, 90.0]},
+                    recipe="recipe",
                 )
             },
         )
@@ -263,14 +264,7 @@ class BundleTestsMixin(BaseFixture):
         log.append(ts=1.5, level=2, msg="message", name="logname")
 
         products = ob.Products()
-        products.flavour = {"name": "test"}
-        products.by_recipe["rtest"] = recipe_orders = ob.RecipeOrders()
-        recipe_orders.by_reftime[datetime.datetime(2023, 7, 1)] = ro = ob.ReftimeOrders()
-        ro.inputs.add("test")
-        ro.steps[ModelStep(17)] = 1
-        ro.legend_info = {"bar": 2}
-        ro.render_time_ns = 12345
-        products.by_path["test"] = ob.ProductInfo(recipe="recipe", reftime=datetime.datetime(2023, 7, 1), step=17)
+        products.add_order(self.order)
 
         with tempfile.NamedTemporaryFile() as tf:
             with self.writer_cls(out=tf) as writer:
@@ -298,9 +292,9 @@ class BundleTestsMixin(BaseFixture):
                 )
 
                 self.assertEqual(reader.version(), "1")
-                self.assertEqual(reader.input_summary().to_jsonable(), input_summary.to_jsonable())
-                self.assertEqual(reader.log().entries, log.entries)
-                self.assertEqual(reader.products().to_jsonable(), products.to_jsonable())
+                self.assertEqual(reader.input_summary(), input_summary)
+                self.assertEqual(reader.log(), log)
+                self.assertEqual(reader.products(), products)
 
 
 class TestZipBundle(BundleTestsMixin, unittest.TestCase):
