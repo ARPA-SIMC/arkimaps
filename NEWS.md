@@ -1,3 +1,8 @@
+# New in version 1.30
+
+* Fixed validation for add_symbols (#179)
+* Fixed and added test on JSON outputs (#181)
+
 # New in version 1.29
 
 * Re-added typeOfStatisticalProcessing filter for tpclim product
