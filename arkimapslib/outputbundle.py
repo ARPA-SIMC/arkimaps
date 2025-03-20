@@ -94,7 +94,7 @@ class InputProcessingStats(Serializable):
         """
         self.computation_log.append((elapsed, what))
 
-    def dict(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+    def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
         res = super().dict(*args, **kwargs)
         res["used_by"] = sorted(res["used_by"])
         res["computation"] = res.pop("computation_log")
@@ -251,11 +251,11 @@ class Products(Serializable):
         # del self.by_path
 
     @property
-    def by_path(self) -> dict[str, PathInfo]:
+    def by_path(self) -> Dict[str, PathInfo]:
         """
         Return a standard layout of information for each image file in the output.
         """
-        res: dict[str, PathInfo] = {}
+        res: Dict[str, PathInfo] = {}
         for (flavour, recipe), rp in self.products.items():
             for prods in rp.reftimes.values():
                 for path, info in prods.products.items():
