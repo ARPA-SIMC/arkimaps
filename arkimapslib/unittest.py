@@ -155,7 +155,7 @@ class RecipeTestMixin(unittest.TestCase):
         recipe = self.kitchen.defs.recipes.get(recipe_name)
 
         # Import all test files available for the given recipe
-        sample_dirs: list[Path] = [Path(os.path.basename(recipe_name))]
+        sample_dirs: List[Path] = [Path(os.path.basename(recipe_name))]
         sample_dirs += [Path(p) for p in extra_sample_dirs]
         for dirname in sample_dirs:
             sample_dir = Path("testdata") / dirname

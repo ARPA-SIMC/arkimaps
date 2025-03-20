@@ -383,7 +383,7 @@ class AddSymbolsParamsSpec(LegendParamsSpec):
     symbol_image_format: str = "automatic"
     symbol_image_width: int = -1
     symbol_image_height: int = -1
-    symbol_text_list: list[str] = pydantic.Field(default_factory=list)
+    symbol_text_list: List[str] = pydantic.Field(default_factory=list)
     symbol_text_position: str = "right"
     symbol_text_font: str = "sansserif"
     symbol_text_font_size: float = 0.25
@@ -399,14 +399,14 @@ class AddSymbolsParamsSpec(LegendParamsSpec):
     contour_level_tolerance: int = 2
     contour_reference_level: float = 0.0
     contour_interval: float = 0.0
-    contour_level_list: list[float] = pydantic.Field(default_factory=list)
+    contour_level_list: List[float] = pydantic.Field(default_factory=list)
     symbol_advanced_table_min_value: float = -1.0e21
     symbol_advanced_table_max_value: float = 1.0e21
     symbol_advanced_table_level_count: int = 10
     symbol_advanced_table_level_tolerance: int = 2
     symbol_advanced_table_interval: float = 8.0
     symbol_advanced_table_reference_level: float = 0.0
-    symbol_advanced_table_level_list: list[float] = pydantic.Field(default_factory=list)
+    symbol_advanced_table_level_list: List[float] = pydantic.Field(default_factory=list)
     symbol_advanced_table_colour_method: str = "calculate"
     contour_shade_max_level_colour: str = "#0000FF"
     contour_shade_min_level_colour: str = "#FF0000"
