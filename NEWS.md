@@ -1,3 +1,7 @@
+# New in version 1.29
+
+* Re-added typeOfStatisticalProcessing filter for tpclim product
+
 # New in version 1.28
 
 * Improved t_inputs and tp_inputs definitions for praga and icon models
