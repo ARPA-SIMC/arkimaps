@@ -1,7 +1,8 @@
 # from __future__ import annotations
 
 import datetime
-from typing import Union
+from typing import Union, Generator, Callable
+from .models import pydantic
 
 
 class ModelStep:
@@ -18,6 +19,16 @@ class ModelStep:
         if unit != "h":
             raise ValueError(f"only 'h' currently supported as a time unit (found {unit!r})")
         self._value = val
+
+    @classmethod
+    def __get_validators__(
+        cls,
+    ) -> Generator[Callable[["ModelStep", pydantic.fields.ModelField], "ModelStep"], None, None]:
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, val: "ModelStep", field: pydantic.fields.ModelField) -> "ModelStep":
+        return cls(val)
 
     def __eq__(self, other):
         if isinstance(other, int):

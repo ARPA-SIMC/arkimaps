@@ -5,6 +5,7 @@ import datetime
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -245,15 +246,15 @@ if HAS_ARKIMET:
         def __init__(self, session: "arkimet.dataset.Session", **kw):
             super().__init__(**kw)
             self.session = session
-            self.cached_matchers: Dict[Input, Optional[arkimet.Matcher]] = {}
+            self.cached_matchers: Dict[Input, Optional["arkimet.Matcher"]] = {}
 
-        def arkimet_matcher(self, inp: Input) -> Optional[arkimet.Matcher]:
+        def arkimet_matcher(self, inp: Input) -> Optional["arkimet.Matcher"]:
             """
             If the input has an arkimet match expression, return its compiled
             Matcher
             """
             if inp not in self.cached_matchers:
-                cached: Optional[arkimet.Matcher] = None
+                cached: Optional["arkimet.Matcher"] = None
                 expression: Optional[str] = getattr(inp.spec, "arkimet", None)
                 if expression is not None and expression != "skip":
                     cached = self.session.matcher(inp.spec.arkimet)
@@ -312,7 +313,7 @@ if HAS_ARKIMET:
             self.data_root = pantry.data_root
             self.todo_list = todo_list
 
-        def dispatch(self, md: arkimet.Metadata) -> bool:
+        def dispatch(self, md: "arkimet.Metadata") -> bool:
             for matcher, inp in self.todo_list:
                 if matcher.match(md):
                     trange = md.to_python("timerange")
@@ -448,17 +449,20 @@ class EccodesPantry(DispatchPantry):
         """
         Run grib_filter on arkimet input
         """
+        grib_filter = shutil.which("grib_filter")
+        if grib_filter is None:
+            raise RuntimeError("grib_filter not found")
         with tempfile.TemporaryFile("w+b") as outfd:
             with tempfile.TemporaryFile("w+b") as errfd:
                 try:
                     proc = subprocess.Popen(
-                        ["grib_filter", self.grib_filter_rules.as_posix(), "-"],
+                        [grib_filter, self.grib_filter_rules.as_posix(), "-"],
                         stdin=subprocess.PIPE,
                         stdout=outfd,
                         stderr=errfd,
                     )
 
-                    def dispatch(md: arkimet.Metadata) -> bool:
+                    def dispatch(md: "arkimet.Metadata") -> bool:
                         assert proc.stdin is not None
                         proc.stdin.write(md.data)
                         return True

@@ -477,7 +477,7 @@ class VG6DStatProcMixin(Derived, ABC):
 
         # Generate derived input
         grib_filter_rules = pantry.get_accessory_fullname(self, "grib_filter_rules.txt")
-        with open(grib_filter_rules, "wt") as fd:
+        with open(grib_filter_rules, "w") as fd:
             print('print "s:[year],[month],[day],[hour],[minute],[second],[endStep]";', file=fd)
             print(f'write "{pantry.get_eccodes_fullname(self)}";', file=fd)
 

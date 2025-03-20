@@ -138,7 +138,7 @@ class Order(ABC):
             "bbox": [min(lllon, urlon), min(lllat, urlat), max(lllon, urlon), max(lllat, urlat)],
         }
 
-    def summarize_outputs(self, products_info: outputbundle.Products):
+    def summarize_outputs(self, products_info: outputbundle.ReftimeProducts):
         """
         Add information about the images producted by this order to the
         products information of an output bundle
@@ -146,12 +146,11 @@ class Order(ABC):
         if self.output is None:
             raise AssertionError(f"{self}: product has not been rendered")
 
-        products_info.by_path[self.output.relpath].add_recipe(self.recipe)
-        products_info.by_path[self.output.relpath].add_instant(self.instant)
-
+        kwargs = {}
         georef = self.georeference()
         if georef is not None:
-            products_info.by_path[self.output.relpath].add_georef(georef)
+            kwargs["georef"] = georef
+        products_info.add_product(self.output.relpath, **kwargs)
 
 
 class MapOrder(Order):
@@ -328,7 +327,7 @@ class TileOrder(Order):
                     bundle.add_product(bundle_path, buf)
                     log.info("Rendered %s to %s", self, bundle_path)
 
-    def summarize_outputs(self, products_info: outputbundle.Products):
+    def summarize_outputs(self, products_info: outputbundle.ReftimeProducts):
         """
         Add information about the images producted by this order to the
         products information of an output bundle
@@ -350,20 +349,19 @@ class TileOrder(Order):
         for x in range(width):
             for y in range(height):
                 bundle_path = os.path.join(relpath, str(x + start_x), f"{y + start_y}.png")
-                products_info.by_path[bundle_path].add_recipe(self.recipe)
-                products_info.by_path[bundle_path].add_instant(self.instant)
 
-                if georef is None:
-                    continue
-
-                tile_georef = georef.copy()
-                tile_georef["bbox"] = [
-                    lonmin + x * lon_width,
-                    latmin + y * lat_height,
-                    lonmin + (x + 1) * lon_width,
-                    latmin + (y + 1) * lat_height,
-                ]
-                products_info.by_path[bundle_path].add_georef(tile_georef)
+                kwargs = {}
+                georef = self.georeference()
+                if georef is not None:
+                    tile_georef = georef.copy()
+                    tile_georef["bbox"] = [
+                        lonmin + x * lon_width,
+                        latmin + y * lat_height,
+                        lonmin + (x + 1) * lon_width,
+                        latmin + (y + 1) * lat_height,
+                    ]
+                    kwargs["georef"] = tile_georef
+                products_info.add_product(bundle_path, **kwargs)
 
     @classmethod
     def make_orders(
