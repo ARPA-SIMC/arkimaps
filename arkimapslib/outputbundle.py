@@ -35,7 +35,6 @@ import tarfile
 import zipfile
 from abc import ABC, abstractmethod
 from collections import Counter
-from functools import cached_property
 from pathlib import Path
 from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
