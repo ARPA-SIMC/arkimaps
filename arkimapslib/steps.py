@@ -1,6 +1,6 @@
 # from __future__ import annotations
 from abc import ABC
-from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING, Literal
+from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING
 
 from .models import BaseDataModel, pydantic
 from .component import Component
@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
-
-OnOff = Literal["on", "off"]
 
 
 class StepSpec(BaseDataModel):
@@ -374,25 +372,25 @@ class AddCoastlinesBg(MagicsMacro):
 
 
 class AddSymbolsParamsSpec(LegendParamsSpec):
-    symbol_type: Literal["number", "text", "marker", "wind"] = "marker"
-    symbol_table_mode: Literal["off", "advanced", "on"] = "off"
+    symbol_type: str = "marker"
+    symbol_table_mode: str = "off"
     symbol_colour: str = "blue"
     symbol_height: float = 0.2
     sumbol_marker_mode: str = "index"
     symbol_marker_index: int = 1
     symbol_marker_name: str = "dot"
     symbol_image_path: str = ""
-    symbol_image_format: Literal["automatic", "png", "svg"] = "automatic"
+    symbol_image_format: str = "automatic"
     symbol_image_width: int = -1
     symbol_image_height: int = -1
     symbol_text_list: list[str] = pydantic.Field(default_factory=list)
-    symbol_text_position: Literal["right", "left", "bottom", "top"] = "right"
+    symbol_text_position: str = "right"
     symbol_text_font: str = "sansserif"
     symbol_text_font_size: float = 0.25
     symbol_text_font_style: str = "normal"
     symbol_text_font_colour: str = "#ffffff"
     symbol_legend_height: int = -1
-    symbol_advanced_table_selection_type: Literal["count", "interval", "list"] = "count"
+    symbol_advanced_table_selection_type: str = "count"
     contour_max_level: float = 1.0e21
     contour_min_level: float = -1.0e21
     contour_shade_max_level: float = 1.0e21
@@ -412,28 +410,28 @@ class AddSymbolsParamsSpec(LegendParamsSpec):
     symbol_advanced_table_colour_method: str = "calculate"
     contour_shade_max_level_colour: str = "#0000FF"
     contour_shade_min_level_colour: str = "#FF0000"
-    contour_shade_colour_direction: Literal["clockwise", "anti_clockwise"] = "anti_clockwise"
+    contour_shade_colour_direction: str = "anti_clockwise"
     contour_shade_colour_list: List[str] = pydantic.Field(default_factory=list)
     symbol_advanced_table_max_level_colour: str = "#0000FF"
     symbol_advanced_table_min_level_colour: str = "#FF0000"
-    symbol_advanced_table_colour_direction: Literal["clockwise", "anti_clockwise"] = "anti_clockwise"
+    symbol_advanced_table_colour_direction: str = "anti_clockwise"
     symbol_advanced_table_colour_list: List[str] = pydantic.Field(default_factory=list)
-    symbol_advanced_table_colour_list_policy: Literal["lastone", "cycle"] = "lastone"
+    symbol_advanced_table_colour_list_policy: str = "lastone"
     symbol_advanced_table_marker_list: List[int] = pydantic.Field(default_factory=list)
     symbol_advanced_table_marker_name_list: List[str] = pydantic.Field(default_factory=list)
-    symbol_advanced_table_marker_list_policy: Literal["lastone", "cycle"] = "lastone"
-    symbol_advanced_table_height_method: Literal["calculate", "list"] = "list"
+    symbol_advanced_table_marker_list_policy: str = "lastone"
+    symbol_advanced_table_height_method: str = "list"
     symbol_advanced_table_height_max_value: float = 0.2
     symbol_advanced_table_height_min_value: float = 0.1
     symbol_advanced_table_height_list: List[float] = pydantic.Field(default_factory=list)
-    symbol_advanced_table_height_list_policy: Literal["lastone", "cycle"] = "lastone"
+    symbol_advanced_table_height_list_policy: str = "lastone"
     symbol_advanced_table_text_list: List[str] = pydantic.Field(default_factory=list)
-    symbol_advanced_table_text_list_policy: Literal["lastone", "cycle"] = "cycle"
+    symbol_advanced_table_text_list_policy: str = "cycle"
     symbol_advanced_table_text_font: str = "sansserif"
     symbol_advanced_table_text_font_size: float = 0.25
     symbol_advanced_table_text_font_style: str = "normal"
     symbol_advanced_table_text_font_colour: str = "#ffffff"
-    symbol_advanced_table_text_display_type: Literal["centre", "none", "right", "left", "top", "bottom"] = "none"
+    symbol_advanced_table_text_display_type: str = "none"
     symbol_advanced_table_outlayer_method: str = "none"
     symbol_min_table: List[float] = pydantic.Field(default_factory=list)
     symbol_max_table: List[float] = pydantic.Field(default_factory=list)
@@ -442,16 +440,16 @@ class AddSymbolsParamsSpec(LegendParamsSpec):
     symbol_colour_table: List[str] = pydantic.Field(default_factory=list)
     symbol_height_table: List[str] = pydantic.Field(default_factory=list)
     symbol_format: str = "(automatic)"
-    symbol_text_blanking: OnOff = "off"
-    symbol_outline: OnOff = "off"
+    symbol_text_blanking: str = "off"
+    symbol_outline: str = "off"
     symbol_outline_colour: str = "#000000"
     symbol_outline_thickness: int = 1
-    symbol_outline_style: Literal["solid", "dash", "dot", "chain_dash", "chain_dot"] = "solid"
-    symbol_connect_line: OnOff = "off"
-    symbol_connect_automatic_line_colour: OnOff = "on"
+    symbol_outline_style: str = "solid"
+    symbol_connect_line: str = "off"
+    symbol_connect_automatic_line_colour: str = "on"
     symbol_connect_line_colour: str = "#000000"
     symbol_connect_line_thickness: int = 1
-    symbol_connect_line_style: Literal["solid", "dash", "dot", "chain_dash", "chain_dot"] = "solid"
+    symbol_connect_line_style: str = "solid"
 
 
 class AddSymbolsSpec(MagicsMacroSpec):
