@@ -1,3 +1,7 @@
+# New in version 1.31
+
+* Use curly brackets instead of null for empty recipe info in products.json
+
 # New in version 1.30
 
 * Fixed validation for add_symbols (#179)
