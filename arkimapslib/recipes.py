@@ -326,7 +326,7 @@ class Recipe(RootComponent[RecipeSpec, "Recipe"]):
             "name": self.name,
             "defined_in": self.defined_in,
             "description": self.spec.description,
-            "info": self.spec.info,
+            "info": self.spec.info or {},
         }
 
     def document(self, flavour: "flavours.Flavour", pantry: "pantry.Pantry", dest: str):

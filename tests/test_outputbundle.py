@@ -168,7 +168,7 @@ class RecipeProductsTests(BaseFixture, unittest.TestCase):
                 "recipe": {
                     "defined_in": "recipe.yaml",
                     "description": "Unnamed recipe",
-                    "info": None,
+                    "info": {},
                     "name": "recipe",
                 },
                 "reftimes": {"2023-12-15 00:00:00": val.reftimes["2023-12-15 00:00:00"].to_jsonable()},

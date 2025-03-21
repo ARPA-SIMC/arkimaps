@@ -121,6 +121,31 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r2.steps[0].id, "basemap")
         self.assertEqual(r2.steps[0].args, {"params": {"a": 1, "b": 3}})
 
+    def test_summarize(self):
+        r = Recipe(
+            config=self.config,
+            name="test",
+            defined_in="test.yaml",
+            args={"recipe": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}]},
+        )
+        self.assertEqual(
+            r.summarize(), {"defined_in": "test.yaml", "description": "Unnamed recipe", "info": {}, "name": "test"}
+        )
+
+        r = Recipe(
+            config=self.config,
+            name="test",
+            defined_in="test.yaml",
+            args={
+                "recipe": [{"step": "add_grib", "grib": "t2m"}, {"step": "add_user_boundaries"}],
+                "info": {"test": "val"},
+            },
+        )
+        self.assertEqual(
+            r.summarize(),
+            {"defined_in": "test.yaml", "description": "Unnamed recipe", "info": {"test": "val"}, "name": "test"},
+        )
+
 
 class TestRecipes(unittest.TestCase):
     def setUp(self):
