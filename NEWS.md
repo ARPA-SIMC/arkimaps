@@ -1,3 +1,7 @@
+# New in version 1.32
+
+* Added Products.by_recipe accessor (#183)
+
 # New in version 1.31
 
 * Use curly brackets instead of null for empty recipe info in products.json

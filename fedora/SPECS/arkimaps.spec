@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.31
+Version:        1.32
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Mar 25 2025 Daniele Branchini <dbranchini@arpae.it> - 1.32-1
+- Added Products.by_recipe accessor (#183)
+
 * Fri Mar 21 2025 Daniele Branchini <dbranchini@arpae.it> - 1.31-1
 - Use curly brackets instead of null for empty recipe info in products.json
 
