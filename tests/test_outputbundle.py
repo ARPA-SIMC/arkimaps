@@ -5,7 +5,8 @@ import logging
 import os
 import tempfile
 import unittest
-from typing import Type
+from pathlib import Path
+from typing import Type, Any, List, Dict
 
 import arkimapslib.outputbundle as ob
 from arkimapslib import flavours, inputs, orders
@@ -19,11 +20,30 @@ class BaseFixture:
     def setUp(self):
         super().setUp()
         self.config = Config()
-        self.flavour = flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
-        self.recipe = Recipe(
-            config=self.config, name="recipe", defined_in="recipe.yaml", args={"recipe": [{"step": "add_basemap"}]}
+
+    def flavour(self) -> flavours.Flavour:
+        return flavours.Simple(config=self.config, name="flavour", defined_in="flavour.yaml", args={})
+
+    def recipe(self, with_legend: bool = False) -> Recipe:
+        steps: List[Dict[str, Any]] = [
+            {"step": "add_basemap"},
+        ]
+        if with_legend:
+            steps.append(
+                {
+                    "step": "add_contour",
+                    "params": {"legend": "on"},
+                }
+            )
+        return Recipe(
+            config=self.config,
+            name="recipe",
+            defined_in="recipe.yaml",
+            args={"recipe": steps},
         )
-        self.input = inputs.Static(
+
+    def input(self) -> inputs.Input:
+        return inputs.Static(
             config=self.config,
             name="test",
             defined_in="test.yaml",
@@ -34,21 +54,31 @@ class BaseFixture:
                 "path": os.path.join(self.config.static_dir[0], "puntiCitta.geo"),
             },
         )
-        self.instant = Instant(reftime=datetime.datetime(2023, 12, 15), step=12)
-        self.order = orders.MapOrder(
-            flavour=self.flavour,
-            recipe=self.recipe,
-            input_files={"test": self.input},
-            instant=self.instant,
+
+    def instant(self) -> Instant:
+        return Instant(reftime=datetime.datetime(2023, 12, 15), step=12)
+
+    def order(self, with_legend: bool = False) -> orders.Order:
+        order = orders.MapOrder(
+            flavour=self.flavour(),
+            recipe=self.recipe(with_legend=with_legend),
+            input_files={
+                "test": inputs.InputFile(pathname=Path("test.grib"), info=self.input(), instant=self.instant())
+            },
+            instant=self.instant(),
         )
-        self.order.output = orders.Output(name="output", relpath="test/output.png", magics_output="test/magics.png")
+        if with_legend:
+            order.output = orders.Output("legend", "test/legend.png", "")
+        else:
+            order.output = orders.Output(name="output", relpath="test/output.png", magics_output="test/magics.png")
+        return order
 
 
 class InputProcessingStatsTests(BaseFixture, unittest.TestCase):
     def test_inputprocessingstats(self):
         val = ob.InputProcessingStats()
         val.add_computation_log(100_000_000, "mock processing")
-        val.used_by.add(self.recipe.name)
+        val.used_by.add(self.recipe().name)
 
         as_json = val.to_jsonable()
         self.assertEqual(as_json, {"computation": [(100000000, "mock processing")], "used_by": ["recipe"]})
@@ -61,7 +91,7 @@ class InputSummaryTests(BaseFixture, unittest.TestCase):
     def test_inputsummary(self):
         stats = ob.InputProcessingStats()
         stats.add_computation_log(100_000_000, "mock processing")
-        stats.used_by.add(self.recipe.name)
+        stats.used_by.add(self.recipe().name)
 
         val = ob.InputSummary()
         val.add("test", stats)
@@ -88,7 +118,7 @@ class LogTests(BaseFixture, unittest.TestCase):
 class ReftimeProductsTests(BaseFixture, unittest.TestCase):
     def test_reftimeproduct(self):
         val = ob.ReftimeProducts()
-        val.add_order(self.order)
+        val.add_order(self.order())
 
         as_json = val.to_jsonable()
         self.assertEqual(
@@ -110,27 +140,7 @@ class ReftimeProductsTests(BaseFixture, unittest.TestCase):
         self.assertEqual(val1, val)
 
     def test_legend(self) -> None:
-        recipe = Recipe(
-            config=self.config,
-            name="recipe",
-            defined_in="recipe.yaml",
-            args={
-                "recipe": [
-                    {"step": "add_basemap"},
-                    {
-                        "step": "add_contour",
-                        "params": {"legend": "on"},
-                    },
-                ]
-            },
-        )
-        order = orders.MapOrder(
-            flavour=self.flavour,
-            recipe=recipe,
-            input_files={"test": self.input},
-            instant=self.instant,
-        )
-        order.output = orders.Output("legend", "test/legend.png", "")
+        order = self.order(with_legend=True)
 
         val = ob.ReftimeProducts()
         val.add_order(order)
@@ -158,7 +168,7 @@ class ReftimeProductsTests(BaseFixture, unittest.TestCase):
 class RecipeProductsTests(BaseFixture, unittest.TestCase):
     def test_recipeproducts(self) -> None:
         val = ob.RecipeProducts()
-        val.add_order(self.order)
+        val.add_order(self.order())
 
         as_json = val.to_jsonable()
         self.assertEqual(
@@ -196,7 +206,7 @@ class ProductsTests(BaseFixture, unittest.TestCase):
 
     def test_products(self):
         val = ob.Products()
-        val.add_order(self.order)
+        val.add_order(self.order())
 
         as_json = val.to_jsonable()
         self.assertEqual(as_json, [val.products[("flavour", "recipe")].to_jsonable()])
@@ -206,7 +216,7 @@ class ProductsTests(BaseFixture, unittest.TestCase):
 
     def test_by_path(self):
         val = ob.Products()
-        val.add_order(self.order)
+        val.add_order(self.order())
         self.assertEqual(
             val.by_path,
             {
@@ -215,6 +225,14 @@ class ProductsTests(BaseFixture, unittest.TestCase):
                     recipe="recipe",
                 )
             },
+        )
+
+    def test_by_recipe(self):
+        val = ob.Products()
+        val.add_order(self.order(with_legend=True))
+        self.assertEqual(
+            val.by_recipe,
+            {"recipe": ob.RecipeOrders(legend_info={"legend": True})},
         )
 
 
@@ -255,7 +273,7 @@ class BundleTestsMixin(BaseFixture):
     def test_serialize(self):
         stats = ob.InputProcessingStats()
         stats.add_computation_log(100_000_000, "mock processing")
-        stats.used_by.add(self.recipe.name)
+        stats.used_by.add(self.recipe().name)
 
         input_summary = ob.InputSummary()
         input_summary.add("test", stats)
@@ -264,7 +282,7 @@ class BundleTestsMixin(BaseFixture):
         log.append(ts=1.5, level=2, msg="message", name="logname")
 
         products = ob.Products()
-        products.add_order(self.order)
+        products.add_order(self.order())
 
         with tempfile.NamedTemporaryFile() as tf:
             with self.writer_cls(out=tf) as writer:

@@ -36,7 +36,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from collections import Counter
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 from . import steps
 from .models import BaseDataModel, pydantic
@@ -221,13 +221,38 @@ class RecipeProducts(Serializable):
 
 
 class ProductKey(NamedTuple):
+    """
+    Unique identifier for products generated from the same recipe and flavour.
+    """
+
+    #: Flavour name
     flavour: str
+    #: Recipe name
     recipe: str
 
 
 class PathInfo(NamedTuple):
+    """
+    Information about a single generated product image.
+    """
+
+    #: Recipe name
     recipe: str
+    #: Georeferencing information
     georef: Optional[Dict[str, Any]] = None
+
+
+class RecipeOrders(NamedTuple):
+    """
+    Information and statistics for all orders generated from one recipe
+    """
+
+    # Only legend_info is really accessed here. If more information is needed
+    # by software using the previously drafted API, the draft implementation
+    # can be found in version v1.29-1.
+
+    #: Legend information for products produced from this recipe
+    legend_info: Optional[Dict[str, Any]]
 
 
 class Products(Serializable):
@@ -260,6 +285,23 @@ class Products(Serializable):
             for prods in rp.reftimes.values():
                 for path, info in prods.products.items():
                     res[path] = PathInfo(recipe=recipe, georef=info.georef)
+        return res
+
+    @property
+    def by_recipe(self) -> Dict[str, RecipeOrders]:
+        """
+        Return a standard layout of information for each recipe in the output.
+        """
+        res: Dict[str, RecipeOrders] = {}
+        for (flavour, recipe), rp in self.products.items():
+            if recipe in res:
+                continue
+            legend_info: Optional[Dict[str, Any]] = None
+            for reftime_info in rp.reftimes.values():
+                if reftime_info.legend_info:
+                    legend_info = reftime_info.legend_info
+                    break
+            res[recipe] = RecipeOrders(legend_info=legend_info)
         return res
 
     def dict(self, *args: Any, **kwargs: Any) -> Any:
@@ -416,12 +458,12 @@ class TarReader(Reader):
     See :py:class:`Reader` for the full method list
     """
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Union[Path, str]):
         """
         Read an existing output bundle
         """
         self.tarfile = tarfile.open(path, mode="r")
-        self.path = path
+        self.path = Path(path)
 
     def __enter__(self):
         return self
@@ -471,11 +513,12 @@ class ZipReader(Reader):
     See :py:class:`Reader` for the full method list
     """
 
-    def __init__(self, path: Path):
+    def __init__(self, path: Union[Path, str]):
         """
         Read an existing output bundle
         """
         self.zipfile = zipfile.ZipFile(path, mode="r")
+        self.path = Path(path)
 
     def __enter__(self):
         return self
