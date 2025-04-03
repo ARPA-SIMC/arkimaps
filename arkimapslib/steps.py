@@ -438,7 +438,7 @@ class AddSymbolsParamsSpec(LegendParamsSpec):
     symbol_marker_table: List[int] = pydantic.Field(default_factory=list)
     symbol_name_table: List[str] = pydantic.Field(default_factory=list)
     symbol_colour_table: List[str] = pydantic.Field(default_factory=list)
-    symbol_height_table: List[str] = pydantic.Field(default_factory=list)
+    symbol_height_table: List[float] = pydantic.Field(default_factory=list)
     symbol_format: str = "(automatic)"
     symbol_text_blanking: str = "off"
     symbol_outline: str = "off"
