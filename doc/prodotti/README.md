@@ -70,5 +70,6 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `tcw`    | Contenuto totale acqueo                        | [tcw.png](tcw.png)  | [tcw.md](../recipes/tcw.md) |
 | `tcwwind`  | Contenuto totale acqueo e vento a 500hPa e 850hPa | [tcwwind.png](tcwwind.png)  | [tcwwind.md](../recipes/standalone/tcwwind.md) |
 | `frzrain`  | Freezing rain                                | [frzrain.png](frzrain.png)  | [frzrain.md](../recipes/frzrain.md) |
+| `precipitation_type` | Tipologia di precipitazione        | [precipitation_type.png](precipitation_type.png) | [precipitation_type.md](../recipes/precipitation_type.md) |
 | `snowlmt`  | Height of snow fall limit                    | [snowlmt.png](snowlmt.png)  | [snowlmt.md](../recipes/snowlmt.md) |
 | `wspeed10m` `wspeed250hPa` `wspeed500hPa` `wspeed700hPa` `wspeed850hPa` `wspeed925hPa` | Velocità del vento a vari livelli di pressione | | |

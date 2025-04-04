@@ -1,3 +1,7 @@
+# New in version 1.33
+
+* Added precipitation_type product for IFS
+
 # New in version 1.32
 
 * Added Products.by_recipe accessor (#183)
