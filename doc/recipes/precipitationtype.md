@@ -1,4 +1,4 @@
-# precipitation_type: Precipitation types
+# precipitationtype: Precipitation types
 
 Mixer: **default**
 

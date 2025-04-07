@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Mon Apr  7 2025 Daniele Branchini <dbranchini@arpae.it> - 1.33-2
+- Renamed precipitation_type to precipitationtype
+
 * Fri Apr  4 2025 Daniele Branchini <dbranchini@arpae.it> - 1.33-1
 - Added precipitation_type product for IFS
 

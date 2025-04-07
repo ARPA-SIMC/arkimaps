@@ -1,6 +1,6 @@
 # New in version 1.33
 
-* Added precipitation_type product for IFS
+* Added precipitationtype product for IFS
 
 # New in version 1.32
 
