@@ -16,12 +16,9 @@ recipe:
     contour_level_selection_type: level_list
     contour_shade_colour_method: list
     contour_shade_method: area_fill
-    contour_shade_colour_list: [ "#bcbdef", "#7778ef", "#0178ff", "#02bcff",
-                               "#04fdef", "#01acac", "#00781d", "#06fb2f",
-                               "#cefb02", "#ff9a00", "#ff1e00", "#ac1a77",
-                               "#fe38ff", "#7730ff" ]
-    contour_level_list: [ 10, 50, 100, 200, 300, 400, 500, 600, 800,
-                        1000, 1250, 1500, 1750, 2000, 4000 ]
+    contour_shade_colour_list: ["#00781d","#06fb2f","#cefb02","#ff9a00","#ff1e00","#ac1a77","#fe38ff","#7730ff"]
+    contour_level_list: [ 300, 500, 800, 1000, 1250, 1500, 1750, 2000, 4000 ]
+    contour_shade_min_level: 300
     contour_highlight: off
     contour_hilo: off
     contour_label: off

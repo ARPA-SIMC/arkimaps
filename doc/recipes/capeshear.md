@@ -86,12 +86,6 @@ With arguments:
     "contour_shade_colour_method": "list",
     "contour_shade_method": "area_fill",
     "contour_shade_colour_list": [
-      "#bcbdef",
-      "#7778ef",
-      "#0178ff",
-      "#02bcff",
-      "#04fdef",
-      "#01acac",
       "#00781d",
       "#06fb2f",
       "#cefb02",
@@ -102,14 +96,8 @@ With arguments:
       "#7730ff"
     ],
     "contour_level_list": [
-      10,
-      50,
-      100,
-      200,
       300,
-      400,
       500,
-      600,
       800,
       1000,
       1250,
@@ -118,6 +106,7 @@ With arguments:
       2000,
       4000
     ],
+    "contour_shade_min_level": 300,
     "contour_highlight": false,
     "contour_hilo": false,
     "contour_label": false,
