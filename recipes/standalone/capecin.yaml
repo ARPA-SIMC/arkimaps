@@ -8,6 +8,9 @@ inputs:
     - model: icon
       arkimet: product:GRIB2,,000,007,007,,
       eccodes: centre != 98 and shortName is "cin_ml" and editionNumber == 2
+    - model: ifs_g2
+      arkimet: product:GRIB2,98,0,7,6
+      eccodes: centre == 98 and shortName is "mucin"
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg

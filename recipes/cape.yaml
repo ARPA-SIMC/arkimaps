@@ -8,6 +8,9 @@ inputs:
     - model: ifs 
       arkimet: product:GRIB1,98,128,59
       eccodes: centre == 98 and shortName is "cape"
+    - model: ifs_g2
+      arkimet: product:GRIB2,98,0,7,6
+      eccodes: centre == 98 and shortName is "mucape"
     - model: icon
       arkimet: product:GRIB2,,000,007,006,,
       eccodes: centre != 98 and shortName is "cape" and editionNumber == 2

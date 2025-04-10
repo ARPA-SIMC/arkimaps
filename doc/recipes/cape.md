@@ -11,6 +11,9 @@ Mixer: **default**
     * Model **ifs**:
         * **Arkimet matcher**: `product:GRIB1,98,128,59`
         * **grib_filter matcher**: `centre == 98 and shortName is "cape"`
+    * Model **ifs_g2**:
+        * **Arkimet matcher**: `product:GRIB2,98,0,7,6`
+        * **grib_filter matcher**: `centre == 98 and shortName is "mucape"`
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,000,007,006,,`
         * **grib_filter matcher**: `centre != 98 and shortName is "cape" and editionNumber == 2`
