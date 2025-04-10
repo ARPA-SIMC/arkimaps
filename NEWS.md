@@ -1,3 +1,8 @@
+# New in version 1.34
+
+* Added cape+cin products for IFS grib2
+* Updated contour for capeshear
+
 # New in version 1.33
 
 * Added precipitationtype product for IFS

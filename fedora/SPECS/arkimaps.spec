@@ -1,9 +1,9 @@
-%global releaseno 2
+%global releaseno 1
 # Note: define _srcarchivename in Travis build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.33
+Version:        1.34
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,10 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Apr 10 2025 Daniele Branchini <dbranchini@arpae.it> - 1.34-1
+- Added cape+cin products for IFS grib2
+- Updated contour for capeshear
+
 * Mon Apr  7 2025 Daniele Branchini <dbranchini@arpae.it> - 1.33-2
 - Renamed precipitation_type to precipitationtype
 
