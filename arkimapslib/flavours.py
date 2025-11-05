@@ -2,7 +2,7 @@
 import fnmatch
 import logging
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Type, cast, TypeVar
 
 from . import inputs, orders
 from .config import Config
@@ -49,14 +49,16 @@ class FlavourSpec(BaseDataModel):
     recipes_filter: List[str] = pydantic.Field(default_factory=list)
 
 
-class Flavour(RootComponent[FlavourSpec]):
+SPEC = TypeVar("SPEC", bound=FlavourSpec)
+
+
+class Flavour(RootComponent[SPEC], spec=FlavourSpec):
     """
     Set of default settings used for generating a product
     """
 
     __registry__ = TypeRegistry["Flavour"]()
-
-    Spec = FlavourSpec
+    lookup = __registry__.lookup
 
     def __init__(
         self,
@@ -247,7 +249,7 @@ class Flavour(RootComponent[FlavourSpec]):
         raise NotImplementedError(f"{self.__class__}.inputs_to_orders not implemented")
 
 
-class Simple(Flavour):
+class Simple(Flavour[FlavourSpec], spec=FlavourSpec):
     def inputs_to_orders(
         self,
         recipe: "recipes.Recipe",
@@ -302,13 +304,11 @@ class TiledSpec(FlavourSpec):
     tile: TileSpec
 
 
-class Tiled(Flavour):
+class Tiled(Flavour[TiledSpec], spec=TiledSpec):
     """
     Flavour that generates tiled output.
 
     """
-
-    Spec = TiledSpec
 
     def summarize(self) -> Dict[str, Any]:
         res = super().summarize()
@@ -388,10 +388,10 @@ class Tiled(Flavour):
             order_steps.append(grib_step)
 
         params = contour_step.spec.params
-        params.legend = "on"
+        params.legend = True
         params.legend_text_font_size = "25%"
         params.legend_border_thickness = 4
-        params.legend_only = "on"
+        params.legend_only = True
         params.legend_box_mode = "positional"
         params.legend_box_x_position = 0.00
         params.legend_box_y_position = 0.00

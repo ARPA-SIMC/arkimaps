@@ -13,7 +13,7 @@ import numpy
 
 import arkimapslib.inputs
 from arkimapslib.config import Config
-from arkimapslib.inputs import Input, Inputs
+from arkimapslib.inputs import Input, Inputs, GribSetInputSpec
 from arkimapslib.pantry import DiskPantry
 from arkimapslib.types import Instant
 
@@ -136,7 +136,7 @@ class TestInputs(unittest.TestCase):
             self.assertEqual(os.path.getsize(data_file), len(mds[0].data))
 
     def test_apply_clip(self) -> None:
-        class Tester(arkimapslib.inputs.GribSetMixin):
+        class Tester(arkimapslib.inputs.GribSetMixin[GribSetInputSpec], spec=GribSetInputSpec):
             def __init__(self, clip: str):
                 super().__init__(config=None, name="hzero", defined_in=__file__, args={"clip": clip})
 

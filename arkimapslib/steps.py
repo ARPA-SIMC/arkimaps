@@ -1,6 +1,6 @@
 # from __future__ import annotations
 from abc import ABC
-from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING
+from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING, TypeVar
 
 from .models import BaseDataModel, pydantic
 from .component import Component
@@ -20,12 +20,13 @@ class StepSpec(BaseDataModel):
     """
 
 
-class Step(Component[StepSpec], ABC):
+SPEC = TypeVar("SPEC", bound=StepSpec)
+
+
+class Step(Component[SPEC], ABC, spec=StepSpec):
     """
     One recipe step provided by a Mixer
     """
-
-    Spec = StepSpec
 
     DEFAULTS: Optional[Dict[str, Any]] = None
     DEEP_DEFAULTS: Optional[Dict[str, Any]] = None
@@ -92,7 +93,7 @@ class BaseMagicsParamsSpec(BaseDataModel):
     """
 
 
-class MagicsMacroSpec(BaseDataModel):
+class MagicsMacroSpec(StepSpec):
     """
     Data model for MagicsMacro Steps
     """
@@ -100,13 +101,15 @@ class MagicsMacroSpec(BaseDataModel):
     params: BaseMagicsParamsSpec = pydantic.Field(default_factory=BaseMagicsParamsSpec)
 
 
-class MagicsMacro(Step, ABC):
+MSPEC = TypeVar("MSPEC", bound=MagicsMacroSpec)
+
+
+class MagicsMacro(Step[MSPEC], ABC, spec=MagicsMacroSpec):
     """
     Run a Magics macro with optional default arguments
     """
 
     MACRO_NAME: str
-    Step = MagicsMacroSpec
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         return self.MACRO_NAME, self.spec.params.dict(exclude_unset=True)
@@ -342,25 +345,22 @@ class AddBasemapSpec(MagicsMacroSpec):
     params: AddBasemapParamsSpec = pydantic.Field(default_factory=AddBasemapParamsSpec)
 
 
-class AddBasemap(MagicsMacro):
+class AddBasemap(MagicsMacro[AddBasemapSpec], spec=AddBasemapSpec):
     """
     Add a base map
     """
 
     MACRO_NAME = "mmap"
-    Spec = AddBasemapSpec
 
 
 class AddCoastlinesBgSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddCoastlinesBg(MagicsMacro):
+class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec], spec=AddCoastlinesBgSpec):
     """
     Add background coastlines
     """
-
-    Spec = AddCoastlinesBgSpec
 
     MACRO_NAME = "mcoast"
     DEFAULTS = {
@@ -456,12 +456,10 @@ class AddSymbolsSpec(MagicsMacroSpec):
     params: AddSymbolsParamsSpec = pydantic.Field(default_factory=AddSymbolsParamsSpec)
 
 
-class AddSymbols(MagicsMacro):
+class AddSymbols(MagicsMacro[AddSymbolsSpec], spec=AddSymbolsSpec):
     """
     Add symbols settings
     """
-
-    Spec = AddSymbolsSpec
 
     MACRO_NAME = "msymb"
     DEFAULTS = {
@@ -480,7 +478,7 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_line_style: str = "solid"
     # TODO: this seems to be integer only in rocky8, and accept float later
     # contour_line_thickness: float = 1.0
-    contour_line_thickness: int = 1.0
+    contour_line_thickness: int = 1
     contour_line_colour_rainbow: bool = False
     contour_line_colour: str = "blue"
     contour_line_colour_rainbow_method: str = "calculate"
@@ -611,12 +609,10 @@ class AddContourSpec(MagicsMacroSpec):
     params: AddContourParamsSpec = pydantic.Field(default_factory=AddContourParamsSpec)
 
 
-class AddContour(MagicsMacro):
+class AddContour(MagicsMacro[AddContourSpec], spec=AddContourSpec):
     """
     Add contouring of the previous data
     """
-
-    Spec = AddContourSpec
 
     MACRO_NAME = "mcont"
     DEFAULTS = {
@@ -695,25 +691,22 @@ class AddWindSpec(MagicsMacroSpec):
     params: AddWindParamsSpec = pydantic.Field(default_factory=AddWindParamsSpec)
 
 
-class AddWind(MagicsMacro):
+class AddWind(MagicsMacro[AddWindSpec], spec=AddWindSpec):
     """
     Add wind flag rendering of the previous data
     """
 
     MACRO_NAME = "mwind"
-    Spec = AddWindSpec
 
 
 class AddGridSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddGrid(MagicsMacro):
+class AddGrid(MagicsMacro[AddGridSpec], spec=AddGridSpec):
     """
     Add a coordinates grid
     """
-
-    Spec = AddGridSpec
 
     MACRO_NAME = "mcoast"
     DEFAULTS = {
@@ -727,12 +720,10 @@ class AddCoastlinesFgSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddCoastlinesFg(MagicsMacro):
+class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec], spec=AddCoastlinesFgSpec):
     """
     Add foreground coastlines
     """
-
-    Spec = AddCoastlinesFgSpec
 
     MACRO_NAME = "mcoast"
     DEFAULTS = {
@@ -751,12 +742,10 @@ class AddBoundariesSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddBoundaries(MagicsMacro):
+class AddBoundaries(MagicsMacro[AddBoundariesSpec], spec=AddBoundariesSpec):
     """
     Add political boundaries
     """
-
-    Spec = AddBoundariesSpec
 
     MACRO_NAME = "mcoast"
     DEFAULTS = {
@@ -793,12 +782,12 @@ class AddGribSpec(MagicsMacroSpec):
     grib: str
 
 
-class AddGrib(Step):
+class AddGrib(MagicsMacro[AddGribSpec], spec=AddGribSpec):
     """
     Add a grib file
     """
 
-    Spec = AddGribSpec
+    MACRO_NAME = "mgrib"
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -815,7 +804,7 @@ class AddGrib(Step):
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         params = self.spec.params.dict(exclude_unset=True)
         params["grib_input_file_name"] = str(self.grib_input.pathname)
-        return "mgrib", params
+        return self.MACRO_NAME, params
 
     @classmethod
     def get_input_names(cls, args: Dict[str, Any]) -> Set[str]:
@@ -834,12 +823,12 @@ class AddUserBoundariesSpec(MagicsMacroSpec):
     shape: str
 
 
-class AddUserBoundaries(Step):
+class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec], spec=AddUserBoundariesSpec):
     """
     Add user-defined boundaries from a shapefile
     """
 
-    Spec = AddUserBoundariesSpec
+    MACRO_NAME = "mcoast"
     DEFAULTS = {
         "params": {
             "map_user_layer": "on",
@@ -858,7 +847,7 @@ class AddUserBoundaries(Step):
         inp = self.sources.get(self.spec.shape)
         if inp is None:
             raise KeyError(
-                f"{self.name}: input {self.spec.name} not found. Available: {', '.join(self.sources.keys())}"
+                f"{self.name}: input {self.spec.shape} not found. Available: {', '.join(self.sources.keys())}"
             )
         self.shape = inp
 
@@ -869,7 +858,7 @@ class AddUserBoundaries(Step):
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         params = self._run_params()
-        return "mcoast", params
+        return self.MACRO_NAME, params
 
     @classmethod
     def get_input_names(cls, args: Dict[str, Any]) -> Set[str]:
@@ -892,12 +881,12 @@ class AddGeopointsSpec(MagicsMacroSpec):
     points: str
 
 
-class AddGeopoints(Step):
+class AddGeopoints(MagicsMacro[AddGeopointsSpec], spec=AddGeopointsSpec):
     """
     Add geopoints
     """
 
-    Spec = AddGeopointsSpec
+    MACRO_NAME = "mgeo"
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -911,7 +900,7 @@ class AddGeopoints(Step):
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         params = self.spec.params.dict(exclude_unset=True)
         params["geo_input_file_name"] = str(self.points.pathname)
-        return "mgeo", params
+        return self.MACRO_NAME, params
 
     @classmethod
     def get_input_names(cls, args: Dict[str, Any]) -> Set[str]:

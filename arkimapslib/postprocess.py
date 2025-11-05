@@ -4,7 +4,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Generic, List, Optional, Tuple, Union, TypeVar
 
 import osgeo
 from osgeo import osr
@@ -27,7 +27,10 @@ class PostprocessorSpec(BaseDataModel):
     """
 
 
-class Postprocessor(RootComponent[PostprocessorSpec], ABC):
+SPEC = TypeVar("SPEC", bound=PostprocessorSpec)
+
+
+class Postprocessor(RootComponent[SPEC], ABC):
     """
     Base class for postprocessors.
 
@@ -36,8 +39,7 @@ class Postprocessor(RootComponent[PostprocessorSpec], ABC):
     """
 
     __registry__ = TypeRegistry["Postprocessor"]()
-
-    Spec = PostprocessorSpec
+    lookup = __registry__.lookup
 
     def lint(self, lint: "Lint") -> None:
         """
@@ -76,7 +78,7 @@ class Postprocessor(RootComponent[PostprocessorSpec], ABC):
         ...
 
 
-class WatermarkPostprocessorSpec(BaseDataModel):
+class WatermarkPostprocessorSpec(PostprocessorSpec):
     """
     Data model for Watermark postprocessors
     """
@@ -108,12 +110,10 @@ class WatermarkPostprocessorSpec(BaseDataModel):
     # TODO: text angle?
 
 
-class Watermark(Postprocessor):
+class Watermark(Postprocessor[WatermarkPostprocessorSpec], spec=WatermarkPostprocessorSpec):
     """
     Write a string on the image.
     """
-
-    Spec = WatermarkPostprocessorSpec
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -143,7 +143,7 @@ class Watermark(Postprocessor):
         return full_relpath
 
 
-class CutShapePostprocessorSpec(BaseDataModel):
+class CutShapePostprocessorSpec(PostprocessorSpec):
     """
     Data model for CutShape postprocessors
     """
@@ -153,12 +153,10 @@ class CutShapePostprocessorSpec(BaseDataModel):
     shapefile: Path
 
 
-class CutShape(Postprocessor):
+class CutShape(Postprocessor[CutShapePostprocessorSpec], spec=CutShapePostprocessorSpec):
     """
     Make the image transparent when outside a given shapefile
     """
-
-    Spec = CutShapePostprocessorSpec
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)

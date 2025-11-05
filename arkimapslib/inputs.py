@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable, List, NamedTuple, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable, List, NamedTuple, Optional, Tuple, Type, TypeVar
 
 from .config import Config
 from .grib import GRIB
@@ -114,7 +114,10 @@ class InputSpec(BaseDataModel):
     notes: Optional[str] = None
 
 
-class Input(RootComponent[InputSpec], ABC):
+SPEC = TypeVar("SPEC", bound=InputSpec)
+
+
+class Input(RootComponent[SPEC], ABC):
     """
     An input element to a recipe.
 
@@ -123,9 +126,9 @@ class Input(RootComponent[InputSpec], ABC):
     """
 
     __registry__ = TypeRegistry["Input"]()
+    lookup = __registry__.lookup
 
     NAME: str
-    Spec: Type[InputSpec] = InputSpec
 
     @classmethod
     def create(cls, *, config: Config, name: str, defined_in: str, type: str = "default", args: Dict[str, Any]):
@@ -219,7 +222,7 @@ class StaticInputSpec(InputSpec):
     path: Path
 
 
-class Static(Input):
+class Static(Input[StaticInputSpec], spec=StaticInputSpec):
     """
     An input that refers to static files distributed with arkimaps
     """
@@ -269,7 +272,7 @@ class Static(Input):
         return {None: InputFile(self.abspath, self, None)}
 
 
-class Shape(Static):
+class Shape(Static, spec=StaticInputSpec):
     """
     A special instance of static that deals with shapefiles
     """
@@ -309,7 +312,7 @@ class SourceInputSpec(InputSpec):
     eccodes: Optional[str] = None
 
 
-class Source(Input):
+class Source(Input[SourceInputSpec], spec=SourceInputSpec):
     """
     An input that is data straight out of a model
     """
@@ -385,12 +388,13 @@ class DerivedInputSpec(InputSpec):
         return value
 
 
-class Derived(Input, ABC):
+DSPEC = TypeVar("DSPEC", bound=DerivedInputSpec)
+
+
+class Derived(Input[DSPEC], ABC):
     """
     Base class for inputs derives from other inputs
     """
-
-    Spec = DerivedInputSpec
 
     def to_dict(self):
         res = super().to_dict()
@@ -452,13 +456,11 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec, ABC):
     @pydantic.validator("inputs", allow_reuse=True)
     def only_one_input(cls, value):
         if len(value) != 1:
-            raise RuntimeError(f"only one source in put allowed")
+            raise RuntimeError("only one source in put allowed")
         return value
 
 
-class VG6DStatProcMixin(Derived, ABC):
-    Spec = VG6DStatProDerivedcInputSpec
-
+class VG6DStatProcMixin(Derived[VG6DStatProDerivedcInputSpec], ABC, spec=VG6DStatProDerivedcInputSpec):
     def to_dict(self):
         res = super().to_dict()
         res["step"] = self.spec.step
@@ -554,7 +556,7 @@ class VG6DStatProcMixin(Derived, ABC):
                 os.unlink(decumulated_data)
 
 
-class Decumulate(VG6DStatProcMixin):
+class Decumulate(VG6DStatProcMixin, spec=VG6DStatProDerivedcInputSpec):
     """
     Decumulate inputs
     """
@@ -571,7 +573,7 @@ class Decumulate(VG6DStatProcMixin):
         super().document(file, indent)
 
 
-class Average(VG6DStatProcMixin):
+class Average(VG6DStatProcMixin, spec=VG6DStatProDerivedcInputSpec):
     """
     Average inputs
     """
@@ -588,7 +590,7 @@ class Average(VG6DStatProcMixin):
         super().document(file, indent)
 
 
-class AlignInstants(Derived):
+class AlignInstants(Derived[DSPEC], ABC):
     def align_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], List["InputFile"]]:
         # Get the steps for each of our inputs
         available_instants: Optional[Dict[Optional[Instant], List[InputFile]]] = None
@@ -631,13 +633,12 @@ class VG6DTransformInputSpec(DerivedInputSpec):
         return value
 
 
-class VG6DTransform(AlignInstants):
+class VG6DTransform(AlignInstants[VG6DTransformInputSpec], spec=VG6DTransformInputSpec):
     """
     Process inputs with vg6d_transform
     """
 
     NAME = "vg6d_transform"
-    Spec = VG6DTransformInputSpec
 
     def to_dict(self):
         res = super().to_dict()
@@ -688,7 +689,7 @@ class VG6DTransform(AlignInstants):
         super().document(file, indent)
 
 
-class Cat(AlignInstants):
+class Cat(AlignInstants[DerivedInputSpec], spec=DerivedInputSpec):
     """
     Concatenate inputs
     """
@@ -718,7 +719,7 @@ class Cat(AlignInstants):
             pantry.add_instant(self, instant)
 
 
-class Or(Derived):
+class Or(Derived[DerivedInputSpec], spec=DerivedInputSpec):
     """
     Represents the first of the inputs listed that has data for a step
     """
@@ -751,12 +752,13 @@ class GribSetInputSpec(DerivedInputSpec):
     clip: Optional[str] = None
 
 
-class GribSetMixin(Derived, ABC):
+GSPEC = TypeVar("GSPEC", bound=GribSetInputSpec)
+
+
+class GribSetMixin(Derived[GSPEC], ABC):
     """
     Mixin used for inputs that take a `grib_set` argument
     """
-
-    Spec = GribSetInputSpec
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -791,7 +793,7 @@ class GribSetMixin(Derived, ABC):
         return values[self.name]
 
 
-class GroundToMSL(GribSetMixin, Derived):
+class GroundToMSL(GribSetMixin[GribSetInputSpec], spec=GribSetInputSpec):
     """
     Convert heights above ground to heights above mean sea level, by adding
     ground geopotential.
@@ -871,7 +873,7 @@ class ExprInputSpec(GribSetInputSpec):
     expr: str
 
 
-class Expr(GribSetMixin, AlignInstants):
+class Expr(GribSetMixin[ExprInputSpec], AlignInstants[ExprInputSpec], spec=ExprInputSpec):
     """
     Compute the result using a Python expression of the input values, as numpy
     arrays.
@@ -881,7 +883,6 @@ class Expr(GribSetMixin, AlignInstants):
     """
 
     NAME = "expr"
-    Spec = ExprInputSpec
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -943,7 +944,7 @@ class Expr(GribSetMixin, AlignInstants):
                     pantry.add_instant(self, instant)
 
 
-class SFFraction(GribSetMixin, AlignInstants):
+class SFFraction(GribSetMixin[GribSetInputSpec], AlignInstants[GribSetInputSpec], spec=GribSetInputSpec):
     """
     Compute snow fraction percentage based on formulas documented in #38
 
