@@ -3,13 +3,13 @@ import inspect
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Sequence, Set, TextIO, Tuple, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, TextIO, Type
 
 from . import steps, toposort
 from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
-from .component import RootComponent
+from .component import RootComponent, TypeRegistry
 from .utils import setdefault_deep
 
 if TYPE_CHECKING:
@@ -246,10 +246,12 @@ class RecipeSpec(BaseDataModel):
         return value
 
 
-class Recipe(RootComponent[RecipeSpec, "Recipe"]):
+class Recipe(RootComponent[RecipeSpec]):
     """
     A parsed and validated recipe
     """
+
+    __registry__ = TypeRegistry["Recipe"]()
 
     Spec = RecipeSpec
 

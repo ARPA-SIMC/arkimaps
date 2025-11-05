@@ -8,8 +8,12 @@ if TYPE_CHECKING:
     from .config import Config
 
 
-T = TypeVar("T", bound="RootComponent[BaseDataModel, Any]")
+ROOT = TypeVar("ROOT", bound="RootComponent[BaseDataModel, Any]")
 SPEC = TypeVar("SPEC", bound=BaseDataModel)
+
+
+class InvalidComponentError(Exception):
+    """Exception raised when a component is badly specified."""
 
 
 class Component(Generic[SPEC], ABC):
@@ -34,15 +38,15 @@ class Component(Generic[SPEC], ABC):
         self.spec = self.Spec(**args)
 
 
-class TypeRegistry(Generic[T]):
+class TypeRegistry(Generic[ROOT]):
     """
     Registry of type objects by name
     """
 
     def __init__(self) -> None:
-        self.registry: Dict[str, Type[T]] = {}
+        self.registry: Dict[str, Type[ROOT]] = {}
 
-    def register(self, impl_cls: Type[T]) -> Type[T]:
+    def register(self, impl_cls: Type[ROOT]) -> Type[ROOT]:
         """
         Add a class to the registry
         """
@@ -52,21 +56,20 @@ class TypeRegistry(Generic[T]):
         self.registry[name] = impl_cls
         return impl_cls
 
-    def by_name(self, name: str) -> Type[T]:
+    def by_name(self, name: str) -> Type[ROOT]:
         """
         Lookup a class by name
         """
         return self.registry[name.lower()]
 
 
-class RootComponent(Generic[SPEC, T], Component[SPEC], ABC):
+class RootComponent(Generic[SPEC], Component[SPEC], ABC):
     """
     Base class for components class hierarchies.
     """
 
     NAME: str
-    __component_label__: str
-    __registry__: TypeRegistry[T]
+    __registry__: TypeRegistry[Any]
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """
@@ -74,8 +77,7 @@ class RootComponent(Generic[SPEC, T], Component[SPEC], ABC):
         """
         # The first subclass found defines the root registry for that type
         if not hasattr(cls, "__registry__"):
-            cls.__registry__ = TypeRegistry[T]()
-            cls.__component_label__ = cls.__name__.lower()
+            raise InvalidComponentError(f"Class {cls.__name__} is a root component without __registry__ member")
 
         if ABC in cls.__bases__:
             # Do not register abstract classes
@@ -84,7 +86,7 @@ class RootComponent(Generic[SPEC, T], Component[SPEC], ABC):
         cls.__registry__.register(cls)
 
     @classmethod
-    def lookup(cls, name: str) -> Type[T]:
+    def lookup(cls, name: str) -> Type[ROOT]:
         """
         Lookup a component class by name
         """

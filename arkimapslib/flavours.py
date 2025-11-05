@@ -9,12 +9,11 @@ from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor
-from .component import RootComponent
+from .component import RootComponent, TypeRegistry
 
 if TYPE_CHECKING:
     from . import pantry, recipes
     from .inputs import InputFile, Instant
-    from .steps import Step
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -50,10 +49,12 @@ class FlavourSpec(BaseDataModel):
     recipes_filter: List[str] = pydantic.Field(default_factory=list)
 
 
-class Flavour(RootComponent[FlavourSpec, "Flavour"]):
+class Flavour(RootComponent[FlavourSpec]):
     """
     Set of default settings used for generating a product
     """
+
+    __registry__ = TypeRegistry["Flavour"]()
 
     Spec = FlavourSpec
 

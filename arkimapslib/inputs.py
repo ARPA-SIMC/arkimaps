@@ -17,7 +17,7 @@ from .grib import GRIB
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .types import Instant
-from .component import RootComponent
+from .component import RootComponent, TypeRegistry
 from .utils import perf_counter_ns
 
 if TYPE_CHECKING:
@@ -114,13 +114,15 @@ class InputSpec(BaseDataModel):
     notes: Optional[str] = None
 
 
-class Input(RootComponent[InputSpec, "Input"], ABC):
+class Input(RootComponent[InputSpec], ABC):
     """
     An input element to a recipe.
 
     All arguments to the constructor besides `name` and `defined_in` are taken
     from the YAML input definition
     """
+
+    __registry__ = TypeRegistry["Input"]()
 
     NAME: str
     Spec: Type[InputSpec] = InputSpec
