@@ -6,7 +6,6 @@ from .models import BaseDataModel, pydantic
 from .component import Component
 
 if TYPE_CHECKING:
-    from .config import Config
     from . import inputs
     from .lint import Lint
 

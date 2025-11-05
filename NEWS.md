@@ -1,3 +1,7 @@
+# New in version UNRELEASED
+
+* Added new `quantize` postprocessor, taking argument `colors: int = 256` and `dither: bool = True` (#184)
+
 # New in version 1.34
 
 * Added cape+cin products for IFS grib2

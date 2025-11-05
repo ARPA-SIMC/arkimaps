@@ -4,7 +4,7 @@ import logging
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Generic, List, Optional, Tuple, Union, TypeVar
+from typing import TYPE_CHECKING, Any, Tuple, TypeVar
 
 import osgeo
 from osgeo import osr
@@ -13,7 +13,6 @@ from .models import BaseDataModel
 from .component import RootComponent, TypeRegistry
 
 if TYPE_CHECKING:
-    from .config import Config
     from .lint import Lint
     from .orders import Order
     from .pygen import PyGen
@@ -246,3 +245,43 @@ class CutShape(Postprocessor[CutShapePostprocessorSpec], spec=CutShapePostproces
             ul = transform.TransformPoint(bbox[3], bbox[2])
 
         return (lr[0], lr[1], ul[0], ul[1])
+
+
+class QuantizePostprocessorSpec(PostprocessorSpec):
+    """
+    Data model for Quantize postprocessors
+    """
+
+    #: Number of colors to use
+    colors: int = 256
+
+    #: Whether to apply dithering
+    dither: bool = True
+
+
+class Quantize(Postprocessor[QuantizePostprocessorSpec], spec=QuantizePostprocessorSpec):
+    """
+    Reduce the number of colors
+    """
+
+    def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
+        # See https://gist.github.com/PMelch/239d163a5dc227f28dded8b985684894 for dithering RGBA images
+        gen.import_("Image", "ImageDraw", "ImageFont", from_="PIL")
+        gen.line(f"with Image.open(os.path.join(workdir, {full_relpath!r})) as im:")
+        with gen.nested() as sub:
+            if self.spec.dither:
+                sub.line("noalpha = im.convert('RGB')")
+                sub.line(
+                    "dithered = im.convert(mode='P', palette=Image.Palette.ADAPTIVE, dither=Image.Dither.FLOYDSTEINBERG)"
+                )
+                sub.line("transparent = Image.new('RGBA', noalpha.size)")
+                sub.line("transparent.paste(dithered, (0, 0), im)")
+                sub.line(
+                    f"im = transparent.convert('P', palette=Image.Palette.ADAPTIVE, colors={self.spec.colors}, dither=Image.Dither.NONE)"
+                )
+            else:
+                sub.line(
+                    f"im = im.convert(mode='P', palette=Image.Palette.ADAPTIVE, colors={self.spec.colors}, dither=Image.Dither.NONE)"
+                )
+            sub.line(f"im.save(os.path.join(workdir, {full_relpath!r}))")
+        return full_relpath
