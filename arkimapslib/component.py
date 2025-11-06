@@ -25,14 +25,14 @@ class Component(Generic[SPEC], ABC):
     Spec: Type[SPEC]
     spec: SPEC
 
-    def __init_subclass__(cls, spec: Optional[Type[SPEC]] = None, **kwargs: Any) -> None:
+    def __init_subclass__(cls, **kwargs: Any) -> None:
         """
         Maintain the subclass registry
         """
-        if spec is not None:
-            cls.Spec = spec
-        elif ABC not in cls.__bases__:
-            raise InvalidComponentError(f"Component class {cls.__name__} is not abstract but lacks a spec= argument")
+        if ABC in cls.__bases__:
+            return
+        if not hasattr(cls, "Spec"):
+            raise InvalidComponentError(f"Component class {cls.__name__} is not abstract but lacks a Spec member")
 
     def __init__(self, *, config: "Config", name: str, defined_in: str, args: Dict[str, Any]) -> None:
         """
@@ -91,8 +91,8 @@ class RootComponent(Component[SPEC], ABC):
         super().__init_subclass__(**kwargs)
 
         # The first subclass found defines the root registry for that type
-        if not hasattr(cls, "__registry__"):
-            raise InvalidComponentError(f"Class {cls.__name__} is a root component without __registry__ member")
+        # if not hasattr(cls, "__registry__"):
+        #     raise InvalidComponentError(f"Class {cls.__name__} is a root component without __registry__ member")
 
         if ABC in cls.__bases__:
             # Do not register abstract classes

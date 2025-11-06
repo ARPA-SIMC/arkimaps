@@ -222,7 +222,7 @@ class StaticInputSpec(InputSpec):
     path: Path
 
 
-class Static(Input[StaticInputSpec], spec=StaticInputSpec):
+class Static(Input[StaticInputSpec]):
     """
     An input that refers to static files distributed with arkimaps
     """
@@ -272,7 +272,7 @@ class Static(Input[StaticInputSpec], spec=StaticInputSpec):
         return {None: InputFile(self.abspath, self, None)}
 
 
-class Shape(Static, spec=StaticInputSpec):
+class Shape(Static):
     """
     A special instance of static that deals with shapefiles
     """
@@ -280,6 +280,7 @@ class Shape(Static, spec=StaticInputSpec):
     # TODO: in newer pythons, use importlib.resources.Resource and copy to
     # workdir in get_instants
     NAME = "shape"
+    Spec = StaticInputSpec
 
     def clean_path(self, path: Path):
         """
@@ -312,7 +313,7 @@ class SourceInputSpec(InputSpec):
     eccodes: Optional[str] = None
 
 
-class Source(Input[SourceInputSpec], spec=SourceInputSpec):
+class Source(Input[SourceInputSpec]):
     """
     An input that is data straight out of a model
     """
@@ -460,7 +461,7 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec, ABC):
         return value
 
 
-class VG6DStatProcMixin(Derived[VG6DStatProDerivedcInputSpec], ABC, spec=VG6DStatProDerivedcInputSpec):
+class VG6DStatProcMixin(Derived[VG6DStatProDerivedcInputSpec], ABC):
     def to_dict(self):
         res = super().to_dict()
         res["step"] = self.spec.step
@@ -556,12 +557,13 @@ class VG6DStatProcMixin(Derived[VG6DStatProDerivedcInputSpec], ABC, spec=VG6DSta
                 os.unlink(decumulated_data)
 
 
-class Decumulate(VG6DStatProcMixin, spec=VG6DStatProDerivedcInputSpec):
+class Decumulate(VG6DStatProcMixin):
     """
     Decumulate inputs
     """
 
     NAME = "decumulate"
+    Spec = VG6DStatProDerivedcInputSpec
 
     def __init__(self, args: Dict[str, Any], **kwargs):
         args.setdefault("comp_stat_proc", "1")
@@ -573,12 +575,13 @@ class Decumulate(VG6DStatProcMixin, spec=VG6DStatProDerivedcInputSpec):
         super().document(file, indent)
 
 
-class Average(VG6DStatProcMixin, spec=VG6DStatProDerivedcInputSpec):
+class Average(VG6DStatProcMixin):
     """
     Average inputs
     """
 
     NAME = "average"
+    Spec = VG6DStatProDerivedcInputSpec
 
     def __init__(self, args: Dict[str, Any], **kwargs):
         args.setdefault("comp_stat_proc", "254:0")
@@ -633,12 +636,13 @@ class VG6DTransformInputSpec(DerivedInputSpec):
         return value
 
 
-class VG6DTransform(AlignInstants[VG6DTransformInputSpec], spec=VG6DTransformInputSpec):
+class VG6DTransform(AlignInstants[VG6DTransformInputSpec]):
     """
     Process inputs with vg6d_transform
     """
 
     NAME = "vg6d_transform"
+    Spec = VG6DTransformInputSpec
 
     def to_dict(self):
         res = super().to_dict()
@@ -689,12 +693,13 @@ class VG6DTransform(AlignInstants[VG6DTransformInputSpec], spec=VG6DTransformInp
         super().document(file, indent)
 
 
-class Cat(AlignInstants[DerivedInputSpec], spec=DerivedInputSpec):
+class Cat(AlignInstants[DerivedInputSpec]):
     """
     Concatenate inputs
     """
 
     NAME = "cat"
+    Spec = DerivedInputSpec
 
     def generate(self, pantry: "pantry.DiskPantry"):
         # Get the instants for each of our inputs
@@ -719,12 +724,13 @@ class Cat(AlignInstants[DerivedInputSpec], spec=DerivedInputSpec):
             pantry.add_instant(self, instant)
 
 
-class Or(Derived[DerivedInputSpec], spec=DerivedInputSpec):
+class Or(Derived[DerivedInputSpec]):
     """
     Represents the first of the inputs listed that has data for a step
     """
 
     NAME = "or"
+    Spec = DerivedInputSpec
 
     def generate(self, pantry: "pantry.DiskPantry"):
         available_instants: Dict[Instant, InputFile] = {}
@@ -793,7 +799,7 @@ class GribSetMixin(Derived[GSPEC], ABC):
         return values[self.name]
 
 
-class GroundToMSL(GribSetMixin[GribSetInputSpec], spec=GribSetInputSpec):
+class GroundToMSL(GribSetMixin[GribSetInputSpec]):
     """
     Convert heights above ground to heights above mean sea level, by adding
     ground geopotential.
@@ -803,6 +809,7 @@ class GroundToMSL(GribSetMixin[GribSetInputSpec], spec=GribSetInputSpec):
     """
 
     NAME = "groundtomsl"
+    Spec = GribSetInputSpec
 
     def generate(self, pantry: "pantry.DiskPantry"):
         if len(self.spec.inputs) != 2:
@@ -873,7 +880,7 @@ class ExprInputSpec(GribSetInputSpec):
     expr: str
 
 
-class Expr(GribSetMixin[ExprInputSpec], AlignInstants[ExprInputSpec], spec=ExprInputSpec):
+class Expr(GribSetMixin[ExprInputSpec], AlignInstants[ExprInputSpec]):
     """
     Compute the result using a Python expression of the input values, as numpy
     arrays.
@@ -883,6 +890,7 @@ class Expr(GribSetMixin[ExprInputSpec], AlignInstants[ExprInputSpec], spec=ExprI
     """
 
     NAME = "expr"
+    Spec = ExprInputSpec
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -944,7 +952,7 @@ class Expr(GribSetMixin[ExprInputSpec], AlignInstants[ExprInputSpec], spec=ExprI
                     pantry.add_instant(self, instant)
 
 
-class SFFraction(GribSetMixin[GribSetInputSpec], AlignInstants[GribSetInputSpec], spec=GribSetInputSpec):
+class SFFraction(GribSetMixin[GribSetInputSpec], AlignInstants[GribSetInputSpec]):
     """
     Compute snow fraction percentage based on formulas documented in #38
 
@@ -953,6 +961,7 @@ class SFFraction(GribSetMixin[GribSetInputSpec], AlignInstants[GribSetInputSpec]
     """
 
     NAME = "sffraction"
+    Spec = GribSetInputSpec
 
     def generate(self, pantry: "pantry.DiskPantry"):
         if len(self.spec.inputs) != 2:

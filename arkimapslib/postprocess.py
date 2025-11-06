@@ -109,10 +109,12 @@ class WatermarkPostprocessorSpec(PostprocessorSpec):
     # TODO: text angle?
 
 
-class Watermark(Postprocessor[WatermarkPostprocessorSpec], spec=WatermarkPostprocessorSpec):
+class Watermark(Postprocessor[WatermarkPostprocessorSpec]):
     """
     Write a string on the image.
     """
+
+    Spec = WatermarkPostprocessorSpec
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -152,10 +154,12 @@ class CutShapePostprocessorSpec(PostprocessorSpec):
     shapefile: Path
 
 
-class CutShape(Postprocessor[CutShapePostprocessorSpec], spec=CutShapePostprocessorSpec):
+class CutShape(Postprocessor[CutShapePostprocessorSpec]):
     """
     Make the image transparent when outside a given shapefile
     """
+
+    Spec = CutShapePostprocessorSpec
 
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -259,10 +263,12 @@ class QuantizePostprocessorSpec(PostprocessorSpec):
     dither: bool = True
 
 
-class Quantize(Postprocessor[QuantizePostprocessorSpec], spec=QuantizePostprocessorSpec):
+class Quantize(Postprocessor[QuantizePostprocessorSpec]):
     """
     Reduce the number of colors
     """
+
+    Spec = QuantizePostprocessorSpec
 
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         # See https://gist.github.com/PMelch/239d163a5dc227f28dded8b985684894 for dithering RGBA images

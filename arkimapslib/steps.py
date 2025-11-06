@@ -22,7 +22,7 @@ class StepSpec(BaseDataModel):
 SPEC = TypeVar("SPEC", bound=StepSpec)
 
 
-class Step(Component[SPEC], ABC, spec=StepSpec):
+class Step(Component[SPEC], ABC):
     """
     One recipe step provided by a Mixer
     """
@@ -103,7 +103,7 @@ class MagicsMacroSpec(StepSpec):
 MSPEC = TypeVar("MSPEC", bound=MagicsMacroSpec)
 
 
-class MagicsMacro(Step[MSPEC], ABC, spec=MagicsMacroSpec):
+class MagicsMacro(Step[MSPEC], ABC):
     """
     Run a Magics macro with optional default arguments
     """
@@ -344,19 +344,20 @@ class AddBasemapSpec(MagicsMacroSpec):
     params: AddBasemapParamsSpec = pydantic.Field(default_factory=AddBasemapParamsSpec)
 
 
-class AddBasemap(MagicsMacro[AddBasemapSpec], spec=AddBasemapSpec):
+class AddBasemap(MagicsMacro[AddBasemapSpec]):
     """
     Add a base map
     """
 
     MACRO_NAME = "mmap"
+    Spec = AddBasemapSpec
 
 
 class AddCoastlinesBgSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec], spec=AddCoastlinesBgSpec):
+class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec]):
     """
     Add background coastlines
     """
@@ -368,6 +369,7 @@ class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec], spec=AddCoastlinesBgSpec
             "map_coastline_resolution": "high",
         },
     }
+    Spec = AddCoastlinesBgSpec
 
 
 class AddSymbolsParamsSpec(LegendParamsSpec):
@@ -455,7 +457,7 @@ class AddSymbolsSpec(MagicsMacroSpec):
     params: AddSymbolsParamsSpec = pydantic.Field(default_factory=AddSymbolsParamsSpec)
 
 
-class AddSymbols(MagicsMacro[AddSymbolsSpec], spec=AddSymbolsSpec):
+class AddSymbols(MagicsMacro[AddSymbolsSpec]):
     """
     Add symbols settings
     """
@@ -470,6 +472,7 @@ class AddSymbols(MagicsMacro[AddSymbolsSpec], spec=AddSymbolsSpec):
             "symbol_height": 0.28,
         },
     }
+    Spec = AddSymbolsSpec
 
 
 class AddContourParamsSpec(LegendParamsSpec):
@@ -608,7 +611,7 @@ class AddContourSpec(MagicsMacroSpec):
     params: AddContourParamsSpec = pydantic.Field(default_factory=AddContourParamsSpec)
 
 
-class AddContour(MagicsMacro[AddContourSpec], spec=AddContourSpec):
+class AddContour(MagicsMacro[AddContourSpec]):
     """
     Add contouring of the previous data
     """
@@ -619,6 +622,7 @@ class AddContour(MagicsMacro[AddContourSpec], spec=AddContourSpec):
             "contour_automatic_setting": "ecmwf",
         },
     }
+    Spec = AddContourSpec
 
 
 class AddWindParamsSpec(LegendParamsSpec):
@@ -690,19 +694,20 @@ class AddWindSpec(MagicsMacroSpec):
     params: AddWindParamsSpec = pydantic.Field(default_factory=AddWindParamsSpec)
 
 
-class AddWind(MagicsMacro[AddWindSpec], spec=AddWindSpec):
+class AddWind(MagicsMacro[AddWindSpec]):
     """
     Add wind flag rendering of the previous data
     """
 
     MACRO_NAME = "mwind"
+    Spec = AddWindSpec
 
 
 class AddGridSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddGrid(MagicsMacro[AddGridSpec], spec=AddGridSpec):
+class AddGrid(MagicsMacro[AddGridSpec]):
     """
     Add a coordinates grid
     """
@@ -713,13 +718,14 @@ class AddGrid(MagicsMacro[AddGridSpec], spec=AddGridSpec):
             "map_coastline_general_style": "grid",
         },
     }
+    Spec = AddGridSpec
 
 
 class AddCoastlinesFgSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec], spec=AddCoastlinesFgSpec):
+class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec]):
     """
     Add foreground coastlines
     """
@@ -735,13 +741,14 @@ class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec], spec=AddCoastlinesFgSpec
             "map_coastline_resolution": "high",
         },
     }
+    Spec = AddCoastlinesFgSpec
 
 
 class AddBoundariesSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddBoundaries(MagicsMacro[AddBoundariesSpec], spec=AddBoundariesSpec):
+class AddBoundaries(MagicsMacro[AddBoundariesSpec]):
     """
     Add political boundaries
     """
@@ -757,6 +764,7 @@ class AddBoundaries(MagicsMacro[AddBoundariesSpec], spec=AddBoundariesSpec):
             "map_administrative_boundaries": "on",
         },
     }
+    Spec = AddBoundariesSpec
 
 
 class AddGribParamsSpec(BaseMagicsParamsSpec):
@@ -781,12 +789,13 @@ class AddGribSpec(MagicsMacroSpec):
     grib: str
 
 
-class AddGrib(MagicsMacro[AddGribSpec], spec=AddGribSpec):
+class AddGrib(MagicsMacro[AddGribSpec]):
     """
     Add a grib file
     """
 
     MACRO_NAME = "mgrib"
+    Spec = AddGribSpec
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -822,7 +831,7 @@ class AddUserBoundariesSpec(MagicsMacroSpec):
     shape: str
 
 
-class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec], spec=AddUserBoundariesSpec):
+class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec]):
     """
     Add user-defined boundaries from a shapefile
     """
@@ -840,6 +849,7 @@ class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec], spec=AddUserBoundari
             "map_user_layer_colour": "blue",
         }
     }
+    Spec = AddUserBoundariesSpec
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -880,12 +890,13 @@ class AddGeopointsSpec(MagicsMacroSpec):
     points: str
 
 
-class AddGeopoints(MagicsMacro[AddGeopointsSpec], spec=AddGeopointsSpec):
+class AddGeopoints(MagicsMacro[AddGeopointsSpec]):
     """
     Add geopoints
     """
 
     MACRO_NAME = "mgeo"
+    Spec = AddGeopointsSpec
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)

@@ -136,7 +136,9 @@ class TestInputs(unittest.TestCase):
             self.assertEqual(os.path.getsize(data_file), len(mds[0].data))
 
     def test_apply_clip(self) -> None:
-        class Tester(arkimapslib.inputs.GribSetMixin[GribSetInputSpec], spec=GribSetInputSpec):
+        class Tester(arkimapslib.inputs.GribSetMixin[GribSetInputSpec]):
+            Spec = GribSetInputSpec
+
             def __init__(self, clip: str):
                 super().__init__(config=None, name="hzero", defined_in=__file__, args={"clip": clip})
 

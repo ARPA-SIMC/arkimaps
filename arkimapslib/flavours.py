@@ -1,4 +1,5 @@
 # from __future__ import annotations
+from abc import ABC
 import fnmatch
 import logging
 import re
@@ -52,7 +53,7 @@ class FlavourSpec(BaseDataModel):
 SPEC = TypeVar("SPEC", bound=FlavourSpec)
 
 
-class Flavour(RootComponent[SPEC], spec=FlavourSpec):
+class Flavour(RootComponent[SPEC], ABC):
     """
     Set of default settings used for generating a product
     """
@@ -249,7 +250,9 @@ class Flavour(RootComponent[SPEC], spec=FlavourSpec):
         raise NotImplementedError(f"{self.__class__}.inputs_to_orders not implemented")
 
 
-class Simple(Flavour[FlavourSpec], spec=FlavourSpec):
+class Simple(Flavour[FlavourSpec]):
+    Spec = FlavourSpec
+
     def inputs_to_orders(
         self,
         recipe: "recipes.Recipe",
@@ -304,11 +307,12 @@ class TiledSpec(FlavourSpec):
     tile: TileSpec
 
 
-class Tiled(Flavour[TiledSpec], spec=TiledSpec):
+class Tiled(Flavour[TiledSpec]):
     """
     Flavour that generates tiled output.
-
     """
+
+    Spec = TiledSpec
 
     def summarize(self) -> Dict[str, Any]:
         res = super().summarize()

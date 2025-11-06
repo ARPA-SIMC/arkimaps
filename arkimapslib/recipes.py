@@ -246,13 +246,14 @@ class RecipeSpec(BaseDataModel):
         return value
 
 
-class Recipe(RootComponent[RecipeSpec], spec=RecipeSpec):
+class Recipe(RootComponent[RecipeSpec]):
     """
     A parsed and validated recipe
     """
 
     __registry__ = TypeRegistry["Recipe"]()
     lookup = __registry__.lookup
+    Spec = RecipeSpec
 
     def __init__(self, *, config: Config, name: str, defined_in: str, args: Dict[str, Any]) -> None:
         from .mixers import mixers
