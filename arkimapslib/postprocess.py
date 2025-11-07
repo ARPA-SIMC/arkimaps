@@ -273,21 +273,21 @@ class Quantize(Postprocessor[QuantizePostprocessorSpec]):
     def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
         # See https://gist.github.com/PMelch/239d163a5dc227f28dded8b985684894 for dithering RGBA images
         gen.import_("Image", "ImageDraw", "ImageFont", from_="PIL")
+        # gen.import_("Palette", from_="PIL.Image")
         gen.line(f"with Image.open(os.path.join(workdir, {full_relpath!r})) as im:")
         with gen.nested() as sub:
+            # TODO: in newer PIL, use Image.Palette.ADAPTIVE, Image.Dither.FLOYDSTEINBERG, Image.Dither.NONE
             if self.spec.dither:
                 sub.line("noalpha = im.convert('RGB')")
-                sub.line(
-                    "dithered = im.convert(mode='P', palette=Image.Palette.ADAPTIVE, dither=Image.Dither.FLOYDSTEINBERG)"
-                )
+                sub.line("dithered = im.convert(mode='P', palette=Image.ADAPTIVE, dither=Image.FLOYDSTEINBERG)")
                 sub.line("transparent = Image.new('RGBA', noalpha.size)")
                 sub.line("transparent.paste(dithered, (0, 0), im)")
                 sub.line(
-                    f"im = transparent.convert('P', palette=Image.Palette.ADAPTIVE, colors={self.spec.colors}, dither=Image.Dither.NONE)"
+                    f"im = transparent.convert('P', palette=Image.ADAPTIVE, colors={self.spec.colors}, dither=Image.NONE)"
                 )
             else:
                 sub.line(
-                    f"im = im.convert(mode='P', palette=Image.Palette.ADAPTIVE, colors={self.spec.colors}, dither=Image.Dither.NONE)"
+                    f"im = im.convert(mode='P', palette=Image.ADAPTIVE, colors={self.spec.colors}, dither=Image.NONE)"
                 )
             sub.line(f"im.save(os.path.join(workdir, {full_relpath!r}))")
         return full_relpath
