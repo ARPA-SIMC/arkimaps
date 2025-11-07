@@ -62,11 +62,14 @@ class TestQuantize(unittest.TestCase):
     def count_colors(self, path: Path) -> int:
         with Image.open(path) as im:
             self.assertEqual(im.mode, "P")
+            # Commented out as it does not work in rocky8
             # palette = im.getpalette(rawmode="RGBA")
             # triplet_size = 4
             entry_size = 3
             palette = im.getpalette()
-            return len(set(batched(palette, entry_size, strict=True)))
+            # Use strict=True from Fedora >= 42
+            return len(set(batched(palette, entry_size)))
+            # return len(set(batched(palette, entry_size, strict=True)))
 
     def assertSmaller(self, first: Path, second: Path) -> None:
         """Ensure first is a smaller file than second."""
