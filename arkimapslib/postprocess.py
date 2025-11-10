@@ -270,24 +270,59 @@ class Quantize(Postprocessor[QuantizePostprocessorSpec]):
 
     Spec = QuantizePostprocessorSpec
 
-    def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
-        # See https://gist.github.com/PMelch/239d163a5dc227f28dded8b985684894 for dithering RGBA images
+    def add_python_preamble(self, gen: "PyGen") -> None:
+        gen.import_("tempfile")
         gen.import_("Image", "ImageDraw", "ImageFont", from_="PIL")
         # gen.import_("Palette", from_="PIL.Image")
-        gen.line(f"with Image.open(os.path.join(workdir, {full_relpath!r})) as im:")
-        with gen.nested() as sub:
-            # TODO: in newer PIL, use Image.Palette.ADAPTIVE, Image.Dither.FLOYDSTEINBERG, Image.Dither.NONE
-            if self.spec.dither:
-                sub.line("noalpha = im.convert('RGB')")
-                sub.line("dithered = im.convert(mode='P', palette=Image.ADAPTIVE, dither=Image.FLOYDSTEINBERG)")
-                sub.line("transparent = Image.new('RGBA', noalpha.size)")
-                sub.line("transparent.paste(dithered, (0, 0), im)")
-                sub.line(
-                    f"im = transparent.convert('P', palette=Image.ADAPTIVE, colors={self.spec.colors}, dither=Image.NONE)"
-                )
-            else:
-                sub.line(
-                    f"im = im.convert(mode='P', palette=Image.ADAPTIVE, colors={self.spec.colors}, dither=Image.NONE)"
-                )
-            sub.line(f"im.save(os.path.join(workdir, {full_relpath!r}))")
+
+        if self.spec.dither:
+            # Quantize images with dithering
+            # See https://github.com/python-pillow/Pillow/issues/5836
+            gen.line("def quantize_dither(im, colors):")
+            with gen.nested() as sub:
+                sub.line("palette = im.quantize(colors)")
+                sub.line("return im.quantize(colors=colors, palette=palette, dither=Image.FLOYDSTEINBERG)")
+
+            # Quantize RGBA images with dithering, as standard quantize does
+            # not support dithering with an alpha channel.
+            # See https://gist.github.com/PMelch/239d163a5dc227f28dded8b985684894 for dithering RGBA images
+            # See https://stackoverflow.com/questions/70595979/add-alpha-channel-to-an-image-with-pil
+            # Adapted after testing
+            gen.line("def quantize_dither_rgba(im, colors):")
+            with gen.nested() as sub:
+                sub.line("alpha = im.getchannel('A')")
+                sub.line("dithered = quantize_dither(im.convert('RGB'), colors).convert('RGBA')")
+                sub.line("dithered.putalpha(alpha)")
+                sub.line("return dithered.convert(mode='P', colors=colors)")
+
+            gen.line("quantize = quantize_dither")
+        else:
+            # Implementation for all other cases
+            gen.line("def quantize(im, colors):")
+            with gen.nested() as sub:
+                sub.line("return im.quantize(colors=colors, dither=Image.NONE)")
+
+    def add_python(self, order: "Order", full_relpath: str, gen: "PyGen") -> str:
+        self.add_python_preamble(gen)
+        gen.line(f"abspath = os.path.join(workdir, {full_relpath!r})")
+        gen.line(
+            "with tempfile.NamedTemporaryFile(dir=os.path.dirname(abspath), prefix=os.path.basename(abspath), suffix='.png', delete=False)"
+            " as workfile:"
+        )
+        with gen.nested() as scope_tempfile:
+            scope_tempfile.line("with Image.open(abspath) as im:")
+            with scope_tempfile.nested() as sub:
+                if self.spec.dither:
+                    gen.line("if im.mode == 'RGBA':")
+                    with gen.nested() as sub1:
+                        sub1.line("quantize = quantize_dither_rgba")
+                sub.line(f"im = quantize(im, colors={self.spec.colors})")
+                sub.line("im.save(workfile.name)")
+            # If the saved image is bigger than the original, keep the original
+            scope_tempfile.line("if os.path.getsize(workfile.name) < os.path.getsize(abspath):")
+            with scope_tempfile.nested() as sub:
+                sub.line("os.rename(workfile.name, abspath)")
+            scope_tempfile.line("else:")
+            with scope_tempfile.nested() as sub:
+                sub.line("os.unlink(workfile.name)")
         return full_relpath

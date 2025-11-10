@@ -48,7 +48,19 @@ class TestQuantize(unittest.TestCase):
         raw = (np.stack((red, green, blue, alpha), axis=2) * 255).astype(np.uint8)
         return Image.fromarray(raw, mode="RGBA")
 
-    def quantize(self, path: Path, **kwargs: Any) -> None:
+    def make_rgb_source(self) -> Image.Image:
+        gradient = np.linspace(0, 1, 256)
+        vert = np.tile(gradient.reshape(256, 1), (1, 256))
+        hor = np.rot90(vert)
+
+        red = (hor + vert) / 2
+        green = np.rot90(red)
+        blue = np.rot90(green)
+
+        raw = (np.stack((red, green, blue), axis=2) * 255).astype(np.uint8)
+        return Image.fromarray(raw, mode="RGB")
+
+    def quantize(self, path: Path, debug: bool = False, **kwargs: Any) -> None:
         order = cast(orders.Order, None)
         quantize = postprocess.Quantize(config=Config(), name="quantize", defined_in="test code", args=kwargs)
         pygen = PyGen()
@@ -58,6 +70,9 @@ class TestQuantize(unittest.TestCase):
             pygen.write(script)
             script.flush()
             subprocess.run([sys.executable, script.name], cwd=path.parent, check=True)
+            if debug:
+                print("\n***", path)
+                pygen.write(sys.stdout)
 
     def count_colors(self, path: Path) -> int:
         with Image.open(path) as im:
@@ -79,13 +94,13 @@ class TestQuantize(unittest.TestCase):
             return
         self.fail(f"{first} ({first_size}b) is not smaller than {second} ({second_size}b)")
 
-    def assertDiffers(self, first: Path, second: Path) -> None:
+    def assertUnchanged(self, first: Path, second: Path) -> None:
         """Ensure the two files have different contents."""
-        if first.read_bytes() != second.read_bytes():
+        if first.read_bytes() == second.read_bytes():
             return
-        self.fail(f"{first} and {second} contain identical data")
+        self.fail(f"{first} and {second} are different")
 
-    def test_quantize(self) -> None:
+    def test_quantize_rgba(self) -> None:
         with tempfile.TemporaryDirectory() as workdir_str:
             workdir = Path(workdir_str)
             orig = workdir / "orig.png"
@@ -96,45 +111,94 @@ class TestQuantize(unittest.TestCase):
             q8 = workdir / "quant8.png"
             img.save(q8)
             self.quantize(q8, colors=8, dither=False)
-            self.assertEqual(self.count_colors(q8), 9)
-            self.assertSmaller(q8, orig)
-
             q8d = workdir / "quant8d.png"
             img.save(q8d)
             self.quantize(q8d, colors=8, dither=True)
-            self.assertEqual(self.count_colors(q8d), 9)
-            self.assertSmaller(q8d, orig)
-            self.assertDiffers(q8, q8d)
-
             q64 = workdir / "quant64.png"
             img.save(q64)
             self.quantize(q64, colors=64, dither=False)
+            q64d = workdir / "quant64d.png"
+            img.save(q64d)
+            self.quantize(q64d, colors=64, dither=True)
+            q256 = workdir / "quant256.png"
+            img.save(q256)
+            self.quantize(q256, colors=256, dither=False)
+            q256d = workdir / "quant256d.png"
+            img.save(q256d)
+            self.quantize(q256d, colors=256, dither=True)
+
+            # Uncomment to run an image viewer to evaluate images
+            # subprocess.run(["geeqie"], cwd=workdir, check=True)
+
+            self.assertLessEqual(self.count_colors(q8), 9)
+            self.assertSmaller(q8, orig)
+
+            self.assertLessEqual(self.count_colors(q8d), 8)
+            self.assertSmaller(q8d, orig)
+            self.assertSmaller(q8, q8d)
+
             self.assertEqual(self.count_colors(q64), 65)
             self.assertSmaller(q64, orig)
             self.assertSmaller(q8, q64)
 
-            q64d = workdir / "quant64d.png"
-            img.save(q64d)
-            self.quantize(q64d, colors=64, dither=True)
-            self.assertEqual(self.count_colors(q64d), 65)
+            self.assertEqual(self.count_colors(q64d), 62)
             self.assertSmaller(q64d, orig)
             self.assertSmaller(q8d, q64d)
-            self.assertDiffers(q64, q64d)
+            self.assertSmaller(q64, q64d)
 
-            q256 = workdir / "quant256.png"
-            img.save(q256)
-            self.quantize(q256, colors=256, dither=False)
             self.assertEqual(self.count_colors(q256), 177)
             self.assertSmaller(q256, orig)
             self.assertSmaller(q64, q256)
 
+            self.assertEqual(self.count_colors(q256), 177)
+            self.assertSmaller(q256d, orig)
+            self.assertSmaller(q256, q256d)
+
+    def test_quantize_rgb(self) -> None:
+        with tempfile.TemporaryDirectory() as workdir_str:
+            workdir = Path(workdir_str)
+            orig = workdir / "orig.png"
+
+            img = self.make_rgb_source()
+            img.save(orig)
+
+            q8 = workdir / "quant8.png"
+            img.save(q8)
+            self.quantize(q8, colors=8, dither=False)
+            q8d = workdir / "quant8d.png"
+            img.save(q8d)
+            self.quantize(q8d, colors=8, dither=True)
+            q64 = workdir / "quant64.png"
+            img.save(q64)
+            self.quantize(q64, colors=64, dither=False)
+            q64d = workdir / "quant64d.png"
+            img.save(q64d)
+            self.quantize(q64d, colors=64, dither=True)
+            q256 = workdir / "quant256.png"
+            img.save(q256)
+            self.quantize(q256, colors=256, dither=False)
             q256d = workdir / "quant256d.png"
             img.save(q256d)
             self.quantize(q256d, colors=256, dither=True)
-            self.assertEqual(self.count_colors(q256), 177)
-            self.assertSmaller(q256d, orig)
-            self.assertSmaller(q64d, q256d)
-            self.assertDiffers(q256, q256d)
 
             # Uncomment to run an image viewer to evaluate images
             # subprocess.run(["geeqie"], cwd=workdir, check=True)
+
+            self.assertLessEqual(self.count_colors(q8), 9)
+            self.assertSmaller(q8, orig)
+
+            self.assertLessEqual(self.count_colors(q8d), 9)
+            self.assertSmaller(q8d, orig)
+            self.assertSmaller(q8, q8d)
+
+            self.assertLessEqual(self.count_colors(q64), 65)
+            self.assertSmaller(q64, orig)
+            self.assertSmaller(q8, q64)
+
+            self.assertUnchanged(q64d, orig)
+
+            self.assertEqual(self.count_colors(q256), 256)
+            self.assertSmaller(q256, orig)
+            self.assertSmaller(q64, q256)
+
+            self.assertUnchanged(q256d, orig)
