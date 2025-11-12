@@ -1,6 +1,8 @@
 ---
 flavours:
  - name: ita
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -46,6 +48,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: ita_small
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -91,6 +95,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: ita_web
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:

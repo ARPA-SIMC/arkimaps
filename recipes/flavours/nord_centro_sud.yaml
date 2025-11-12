@@ -1,6 +1,8 @@
 ---
 flavours:
  - name: nord
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -48,6 +50,8 @@ flavours:
      add_geopoints:
        points: puntiCitta
  - name: centro
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -94,6 +98,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: sud
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:

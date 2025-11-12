@@ -1,6 +1,8 @@
 ---
 flavours:
  - name: adriatic
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -47,6 +49,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: sea_emr
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -93,6 +97,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: sea_sne
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -139,6 +145,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: sea_tos
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -185,6 +193,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: sea_cam
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -231,6 +241,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: sea_mar
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -277,6 +289,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: sea_ita
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -323,6 +337,8 @@ flavours:
      add_symbols:
        skip: yes
  - name: mediterranean
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:

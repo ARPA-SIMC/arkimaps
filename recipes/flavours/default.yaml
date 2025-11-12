@@ -1,6 +1,8 @@
 ---
 flavours:
  - name: default
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:

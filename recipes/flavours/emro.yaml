@@ -1,6 +1,8 @@
 ---
 flavours:
  - name: emro
+   postprocess:
+     - type: quantize
    steps:
      add_basemap:
        params:
@@ -39,6 +41,8 @@ flavours:
      add_geopoints:
        points: puntiCitta
  - name: emro_web
+   postprocess:
+     - type: quantize
    postprocess:
      - type: cutshape
        shapefile: "emro.shp"
