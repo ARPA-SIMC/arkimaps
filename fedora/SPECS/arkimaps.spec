@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.34
+Version:        1.35
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,10 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Wed Nov 12 2025 Daniele Branchini  <dbranchini@arpae.it> - 1.35-1
+- Added new `quantize` postprocessor (#184)
+- Fixed wind flags circles
+
 * Thu Apr 10 2025 Daniele Branchini <dbranchini@arpae.it> - 1.34-1
 - Added cape+cin products for IFS grib2
 - Updated contour for capeshear

@@ -1,6 +1,7 @@
-# New in version UNRELEASED
+# New in version 1.35
 
 * Added new `quantize` postprocessor, taking argument `colors: int = 256` and `dither: bool = True` (#184)
+* Fixed wind flags circles
 
 # New in version 1.34
 

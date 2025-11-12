@@ -6,7 +6,7 @@ import sys
 from arkimapslib import cli
 from arkimapslib.cmdline import Fail, Success
 
-VERSION = "1.34"
+VERSION = "1.35"
 
 
 def main():
