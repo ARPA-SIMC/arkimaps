@@ -1,3 +1,7 @@
+# New in version 1.36
+
+* Updated hzero contouring
+
 # New in version 1.35
 
 * Added new `quantize` postprocessor, taking argument `colors: int = 256` and `dither: bool = True` (#184)
