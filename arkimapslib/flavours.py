@@ -97,6 +97,9 @@ class Flavour(RootComponent[SPEC], ABC):
     def __str__(self):
         return self.name
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.name}, defined_in={self.defined_in})"
+
     def summarize(self) -> Dict[str, Any]:
         """
         Return a structure describing this Flavour, to use for the render order
@@ -142,8 +145,7 @@ class Flavour(RootComponent[SPEC], ABC):
         """
         res: List[str] = []
         for input_name in self.list_inputs(recipe):
-            for inp in pantry.inputs[input_name]:
-                inp.add_all_inputs(pantry, res)
+            pantry.inputs.add_inputs_recursive(input_name, res)
         return res
 
     def list_inputs(self, recipe: "recipes.Recipe") -> List[str]:

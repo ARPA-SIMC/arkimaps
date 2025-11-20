@@ -100,6 +100,19 @@ class Inputs:
                 if stats.used_by or stats.computation_log:
                     summary.add(inp.name, stats)
 
+    def add_inputs_recursive(self, name: str, res: List[str]) -> None:
+        """
+        Add to res the name of this input, and all inputs of this input, and
+        their inputs, recursively
+        """
+        if name in res:
+            return
+        res.append(name)
+        for inp in self[name]:
+            for other in inp.get_all_inputs():
+                for inp in self[other]:
+                    self.add_inputs_recursive(other, res)
+
 
 class InputSpec(BaseDataModel):
     """
@@ -180,18 +193,6 @@ class Input(RootComponent[SPEC], ABC):
         Return all names of inputs used by this input
         """
         return []
-
-    def add_all_inputs(self, pantry: "pantry.Pantry", res: List[str]):
-        """
-        Add to res the name of this input, and all inputs of this input, and
-        their inputs, recursively
-        """
-        if self.name in res:
-            return
-        res.append(self.name)
-        for name in self.get_all_inputs():
-            for inp in pantry.inputs[name]:
-                inp.add_all_inputs(pantry, res)
 
     def get_instants(self, pantry: "pantry.DiskPantry") -> Dict[Optional[Instant], "InputFile"]:
         """
