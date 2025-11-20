@@ -1,3 +1,7 @@
+# New in version 1.37
+
+* Fixed issue in multiple inputs recipes (#185)
+
 # New in version 1.36
 
 * Updated hzero contouring
