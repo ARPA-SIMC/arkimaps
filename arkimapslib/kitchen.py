@@ -1,6 +1,7 @@
 # from __future__ import annotations
 import contextlib
 import datetime
+import logging
 import os
 from pathlib import Path
 import tempfile
@@ -27,6 +28,8 @@ from .definitions import Definitions
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
 
+log = logging.getLogger("arkimaps.kitchen")
+
 
 class Kitchen:
     """
@@ -48,14 +51,15 @@ class Kitchen:
 
     def list_inputs(self, flavours: List[Flavour]) -> Set[str]:
         """
-        Filter the available of recipes according the flavours' recipe filters,
-        and return the names of all possible inputs that can be used by the
-        remaining recipes
+        Filter the available list of recipes according the flavours' recipe
+        filters, and return the names of all possible inputs that can be used
+        by them
         """
         all_inputs: Set[str] = set()
         for recipe in self.defs.recipes:
             for flavour in flavours:
                 if not flavour.allows_recipe(recipe):
+                    log.debug("%s: recipe not allowed by flavour %s", recipe, flavour)
                     continue
                 all_inputs.update(flavour.list_inputs_recursive(recipe, self.pantry))
         return all_inputs

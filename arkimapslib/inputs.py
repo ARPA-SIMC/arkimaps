@@ -811,6 +811,9 @@ class GroundToMSL(GribSetMixin[GribSetInputSpec]):
     NAME = "groundtomsl"
     Spec = GribSetInputSpec
 
+    def __str__(self) -> str:
+        return f"groundtomsl({', '.join(self.get_all_inputs())})"
+
     def generate(self, pantry: "pantry.DiskPantry"):
         if len(self.spec.inputs) != 2:
             raise RuntimeError(f"{self.name} has {len(self.spec.inputs)} inputs instead of 2")

@@ -285,8 +285,10 @@ if HAS_ARKIMET:
             for inps in self.inputs.values():
                 for inp in inps:
                     if getattr(inp.spec, "arkimet", None) == "skip":
+                        log.debug("%s: input skipped as it does not have an arkimet matcher", inp)
                         continue
                     if input_filter is not None and inp.name not in input_filter:
+                        log.debug("%s: input skipped as it does not match the input filter", inp)
                         continue
                     matcher = self.arkimet_matcher(inp)
                     if matcher is None:
