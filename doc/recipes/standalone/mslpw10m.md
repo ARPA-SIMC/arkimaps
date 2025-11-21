@@ -42,6 +42,12 @@ Mixer: **default**
     * Model **icon**:
         * **Preprocessing**: cat
         * **Inputs**: u10m, v10m
+* **ws10m**:
+    * **Arkimet matcher**: `product:GRIB2,00200,000,002,001,004,;level:GRIB2S,103,003,0000010000`
+    * **grib_filter matcher**: `shortName is "ws" and level == 10`
+* **wdir10m**:
+    * **Arkimet matcher**: `product:GRIB2,00200,000,002,000,004,;level:GRIB2S,103,003,0000010000`
+    * **grib_filter matcher**: `shortName is "wdir" and level == 10`
 * **mslp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,2`

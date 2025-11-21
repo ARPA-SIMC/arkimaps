@@ -1,29 +1,18 @@
-# hzero: Height of zero degree level
+# hwbt1: Height of one-degree wet-bulb temperature
 
 Mixer: **default**
 
-## Notes
-
-for IFS model it needs both "deg0l" and "z" variables
-
 ## Inputs
 
-* **hzero**:
-    * Model **cosmo**:
-        * **Arkimet matcher**: `product:GRIB1,80,201,84;level:GRIB1,4`
-        * **grib_filter matcher**: `shortName is "hzerocl"`
-    * Model **icon**:
-        * **Arkimet matcher**: `product:GRIB2,,,003,006,,;level:GRIB2D,004,000,0000000000,101,,`
-        * **grib_filter matcher**: `centre != 98 and shortName is "h" and editionNumber == 2`
-    * Model **ifs**:
-        * **Preprocessing**: groundtomsl
-        * **Inputs**: z, hzeroground
+* **hwbt1**:
+    * **Preprocessing**: groundtomsl
+    * **Inputs**: z, hwbt1ground
 * **z**:
     * **Arkimet matcher**: `product:GRIB1,98,128,129;level:GRIB1,1`
     * **grib_filter matcher**: `centre == 98 and shortName is "z"`
-* **hzeroground**:
-    * **Arkimet matcher**: `product:GRIB1,98,228,24;level:GRIB1,1`
-    * **grib_filter matcher**: `centre == 98 and shortName is "deg0l"`
+* **hwbt1ground**:
+    * **Arkimet matcher**: `product:GRIB1,98,228,48`
+    * **grib_filter matcher**: `centre == 98 and shortName is "hwbt1"`
 
 ## Steps
 
@@ -85,7 +74,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "hzero"
+  "grib": "hwbt1"
 }
 ```
 
@@ -158,7 +147,7 @@ With arguments:
     "legend": true,
     "legend_display_type": "continuous",
     "legend_title": true,
-    "legend_title_text": "Height of zero degree level (m)",
+    "legend_title_text": "Height of one-degree wet-bulb temperature (m)",
     "legend_text_colour": "black",
     "legend_text_font_size": 0.4,
     "legend_title_font_size": 0.5,

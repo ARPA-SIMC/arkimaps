@@ -1,0 +1,47 @@
+---
+description: Height of one-degree wet-bulb temperature
+inputs:
+ hwbt1ground:
+  - model: ifs
+    arkimet: product:GRIB1,98,228,48
+    eccodes: centre == 98 and shortName is "hwbt1"
+ hwbt1:
+  - model: ifs
+    type: groundtomsl
+    inputs: [z, hwbt1ground]
+    clip: "hwbt1[hwbt1 <= z] = -999"
+    grib_set:
+      shortName: hwbt1
+recipe:
+ - step: add_basemap
+ - step: add_coastlines_bg
+ - step: add_grib
+   grib: hwbt1
+ - step: add_contour
+   params:
+    contour: off
+    contour_shade: on
+    contour_shade_colour_method: list
+    contour_shade_colour_list: ["white", "black", "#999999", "#ab00ab", "#f727e6", "#f7a6f1",
+                               "#0000cd", "#1e90ff", "#87ceff", "#2e8b57", "#05cd05", "#90ee90",
+                               "#990000", "#b05109", "#ff3333", "#ff8000", "#f2ac33", "#ffe600",
+                               "#e6e6e6", "#727326", "#999933", "#bfbf40", "#cccc66", "#d9d98c"]
+    contour_shade_method: area_fill
+    contour_level_selection_type: list
+    contour_level_list: [-999, 0, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000,
+                        1100, 1200, 1300, 1400, 1500, 1600, 1800, 2000, 2250, 2500,
+                        3000, 3500, 5000]
+    legend: on
+    legend_display_type: continuous
+    legend_title: on
+    legend_title_text: "Height of one-degree wet-bulb temperature (m)"
+    legend_text_colour: black
+    legend_text_font_size: 0.4
+    legend_title_font_size: 0.5
+    legend_automatic_position: right
+ - step: add_coastlines_fg
+ - step: add_grid
+ - step: add_boundaries
+ - step: add_user_boundaries
+ - step: add_geopoints
+ - step: add_symbols

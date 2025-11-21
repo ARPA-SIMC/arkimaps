@@ -38,6 +38,12 @@ Mixer: **default**
     * Model **icon**:
         * **Arkimet matcher**: `product:GRIB2,,,002,003,,;level:GRIB2S,103,000,0000000010`
         * **grib_filter matcher**: `centre != 98 and shortName is "10v" and editionNumber == 2`
+* **ws10m**:
+    * **Arkimet matcher**: `product:GRIB2,00200,000,002,001,004,;level:GRIB2S,103,003,0000010000`
+    * **grib_filter matcher**: `shortName is "ws" and level == 10`
+* **wdir10m**:
+    * **Arkimet matcher**: `product:GRIB2,00200,000,002,000,004,;level:GRIB2S,103,003,0000010000`
+    * **grib_filter matcher**: `shortName is "wdir" and level == 10`
 
 ## Steps
 
