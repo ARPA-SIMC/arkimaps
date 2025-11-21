@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.37
+Version:        1.38
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Fri Nov 21 2025 Daniele Branchini  <dbranchini@arpae.it> - 1.38-1
+- Added recipe for height of one-degree wet-bulb temperature
+
 * Thu Nov 20 2025 Daniele Branchini  <dbranchini@arpae.it> - 1.37-1
 - Fixed issue in multiple inputs recipes (#185)
 

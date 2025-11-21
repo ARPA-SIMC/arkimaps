@@ -1,3 +1,7 @@
+# New in version 1.38
+
+* Added recipe for height of one-degree wet-bulb temperature
+
 # New in version 1.37
 
 * Fixed issue in multiple inputs recipes (#185)
