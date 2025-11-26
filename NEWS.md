@@ -1,3 +1,7 @@
+# New in version 1.39
+
+* Updated snow limit contouring
+
 # New in version 1.38
 
 * Added recipe for height of one-degree wet-bulb temperature
