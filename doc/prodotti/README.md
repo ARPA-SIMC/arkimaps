@@ -72,5 +72,5 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `frzrain`  | Freezing rain                                | [frzrain.png](frzrain.png)  | [frzrain.md](../recipes/frzrain.md) |
 | `precipitationtype` | Tipologia di precipitazione        | [precipitationtype.png](precipitationtype.png) | [precipitationtype.md](../recipes/precipitationtype.md) |
 | `snowlmt`  | Height of snow fall limit                    | [snowlmt.png](snowlmt.png)  | [snowlmt.md](../recipes/snowlmt.md) |
-| `wspeed10m` `wspeed250hPa` `wspeed500hPa` `wspeed700hPa` `wspeed850hPa` `wspeed925hPa` | Velocità del vento a vari livelli di pressione | | |
 | `hwbt1`    | Height of one-degree wet-bulb temperature   |  [hwbt1.png](hwbt1.png) | [hwbt1.md](../recipes/hwbt1.md) |
+| `wspeed10m` `wspeed250hPa` `wspeed500hPa` `wspeed700hPa` `wspeed850hPa` `wspeed925hPa` | Velocità del vento a vari livelli di pressione | | |
