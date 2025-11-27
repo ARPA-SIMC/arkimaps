@@ -1,3 +1,7 @@
+# New in version 1.40
+
+* Fixed decumulation for freezing rain (IFS)
+
 # New in version 1.39
 
 * Updated snow limit contouring

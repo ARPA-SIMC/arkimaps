@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.39
+Version:        1.40
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Nov 27 2025 Daniele Branchini  <dbranchini@arpae.it> - 1.40-1
+- Fixed decumulation for freezing rain (IFS)
+
 * Wed Nov 26 2025 Daniele Branchini  <dbranchini@arpae.it> - 1.39-1
 - Updated snow limit contouring
 
