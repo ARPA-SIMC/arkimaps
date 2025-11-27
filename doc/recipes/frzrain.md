@@ -4,6 +4,13 @@ Mixer: **default**
 
 ## Inputs
 
+* **frzraindec3h**:
+    * **Decumulation step**: 3
+    * **Preprocessing**: decumulate
+    * **Inputs**: frztp
+* **frztp**:
+    * **Preprocessing**: expr
+    * **Inputs**: frzrain
 * **frzrain**:
     * **Arkimet matcher**: `product:GRIB1,98,228,216`
     * **grib_filter matcher**: `shortName is "fzra"`
@@ -68,7 +75,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "frzrain"
+  "grib": "frzraindec3h"
 }
 ```
 
@@ -122,7 +129,7 @@ With arguments:
     "legend_text_colour": "black",
     "legend_text_font_size": 0.4,
     "legend_title_font_size": 0.5,
-    "legend_title_text": "Convective precipitation [mm]",
+    "legend_title_text": "Accumulated freezing rain [mm]",
     "legend_automatic_position": "right"
   }
 }
