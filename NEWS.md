@@ -1,3 +1,7 @@
+# New in version 1.41
+
+* Updated tpaperc contouring
+
 # New in version 1.40
 
 * Fixed decumulation for freezing rain (IFS)

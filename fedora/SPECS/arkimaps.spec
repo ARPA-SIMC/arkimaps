@@ -1,9 +1,9 @@
 %global releaseno 1
-# Note: define _srcarchivename in Travis build only.
+# Note: define _srcarchivename in CI build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.40
+Version:        1.41
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu Jan 29 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.41-1
+- Updated tpaperc contouring
+
 * Thu Nov 27 2025 Daniele Branchini  <dbranchini@arpae.it> - 1.40-1
 - Fixed decumulation for freezing rain (IFS)
 
