@@ -7,7 +7,7 @@ flavours:
          # Mediterranean
          page_id_line: off
          output_width: 1280
-         subpage_map_projection: mercator
+         subpage_map_projection: polar_stereographic
          subpage_lower_left_longitude: -8.0
          subpage_lower_left_latitude: 30.0
          subpage_upper_right_longitude: 36.0

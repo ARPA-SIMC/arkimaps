@@ -153,7 +153,7 @@ flavours:
          # costa Toscana
          page_id_line: off
          output_width: 1050
-         subpage_map_projection: mercator
+         subpage_map_projection: polar_stereographic
          subpage_lower_left_longitude: 9.5
          subpage_lower_left_latitude: 42.0
          subpage_upper_right_longitude: 12.0
@@ -201,7 +201,7 @@ flavours:
          # costa Campania
          page_id_line: off
          output_width: 900
-         subpage_map_projection: mercator
+         subpage_map_projection: polar_stereographic
          subpage_lower_left_longitude: 13.0
          subpage_lower_left_latitude: 39.5
          subpage_upper_right_longitude: 16.0
@@ -345,7 +345,7 @@ flavours:
          # mare Mediterraneo
          page_id_line: off
          output_width: 1050
-         subpage_map_projection: mercator
+         subpage_map_projection: polar_stereographic
          subpage_lower_left_longitude: -5.0
          subpage_lower_left_latitude: 30.0
          subpage_upper_right_longitude: 36.0
