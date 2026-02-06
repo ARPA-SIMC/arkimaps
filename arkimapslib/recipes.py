@@ -179,6 +179,7 @@ class RecipeStep:
             for k, v in self.step_class.DEFAULTS.items():
                 res.setdefault(k, v)
 
+        # Fold in extra elements by recursing into dictionaries
         if self.step_class.DEEP_DEFAULTS is not None:
             setdefault_deep(res, self.step_class.DEEP_DEFAULTS)
 
