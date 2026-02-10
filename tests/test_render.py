@@ -22,7 +22,7 @@ class TestRender(unittest.TestCase):
                 parts.append(
                     macro.mmap(
                         **{
-                            "subpage_map_projection": "mercator",
+                            "subpage_map_projection": "polar_stereographic",
                             "subpage_lower_left_longitude": 5.1,
                             "subpage_lower_left_latitude": 43.0,
                             "subpage_upper_right_longitude": 15.0,

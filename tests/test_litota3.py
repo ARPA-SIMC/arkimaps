@@ -47,7 +47,7 @@ class LITOTA3NordMixin:
         "output_width": 1000,
         "page_x_length": 38,
         "page_y_length": 24,
-        "subpage_map_projection": "mercator",
+        "subpage_map_projection": "polar_stereographic",
         "subpage_lower_left_latitude": 43.0,
         "subpage_lower_left_longitude": 5.1,
         "subpage_upper_right_latitude": 47.5,
