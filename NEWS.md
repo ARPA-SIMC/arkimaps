@@ -1,3 +1,7 @@
+# Newi in version _unreleased_
+
+* Updated lpi contouring
+
 # New in version 1.41
 
 * Updated tpaperc contouring
