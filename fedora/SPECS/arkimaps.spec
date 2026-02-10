@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.41
+Version:        1.42
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,11 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Feb 10 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.42-1
+- Increased thickness for sottozone ER in emro/nord
+- Updated lpi contouring
+- Removed mercator projection for wind thinning issues (rif #98)
+
 * Thu Jan 29 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.41-1
 - Updated tpaperc contouring
 

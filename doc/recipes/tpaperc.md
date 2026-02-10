@@ -120,7 +120,7 @@ With arguments:
       300.0,
       400.0,
       500.0,
-      1000.0
+      10000.0
     ],
     "contour_shade_colour_list": [
       "rgb(0.8,0,0)",

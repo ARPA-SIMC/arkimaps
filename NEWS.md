@@ -1,4 +1,4 @@
-# New in version _unreleased_
+# New in version 1.42
 
 * Increased thickness for sottozone ER in emro/nord
 * Updated lpi contouring

@@ -95,7 +95,7 @@ With arguments:
       16.0,
       18.0,
       20.0,
-      50.0
+      100.0
     ],
     "contour_shade_colour_method": "list",
     "contour_shade_colour_list": [
