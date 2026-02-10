@@ -1,4 +1,4 @@
-%global releaseno 1
+%global releaseno 2
 # Note: define _srcarchivename in CI build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue Feb 10 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.42-2
+- Fixed projection in tests
+
 * Tue Feb 10 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.42-1
 - Increased thickness for sottozone ER in emro/nord
 - Updated lpi contouring
