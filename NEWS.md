@@ -1,6 +1,8 @@
-# Newi in version _unreleased_
+# New in version _unreleased_
 
+* Increased thickness for sottozone ER in emro/nord
 * Updated lpi contouring
+* Removed mercator projection for wind thinning issues (rif #98)
 
 # New in version 1.41
 

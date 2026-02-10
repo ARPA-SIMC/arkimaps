@@ -36,8 +36,9 @@ flavours:
      add_user_boundaries:
        shape: sottozoneAllertaER
        params:
-         map_user_layer_colour: blue
+         map_user_layer_colour: black
          map_coastline_resolution: high
+         map_user_layer_thickness: 2
      add_geopoints:
        points: puntiCitta
  - name: emro_web
