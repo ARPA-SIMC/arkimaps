@@ -1,7 +1,8 @@
 [![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/rocky8.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
 [![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/rocky9.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
-[![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/fedora40.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
+[![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/rocky10.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
 [![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/fedora42.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
+[![Build Status](https://simc.arpae.it/moncic-ci/arkimaps/fedora44.png)](https://simc.arpae.it/moncic-ci/arkimaps/)
 [![Build Status](https://copr.fedorainfracloud.org/coprs/simc/stable/package/arkimaps/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/simc/stable/package/arkimaps/)
 
 # arkimaps
@@ -173,7 +174,7 @@ output, it's possible to add a `tile` keyword containing:
 
 ## Contact and copyright information
 
-arkimaps is Copyright (C) 2020-2023 ARPAE-SIMC <urpsim@arpae.it>
+arkimaps is Copyright (C) 2020-2026 ARPAE-SIMC <urpsim@arpae.it>
 
 arkimaps is Free Software, licensed under the terms of the GNU General Public
 License version 2.
