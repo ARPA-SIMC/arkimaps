@@ -162,6 +162,29 @@ inputs:
  uv925:
    type: cat
    inputs: [u925, v925]
+ u950:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,33;level:GRIB1,100,950
+     eccodes: centre != 98 and shortName is "u" and levelType == 100 and level == 950 and editionNumber == 1
+   - model: ifs
+     arkimet: product:GRIB1,98,128,131;level:GRIB1,100,950
+     eccodes: centre == 98 and shortName is "u" and levelType == 100 and level == 950
+   - model: icon
+     arkimet: product:GRIB2,,,002,002,,;level:GRIB2S,100,000,0000095000
+     eccodes: centre != 98 and shortName is "u" and typeOfLevel is "isobaricInhPa" and level == 950 and editionNumber == 2
+ v950:
+   - model: cosmo
+     arkimet: product:GRIB1,,2,34;level:GRIB1,100,950
+     eccodes: centre != 98 and shortName is "v" and levelType == 100 and level == 950 and editionNumber == 1
+   - model: ifs
+     arkimet: product:GRIB1,98,128,132;level:GRIB1,100,950
+     eccodes: centre == 98 and shortName is "v" and levelType == 100 and level == 950
+   - model: icon
+     arkimet: product:GRIB2,,,002,003,,;level:GRIB2S,100,000,0000095000
+     eccodes: centre != 98 and shortName is "v" and typeOfLevel is "isobaricInhPa" and level == 950 and editionNumber == 2
+ uv950:
+   type: cat
+   inputs: [u950, v950]
  upv:
    arkimet: product:GRIB1,98,128,131;level:GRIB1,117,2000
    eccodes: centre == 98 and shortName is "u" and levelType == 117 and level == 2000

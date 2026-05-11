@@ -1,3 +1,7 @@
+# New in version *unreleased*
+
+* Added product: integrated vapour transport
+
 # New in version 1.42
 
 * Increased thickness for sottozone ER in emro/nord

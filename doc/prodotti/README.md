@@ -52,6 +52,7 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `lpi`    | Lighting Potential Index                         | [lpi.png](lpi.png) | [lpi.md](../recipes/lpi.md) |
 | `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/standalone/viwvn.md) |
 | `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/standalone/viwve.md) |
+| `ivt`    | Integrated Vapour Tranport                       | [ivt.png](ivt.pg)      | [ivt.md](../recipes/standalone/ivt.md) |
 | `wmax`   | Raffica massima vento                          | [wmax.png](wmax.png)   | [wmax.md](../recipes/tiles/wmax.md)   |
 | `t2mavg` | Media giornaliera temperatura a 2 metri dal suolo  | [t2mavg.png](t2mavg.png) | [t2mavg.md](../recipes/t2mavg.md) |
 | `tground`| Temperatura a livello del suolo                  | [tground.png](tground.png "Temperatura a livello del suolo") | [tground.md](../recipes/tground.md) |
