@@ -5,8 +5,12 @@ Mixer: **default**
 ## Inputs
 
 * **viwvn**:
-    * **Arkimet matcher**: `product:GRIB2,98,192,162,72,5`
-    * **grib_filter matcher**: `shortName is "viwvn"`
+    * Model **any**:
+        * **Arkimet matcher**: `product:GRIB2,98,192,162,72,5`
+        * **grib_filter matcher**: `shortName is "viwvn" and editionNumber == 1`
+    * Model **ifs_g2**:
+        * **Arkimet matcher**: `product:GRIB2,98,0,1,151;level:GRIB2D,1,,,`
+        * **grib_filter matcher**: `shortName is "viwvn" and editionNumber == 2`
 * **mslp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,2`

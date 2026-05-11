@@ -3,9 +3,12 @@
 description: Vertical integral of eastward water vapour flux
 inputs:
  viwve:
-  - model: any
+  - model: ifs
     arkimet: product:GRIB2,98,192,162,71,5
-    eccodes: shortName is "viwve"
+    eccodes: shortName is "viwve" and editionNumber == 1
+  - model: ifs_g2
+    arkimet: product:GRIB2,98,0,1,150;level:GRIB2D,1,,,
+    eccodes: shortName is "viwve" and editionNumber == 2
 recipe:
  - step: add_basemap
  - step: add_coastlines_bg
