@@ -1,16 +1,16 @@
-# viwve: Vertical integral of eastward water vapour flux
+# standalone/viwvn: Vertical integral of northward water vapour flux
 
 Mixer: **default**
 
 ## Inputs
 
-* **viwve**:
-    * Model **ifs**:
-        * **Arkimet matcher**: `product:GRIB2,98,192,162,71,5`
-        * **grib_filter matcher**: `shortName is "viwve" and editionNumber == 1`
+* **viwvn**:
+    * Model **any**:
+        * **Arkimet matcher**: `product:GRIB2,98,192,162,72,5`
+        * **grib_filter matcher**: `shortName is "viwvn" and editionNumber == 1`
     * Model **ifs_g2**:
-        * **Arkimet matcher**: `product:GRIB2,98,0,1,150;level:GRIB2D,1,,,`
-        * **grib_filter matcher**: `shortName is "viwve" and editionNumber == 2`
+        * **Arkimet matcher**: `product:GRIB2,98,0,1,151;level:GRIB2D,1,,,`
+        * **grib_filter matcher**: `shortName is "viwvn" and editionNumber == 2`
 * **mslp**:
     * Model **cosmo**:
         * **Arkimet matcher**: `product:GRIB1,,2,2`
@@ -82,7 +82,7 @@ Add a grib file
 With arguments:
 ```
 {
-  "grib": "viwve"
+  "grib": "viwvn"
 }
 ```
 
@@ -126,7 +126,7 @@ With arguments:
     "contour_hilo": false,
     "legend": true,
     "legend_title": true,
-    "legend_title_text": "Vertical integral of eastward water vapour flux",
+    "legend_title_text": "Vertical integral of northward water vapour flux",
     "legend_display_type": "continuous",
     "legend_automatic_position": "right",
     "legend_text_colour": "black",

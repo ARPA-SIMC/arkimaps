@@ -50,8 +50,8 @@ gdal_translate -of Gtiff -a_srs 'EPSG:3857' -a_ullr 389618.2177764575 6446275.84
 | `sf1h` `sf3h` `sf6h` `sf12h` `sf24h` | Precipitazione nevosa totale cumulata su 1/3/6/12/24h     | [sf24h.png](sf24h.png)  |  [sf1h.md](../recipes/sf1h.md) [sf3h.md](../recipes/sf3h.md) [sf6h.md](../recipes/sf6h.md) [sf12h.md](../recipes/sf12h.md) [sf24h.md](../recipes/sf24h.md) |
 | `litota3` | Densità media fulminazioni nelle ultime 3h | [litota3.png](litota3.png "Densità fulminazioni 3h") | [litota3.md](../recipes/litota3.md) |
 | `lpi`    | Lighting Potential Index                         | [lpi.png](lpi.png) | [lpi.md](../recipes/lpi.md) |
-| `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/viwvn.md) |
-| `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/viwve.md) |
+| `viwvn`  | Vertical integral of northward water vapour flux | [viwvn.png](viwvn.png) | [viwvn.md](../recipes/standalone/viwvn.md) |
+| `viwvn`  | Vertical integral of eastward water vapour flux  | [viwve.png](viwve.png) | [viwve.md](../recipes/standalone/viwve.md) |
 | `wmax`   | Raffica massima vento                          | [wmax.png](wmax.png)   | [wmax.md](../recipes/tiles/wmax.md)   |
 | `t2mavg` | Media giornaliera temperatura a 2 metri dal suolo  | [t2mavg.png](t2mavg.png) | [t2mavg.md](../recipes/t2mavg.md) |
 | `tground`| Temperatura a livello del suolo                  | [tground.png](tground.png "Temperatura a livello del suolo") | [tground.md](../recipes/tground.md) |
