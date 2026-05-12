@@ -1,4 +1,4 @@
-# New in version *unreleased*
+# New in version 1.43
 
 * Added product: integrated vapour transport
 

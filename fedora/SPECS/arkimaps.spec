@@ -1,9 +1,9 @@
-%global releaseno 2
+%global releaseno 1
 # Note: define _srcarchivename in CI build only.
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.42
+Version:        1.43
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Tue May 12 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.43-1
+- Added product: integrated vapour transport
+
 * Tue Feb 10 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.42-2
 - Fixed projection in tests
 
