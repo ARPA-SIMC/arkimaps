@@ -169,7 +169,7 @@ With arguments:
     "legend_display_type": "continuous",
     "legend_automatic_position": "right",
     "legend_text_colour": "black",
-    "legend_text_font_size": 0.4,
+    "legend_text_font_size": 0.5,
     "legend_title_font_size": 0.5
   }
 }
@@ -201,15 +201,21 @@ With arguments:
     "contour_shade": false,
     "contour": true,
     "contour_level_selection_type": "interval",
-    "contour_interval": 4,
+    "contour_interval": 2,
+    "contour_line_style": "solid",
     "contour_line_colour": "black",
+    "contour_reference_level": 1000,
     "contour_line_thickness": 2,
-    "contour_highlight": false,
+    "contour_hilo": true,
+    "contour_hilo_type": "text",
+    "contour_lo_colour": "blue",
+    "contour_hi_colour": "red",
+    "contour_hilo_window_size": 5,
+    "contour_highlight_frequency": 100,
+    "contour_highlight_colour": "blue",
     "contour_label": true,
     "contour_label_height": 0.4,
     "contour_label_frequency": 2,
-    "contour_label_blanking": true,
-    "contour_label_colour": "navy",
     "legend": false
   }
 }
@@ -239,10 +245,18 @@ With arguments:
     "wind_arrow_head_shape": 0,
     "wind_arrow_head_ratio": 0.6,
     "wind_arrow_unit_velocity": 25,
-    "wind_flag_origin_marker": "off",
-    "wind_flag_cross_boundary": "on",
+    "wind_flag_origin_marker": false,
+    "wind_flag_cross_boundary": true,
     "wind_thinning_method": "automatic",
-    "wind_thinning_factor": 1
+    "wind_thinning_factor": 1,
+    "legend": true,
+    "legend_title": true,
+    "legend_title_text": "Integrated Vapour Transport (kg/ms)",
+    "legend_display_type": "continuous",
+    "legend_automatic_position": "right",
+    "legend_text_colour": "black",
+    "legend_text_font_size": 0.5,
+    "legend_title_font_size": 0.5
   }
 }
 ```
