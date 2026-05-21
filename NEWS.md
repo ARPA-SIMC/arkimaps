@@ -1,3 +1,7 @@
+# New in version 1.44
+
+* Added products: tp 1/6h + mslp
+
 # New in version 1.43
 
 * Added product: integrated vapour transport

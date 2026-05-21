@@ -3,7 +3,7 @@
 %{!?srcarchivename: %global srcarchivename %{name}-%{version}-%{releaseno}}
 
 Name:           arkimaps
-Version:        1.43
+Version:        1.44
 Release:        %{releaseno}
 Summary:        Meteo plot generator from grib data
 
@@ -90,6 +90,9 @@ Postprocessor for arkimet.
 %{_libdir}/arkimet/%{name}
 
 %changelog
+* Thu May 21 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.44-1
+- Added products: tp 1/6h + mslp
+
 * Tue May 12 2026 Daniele Branchini  <dbranchini@arpae.it> - 1.43-1
 - Added product: integrated vapour transport
 
