@@ -27,17 +27,16 @@ LEGEND_WIDTH_CM = 3
 LEGEND_HEIGHT_CM = 21
 
 
-class FlavourStep:
+class FlavourStepSpec(BaseDataModel):
     """
     Flavour configuration for a step
     """
 
-    def __init__(self, name: str, options: Optional[Kwargs] = None, **kw):
-        self.name = name
-        self.options: Kwargs = options if options is not None else {}
-
-    def get_param(self, name: str) -> Any:
-        return self.options.get(name)
+    skip: bool = False
+    params: Dict[str, Any] = pydantic.Field(default_factory=dict)
+    grib: Optional[str] = None
+    shape: Optional[str] = None
+    points: Optional[str] = None
 
 
 class FlavourSpec(BaseDataModel):
@@ -45,7 +44,7 @@ class FlavourSpec(BaseDataModel):
     Data model for Flavours
     """
 
-    steps: Dict[str, Any] = pydantic.Field(default_factory=dict)
+    steps: Dict[str, Dict[str, Any]] = pydantic.Field(default_factory=dict)
     postprocess: List[Dict[str, Any]] = pydantic.Field(default_factory=list)
     recipes_filter: List[str] = pydantic.Field(default_factory=list)
 
@@ -74,10 +73,6 @@ class Flavour(RootComponent[SPEC], ABC):
         self.recipes_filter: List[re.Pattern] = []
         for expr in self.spec.recipes_filter:
             self.recipes_filter.append(re.compile(fnmatch.translate(expr)))
-
-        self.steps: Dict[str, FlavourStep] = {}
-        for name, options in self.spec.steps.items():
-            self.steps[name] = FlavourStep(name, options)
 
         self.postprocessors: List[Postprocessor] = []
         for desc in self.spec.postprocess:
@@ -130,14 +125,14 @@ class Flavour(RootComponent[SPEC], ABC):
                 return True
         return False
 
-    def step_config(self, name: str) -> FlavourStep:
+    def step_config(self, name: str) -> FlavourStepSpec:
         """
         Return a FlavourStep object for the given step name
         """
-        res = self.steps.get(name)
-        if res is None:
-            res = FlavourStep(name)
-        return res
+        args = self.spec.steps.get(name)
+        if args is None:
+            return FlavourStepSpec()
+        return FlavourStepSpec(**args)
 
     def list_inputs_recursive(self, recipe: "recipes.Recipe", pantry: "pantry.Pantry") -> List[str]:
         """

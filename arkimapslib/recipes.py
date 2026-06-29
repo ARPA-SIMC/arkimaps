@@ -171,8 +171,16 @@ class RecipeStep:
         res = self.args.copy()
 
         # Add missing bits from flavour
-        for k, v in flavour_step.options.items():
-            res.setdefault(k, v)
+        if flavour_step.params:
+            res.setdefault("params", flavour_step.params)
+        if flavour_step.grib is not None:
+            res.setdefault("grib", flavour_step.grib)
+        if flavour_step.shape is not None:
+            res.setdefault("shape", flavour_step.shape)
+        if flavour_step.points is not None:
+            res.setdefault("points", flavour_step.points)
+        if flavour_step.skip:
+            res.setdefault("skip", flavour_step.skip)
 
         # Add missing bits from step class defaults
         if self.step_class.DEFAULTS is not None:
