@@ -1,9 +1,9 @@
 # from __future__ import annotations
 from abc import ABC
-from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING, TypeVar
+from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING, Type, TypeVar
 
 from .models import BaseDataModel, pydantic
-from .component import Component
+from .component import Component, InvalidComponentError
 
 if TYPE_CHECKING:
     from . import inputs
@@ -11,6 +11,10 @@ if TYPE_CHECKING:
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
+
+
+class InvalidStepError(InvalidComponentError):
+    """Exception raised when a step is badly defined."""
 
 
 class StepSpec(BaseDataModel):
@@ -21,14 +25,26 @@ class StepSpec(BaseDataModel):
 
 SPEC = TypeVar("SPEC", bound=StepSpec)
 
+REGISTRY: "Dict[str, Type[Step[Any]]]" = {}
+
 
 class Step(Component[SPEC], ABC):
     """
     One recipe step provided by a Mixer
     """
 
+    STEP_NAME: str
     DEFAULTS: Optional[Dict[str, Any]] = None
     DEEP_DEFAULTS: Optional[Dict[str, Any]] = None
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Maintain the step registry."""
+        super().__init_subclass__(**kwargs)
+        if ABC in cls.__bases__:
+            return
+        if not hasattr(cls, "STEP_NAME"):
+            raise InvalidStepError(f"Step class {cls.__name__} is not abstract but lacks a STEP_NAME member")
+        REGISTRY[cls.STEP_NAME] = cls
 
     def __init__(
         self,
@@ -38,6 +54,11 @@ class Step(Component[SPEC], ABC):
     ) -> None:
         super().__init__(**kwargs)
         self.sources = sources
+
+    @classmethod
+    def step_by_name(cls, name: str) -> "Type[Step[Any]]":
+        """Find a step class by name."""
+        return REGISTRY[name]
 
     @classmethod
     def lint(cls, lint: "Lint", *, defined_in: str, name: str, step: str, args: Dict[str, Any]) -> Optional[StepSpec]:
@@ -349,6 +370,7 @@ class AddBasemap(MagicsMacro[AddBasemapSpec]):
     Add a base map
     """
 
+    STEP_NAME = "add_basemap"
     MACRO_NAME = "mmap"
     Spec = AddBasemapSpec
 
@@ -362,6 +384,7 @@ class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec]):
     Add background coastlines
     """
 
+    STEP_NAME = "add_coastlines_bg"
     MACRO_NAME = "mcoast"
     DEFAULTS = {
         "params": {
@@ -462,6 +485,7 @@ class AddSymbols(MagicsMacro[AddSymbolsSpec]):
     Add symbols settings
     """
 
+    STEP_NAME = "add_symbols"
     MACRO_NAME = "msymb"
     DEFAULTS = {
         "params": {
@@ -616,6 +640,7 @@ class AddContour(MagicsMacro[AddContourSpec]):
     Add contouring of the previous data
     """
 
+    STEP_NAME = "add_contour"
     MACRO_NAME = "mcont"
     DEFAULTS = {
         "params": {
@@ -699,6 +724,7 @@ class AddWind(MagicsMacro[AddWindSpec]):
     Add wind flag rendering of the previous data
     """
 
+    STEP_NAME = "add_wind"
     MACRO_NAME = "mwind"
     Spec = AddWindSpec
 
@@ -712,6 +738,7 @@ class AddGrid(MagicsMacro[AddGridSpec]):
     Add a coordinates grid
     """
 
+    STEP_NAME = "add_grid"
     MACRO_NAME = "mcoast"
     DEFAULTS = {
         "params": {
@@ -730,6 +757,7 @@ class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec]):
     Add foreground coastlines
     """
 
+    STEP_NAME = "add_coastlines_fg"
     MACRO_NAME = "mcoast"
     DEFAULTS = {
         "params": {
@@ -753,6 +781,7 @@ class AddBoundaries(MagicsMacro[AddBoundariesSpec]):
     Add political boundaries
     """
 
+    STEP_NAME = "add_boundaries"
     MACRO_NAME = "mcoast"
     DEFAULTS = {
         "params": {
@@ -794,6 +823,7 @@ class AddGrib(MagicsMacro[AddGribSpec]):
     Add a grib file
     """
 
+    STEP_NAME = "add_grib"
     MACRO_NAME = "mgrib"
     Spec = AddGribSpec
 
@@ -836,6 +866,7 @@ class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec]):
     Add user-defined boundaries from a shapefile
     """
 
+    STEP_NAME = "add_user_boundaries"
     MACRO_NAME = "mcoast"
     DEFAULTS = {
         "params": {
@@ -895,6 +926,7 @@ class AddGeopoints(MagicsMacro[AddGeopointsSpec]):
     Add geopoints
     """
 
+    STEP_NAME = "add_geopoints"
     MACRO_NAME = "mgeo"
     Spec = AddGeopointsSpec
 

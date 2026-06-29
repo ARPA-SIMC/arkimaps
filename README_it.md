@@ -118,7 +118,7 @@ definire degli input comuni.
 
 File statici come geopoint o shapefile possono essere distribuiti nel path
 speciale `$recipes/static` e configurati nelle ricette (vedi ad esempio:
-recipes/flavours/flavours_inputs.yaml)
+`recipes/flavours/flavours_inputs.yaml`)
 
 ## Creazione di nuove ricette
 

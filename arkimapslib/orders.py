@@ -53,8 +53,6 @@ class Order(ABC):
         self.flavour: "Flavour" = flavour
         # Reference to the recipe to use for summaries
         self.recipe: "Recipe" = recipe
-        # Name of the Mixer to use
-        self.mixer = recipe.spec.mixer
         # Dict mapping source names to pathnames of GRIB files
         self.input_files = input_files
         # Product instant

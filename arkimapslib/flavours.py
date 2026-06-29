@@ -1,4 +1,3 @@
-# from __future__ import annotations
 from abc import ABC
 import fnmatch
 import logging
@@ -11,6 +10,7 @@ from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor
 from .component import RootComponent, TypeRegistry
+from .steps import Step
 
 if TYPE_CHECKING:
     from . import pantry, recipes
@@ -132,6 +132,7 @@ class Flavour(RootComponent[SPEC], ABC):
         args = self.spec.steps.get(name)
         if args is None:
             return FlavourStepSpec()
+        # TODO: instantiate based on the type of the named step
         return FlavourStepSpec(**args)
 
     def list_inputs_recursive(self, recipe: "recipes.Recipe", pantry: "pantry.Pantry") -> List[str]:
@@ -324,7 +325,6 @@ class Tiled(Flavour[TiledSpec]):
         """
         Create an order to generate the legend for a tileset
         """
-        from .mixers import mixers
         from .recipes import RecipeStepSkipped
         from .steps import AddGrib, AddContour
 
@@ -351,10 +351,9 @@ class Tiled(Flavour[TiledSpec]):
 
         order_steps = []
 
-        step_collection = mixers.get_steps(recipe.spec.mixer)
-        add_basemap_class = step_collection.get("add_basemap")
+        add_basemap_class = Step.step_by_name("add_basemap")
         if add_basemap_class is None:
-            raise RuntimeError(f"step add_basemap not found in mixer {recipe.spec.mixer}")
+            raise RuntimeError(f"step add_basemap not found")
 
         # Configure the basemap to be just a canvas for the legend
         order_steps.append(

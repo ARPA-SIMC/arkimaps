@@ -11,6 +11,7 @@ from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .component import RootComponent, TypeRegistry
 from .utils import setdefault_deep
+from .steps import Step
 
 if TYPE_CHECKING:
     from . import flavours, inputs, pantry
@@ -171,6 +172,7 @@ class RecipeStep:
         res = self.args.copy()
 
         # Add missing bits from flavour
+        # TODO: delegate overriding to the flavour step config
         if flavour_step.params:
             res.setdefault("params", flavour_step.params)
         if flavour_step.grib is not None:
@@ -239,20 +241,10 @@ class RecipeSpec(BaseDataModel):
     notes: Optional[str] = None
     #: Long description for the recipe
     description: str = "Unnamed recipe"
-    #: Name of the mixer to use
-    mixer: str = "default"
     #: Informational fields about the recipe
     info: Optional[Dict[str, Any]] = None
     #: Unparsed recipe steps
     recipe: List[Dict[str, Any]] = pydantic.Field(default_factory=list)
-
-    @pydantic.validator("mixer")
-    def mixer_in_registry(cls, value):
-        from .mixers import mixers
-
-        if value not in mixers.registry:
-            raise ValueError(f"Unknown mixer: {value!r}. Use one of {', '.join(sorted(mixers.registry))}")
-        return value
 
 
 class Recipe(RootComponent[RecipeSpec]):
@@ -265,21 +257,18 @@ class Recipe(RootComponent[RecipeSpec]):
     Spec = RecipeSpec
 
     def __init__(self, *, config: Config, name: str, defined_in: str, args: Dict[str, Any]) -> None:
-        from .mixers import mixers
-
         super().__init__(config=config, name=name, defined_in=defined_in, args=args)
 
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []
-        step_collection = mixers.get_steps(self.spec.mixer)
         for s in self.spec.recipe:
             args = s.copy()
             step = args.pop("step", None)
             if step is None:
                 raise RuntimeError("recipe step does not contain a 'step' name")
-            step_class = step_collection.get(step)
+            step_class = Step.step_by_name(step)
             if step_class is None:
-                raise RuntimeError(f"step {step} not found in mixer {self.spec.mixer}")
+                raise RuntimeError(f"step {step} not found")
             id = args.pop("id", None)
             self.steps.append(
                 RecipeStep(
@@ -307,7 +296,6 @@ class Recipe(RootComponent[RecipeSpec]):
         # If elements aren't specified, use those from the parent recipe
         kwargs.setdefault("notes", parent.spec.notes)
         kwargs.setdefault("description", parent.spec.description)
-        kwargs.setdefault("mixer", parent.spec.mixer)
 
         # Build the new list of steps, based on the parent list
         steps: List[Dict[str, Any]] = []
@@ -344,8 +332,6 @@ class Recipe(RootComponent[RecipeSpec]):
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "w") as fd:
             print(f"# {self.name}: {self.spec.description}", file=fd)
-            print(file=fd)
-            print(f"Mixer: **{self.spec.mixer}**", file=fd)
             print(file=fd)
             if self.spec.notes:
                 print("## Notes", file=fd)
