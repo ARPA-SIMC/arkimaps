@@ -1,4 +1,3 @@
-# from __future__ import annotations
 import contextlib
 import datetime
 import logging
@@ -10,7 +9,7 @@ import subprocess
 import tempfile
 from abc import ABC
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable, List, NamedTuple, Optional, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generator, Iterable, List, NamedTuple, Optional, Tuple, Type, TypeVar, IO
 
 from .config import Config
 from .grib import GRIB
@@ -35,15 +34,15 @@ class Inputs:
 
     def __init__(self) -> None:
         # List of input definitions, indexed by name
-        self.inputs: Dict[str, List["Input"]] = {}
+        self.inputs: Dict[str, List["Input[Any]"]] = {}
 
-    def __getitem__(self, key: str) -> List["Input"]:
+    def __getitem__(self, key: str) -> List["Input[Any]"]:
         """
         Lookup an input by name
         """
         return self.inputs[key]
 
-    def get(self, name: str, model: Optional[str] = None) -> List["Input"]:
+    def get(self, name: str, model: Optional[str] = None) -> List["Input[Any]"]:
         """
         Lookup an input by name, optionally filtered by model
         """
@@ -52,13 +51,13 @@ class Inputs:
             inputs = [inp for inp in inputs if inp.spec.model is None or model == inp.spec.model]
         return inputs
 
-    def values(self) -> Iterable[List["Input"]]:
+    def values(self) -> Iterable[List["Input[Any]"]]:
         """
         Return all the inputs in the repository
         """
         return self.inputs.values()
 
-    def add(self, inp: "Input"):
+    def add(self, inp: "Input[Any]") -> None:
         """
         Add an Input definition
         """
@@ -85,7 +84,9 @@ class Inputs:
         # Input for a new model: store it
         old.append(inp)
 
-    def summarize(self, pantry: "pantry.Pantry", orders: List["orders.Order"], summary: "outputbundle.InputSummary"):
+    def summarize(
+        self, pantry: "pantry.Pantry", orders: List["orders.Order"], summary: "outputbundle.InputSummary"
+    ) -> None:
         """
         Return a JSON-serializable summary about input processing
         """
@@ -138,13 +139,15 @@ class Input(RootComponent[SPEC], ABC):
     from the YAML input definition
     """
 
-    __registry__ = TypeRegistry["Input"]()
+    __registry__ = TypeRegistry["Input[Any]"]()
     lookup = __registry__.lookup
 
     NAME: str
 
     @classmethod
-    def create(cls, *, config: Config, name: str, defined_in: str, type: str = "default", args: Dict[str, Any]):
+    def create(
+        cls, *, config: Config, name: str, defined_in: str, type: str = "default", args: Dict[str, Any]
+    ) -> "Input[Any]":
         """
         Instantiate an input by the ``type`` key in its recipe definition
         """
@@ -170,12 +173,12 @@ class Input(RootComponent[SPEC], ABC):
             pantry.input_stats[self].add_computation_log(elapsed, what)
             pantry.log_input_processing(self, what)
 
-    def __getstate__(self):
+    def __getstate__(self) -> Dict[str, Any]:
         return {
             "mgrib": self.mgrib,
         }
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         """
         Return data about this input in a jsonable dict
         """
@@ -203,7 +206,7 @@ class Input(RootComponent[SPEC], ABC):
         """
         return {}
 
-    def document(self, file, indent=4):
+    def document(self, file: IO[str], indent: int = 4) -> None:
         """
         Document the details about this input in Markdown
         """
@@ -233,13 +236,13 @@ class Static(Input[StaticInputSpec]):
     NAME = "static"
     Spec = StaticInputSpec
 
-    def __init__(self, **kw):
-        super().__init__(**kw)
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
         abspath, path = self.clean_path(self.spec.path)
         self.abspath = abspath
         self.spec.path = path
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         res = super().to_dict()
         res["abspath"] = self.abspath.as_posix()
         res["path"] = self.spec.path.as_posix()
@@ -264,7 +267,7 @@ class Static(Input[StaticInputSpec]):
             return abspath, abspath.relative_to(static_dir)
         raise RuntimeError(f"{path} does not exist inside {self.config.static_dir}")
 
-    def document(self, file, indent=4):
+    def document(self, file: IO[str], indent: int = 4) -> None:
         ind = " " * indent
         print(f"{ind}* **Path**: `{self.spec.path}`", file=file)
         super().document(file, indent)
@@ -283,7 +286,7 @@ class Shape(Static):
     NAME = "shape"
     Spec = StaticInputSpec
 
-    def clean_path(self, path: Path):
+    def clean_path(self, path: Path) -> Tuple[Path, Path]:
         """
         Resolve path into an absolute path, and turn it into a clean relative
         path inside it.
@@ -322,7 +325,7 @@ class Source(Input[SourceInputSpec]):
     NAME = "default"
     Spec = SourceInputSpec
 
-    def lint(self, lint: Lint):
+    def lint(self, lint: Lint) -> None:
         super().lint(lint)
         if not self.spec.arkimet and not self.spec.eccodes:
             lint.warn_input(
@@ -351,10 +354,10 @@ class Source(Input[SourceInputSpec]):
                     name=self.name,
                 )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Source:{self.spec.model}:{self.name}"
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         res = super().to_dict()
         res["arkimet"] = self.spec.arkimet
         res["eccodes"] = self.spec.eccodes
@@ -369,7 +372,7 @@ class Source(Input[SourceInputSpec]):
             res[instant] = pantry.get_input_file(self, instant)
         return res
 
-    def document(self, file, indent=4):
+    def document(self, file: IO[str], indent: int = 4) -> None:
         ind = " " * indent
         print(f"{ind}* **Arkimet matcher**: `{self.spec.arkimet}`", file=file)
         print(f"{ind}* **grib_filter matcher**: `{self.spec.eccodes}`", file=file)
@@ -384,10 +387,10 @@ class DerivedInputSpec(InputSpec):
     inputs: List[str] = pydantic.Field(default_factory=list, min_items=1)
 
     @pydantic.validator("inputs", pre=True, allow_reuse=True)
-    def string_to_list(cls, value):
+    def string_to_list(cls, value: Any) -> List[str]:
         if isinstance(value, str):
             return [value]
-        return value
+        return [str(x) for x in value]
 
 
 DSPEC = TypeVar("DSPEC", bound=DerivedInputSpec)
@@ -398,7 +401,7 @@ class Derived(Input[DSPEC], ABC):
     Base class for inputs derives from other inputs
     """
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         res = super().to_dict()
         res["inputs"] = self.spec.inputs
         return res
@@ -566,11 +569,11 @@ class Decumulate(VG6DStatProcMixin):
     NAME = "decumulate"
     Spec = VG6DStatProDerivedcInputSpec
 
-    def __init__(self, args: Dict[str, Any], **kwargs):
+    def __init__(self, args: Dict[str, Any], **kwargs: Any) -> None:
         args.setdefault("comp_stat_proc", "1")
         super().__init__(args=args, **kwargs)
 
-    def document(self, file, indent=4):
+    def document(self, file: IO[str], indent: int = 4) -> None:
         ind = " " * indent
         print(f"{ind}* **Decumulation step**: {self.spec.step}", file=file)
         super().document(file, indent)
@@ -584,11 +587,11 @@ class Average(VG6DStatProcMixin):
     NAME = "average"
     Spec = VG6DStatProDerivedcInputSpec
 
-    def __init__(self, args: Dict[str, Any], **kwargs):
+    def __init__(self, args: Dict[str, Any], **kwargs: Any) -> None:
         args.setdefault("comp_stat_proc", "254:0")
         super().__init__(args=args, **kwargs)
 
-    def document(self, file, indent=4):
+    def document(self, file: IO[str], indent: int = 4) -> None:
         ind = " " * indent
         print(f"{ind}* **Averaging step**: {self.spec.step}", file=file)
         super().document(file, indent)
@@ -645,7 +648,7 @@ class VG6DTransform(AlignInstants[VG6DTransformInputSpec]):
     NAME = "vg6d_transform"
     Spec = VG6DTransformInputSpec
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         res = super().to_dict()
         res["args"] = self.spec.args
         return res
@@ -688,7 +691,7 @@ class VG6DTransform(AlignInstants[VG6DTransformInputSpec]):
 
             pantry.add_instant(self, instant)
 
-    def document(self, file, indent=4):
+    def document(self, file: IO[str], indent: int = 4) -> None:
         ind = " " * indent
         print(f"{ind}* **vg6d_transform arguments**: {' '.join(shlex.quote(arg) for arg in self.spec.args)}", file=file)
         super().document(file, indent)
@@ -767,19 +770,19 @@ class GribSetMixin(Derived[GSPEC], ABC):
     Mixin used for inputs that take a `grib_set` argument
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.clip_fn = (
             compile(self.spec.clip, filename=self.defined_in, mode="exec") if self.spec.clip is not None else None
         )
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         res = super().to_dict()
         res["grib_set"] = self.spec.grib_set
         res["clip"] = self.spec.clip
         return res
 
-    def apply_grib_set(self, grib: GRIB):
+    def apply_grib_set(self, grib: GRIB) -> None:
         """
         Set key=value entries in the given grib from the `grib_set` input
         definition
@@ -896,11 +899,11 @@ class Expr(GribSetMixin[ExprInputSpec], AlignInstants[ExprInputSpec]):
     NAME = "expr"
     Spec = ExprInputSpec
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.expr_fn = compile(self.spec.expr, filename=self.defined_in, mode="exec")
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         res = super().to_dict()
         res["expr"] = self.spec.expr
         return res
@@ -1031,5 +1034,5 @@ class InputFile(NamedTuple):
     # Forecast step (if None, this input file is valid for all steps)
     instant: Optional[Instant]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.pathname

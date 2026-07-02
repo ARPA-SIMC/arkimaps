@@ -4,7 +4,7 @@ from arkimapslib.unittest import recipe_tests
 
 @recipe_tests("standalone/rhw700")
 class RHW700Mixin:
-    def test_dispatch(self):
+    def test_dispatch(self) -> None:
         self.maxDiff = None
 
         pantry_reftime = "2021_1_10_0_0_0"

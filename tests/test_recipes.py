@@ -8,10 +8,10 @@ from arkimapslib.config import Config
 
 
 class TestRecipeStep(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.config = Config()
 
-    def test_compile_args(self):
+    def test_compile_args(self) -> None:
         flavour = flavours.Simple(config=self.config, name="test", defined_in="test.yaml", args={})
         step = RecipeStep(
             config=self.config,
@@ -33,10 +33,10 @@ class TestRecipeStep(unittest.TestCase):
 
 
 class TestRecipe(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.config = Config()
 
-    def test_simple(self):
+    def test_simple(self) -> None:
         r = Recipe(
             config=self.config,
             name="test",
@@ -49,7 +49,7 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r.steps[0].name, "add_grib")
         self.assertEqual(r.steps[1].name, "add_user_boundaries")
 
-    def test_inherit_simple(self):
+    def test_inherit_simple(self) -> None:
         r1 = Recipe(
             config=self.config,
             name="test",
@@ -66,7 +66,7 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r2.steps[0].args, {"grib": "t2m"})
         self.assertEqual(r2.steps[1].name, "add_user_boundaries")
 
-    def test_inherit_change_args(self):
+    def test_inherit_change_args(self) -> None:
         r1 = Recipe(
             config=self.config,
             name="test",
@@ -94,7 +94,7 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r2.steps[0].args, {"grib": "t2mavg"})
         self.assertEqual(r2.steps[1].name, "add_user_boundaries")
 
-    def test_inherit_change_params(self):
+    def test_inherit_change_params(self) -> None:
         r1 = Recipe(
             config=self.config,
             name="test",
@@ -121,7 +121,7 @@ class TestRecipe(unittest.TestCase):
         self.assertEqual(r2.steps[0].id, "basemap")
         self.assertEqual(r2.steps[0].args, {"params": {"a": 1, "b": 3}})
 
-    def test_summarize(self):
+    def test_summarize(self) -> None:
         r = Recipe(
             config=self.config,
             name="test",
@@ -148,10 +148,10 @@ class TestRecipe(unittest.TestCase):
 
 
 class TestRecipes(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.config = Config()
 
-    def test_inherit(self):
+    def test_inherit(self) -> None:
         recipes = Recipes(config=self.config)
         recipes.add(
             name="test",
@@ -179,7 +179,7 @@ class TestRecipes(unittest.TestCase):
         self.assertEqual(r2.steps[0].args, {"grib": "t2mavg"})
         self.assertEqual(r2.steps[1].name, "add_user_boundaries")
 
-    def test_loop(self):
+    def test_loop(self) -> None:
         recipes = Recipes(config=self.config)
         recipes.add_derived(name="test1", defined_in="test1.yaml", extends="test2")
         recipes.add_derived(name="test2", defined_in="test2.yaml", extends="test1")

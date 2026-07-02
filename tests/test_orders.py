@@ -43,7 +43,7 @@ class TestTypes(unittest.TestCase):
         assert res is not None  # This one is for mypy
         return res
 
-    def test_georef_map_epsg(self):
+    def test_georef_map_epsg(self) -> None:
         georef = self._compute_georef(
             params={
                 "subpage_map_projection": "EPSG:3857",
@@ -63,7 +63,7 @@ class TestTypes(unittest.TestCase):
             },
         )
 
-    def test_georef_map_cylindrical(self):
+    def test_georef_map_cylindrical(self) -> None:
         georef = self._compute_georef(
             params={
                 "subpage_map_projection": "cylindrical",

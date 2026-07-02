@@ -6,22 +6,22 @@ from arkimapslib.utils import setdefault_deep
 
 
 class TestSetdefaultDeep(unittest.TestCase):
-    def test_empty(self):
+    def test_empty(self) -> None:
         d = {}
         setdefault_deep(d, {})
         self.assertEqual(d, {})
 
-    def test_set(self):
+    def test_set(self) -> None:
         d = {}
         setdefault_deep(d, {"a": 1, "b": {"c": 2}})
         self.assertEqual(d, {"a": 1, "b": {"c": 2}})
 
-    def test_merge(self):
+    def test_merge(self) -> None:
         d = {"a": 1}
         setdefault_deep(d, {"a": 2, "b": 3})
         self.assertEqual(d, {"a": 1, "b": 3})
 
-    def test_merge_deep(self):
+    def test_merge_deep(self) -> None:
         d = {"a": 1, "b": {"c": 1, "d": 2}}
         setdefault_deep(d, {"a": 2, "b": {"e": 3, "c": 2}})
         self.assertEqual(d, {"a": 1, "b": {"c": 1, "d": 2, "e": 3}})

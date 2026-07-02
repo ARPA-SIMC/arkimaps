@@ -82,7 +82,7 @@ class TestFlavour(unittest.TestCase):
         self.assertEqual(len(orders), 1)
         return orders[0]
 
-    def test_default_params(self):
+    def test_default_params(self) -> None:
         test_params = {
             "map_coastline_sea_shade_colour": "#f2f2f2",
             "map_grid": False,
@@ -104,7 +104,7 @@ class TestFlavour(unittest.TestCase):
             add_coastlines_fg = self.get_step(order, "add_coastlines_fg")
             self.assertEqual(add_coastlines_fg.spec.params.dict(exclude_unset=True), test_params)
 
-    def test_default_shape(self):
+    def test_default_shape(self) -> None:
         with self.kitchen(
             flavours=[
                 flavour("test", steps={"add_user_boundaries": {"shape": "test"}}),
@@ -123,7 +123,7 @@ class TestFlavour(unittest.TestCase):
             add_user_boundaries = self.get_step(order, "add_user_boundaries")
             self.assertEqual(add_user_boundaries.spec.shape, "test")
 
-    def test_step_filter(self):
+    def test_step_filter(self) -> None:
         with self.kitchen(
             flavours=[
                 flavour("default"),
@@ -139,7 +139,7 @@ class TestFlavour(unittest.TestCase):
             order = self.make_order(kitchen, "test", "t2m")
             self.assertEqual([x.name for x in order.order_steps], ["add_grib"])
 
-    def test_recipe_filter(self):
+    def test_recipe_filter(self) -> None:
         with self.kitchen(
             flavours=[
                 flavour("default"),
@@ -156,7 +156,7 @@ class TestFlavour(unittest.TestCase):
             orders = kitchen.make_orders(flavour=kitchen.defs.flavours["test"])
             self.assertCountEqual([(o.recipe.name, o.instant.step) for o in orders], [("t2m", 12)])
 
-    def test_recipe_filter_subdir(self):
+    def test_recipe_filter_subdir(self) -> None:
         with self.kitchen(
             flavours=[
                 flavour("default"),
@@ -184,7 +184,7 @@ class TestFlavour(unittest.TestCase):
         self.assertEqual(params.subpage_y_position, 0)
         self.assertEqual(params.output_width, 256 * size_x)
 
-    def test_tiled(self):
+    def test_tiled(self) -> None:
         with self.kitchen(
             flavours=[flavour("test", tile={"lat_min": 30.0, "lat_max": 50.0, "lon_min": 0.0, "lon_max": 20.0})],
             recipes={
@@ -236,7 +236,7 @@ class TestFlavour(unittest.TestCase):
             self.assertEqual(params.layout, "test")
             self.assertTileSize(params, 2, 4)
 
-    def test_tiled1(self):
+    def test_tiled1(self) -> None:
         with self.kitchen(
             flavours=[
                 flavour(

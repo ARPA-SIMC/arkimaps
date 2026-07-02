@@ -4,7 +4,7 @@ from arkimapslib.unittest import recipe_tests
 
 @recipe_tests("sf3h", models=["Cosmo"])
 class SF3HCosmoMixin:
-    def test_process(self):
+    def test_process(self) -> None:
         self.maxDiff = None
         pantry_reftime = "2021_1_10_0_0_0"
         self.fill_pantry(
@@ -44,7 +44,7 @@ class SF3HCosmoMixin:
 
 @recipe_tests("sf3h", models=["Cosmo"])
 class SF3HNoConvMixin:
-    def test_process(self):
+    def test_process(self) -> None:
         self.maxDiff = None
         pantry_reftime = "2021_1_10_0_0_0"
         self.fill_pantry(
@@ -76,7 +76,7 @@ class SF3HNoConvMixin:
 
 @recipe_tests("sf3h", models=["IFS"])
 class SF3HIFSMixin:
-    def test_process(self):
+    def test_process(self) -> None:
         self.maxDiff = None
         pantry_reftime = "2021_1_10_0_0_0"
         self.fill_pantry(expected=[f"{self.model_name}_sf_{pantry_reftime}+{step}.grib" for step in range(3, 13, 3)])

@@ -4,7 +4,7 @@ from arkimapslib.unittest import recipe_tests
 
 @recipe_tests("t2mavg")
 class T2MAVGMixin:
-    def test_dispatch(self):
+    def test_dispatch(self) -> None:
         self.fill_pantry()
 
         orders = self.make_orders()

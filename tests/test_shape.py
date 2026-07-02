@@ -10,10 +10,10 @@ from arkimapslib.unittest import Workdir
 
 
 class TestShape(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.workdir = Workdir(self)
 
-    def test_load_recipes(self):
+    def test_load_recipes(self) -> None:
         self.workdir.add_yaml_file(
             "flavours.yaml",
             {

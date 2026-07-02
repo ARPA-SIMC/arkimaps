@@ -10,28 +10,28 @@ from arkimapslib.lint import Lint
 
 
 class TestLint(Lint):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.step_messages: List[str] = []
 
-    def warn_input(self, msg: str, *, defined_in: str, name: str, **kwargs) -> None:
+    def warn_input(self, msg: str, *, defined_in: str, name: str, **kwargs: Any) -> None:
         raise AssertionError(f"input {name}: {msg}")
 
-    def warn_flavour(self, msg: str, *, defined_in: str, name: str, **kwargs) -> None:
+    def warn_flavour(self, msg: str, *, defined_in: str, name: str, **kwargs: Any) -> None:
         raise AssertionError(f"flavour {name}: {msg}")
 
-    def warn_postprocessor(self, msg: str, *, defined_in: str, name: str, **kwargs) -> None:
+    def warn_postprocessor(self, msg: str, *, defined_in: str, name: str, **kwargs: Any) -> None:
         raise AssertionError("postprocessor {name}: {msg}")
 
-    def warn_recipe(self, msg: str, *, defined_in: str, name: str, **kwargs) -> None:
+    def warn_recipe(self, msg: str, *, defined_in: str, name: str, **kwargs: Any) -> None:
         raise AssertionError(f"recipe {name}: {msg}")
 
-    def warn_recipe_step(self, msg: str, *, defined_in: str, name: str, step: str, **kwargs) -> None:
+    def warn_recipe_step(self, msg: str, *, defined_in: str, name: str, step: str, **kwargs: Any) -> None:
         self.step_messages.append(f"{name}: {msg}")
 
 
 class RecipeStepTestsBase(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.config = Config()
 
     def assert_lints(self, name: str, args: Dict[str, Any]) -> None:
@@ -48,7 +48,7 @@ class RecipeStepTestsBase(unittest.TestCase):
 
 
 class AddSymbolsTest(RecipeStepTestsBase):
-    def test_add_symbols(self):
+    def test_add_symbols(self) -> None:
         self.maxDiff = None
         self.assert_lints(
             "add_symbols",
