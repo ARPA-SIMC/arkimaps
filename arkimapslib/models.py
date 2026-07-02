@@ -12,3 +12,6 @@ class BaseDataModel(pydantic.BaseModel):
 
         validate_assignment = True
         extra = pydantic.Extra.forbid
+
+
+__all__ = ["BaseDataModel", "pydantic"]

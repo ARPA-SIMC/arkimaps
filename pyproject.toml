@@ -9,7 +9,8 @@ max-line-length = 120
 
 [tool.mypy]
 mypy_path = "stubs"
-
+packages = ["arkimapslib", "tests"]
+strict = true
 plugins = [
     "numpy.typing.mypy_plugin",
     "pydantic.mypy",

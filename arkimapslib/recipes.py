@@ -3,18 +3,17 @@ import inspect
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, TextIO, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, TextIO, Type
 
 from . import steps, toposort
 from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .component import RootComponent, TypeRegistry
-from .utils import setdefault_deep
 from .steps import Step
 
 if TYPE_CHECKING:
-    from . import flavours, inputs, pantry
+    from . import flavours, pantry
 
 log = logging.getLogger("arkimaps.recipes")
 
@@ -102,14 +101,6 @@ class Recipes:
         return res
 
 
-class RecipeStepSkipped(Exception):
-    """
-    Exception raised constructor to signal that the step should be skipped
-    """
-
-    pass
-
-
 class RecipeStep:
     """
     A step of a recipe, as defined in the recipe file.
@@ -124,76 +115,19 @@ class RecipeStep:
         config: Config,
         name: str,
         defined_in: str,
-        step_class: Type[steps.Step],
+        step_class: Type[steps.Step[Any, Any]],
         args: Dict[str, Any],
         id: Optional[str] = None,
     ):
         self.config = config
         self.name: str = name
         self.defined_in: str = defined_in
-        self.step_class: Type[steps.Step] = step_class
+        self.step_class: Type[steps.Step[Any, Any]] = step_class
         self.args: Dict[str, Any] = args
         self.id: Optional[str] = id
 
     def lint(self, lint: Lint) -> None:
-        args = self.compile_args(lint.flavour)
-        if bool(args.pop("skip", False)):
-            return
-        self.step_class.lint(lint, defined_in=self.defined_in, name=self.name, step=self.name, args=args)
-
-    def create_step(self, flavour: "flavours.Flavour", input_files: Dict[str, "inputs.InputFile"]) -> steps.Step:
-        """
-        Instantiate the Step
-        """
-        args = self.compile_args(flavour)
-        if bool(args.pop("skip", False)):
-            raise RecipeStepSkipped()
-        return self.step_class(
-            config=self.config, name=self.name, defined_in=self.defined_in, args=args, sources=input_files
-        )
-
-    def get_input_names(self, flavour: "flavours.Flavour") -> Set[str]:
-        """
-        Get the names of inputs needed by this step
-        """
-        args = self.compile_args(flavour)
-        if bool(args.pop("skip", False)):
-            return set()
-        return self.step_class.get_input_names(args)
-
-    def compile_args(self, flavour: "flavours.Flavour") -> Dict[str, Any]:
-        """
-        Compute the set of arguments for this step, based on flavour
-        information, arguments defined in the recipe, and step class defaults
-        """
-        flavour_step = flavour.step_config(self.name)
-
-        # Take recipe-defined args
-        res = self.args.copy()
-
-        # Add missing bits from flavour
-        # TODO: delegate overriding to the flavour step config
-        if flavour_step.params:
-            res.setdefault("params", flavour_step.params)
-        if flavour_step.grib is not None:
-            res.setdefault("grib", flavour_step.grib)
-        if flavour_step.shape is not None:
-            res.setdefault("shape", flavour_step.shape)
-        if flavour_step.points is not None:
-            res.setdefault("points", flavour_step.points)
-        if flavour_step.skip:
-            res.setdefault("skip", flavour_step.skip)
-
-        # Add missing bits from step class defaults
-        if self.step_class.DEFAULTS is not None:
-            for k, v in self.step_class.DEFAULTS.items():
-                res.setdefault(k, v)
-
-        # Fold in extra elements by recursing into dictionaries
-        if self.step_class.DEEP_DEFAULTS is not None:
-            setdefault_deep(res, self.step_class.DEEP_DEFAULTS)
-
-        return res
+        self.step_class.lint(lint, defined_in=self.defined_in, name=self.name, step=self.name, args=self.args)
 
     def derive(self) -> Dict[str, Any]:
         """
@@ -217,18 +151,17 @@ class RecipeStep:
             res["id"] = self.id
         return res
 
-    def document(self, flavour: "flavours.Flavour", file: TextIO):
+    def document(self, flavour: "flavours.Flavour[Any]", file: TextIO) -> None:
         """
         Document this recipe step
         """
-        args = self.compile_args(flavour)
         print(inspect.getdoc(self.step_class), file=file)
         print(file=file)
-        if args:
+        if self.args:
             print("With arguments:", file=file)
             print("```", file=file)
             # FIXME: dump as yaml?
-            print(json.dumps(args, indent=2), file=file)
+            print(json.dumps(self.args, indent=2), file=file)
             print("```", file=file)
 
 
@@ -328,7 +261,7 @@ class Recipe(RootComponent[RecipeSpec]):
             "info": self.spec.info or {},
         }
 
-    def document(self, flavour: "flavours.Flavour", pantry: "pantry.Pantry", dest: str):
+    def document(self, flavour: "flavours.Flavour[Any]", pantry: "pantry.Pantry", dest: str) -> None:
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "w") as fd:
             print(f"# {self.name}: {self.spec.description}", file=fd)

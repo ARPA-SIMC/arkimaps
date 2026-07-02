@@ -15,12 +15,12 @@ class TestRecipeStep(unittest.TestCase):
         flavour = flavours.Simple(config=self.config, name="test", defined_in="test.yaml", args={})
         step = RecipeStep(
             config=self.config,
-            name="test",
+            name="add_user_boundaries",
             defined_in="test.yaml",
             step_class=steps.AddUserBoundaries,
             args={"params": {"map_user_layer_colour": "red"}},
         )
-        compiled = step.compile_args(flavour)
+        compiled = flavour.compile_step_args(step)
         self.assertEqual(
             compiled,
             {

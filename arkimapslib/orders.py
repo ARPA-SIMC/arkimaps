@@ -10,7 +10,7 @@ from PIL import Image
 
 from . import outputbundle
 from .pygen import PyGen
-from .recipes import RecipeStepSkipped
+from .steps import StepSkipped
 
 if TYPE_CHECKING:
     from . import inputs, steps
@@ -165,8 +165,8 @@ class MapOrder(Order):
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
             try:
-                s = recipe_step.create_step(flavour, input_files)
-            except RecipeStepSkipped:
+                s = flavour.create_step(recipe_step, input_files)
+            except StepSkipped:
                 log.debug("%s: %s (skipped)", self, recipe_step.name)
                 continue
             self.order_steps.append(s)
@@ -247,7 +247,7 @@ class TileOrder(Order):
         # Instantiate order steps from recipe steps
         for recipe_step in recipe.steps:
             try:
-                compiled_step = recipe_step.create_step(flavour, input_files)
+                compiled_step = flavour.create_step(recipe_step, input_files)
                 if recipe_step.step_class is AddBasemap:
                     # Adjust basemap area
                     params = compiled_step.spec.params
@@ -272,7 +272,7 @@ class TileOrder(Order):
                 elif recipe_step.step_class is AddContour:
                     # Strip legend from add_contour
                     compiled_step.spec.params.legend = False
-            except RecipeStepSkipped:
+            except StepSkipped:
                 log.debug("%s: %s (skipped)", self, compiled_step.name)
                 continue
             self.order_steps.append(compiled_step)

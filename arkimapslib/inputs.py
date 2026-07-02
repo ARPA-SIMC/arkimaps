@@ -431,7 +431,7 @@ class Derived(Input[DSPEC], ABC):
             res[instant] = pantry.get_input_file(self, instant)
         return res
 
-    def document(self, file, indent=4):
+    def document(self, file: IO[str], indent: int = 4) -> None:
         ind = " " * indent
         print(f"{ind}* **Preprocessing**: {self.NAME}", file=file)
         print(f"{ind}* **Inputs**: {', '.join(self.spec.inputs)}", file=file)
@@ -449,7 +449,7 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec, ABC):
     comp_full_steps: bool
 
     @pydantic.root_validator(pre=True, allow_reuse=True)
-    def default_comp_full_steps(cls, values):
+    def default_comp_full_steps(cls, values: Any) -> Any:
         val = values.get("comp_full_steps")
         if val is None:
             val = int(values["step"]) != 24
@@ -459,14 +459,14 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec, ABC):
         return values
 
     @pydantic.validator("inputs", allow_reuse=True)
-    def only_one_input(cls, value):
+    def only_one_input(cls, value: Any) -> Any:
         if len(value) != 1:
             raise RuntimeError("only one source in put allowed")
         return value
 
 
 class VG6DStatProcMixin(Derived[VG6DStatProDerivedcInputSpec], ABC):
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         res = super().to_dict()
         res["step"] = self.spec.step
         return res

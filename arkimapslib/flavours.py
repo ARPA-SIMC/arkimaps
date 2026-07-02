@@ -10,11 +10,12 @@ from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .postprocess import Postprocessor
 from .component import RootComponent, TypeRegistry
-from .steps import Step
+from .steps import Step, StepFlavourSpec, StepSkipped
+from .types import Instant
 
 if TYPE_CHECKING:
     from . import pantry, recipes
-    from .inputs import InputFile, Instant
+    from .inputs import InputFile
 
 # Used for kwargs-style dicts
 Kwargs = Dict[str, Any]
@@ -27,26 +28,30 @@ LEGEND_WIDTH_CM = 3
 LEGEND_HEIGHT_CM = 21
 
 
-class FlavourStepSpec(BaseDataModel):
-    """
-    Flavour configuration for a step
-    """
-
-    skip: bool = False
-    params: Dict[str, Any] = pydantic.Field(default_factory=dict)
-    grib: Optional[str] = None
-    shape: Optional[str] = None
-    points: Optional[str] = None
-
-
 class FlavourSpec(BaseDataModel):
     """
     Data model for Flavours
     """
 
-    steps: Dict[str, Dict[str, Any]] = pydantic.Field(default_factory=dict)
+    steps: Dict[str, StepFlavourSpec] = pydantic.Field(default_factory=dict)
     postprocess: List[Dict[str, Any]] = pydantic.Field(default_factory=list)
     recipes_filter: List[str] = pydantic.Field(default_factory=list)
+
+    @pydantic.validator("steps", pre=True, allow_reuse=True)
+    def args_string_to_list(cls, value: Any) -> Dict[str, StepFlavourSpec]:
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise ValueError("steps is not a dict")
+        res: Dict[str, StepFlavourSpec] = {}
+        for name, args in value.items():
+            try:
+                step_cls = Step.step_by_name(name)
+            except KeyError:
+                raise ValueError(f"{name!r}: invalid step name")
+            fspec_cls = step_cls.FlavourSpec
+            res[name] = fspec_cls.parse_obj(args)
+        return res
 
 
 SPEC = TypeVar("SPEC", bound=FlavourSpec)
@@ -57,7 +62,7 @@ class Flavour(RootComponent[SPEC], ABC):
     Set of default settings used for generating a product
     """
 
-    __registry__ = TypeRegistry["Flavour"]()
+    __registry__ = TypeRegistry["Flavour[Any]"]()
     lookup = __registry__.lookup
 
     def __init__(
@@ -70,7 +75,7 @@ class Flavour(RootComponent[SPEC], ABC):
     ):
         super().__init__(config=config, name=name, defined_in=defined_in, args=args)
 
-        self.recipes_filter: List[re.Pattern] = []
+        self.recipes_filter: List[re.Pattern[str]] = []
         for expr in self.spec.recipes_filter:
             self.recipes_filter.append(re.compile(fnmatch.translate(expr)))
 
@@ -89,10 +94,10 @@ class Flavour(RootComponent[SPEC], ABC):
         for postproc in self.postprocessors:
             postproc.lint(lint=lint)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self.name}, defined_in={self.defined_in})"
 
     def summarize(self) -> Dict[str, Any]:
@@ -106,15 +111,15 @@ class Flavour(RootComponent[SPEC], ABC):
         }
 
     @classmethod
-    def create(cls, *, args=Dict[str, Any], **kwargs: Any) -> "Flavour":
-        tile_cls: Type[Flavour]
+    def create(cls, *, args: Dict[str, Any], **kwargs: Any) -> "Flavour[Any]":
+        tile_cls: Type[Flavour[Any]]
         if "tile" in args:
             tile_cls = cls.lookup("tiled")
         else:
             tile_cls = cls.lookup("simple")
         return tile_cls(args=args, **kwargs)
 
-    def allows_recipe(self, recipe: "recipes.Recipe"):
+    def allows_recipe(self, recipe: "recipes.Recipe") -> bool:
         """
         Check if a recipe should be generated for this flavour
         """
@@ -125,15 +130,46 @@ class Flavour(RootComponent[SPEC], ABC):
                 return True
         return False
 
-    def step_config(self, name: str) -> FlavourStepSpec:
+    def step_config(self, name: str) -> StepFlavourSpec:
         """
         Return a FlavourStep object for the given step name
         """
         args = self.spec.steps.get(name)
         if args is None:
-            return FlavourStepSpec()
-        # TODO: instantiate based on the type of the named step
-        return FlavourStepSpec(**args)
+            return Step.step_by_name(name).FlavourSpec()
+        return args
+
+    def create_step(
+        self, recipe_step: "recipes.RecipeStep", input_files: Dict[str, "inputs.InputFile"]
+    ) -> Step[Any, Any]:
+        """
+        Instantiate a recipe step.
+
+        :returns: the step, or None if the step should be skipped
+        """
+        args = self.compile_step_args(recipe_step)
+        return recipe_step.step_class(
+            config=self.config, name=recipe_step.name, defined_in=recipe_step.defined_in, args=args, sources=input_files
+        )
+
+    def get_step_input_names(self, recipe_step: "recipes.RecipeStep") -> Set[str]:
+        """
+        Get the names of inputs needed by this step
+        """
+        try:
+            args = self.compile_step_args(recipe_step)
+        except StepSkipped:
+            return set()
+        return recipe_step.step_class.get_input_names(args)
+
+    def compile_step_args(self, recipe_step: "recipes.RecipeStep") -> Dict[str, Any]:
+        """
+        Compute the set of arguments for this step, based on flavour
+        information, arguments defined in the recipe, and step class defaults
+        """
+        flavour_args = self.step_config(recipe_step.name)
+        step_class = Step.step_by_name(recipe_step.name)
+        return step_class.compile_args(flavour_args, recipe_step.args)
 
     def list_inputs_recursive(self, recipe: "recipes.Recipe", pantry: "pantry.Pantry") -> List[str]:
         """
@@ -154,7 +190,7 @@ class Flavour(RootComponent[SPEC], ABC):
 
         # Collect the inputs needed for all steps
         for recipe_step in recipe.steps:
-            for input_name in recipe_step.get_input_names(self):
+            for input_name in self.get_step_input_names(recipe_step):
                 if input_name in input_names:
                     continue
                 input_names.append(input_name)
@@ -167,7 +203,7 @@ class Flavour(RootComponent[SPEC], ABC):
         """
         input_names: Set[str] = set()
         for recipe_step in recipe.steps:
-            for input_name in recipe_step.get_input_names(self):
+            for input_name in self.get_step_input_names(recipe_step):
                 input_names.add(input_name)
         return input_names
 
@@ -176,7 +212,7 @@ class Flavour(RootComponent[SPEC], ABC):
         Scan a recipe and return a set with all the inputs it needs
         """
         # For each output instant, map inputs names to InputFile structures
-        inputs: Optional[Dict["Instant", Dict[str, "InputFile"]]] = None
+        inputs: Optional[Dict[Instant, Dict[str, "InputFile"]]] = None
         # Collection of input name to InputFile mappings used by all output steps
         inputs_for_all_instants: Dict[str, "InputFile"] = {}
 
@@ -186,7 +222,7 @@ class Flavour(RootComponent[SPEC], ABC):
         # Find the intersection of all steps available for all inputs needed
         for input_name in input_names:
             # Find available steps for this input
-            output_instants: Dict[Optional["Instant"], "InputFile"]
+            output_instants: Dict[Optional[Instant], "InputFile"]
             output_instants = pantry.get_instants(input_name)
 
             # Special handling for inputs that are not step-specific and
@@ -242,7 +278,7 @@ class Flavour(RootComponent[SPEC], ABC):
     def inputs_to_orders(
         self,
         recipe: "recipes.Recipe",
-        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+        inputs: Optional[Dict[Instant, Dict[str, "inputs.InputFile"]]],
         inputs_for_all_instants: Dict[str, "inputs.InputFile"],
     ) -> List["orders.Order"]:
         raise NotImplementedError(f"{self.__class__}.inputs_to_orders not implemented")
@@ -254,7 +290,7 @@ class Simple(Flavour[FlavourSpec]):
     def inputs_to_orders(
         self,
         recipe: "recipes.Recipe",
-        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+        inputs: Optional[Dict[Instant, Dict[str, "inputs.InputFile"]]],
         inputs_for_all_instants: Dict[str, "inputs.InputFile"],
     ) -> List["orders.Order"]:
         res: List["orders.Order"] = []
@@ -320,12 +356,11 @@ class Tiled(Flavour[TiledSpec]):
         return res
 
     def make_order_for_legend(
-        self, recipe: "recipes.Recipe", input_files: Dict[str, "inputs.InputFile"], output_instant: "inputs.Instant"
-    ):
+        self, recipe: "recipes.Recipe", input_files: Dict[str, "inputs.InputFile"], output_instant: Instant
+    ) -> Optional[orders.LegendOrder]:
         """
         Create an order to generate the legend for a tileset
         """
-        from .recipes import RecipeStepSkipped
         from .steps import AddGrib, AddContour
 
         # Identify relevant steps for legend generation
@@ -335,15 +370,15 @@ class Tiled(Flavour[TiledSpec]):
         for recipe_step in recipe.steps:
             try:
                 if recipe_step.name == "add_grib":
-                    grib_step = cast(AddGrib, recipe_step.create_step(self, input_files))
+                    grib_step = cast(AddGrib, self.create_step(recipe_step, input_files))
                 elif recipe_step.name == "add_contour":
-                    step = cast(AddContour, recipe_step.create_step(self, input_files))
+                    step = cast(AddContour, self.create_step(recipe_step, input_files))
                     if step.spec.params.legend:
                         contour_step = step
                 else:
                     # Ignore all other steps
                     pass
-            except RecipeStepSkipped:
+            except StepSkipped:
                 continue
 
         if not contour_step:
@@ -353,7 +388,7 @@ class Tiled(Flavour[TiledSpec]):
 
         add_basemap_class = Step.step_by_name("add_basemap")
         if add_basemap_class is None:
-            raise RuntimeError(f"step add_basemap not found")
+            raise RuntimeError("step add_basemap not found")
 
         # Configure the basemap to be just a canvas for the legend
         order_steps.append(
@@ -413,7 +448,7 @@ class Tiled(Flavour[TiledSpec]):
     def inputs_to_orders(
         self,
         recipe: "recipes.Recipe",
-        inputs: Optional[Dict["inputs.Instant", Dict[str, "inputs.InputFile"]]],
+        inputs: Optional[Dict[Instant, Dict[str, "inputs.InputFile"]]],
         inputs_for_all_instants: Dict[str, "inputs.InputFile"],
     ) -> List["orders.Order"]:
         res: List["orders.Order"] = []
