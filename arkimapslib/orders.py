@@ -11,6 +11,7 @@ from PIL import Image
 from . import outputbundle
 from .pygen import PyGen
 from .steps import StepSkipped
+from .types import Instant
 
 if TYPE_CHECKING:
     from . import inputs, steps
@@ -44,13 +45,13 @@ class Order(ABC):
     def __init__(
         self,
         *,
-        flavour: "Flavour",
+        flavour: "Flavour[Any]",
         recipe: "Recipe",
         input_files: Dict[str, "inputs.InputFile"],
-        instant: "inputs.Instant",
-    ):
+        instant: Instant,
+    ) -> None:
         # Reference to the flavour to use for summaries
-        self.flavour: "Flavour" = flavour
+        self.flavour: "Flavour[Any]" = flavour
         # Reference to the recipe to use for summaries
         self.recipe: "Recipe" = recipe
         # Dict mapping source names to pathnames of GRIB files
@@ -58,7 +59,7 @@ class Order(ABC):
         # Product instant
         self.instant = instant
         # List of recipe steps instantiated for this order
-        self.order_steps: List["steps.Step"] = []
+        self.order_steps: List["steps.Step[Any, Any]"] = []
         # Extra options to be passed to Magics' output() macro
         self.output_options: Dict[str, Any] = {}
 
@@ -69,12 +70,12 @@ class Order(ABC):
         self.render_time_ns: int = 0
 
     @abstractmethod
-    def print_python_function(self, function_name: str, gen: PyGen):
+    def print_python_function(self, function_name: str, gen: PyGen) -> None:
         """
         Print a function that renders this order
         """
 
-    def set_output(self, output: Output, timing: int = 0):
+    def set_output(self, output: Output, timing: int = 0) -> None:
         """
         Add a rendered output to this order
         """
@@ -83,7 +84,7 @@ class Order(ABC):
         self.output = output
         self.render_time_ns += timing
 
-    def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer):
+    def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer) -> None:
         """
         Add render results to a tarball
         """
@@ -136,7 +137,7 @@ class Order(ABC):
             "bbox": [min(lllon, urlon), min(lllat, urlat), max(lllon, urlon), max(lllat, urlat)],
         }
 
-    def summarize_outputs(self, products_info: outputbundle.ReftimeProducts):
+    def summarize_outputs(self, products_info: outputbundle.ReftimeProducts) -> None:
         """
         Add information about the images producted by this order to the
         products information of an output bundle
@@ -155,11 +156,11 @@ class MapOrder(Order):
     def __init__(
         self,
         *,
-        flavour: "Flavour",
+        flavour: "Flavour[Any]",
         recipe: "Recipe",
         input_files: Dict[str, "inputs.InputFile"],
-        instant: "inputs.Instant",
-    ):
+        instant: Instant,
+    ) -> None:
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
 
         # Instantiate order steps from recipe steps
@@ -171,13 +172,13 @@ class MapOrder(Order):
                 continue
             self.order_steps.append(s)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({os.path.basename(self.recipe.name)}{self.instant.step_suffix()})"
 
-    def print_python_function(self, function_name: str, gen: PyGen):
+    def print_python_function(self, function_name: str, gen: PyGen) -> None:
         """
         Print a function that renders this order
         """
@@ -215,16 +216,16 @@ class TileOrder(Order):
     def __init__(
         self,
         *,
-        flavour: "Flavour",
+        flavour: "Flavour[Any]",
         recipe: "Recipe",
         input_files: Dict[str, "inputs.InputFile"],
-        instant: "inputs.Instant",
+        instant: Instant,
         z: int,
         x: int,
         y: int,
         w: int = 1,
         h: int = 1,
-    ):
+    ) -> None:
         from .steps import AddBasemap, AddContour
 
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
@@ -277,16 +278,16 @@ class TileOrder(Order):
                 continue
             self.order_steps.append(compiled_step)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/"
             f"{self.z}/{self.x}/{self.y}+w{self.width}h{self.height}"
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({str(self)})"
 
-    def print_python_function(self, function_name: str, gen: PyGen):
+    def print_python_function(self, function_name: str, gen: PyGen) -> None:
         """
         Print a function that renders this order
         """
@@ -298,7 +299,7 @@ class TileOrder(Order):
         basename = f"{self.x}-{self.y}-{self.width}-{self.height}"
         gen.magics_renderer(function_name, self, relpath, basename)
 
-    def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer):
+    def add_to_bundle(self, workdir: str, bundle: outputbundle.Writer) -> None:
         """
         Add render results to a tarball
         """
@@ -325,7 +326,7 @@ class TileOrder(Order):
                     bundle.add_product(bundle_path, buf)
                     log.info("Rendered %s to %s", self, bundle_path)
 
-    def summarize_outputs(self, products_info: outputbundle.ReftimeProducts):
+    def summarize_outputs(self, products_info: outputbundle.ReftimeProducts) -> None:
         """
         Add information about the images producted by this order to the
         products information of an output bundle
@@ -365,10 +366,10 @@ class TileOrder(Order):
     def make_orders(
         cls,
         *,
-        flavour: "Flavour",
+        flavour: "Flavour[Any]",
         recipe: "Recipe",
         input_files: Dict[str, "inputs.InputFile"],
-        instant: "inputs.Instant",
+        instant: Instant,
         lat_min: float,
         lat_max: float,
         lon_min: float,
@@ -430,22 +431,22 @@ class LegendOrder(Order):
     def __init__(
         self,
         *,
-        flavour: "Flavour",
+        flavour: "Flavour[Any]",
         recipe: "Recipe",
         input_files: Dict[str, "inputs.InputFile"],
-        instant: "inputs.Instant",
-        order_steps: List["steps.Step"],
-    ):
+        instant: Instant,
+        order_steps: List["steps.Step[Any, Any]"],
+    ) -> None:
         super().__init__(flavour=flavour, recipe=recipe, input_files=input_files, instant=instant)
         self.order_steps.extend(order_steps)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{os.path.basename(self.recipe.name)}{self.instant.step_suffix()}/legend"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}({str(self)})"
 
-    def print_python_function(self, function_name: str, gen: PyGen):
+    def print_python_function(self, function_name: str, gen: PyGen) -> None:
         """
         Print a function that renders this order
         """

@@ -10,7 +10,7 @@ from arkimapslib.lint import Lint
 
 
 class TestLint(Lint):
-    def __init__(self, *args, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.step_messages: List[str] = []
 
@@ -64,3 +64,83 @@ class AddSymbolsTest(RecipeStepTestsBase):
                 }
             },
         )
+
+    def test_compile_args(self) -> None:
+        compile_args = steps.AddSymbols.compile_args
+        for fp, fdp, r, exp in (
+            # Recipe has priority over flavour and defaults
+            (
+                {"symbol_type": "fparam"},
+                None,
+                {"symbol_type": "recipe"},
+                {"symbol_type": "recipe"},
+            ),
+            # Flavour has priority over defaults
+            (
+                {"symbol_type": "fparam"},
+                None,
+                None,
+                {"symbol_type": "fparam"},
+            ),
+            # Defaults are used when nothing is specified
+            (
+                None,
+                None,
+                None,
+                {
+                    "legend": "off",
+                    "symbol_colour": "black",
+                    "symbol_height": 0.28,
+                    "symbol_marker_index": 15,
+                    "symbol_type": "marker",
+                },
+            ),
+            # Flavour default_params are applied over recipe
+            (
+                None,
+                {"symbol_text_position": "left"},
+                {"symbol_type": "recipe"},
+                {
+                    "symbol_type": "recipe",
+                    "symbol_text_position": "left",
+                },
+            ),
+            # Flavour default_params are applied over flavour
+            (
+                {"symbol_type": "flavour"},
+                {"symbol_text_position": "left"},
+                None,
+                {
+                    "symbol_type": "flavour",
+                    "symbol_text_position": "left",
+                },
+            ),
+            # Flavour default_params are applied over defaults
+            (
+                None,
+                {"symbol_text_position": "left"},
+                None,
+                {
+                    "legend": "off",
+                    "symbol_colour": "black",
+                    "symbol_height": 0.28,
+                    "symbol_marker_index": 15,
+                    "symbol_type": "marker",
+                    "symbol_text_position": "left",
+                },
+            ),
+        ):
+            with self.subTest(fp=fp, fdp=fdp, r=r):
+                fspec = steps.AddSymbolsFlavourSpec()
+                if fp is not None:
+                    fspec.params = steps.AddSymbolsParamsSpec.parse_obj(fp)
+                if fdp is not None:
+                    fspec.default_params = steps.AddSymbolsParamsSpec.parse_obj(fdp)
+                if r is not None:
+                    rargs = {"params": r}
+                else:
+                    rargs = {}
+                self.assertEqual(
+                    compile_args(fspec, rargs),
+                    {"params": exp},
+                )

@@ -44,7 +44,7 @@ class Kitchen:
     def __exit__(self, *args):
         return self.context_stack.__exit__(*args)
 
-    def list_inputs(self, flavours: List[Flavour]) -> Set[str]:
+    def list_inputs(self, flavours: List[Flavour[Any]]) -> Set[str]:
         """
         Filter the available list of recipes according the flavours' recipe
         filters, and return the names of all possible inputs that can be used
@@ -59,7 +59,7 @@ class Kitchen:
                 all_inputs.update(flavour.list_inputs_recursive(recipe, self.pantry))
         return all_inputs
 
-    def document_recipes(self, flavour: Flavour, path: str):
+    def document_recipes(self, flavour: Flavour[Any], path: str) -> None:
         """
         Generate markdown documentation for all the recipes found.
 
@@ -88,7 +88,7 @@ class WorkingKitchen(Kitchen):
             self.tempdir = None
             self.workdir = workdir
 
-    def fill_pantry(self, path: Optional[Path] = None, flavours: Optional[List[Flavour]] = None):
+    def fill_pantry(self, path: Optional[Path] = None, flavours: Optional[List[Flavour[Any]]] = None) -> None:
         """
         Fill the pantry from the given path or standard input
         """
@@ -98,7 +98,7 @@ class WorkingKitchen(Kitchen):
             all_inputs = self.list_inputs(flavours)
             self.pantry.fill(path, input_filter=all_inputs)
 
-    def make_orders(self, flavour: Union[Flavour, str], recipe: Optional[str] = None) -> List[orders.Order]:
+    def make_orders(self, flavour: Union[Flavour[Any], str], recipe: Optional[str] = None) -> List[orders.Order]:
         """
         Generate all possible orders for all available recipes
         """
@@ -121,7 +121,7 @@ class WorkingKitchen(Kitchen):
     def make_order(
         self,
         recipe: Recipe,
-        flavour: Flavour,
+        flavour: Flavour[Any],
         step: Union[None, int, str, ModelStep],
         reftime: Optional[datetime.datetime],
     ) -> orders.Order:
@@ -144,7 +144,7 @@ class WorkingKitchen(Kitchen):
 class ArkimetRecipesMixin(Kitchen):
     pantry: "pantry.ArkimetBasePantry"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         # Arkimet session
         #
         # Force directory segments so we can access each data by filesystem
@@ -178,7 +178,7 @@ class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
     Arkimet-based kitchen used to load recipes but not prepare products
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.pantry = pantry.ArkimetEmptyPantry(self.session, inputs=self.defs.inputs)
 
@@ -186,7 +186,7 @@ class ArkimetEmptyKitchen(ArkimetRecipesMixin, Kitchen):
 class ArkimetKitchen(ArkimetRecipesMixin, WorkingKitchen):
     pantry: "pantry.ArkimetPantry"
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         from .pantry import ArkimetPantry
 
@@ -198,12 +198,12 @@ class EccodesEmptyKitchen(Kitchen):
     Eccodes-based kitchen used to load recipes but not prepare products
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.pantry = pantry.EmptyPantry(inputs=self.defs.inputs)
 
 
 class EccodesKitchen(WorkingKitchen):
-    def __init__(self, *, grib_input=False, **kwargs):
+    def __init__(self, *, grib_input: bool = False, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.pantry = pantry.EccodesPantry(root=self.workdir, grib_input=grib_input, inputs=self.defs.inputs)

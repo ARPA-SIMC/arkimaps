@@ -1,5 +1,5 @@
-# from __future__ import annotations
 from abc import ABC
+import copy
 from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING, Type, TypeVar, Generic
 
 from .models import BaseDataModel, pydantic
@@ -37,10 +37,11 @@ class StepFlavourSpec(BaseDataModel):
 
     skip: bool = False
 
-    def apply(self, args: Dict[str, Any]) -> None:
-        """Apply this configuration to step arguments."""
-        if self.skip:
-            raise StepSkipped()
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        """Pick the initial values for the toplevel arguments."""
+
+    def fill_defaults(self, args: Dict[str, Any]) -> None:
+        """Fill missing entries with default values."""
 
 
 SPEC = TypeVar("SPEC", bound=StepSpec)
@@ -89,18 +90,24 @@ class Step(Component[SPEC], Generic[SPEC, FSPEC], ABC):
     @classmethod
     def compile_args(cls, flavour_args: FSPEC, recipe_args: Dict[str, Any]) -> Dict[str, Any]:
         """Compute step arguments from recipe and flavour arguments."""
+        if flavour_args.skip:
+            raise StepSkipped()
+
         # Take recipe-defined args
-        res = recipe_args.copy()
+        res = copy.deepcopy(recipe_args)
 
         # Add missing bits from flavour
-        flavour_args.apply(res)
+        flavour_args.select_initial(res)
 
         # Add missing bits from step class defaults
         if cls.DEFAULTS is not None:
             for k, v in cls.DEFAULTS.items():
                 res.setdefault(k, v)
 
-        # Fold in extra elements by recursing into dictionaries
+        # Fold in extra flavour elements by recursing into dictionaries
+        flavour_args.fill_defaults(res)
+
+        # Fold in extra step class elements by recursing into dictionaries
         if cls.DEEP_DEFAULTS is not None:
             setdefault_deep(res, cls.DEEP_DEFAULTS)
 
@@ -175,10 +182,13 @@ class MagicsMacroFlavourSpec(StepFlavourSpec):
     params: BaseMagicsParamsSpec = pydantic.Field(default_factory=BaseMagicsParamsSpec)
     default_params: BaseMagicsParamsSpec = pydantic.Field(default_factory=BaseMagicsParamsSpec)
 
-    def apply(self, args: Dict[str, Any]) -> None:
-        super().apply(args)
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        super().select_initial(args)
         if self.params.__fields_set__:
             args.setdefault("params", self.params.dict(exclude_unset=True))
+
+    def fill_defaults(self, args: Dict[str, Any]) -> None:
+        super().fill_defaults(args)
         if self.default_params.__fields_set__:
             if "params" not in args:
                 args["params"] = {}
@@ -945,8 +955,8 @@ class AddGribFlavourSpec(MagicsMacroFlavourSpec):
     default_params: AddGribParamsSpec = pydantic.Field(default_factory=AddGribParamsSpec)
     grib: Optional[str] = pydantic.Field(description="GRIB input name")
 
-    def apply(self, args: Dict[str, Any]) -> None:
-        super().apply(args)
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        super().select_initial(args)
         if self.grib is not None:
             args.setdefault("grib", self.grib)
 
@@ -1001,8 +1011,8 @@ class AddUserBoundariesFlavourSpec(MagicsMacroFlavourSpec):
     default_params: AddUserBoundariesParamsSpec = pydantic.Field(default_factory=AddUserBoundariesParamsSpec)
     shape: Optional[str] = pydantic.Field(default=None, description="Name of the shapefile to load")
 
-    def apply(self, args: Dict[str, Any]) -> None:
-        super().apply(args)
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        super().select_initial(args)
         if self.shape is not None:
             args.setdefault("shape", self.shape)
 
@@ -1074,8 +1084,8 @@ class AddGeopointsFlavourSpec(MagicsMacroFlavourSpec):
     default_params: AddGeopointsParamsSpec = pydantic.Field(default_factory=AddGeopointsParamsSpec)
     points: Optional[str] = pydantic.Field(default=None, description="Magics geopoints file name")
 
-    def apply(self, args: Dict[str, Any]) -> None:
-        super().apply(args)
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        super().select_initial(args)
         if self.points is not None:
             args.setdefault("points", self.points)
 
