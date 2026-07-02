@@ -35,8 +35,6 @@ class Definitions:
         """
         Load recipes from the given directory
         """
-        from .inputs import Input
-
         path = path.absolute()
         static_path = path / "static"
         if static_path not in self.config.static_dir:

@@ -1,4 +1,3 @@
-# from __future__ import annotations
 import contextlib
 import datetime
 import logging
@@ -6,8 +5,6 @@ import os
 from pathlib import Path
 import tempfile
 from typing import Any, Dict, List, Optional, Set, Union
-
-import yaml
 
 try:
     import arkimet
@@ -17,10 +14,8 @@ except ModuleNotFoundError:
     HAVE_ARKIMET = False
 
 from . import orders, pantry
-from .config import Config
 from .flavours import Flavour
 from .recipes import Recipe
-from .inputs import Inputs
 from .types import ModelStep
 from .definitions import Definitions
 

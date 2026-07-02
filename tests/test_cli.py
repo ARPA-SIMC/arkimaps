@@ -13,7 +13,7 @@ from arkimapslib import cli, outputbundle
 from arkimapslib.unittest import system_definitions
 
 
-class CLITest:
+class CLITest(unittest.TestCase):
     def create(self, cls: Type[cli.Command], *cmd: str):
         parser = argparse.ArgumentParser(description="Render maps from model output.")
         parser.add_argument("-v", "--verbose", action="store_true", help="verbose output")
@@ -26,6 +26,9 @@ class CLITest:
         args.extend(cmd)
         parsed = parser.parse_args(args=args)
         patcher = mock.patch("arkimapslib.cli.DefinitionsCommand._create_defs", return_value=system_definitions())
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        patcher = mock.patch("arkimapslib.cmdline.Command.setup_logging")
         patcher.start()
         self.addCleanup(patcher.stop)
         return cls(args=parsed)

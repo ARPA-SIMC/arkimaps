@@ -60,7 +60,7 @@ class OrderResult:
         raise KeyError(f"Step {step_name} not found in debug trace of order {self.order}")
 
 
-class RecipeTestMixin(unittest.TestCase):
+class RecipeTestCase(unittest.TestCase):
     expected_basemap_args = {
         "page_id_line": False,
         "page_x_length": 38,
@@ -351,7 +351,7 @@ def recipe_tests(recipe_name, models: Sequence[str] = ("IFS", "Cosmo")) -> Calla
 
                 test_case = type(
                     cls_name,
-                    (test_class, dispatch_mixin, model_mixin, RecipeTestMixin, unittest.TestCase),
+                    (test_class, dispatch_mixin, model_mixin, RecipeTestCase, unittest.TestCase),
                     {"recipe_name": recipe_name},
                 )
                 test_case.__module__ = test_class.__module__
