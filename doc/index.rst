@@ -13,6 +13,7 @@ Welcome to arkimaps's documentation!
    INPUTS
    RECIPE_WORKFLOW
    GLOSSARY
+   steps
    reference/index
 
 

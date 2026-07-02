@@ -130,6 +130,7 @@ class MagicsMacro(Step[MSPEC], ABC):
     """
 
     MACRO_NAME: str
+    MACRO_URL: Optional[str] = None
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         return self.MACRO_NAME, self.spec.params.dict(exclude_unset=True)
@@ -367,7 +368,7 @@ class AddBasemapSpec(MagicsMacroSpec):
 
 class AddBasemap(MagicsMacro[AddBasemapSpec]):
     """
-    Add a base map
+    Add a base map.
     """
 
     STEP_NAME = "add_basemap"
@@ -381,11 +382,12 @@ class AddCoastlinesBgSpec(MagicsMacroSpec):
 
 class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec]):
     """
-    Add background coastlines
+    Add background coastlines.
     """
 
     STEP_NAME = "add_coastlines_bg"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_coastline_general_style": "background",
@@ -482,11 +484,12 @@ class AddSymbolsSpec(MagicsMacroSpec):
 
 class AddSymbols(MagicsMacro[AddSymbolsSpec]):
     """
-    Add symbols settings
+    Add symbol markers.
     """
 
     STEP_NAME = "add_symbols"
     MACRO_NAME = "msymb"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14156168/Symbol"
     DEFAULTS = {
         "params": {
             "symbol_type": "marker",
@@ -637,11 +640,12 @@ class AddContourSpec(MagicsMacroSpec):
 
 class AddContour(MagicsMacro[AddContourSpec]):
     """
-    Add contouring of the previous data
+    Add contouring.
     """
 
     STEP_NAME = "add_contour"
     MACRO_NAME = "mcont"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14158128/Contouring"
     DEFAULTS = {
         "params": {
             "contour_automatic_setting": "ecmwf",
@@ -721,11 +725,12 @@ class AddWindSpec(MagicsMacroSpec):
 
 class AddWind(MagicsMacro[AddWindSpec]):
     """
-    Add wind flag rendering of the previous data
+    Add wind flags.
     """
 
     STEP_NAME = "add_wind"
     MACRO_NAME = "mwind"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14156772/Wind+Plotting"
     Spec = AddWindSpec
 
 
@@ -735,11 +740,12 @@ class AddGridSpec(MagicsMacroSpec):
 
 class AddGrid(MagicsMacro[AddGridSpec]):
     """
-    Add a coordinates grid
+    Add a coordinates grid.
     """
 
     STEP_NAME = "add_grid"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_coastline_general_style": "grid",
@@ -759,6 +765,7 @@ class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec]):
 
     STEP_NAME = "add_coastlines_fg"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_coastline_sea_shade_colour": "#f2f2f2",
@@ -778,11 +785,12 @@ class AddBoundariesSpec(MagicsMacroSpec):
 
 class AddBoundaries(MagicsMacro[AddBoundariesSpec]):
     """
-    Add political boundaries
+    Add political boundaries.
     """
 
     STEP_NAME = "add_boundaries"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_boundaries": "on",
@@ -815,16 +823,17 @@ class AddGribParamsSpec(BaseMagicsParamsSpec):
 
 class AddGribSpec(MagicsMacroSpec):
     params: AddGribParamsSpec = pydantic.Field(default_factory=AddGribParamsSpec)
-    grib: str
+    grib: str = pydantic.Field(description="GRIB input name")
 
 
 class AddGrib(MagicsMacro[AddGribSpec]):
     """
-    Add a grib file
+    Add a grib file.
     """
 
     STEP_NAME = "add_grib"
     MACRO_NAME = "mgrib"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14157125/Grib+Input"
     Spec = AddGribSpec
 
     def __init__(self, **kwargs) -> None:
@@ -858,16 +867,17 @@ class AddUserBoundariesParamsSpec(McoastParamsSpec):
 
 class AddUserBoundariesSpec(MagicsMacroSpec):
     params: AddUserBoundariesParamsSpec = pydantic.Field(default_factory=AddUserBoundariesParamsSpec)
-    shape: str
+    shape: str = pydantic.Field("Name of the shapefile to load")
 
 
 class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec]):
     """
-    Add user-defined boundaries from a shapefile
+    Add user-defined boundaries from a shapefile.
     """
 
     STEP_NAME = "add_user_boundaries"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_user_layer": "on",
@@ -918,16 +928,17 @@ class AddGeopointsParamsSpec(BaseMagicsParamsSpec):
 
 class AddGeopointsSpec(MagicsMacroSpec):
     params: AddGeopointsParamsSpec = pydantic.Field(default_factory=AddGeopointsParamsSpec)
-    points: str
+    points: str = pydantic.Field(description="Magics geopoints file name")
 
 
 class AddGeopoints(MagicsMacro[AddGeopointsSpec]):
     """
-    Add geopoints
+    Add geopoints.
     """
 
     STEP_NAME = "add_geopoints"
     MACRO_NAME = "mgeo"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14157144/Geopoints+Input"
     Spec = AddGeopointsSpec
 
     def __init__(self, **kwargs) -> None:
