@@ -1,10 +1,9 @@
-# from __future__ import annotations
 from arkimapslib.unittest import recipe_tests
 
 
 @recipe_tests("mslp")
 class MSLPMixin:
-    def test_dispatch(self):
+    def test_dispatch(self) -> None:
         self.fill_pantry()
 
         orders = self.make_orders()
@@ -18,7 +17,7 @@ class MSLPMixin:
             ifs={"grib_automatic_scaling": False, "grib_scaling_factor": 0.01},
         )
 
-    def test_legend(self):
+    def test_legend(self) -> None:
         # Test that mslp does not produce a legend
         self.fill_pantry(flavour_name="ita_small_tiles")
         orders = self.make_orders(flavour_name="ita_small_tiles")

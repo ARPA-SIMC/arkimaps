@@ -4,7 +4,7 @@ from arkimapslib.unittest import recipe_tests
 
 @recipe_tests("hzero", models=["Cosmo"])
 class HZEROCosmoMixin:
-    def test_process(self):
+    def test_process(self) -> None:
         self.fill_pantry(expected=["cosmo_hzero_2021_1_10_0_0_0+12.grib"])
 
         orders = self.make_orders()
@@ -19,7 +19,7 @@ class HZEROCosmoMixin:
 
 @recipe_tests("hzero", models=["IFS"])
 class HZEROIFSMixin:
-    def test_process(self):
+    def test_process(self) -> None:
         self.maxDiff = None
         self.fill_pantry(
             expected=[

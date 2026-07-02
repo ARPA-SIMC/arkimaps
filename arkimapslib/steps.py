@@ -1,9 +1,10 @@
-# from __future__ import annotations
 from abc import ABC
-from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING, TypeVar
+import copy
+from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING, Type, TypeVar, Generic
 
 from .models import BaseDataModel, pydantic
-from .component import Component
+from .component import Component, InvalidComponentError
+from .utils import setdefault_deep
 
 if TYPE_CHECKING:
     from . import inputs
@@ -13,31 +14,104 @@ if TYPE_CHECKING:
 Kwargs = Dict[str, Any]
 
 
+class InvalidStepError(InvalidComponentError):
+    """Exception raised when a step is badly defined."""
+
+
+class StepSkipped(Exception):
+    """
+    Exception raised to signal that the step should be skipped
+    """
+
+
 class StepSpec(BaseDataModel):
     """
     Data model for Steps
     """
 
 
+class StepFlavourSpec(BaseDataModel):
+    """
+    Data model for steps configuration in flavours
+    """
+
+    skip: bool = False
+
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        """Pick the initial values for the toplevel arguments."""
+
+    def fill_defaults(self, args: Dict[str, Any]) -> None:
+        """Fill missing entries with default values."""
+
+
 SPEC = TypeVar("SPEC", bound=StepSpec)
+FSPEC = TypeVar("FSPEC", bound=StepFlavourSpec)
+
+REGISTRY: "Dict[str, Type[Step[Any, Any]]]" = {}
 
 
-class Step(Component[SPEC], ABC):
+class Step(Component[SPEC], Generic[SPEC, FSPEC], ABC):
     """
     One recipe step provided by a Mixer
     """
 
+    #: Name of then step when used in a recipe
+    STEP_NAME: str
     DEFAULTS: Optional[Dict[str, Any]] = None
     DEEP_DEFAULTS: Optional[Dict[str, Any]] = None
+    #: Data model used for step arguments
+    Spec: Type[SPEC]
+    #: Data model used for step configuration in the flavour
+    FlavourSpec: Type[FSPEC]
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Maintain the step registry."""
+        super().__init_subclass__(**kwargs)
+        if ABC in cls.__bases__:
+            return
+        if not hasattr(cls, "STEP_NAME"):
+            raise InvalidStepError(f"Step class {cls.__name__} is not abstract but lacks a STEP_NAME member")
+        REGISTRY[cls.STEP_NAME] = cls
 
     def __init__(
         self,
         *,
         sources: Dict[str, "inputs.InputFile"],
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
         self.sources = sources
+
+    @classmethod
+    def step_by_name(cls, name: str) -> "Type[Step[StepSpec, StepFlavourSpec]]":
+        """Find a step class by name."""
+        return REGISTRY[name]
+
+    @classmethod
+    def compile_args(cls, flavour_args: FSPEC, recipe_args: Dict[str, Any]) -> Dict[str, Any]:
+        """Compute step arguments from recipe and flavour arguments."""
+        if flavour_args.skip:
+            raise StepSkipped()
+
+        # Take recipe-defined args
+        res = copy.deepcopy(recipe_args)
+
+        # Add missing bits from flavour
+        flavour_args.select_initial(res)
+
+        # Add missing bits from step class defaults
+        if cls.DEFAULTS is not None:
+            for k, v in cls.DEFAULTS.items():
+                res.setdefault(k, v)
+
+        # Fold in extra flavour elements by recursing into dictionaries
+        flavour_args.fill_defaults(res)
+
+        # Fold in extra step class elements by recursing into dictionaries
+        if cls.DEEP_DEFAULTS is not None:
+            setdefault_deep(res, cls.DEEP_DEFAULTS)
+
+        return res
 
     @classmethod
     def lint(cls, lint: "Lint", *, defined_in: str, name: str, step: str, args: Dict[str, Any]) -> Optional[StepSpec]:
@@ -58,7 +132,7 @@ class Step(Component[SPEC], ABC):
         raise NotImplementedError(f"{self.__class__.__name__}.as_magics_macro not implemented")
 
     @classmethod
-    def apply_change(cls, data: Dict[str, Any], change: Dict[str, Any]):
+    def apply_change(cls, data: Dict[str, Any], change: Dict[str, Any]) -> None:
         """
         Apply the given changeset to data.
 
@@ -100,15 +174,39 @@ class MagicsMacroSpec(StepSpec):
     params: BaseMagicsParamsSpec = pydantic.Field(default_factory=BaseMagicsParamsSpec)
 
 
+class MagicsMacroFlavourSpec(StepFlavourSpec):
+    """
+    Data model for MagicsMacro steps flavour configuration
+    """
+
+    params: BaseMagicsParamsSpec = pydantic.Field(default_factory=BaseMagicsParamsSpec)
+    default_params: BaseMagicsParamsSpec = pydantic.Field(default_factory=BaseMagicsParamsSpec)
+
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        super().select_initial(args)
+        if self.params.__fields_set__:
+            args.setdefault("params", self.params.dict(exclude_unset=True))
+
+    def fill_defaults(self, args: Dict[str, Any]) -> None:
+        super().fill_defaults(args)
+        if self.default_params.__fields_set__:
+            if "params" not in args:
+                args["params"] = {}
+            for k, v in self.default_params.dict(exclude_unset=True).items():
+                args["params"].setdefault(k, v)
+
+
 MSPEC = TypeVar("MSPEC", bound=MagicsMacroSpec)
+MFSPEC = TypeVar("MFSPEC", bound=MagicsMacroFlavourSpec)
 
 
-class MagicsMacro(Step[MSPEC], ABC):
+class MagicsMacro(Step[MSPEC, MFSPEC], ABC):
     """
     Run a Magics macro with optional default arguments
     """
 
     MACRO_NAME: str
+    MACRO_URL: Optional[str] = None
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
         return self.MACRO_NAME, self.spec.params.dict(exclude_unset=True)
@@ -344,25 +442,39 @@ class AddBasemapSpec(MagicsMacroSpec):
     params: AddBasemapParamsSpec = pydantic.Field(default_factory=AddBasemapParamsSpec)
 
 
-class AddBasemap(MagicsMacro[AddBasemapSpec]):
+class AddBasemapFlavourSpec(MagicsMacroFlavourSpec):
+    params: AddBasemapParamsSpec = pydantic.Field(default_factory=AddBasemapParamsSpec)
+    default_params: AddBasemapParamsSpec = pydantic.Field(default_factory=AddBasemapParamsSpec)
+
+
+class AddBasemap(MagicsMacro[AddBasemapSpec, AddBasemapFlavourSpec]):
     """
-    Add a base map
+    Add a base map.
     """
 
+    STEP_NAME = "add_basemap"
     MACRO_NAME = "mmap"
     Spec = AddBasemapSpec
+    FlavourSpec = AddBasemapFlavourSpec
 
 
 class AddCoastlinesBgSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec]):
+class AddCoastlinesBgFlavourSpec(MagicsMacroFlavourSpec):
+    params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
+    default_params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
+
+
+class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec, AddCoastlinesBgFlavourSpec]):
     """
-    Add background coastlines
+    Add background coastlines.
     """
 
+    STEP_NAME = "add_coastlines_bg"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_coastline_general_style": "background",
@@ -370,6 +482,7 @@ class AddCoastlinesBg(MagicsMacro[AddCoastlinesBgSpec]):
         },
     }
     Spec = AddCoastlinesBgSpec
+    FlavourSpec = AddCoastlinesBgFlavourSpec
 
 
 class AddSymbolsParamsSpec(LegendParamsSpec):
@@ -457,12 +570,19 @@ class AddSymbolsSpec(MagicsMacroSpec):
     params: AddSymbolsParamsSpec = pydantic.Field(default_factory=AddSymbolsParamsSpec)
 
 
-class AddSymbols(MagicsMacro[AddSymbolsSpec]):
+class AddSymbolsFlavourSpec(MagicsMacroFlavourSpec):
+    params: AddSymbolsParamsSpec = pydantic.Field(default_factory=AddSymbolsParamsSpec)
+    default_params: AddSymbolsParamsSpec = pydantic.Field(default_factory=AddSymbolsParamsSpec)
+
+
+class AddSymbols(MagicsMacro[AddSymbolsSpec, AddSymbolsFlavourSpec]):
     """
-    Add symbols settings
+    Add symbol markers.
     """
 
+    STEP_NAME = "add_symbols"
     MACRO_NAME = "msymb"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14156168/Symbol"
     DEFAULTS = {
         "params": {
             "symbol_type": "marker",
@@ -473,6 +593,7 @@ class AddSymbols(MagicsMacro[AddSymbolsSpec]):
         },
     }
     Spec = AddSymbolsSpec
+    FlavourSpec = AddSymbolsFlavourSpec
 
 
 class AddContourParamsSpec(LegendParamsSpec):
@@ -597,7 +718,7 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_grid_value_position: str = "top"
 
     @pydantic.root_validator(allow_reuse=True)
-    def list_sync(cls, values):
+    def list_sync(cls, values: Any) -> Any:
         cll = values["contour_level_list"]
         cscl = values["contour_shade_colour_list"]
         if cll and cscl and len(cll) != len(cscl) + 1:
@@ -611,18 +732,26 @@ class AddContourSpec(MagicsMacroSpec):
     params: AddContourParamsSpec = pydantic.Field(default_factory=AddContourParamsSpec)
 
 
-class AddContour(MagicsMacro[AddContourSpec]):
+class AddContourFlavourSpec(MagicsMacroFlavourSpec):
+    params: AddContourParamsSpec = pydantic.Field(default_factory=AddContourParamsSpec)
+    default_params: AddContourParamsSpec = pydantic.Field(default_factory=AddContourParamsSpec)
+
+
+class AddContour(MagicsMacro[AddContourSpec, AddContourFlavourSpec]):
     """
-    Add contouring of the previous data
+    Add contouring.
     """
 
+    STEP_NAME = "add_contour"
     MACRO_NAME = "mcont"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14158128/Contouring"
     DEFAULTS = {
         "params": {
             "contour_automatic_setting": "ecmwf",
         },
     }
     Spec = AddContourSpec
+    FlavourSpec = AddContourFlavourSpec
 
 
 class AddWindParamsSpec(LegendParamsSpec):
@@ -694,43 +823,66 @@ class AddWindSpec(MagicsMacroSpec):
     params: AddWindParamsSpec = pydantic.Field(default_factory=AddWindParamsSpec)
 
 
-class AddWind(MagicsMacro[AddWindSpec]):
+class AddWindFlavourSpec(MagicsMacroFlavourSpec):
+    params: AddWindParamsSpec = pydantic.Field(default_factory=AddWindParamsSpec)
+    default_params: AddWindParamsSpec = pydantic.Field(default_factory=AddWindParamsSpec)
+
+
+class AddWind(MagicsMacro[AddWindSpec, AddWindFlavourSpec]):
     """
-    Add wind flag rendering of the previous data
+    Add wind flags.
     """
 
+    STEP_NAME = "add_wind"
     MACRO_NAME = "mwind"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14156772/Wind+Plotting"
     Spec = AddWindSpec
+    FlavourSpec = AddWindFlavourSpec
 
 
 class AddGridSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddGrid(MagicsMacro[AddGridSpec]):
+class AddGridFlavourSpec(MagicsMacroFlavourSpec):
+    params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
+    default_params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
+
+
+class AddGrid(MagicsMacro[AddGridSpec, AddGridFlavourSpec]):
     """
-    Add a coordinates grid
+    Add a coordinates grid.
     """
 
+    STEP_NAME = "add_grid"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_coastline_general_style": "grid",
         },
     }
     Spec = AddGridSpec
+    FlavourSpec = AddGridFlavourSpec
 
 
 class AddCoastlinesFgSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec]):
+class AddCoastlinesFgFlavourSpec(MagicsMacroFlavourSpec):
+    params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
+    default_params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
+
+
+class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec, AddCoastlinesFgFlavourSpec]):
     """
     Add foreground coastlines
     """
 
+    STEP_NAME = "add_coastlines_fg"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_coastline_sea_shade_colour": "#f2f2f2",
@@ -742,18 +894,26 @@ class AddCoastlinesFg(MagicsMacro[AddCoastlinesFgSpec]):
         },
     }
     Spec = AddCoastlinesFgSpec
+    FlavourSpec = AddCoastlinesFgFlavourSpec
 
 
 class AddBoundariesSpec(MagicsMacroSpec):
     params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
 
 
-class AddBoundaries(MagicsMacro[AddBoundariesSpec]):
+class AddBoundariesFlavourSpec(MagicsMacroFlavourSpec):
+    params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
+    default_params: McoastParamsSpec = pydantic.Field(default_factory=McoastParamsSpec)
+
+
+class AddBoundaries(MagicsMacro[AddBoundariesSpec, AddBoundariesFlavourSpec]):
     """
-    Add political boundaries
+    Add political boundaries.
     """
 
+    STEP_NAME = "add_boundaries"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_boundaries": "on",
@@ -765,6 +925,7 @@ class AddBoundaries(MagicsMacro[AddBoundariesSpec]):
         },
     }
     Spec = AddBoundariesSpec
+    FlavourSpec = AddBoundariesFlavourSpec
 
 
 class AddGribParamsSpec(BaseMagicsParamsSpec):
@@ -786,18 +947,32 @@ class AddGribParamsSpec(BaseMagicsParamsSpec):
 
 class AddGribSpec(MagicsMacroSpec):
     params: AddGribParamsSpec = pydantic.Field(default_factory=AddGribParamsSpec)
-    grib: str
+    grib: str = pydantic.Field(description="GRIB input name")
 
 
-class AddGrib(MagicsMacro[AddGribSpec]):
+class AddGribFlavourSpec(MagicsMacroFlavourSpec):
+    params: AddGribParamsSpec = pydantic.Field(default_factory=AddGribParamsSpec)
+    default_params: AddGribParamsSpec = pydantic.Field(default_factory=AddGribParamsSpec)
+    grib: Optional[str] = pydantic.Field(description="GRIB input name")
+
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        super().select_initial(args)
+        if self.grib is not None:
+            args.setdefault("grib", self.grib)
+
+
+class AddGrib(MagicsMacro[AddGribSpec, AddGribFlavourSpec]):
     """
-    Add a grib file
+    Add a grib file.
     """
 
+    STEP_NAME = "add_grib"
     MACRO_NAME = "mgrib"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14157125/Grib+Input"
     Spec = AddGribSpec
+    FlavourSpec = AddGribFlavourSpec
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         inp = self.sources.get(self.spec.grib)
         if inp is None:
@@ -828,15 +1003,28 @@ class AddUserBoundariesParamsSpec(McoastParamsSpec):
 
 class AddUserBoundariesSpec(MagicsMacroSpec):
     params: AddUserBoundariesParamsSpec = pydantic.Field(default_factory=AddUserBoundariesParamsSpec)
-    shape: str
+    shape: str = pydantic.Field("Name of the shapefile to load")
 
 
-class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec]):
+class AddUserBoundariesFlavourSpec(MagicsMacroFlavourSpec):
+    params: AddUserBoundariesParamsSpec = pydantic.Field(default_factory=AddUserBoundariesParamsSpec)
+    default_params: AddUserBoundariesParamsSpec = pydantic.Field(default_factory=AddUserBoundariesParamsSpec)
+    shape: Optional[str] = pydantic.Field(default=None, description="Name of the shapefile to load")
+
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        super().select_initial(args)
+        if self.shape is not None:
+            args.setdefault("shape", self.shape)
+
+
+class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec, AddUserBoundariesFlavourSpec]):
     """
-    Add user-defined boundaries from a shapefile
+    Add user-defined boundaries from a shapefile.
     """
 
+    STEP_NAME = "add_user_boundaries"
     MACRO_NAME = "mcoast"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/13893682/Coastlines"
     DEFAULTS = {
         "params": {
             "map_user_layer": "on",
@@ -850,8 +1038,9 @@ class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec]):
         }
     }
     Spec = AddUserBoundariesSpec
+    FlavourSpec = AddUserBoundariesFlavourSpec
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         inp = self.sources.get(self.spec.shape)
         if inp is None:
@@ -860,7 +1049,7 @@ class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec]):
             )
         self.shape = inp
 
-    def _run_params(self):
+    def _run_params(self) -> Dict[str, Any]:
         params = self.spec.params.dict(exclude_unset=True)
         params["map_user_layer_name"] = str(self.shape.pathname)
         return params
@@ -887,18 +1076,32 @@ class AddGeopointsParamsSpec(BaseMagicsParamsSpec):
 
 class AddGeopointsSpec(MagicsMacroSpec):
     params: AddGeopointsParamsSpec = pydantic.Field(default_factory=AddGeopointsParamsSpec)
-    points: str
+    points: str = pydantic.Field(description="Magics geopoints file name")
 
 
-class AddGeopoints(MagicsMacro[AddGeopointsSpec]):
+class AddGeopointsFlavourSpec(MagicsMacroFlavourSpec):
+    params: AddGeopointsParamsSpec = pydantic.Field(default_factory=AddGeopointsParamsSpec)
+    default_params: AddGeopointsParamsSpec = pydantic.Field(default_factory=AddGeopointsParamsSpec)
+    points: Optional[str] = pydantic.Field(default=None, description="Magics geopoints file name")
+
+    def select_initial(self, args: Dict[str, Any]) -> None:
+        super().select_initial(args)
+        if self.points is not None:
+            args.setdefault("points", self.points)
+
+
+class AddGeopoints(MagicsMacro[AddGeopointsSpec, AddGeopointsFlavourSpec]):
     """
-    Add geopoints
+    Add geopoints.
     """
 
+    STEP_NAME = "add_geopoints"
     MACRO_NAME = "mgeo"
+    MACRO_URL = "https://confluence.ecmwf.int/spaces/MAGP/pages/14157144/Geopoints+Input"
     Spec = AddGeopointsSpec
+    FlavourSpec = AddGeopointsFlavourSpec
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         inp = self.sources.get(self.spec.points)
         if inp is None:

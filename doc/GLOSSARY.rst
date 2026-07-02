@@ -32,16 +32,6 @@ Input data (usually in `GRIB <https://en.wikipedia.org/wiki/GRIB>`_ format) that
 can be used by a `recipe step`_.
 
 
-.. _mixer:
-
-Mixer
-=====
-
-A repository of `recipe steps`_ that can be executed by a recipe_.
-
-It is defined in arkimaps' code. Currently only one mixer is provided called
-``default``, in ``arkimapslib/mixers.py``.
-
 
 .. _`model step`:
 
@@ -90,9 +80,7 @@ Defines what is needed to turn inputs_ into a product_.
 It can contain:
 
 * Zero or more inputs_
-* The name of the mixer_ to use for processing inputs_ (by default:
-  ``default``)
-* A set of `recipe steps`_ to perform with the mixer_ on the inputs_
+* A set of `recipe steps`_ to perform on the inputs_
 * Zero or more flavors_ that define set of default parameters for
   recipe `recipe steps`_.
 
@@ -109,7 +97,7 @@ Recipe step
 One processing element on a recipe_. Each step has a name and optional
 arguments.
 
-The set of available step names are defined by the mixer_ used for processing.
+The set of available step names are defined in the ``arkimapslib.steps`` module.
 
 Arguments for steps that are not explicitly provided by recipes can be provided
 by flavors_.

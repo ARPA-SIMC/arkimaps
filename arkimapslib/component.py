@@ -1,6 +1,6 @@
 # from __future__ import annotations
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Dict, Generic, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Dict, Generic, Type, TypeVar
 
 from .models import BaseDataModel
 

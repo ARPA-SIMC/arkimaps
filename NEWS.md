@@ -1,3 +1,9 @@
+# New in version UNRELEASED
+
+* Allow to specify `default_params` in flavour to recursively provide default
+  values for elements that were not set after the initial values of `params`
+  and other fields have been selected (#187)
+
 # New in version 1.44
 
 * Added products: tp 1/6h + mslp

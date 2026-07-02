@@ -75,7 +75,7 @@ class BaseFixture:
 
 
 class InputProcessingStatsTests(BaseFixture, unittest.TestCase):
-    def test_inputprocessingstats(self):
+    def test_inputprocessingstats(self) -> None:
         val = ob.InputProcessingStats()
         val.add_computation_log(100_000_000, "mock processing")
         val.used_by.add(self.recipe().name)
@@ -104,7 +104,7 @@ class InputSummaryTests(BaseFixture, unittest.TestCase):
 
 
 class LogTests(BaseFixture, unittest.TestCase):
-    def test_log(self):
+    def test_log(self) -> None:
         val = ob.Log()
         val.append(ts=12345.67, level=logging.INFO, msg="test message", name="test.logger")
 
@@ -116,7 +116,7 @@ class LogTests(BaseFixture, unittest.TestCase):
 
 
 class ReftimeProductsTests(BaseFixture, unittest.TestCase):
-    def test_reftimeproduct(self):
+    def test_reftimeproduct(self) -> None:
         val = ob.ReftimeProducts()
         val.add_order(self.order())
 

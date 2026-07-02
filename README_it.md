@@ -118,13 +118,12 @@ definire degli input comuni.
 
 File statici come geopoint o shapefile possono essere distribuiti nel path
 speciale `$recipes/static` e configurati nelle ricette (vedi ad esempio:
-recipes/flavours/flavours_inputs.yaml)
+`recipes/flavours/flavours_inputs.yaml`)
 
 ## Creazione di nuove ricette
 
-In `arkimapslib/mixer.py` sono definiti e commentati i vari `step` possibili. I
-parametri passati agli `step` diventano parametri alle funzioni metodo della
-classe `Mixer`.
+Nella documentazione, alla voce "Recipe steps", sono documentati i vari `step`
+possibili e i loro parametri.
 
 Per velocizzare le prove, ci sono alcune opzioni di `arkimaps`:
 

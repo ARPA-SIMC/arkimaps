@@ -4,7 +4,7 @@ from arkimapslib.unittest import recipe_tests
 
 @recipe_tests("rh2m", models=("IFS", "Cosmo"))
 class RH2MMixin:
-    def test_dispatch(self):
+    def test_dispatch(self) -> None:
         pantry_reftime = "2021_1_10_0_0_0"
         self.fill_pantry(
             expected=[
@@ -38,7 +38,7 @@ class RH2MMixin:
 
 @recipe_tests("rh2m", models=("ERG5",))
 class RH2MERG5Mixin:
-    def test_dispatch(self):
+    def test_dispatch(self) -> None:
         self.fill_pantry(step=0)
 
         # Check that the right input was selected

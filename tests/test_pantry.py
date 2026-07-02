@@ -27,7 +27,7 @@ class PantryTestMixin:
     def get_test_data(self, model: str, recipe: str, input_name: str, step: int) -> Path:
         return Path("testdata") / recipe / f"{model}_{input_name}_2021_1_10_0_0_0+{step:02d}.arkimet"
 
-    def test_dispatch(self):
+    def test_dispatch(self) -> None:
         with self.pantry() as pantry:
             pantry.inputs.add(
                 Input.create(
@@ -45,7 +45,7 @@ class PantryTestMixin:
             instants = pantry.get_instants("test")
             self.assertCountEqual(instants.keys(), [Instant(datetime.datetime(2021, 1, 10), 12)])
 
-    def test_separate_steps(self):
+    def test_separate_steps(self) -> None:
         def add_inputs(pantry):
             pantry.inputs.add(
                 Input.create(
@@ -119,7 +119,7 @@ class TestArkimetPantry(PantryTestMixin, TestCase):
             with self.workdir(workdir) as workdir:
                 yield pantry.ArkimetPantry(root=workdir, session=session, inputs=Inputs())
 
-    def test_dispatch_skip_arkimet(self):
+    def test_dispatch_skip_arkimet(self) -> None:
         with self.pantry() as pantry:
             pantry.inputs.add(
                 Input.create(
@@ -142,7 +142,7 @@ class TestEccodesPantry(PantryTestMixin, TestCase):
         with self.workdir(workdir) as workdir:
             yield pantry.EccodesPantry(root=workdir, inputs=Inputs())
 
-    def test_dispatch_skip_eccodes(self):
+    def test_dispatch_skip_eccodes(self) -> None:
         with self.pantry() as pantry:
             pantry.inputs.add(
                 Input.create(

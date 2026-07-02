@@ -5,7 +5,7 @@ from arkimapslib.unittest import recipe_tests
 
 @recipe_tests("tiles/sffraction3h")
 class SFFRACTION3HMixin:
-    def test_dispatch(self):
+    def test_dispatch(self) -> None:
         self.maxDiff = None
         self.fill_pantry(extra_sample_dirs=["sf3h"], step=3)
 

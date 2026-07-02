@@ -7,7 +7,7 @@ from arkimapslib.unittest import recipe_tests
 
 @recipe_tests("litota3")
 class LITOTA3Mixin:
-    def test_recipe(self):
+    def test_recipe(self) -> None:
         self.maxDiff = None
 
         # Input for litota3 is not computed by COSMO. See #64
@@ -71,7 +71,7 @@ class LITOTA3NordMixin:
         "map_label_latitude_frequency": 1,
     }
 
-    def test_recipe(self):
+    def test_recipe(self) -> None:
         self.maxDiff = None
 
         # Input for litota3 is not computed by COSMO. See #64

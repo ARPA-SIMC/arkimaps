@@ -5,7 +5,7 @@ import unittest
 
 @recipe_tests("tiles/tp1h")
 class TP1HMixin:
-    def test_dispatch(self):
+    def test_dispatch(self) -> None:
         # For IFS and Eccodes, we have a problem:
         #  - IFS has a 3h resolution, so does not provide data for tp1h
         #  - grib_filter errors out if the input is empty, with the same error

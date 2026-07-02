@@ -3,17 +3,17 @@ import inspect
 import json
 import logging
 import os
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Set, TextIO, Type
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, TextIO, Type
 
 from . import steps, toposort
 from .config import Config
 from .lint import Lint
 from .models import BaseDataModel, pydantic
 from .component import RootComponent, TypeRegistry
-from .utils import setdefault_deep
+from .steps import Step
 
 if TYPE_CHECKING:
-    from . import flavours, inputs, pantry
+    from . import flavours, pantry
 
 log = logging.getLogger("arkimaps.recipes")
 
@@ -101,14 +101,6 @@ class Recipes:
         return res
 
 
-class RecipeStepSkipped(Exception):
-    """
-    Exception raised constructor to signal that the step should be skipped
-    """
-
-    pass
-
-
 class RecipeStep:
     """
     A step of a recipe, as defined in the recipe file.
@@ -123,67 +115,19 @@ class RecipeStep:
         config: Config,
         name: str,
         defined_in: str,
-        step_class: Type[steps.Step],
+        step_class: Type[steps.Step[Any, Any]],
         args: Dict[str, Any],
         id: Optional[str] = None,
     ):
         self.config = config
         self.name: str = name
         self.defined_in: str = defined_in
-        self.step_class: Type[steps.Step] = step_class
+        self.step_class: Type[steps.Step[Any, Any]] = step_class
         self.args: Dict[str, Any] = args
         self.id: Optional[str] = id
 
     def lint(self, lint: Lint) -> None:
-        args = self.compile_args(lint.flavour)
-        if bool(args.pop("skip", False)):
-            return
-        self.step_class.lint(lint, defined_in=self.defined_in, name=self.name, step=self.name, args=args)
-
-    def create_step(self, flavour: "flavours.Flavour", input_files: Dict[str, "inputs.InputFile"]) -> steps.Step:
-        """
-        Instantiate the Step
-        """
-        args = self.compile_args(flavour)
-        if bool(args.pop("skip", False)):
-            raise RecipeStepSkipped()
-        return self.step_class(
-            config=self.config, name=self.name, defined_in=self.defined_in, args=args, sources=input_files
-        )
-
-    def get_input_names(self, flavour: "flavours.Flavour") -> Set[str]:
-        """
-        Get the names of inputs needed by this step
-        """
-        args = self.compile_args(flavour)
-        if bool(args.pop("skip", False)):
-            return set()
-        return self.step_class.get_input_names(args)
-
-    def compile_args(self, flavour: "flavours.Flavour") -> Dict[str, Any]:
-        """
-        Compute the set of arguments for this step, based on flavour
-        information, arguments defined in the recipe, and step class defaults
-        """
-        flavour_step = flavour.step_config(self.name)
-
-        # Take recipe-defined args
-        res = self.args.copy()
-
-        # Add missing bits from flavour
-        for k, v in flavour_step.options.items():
-            res.setdefault(k, v)
-
-        # Add missing bits from step class defaults
-        if self.step_class.DEFAULTS is not None:
-            for k, v in self.step_class.DEFAULTS.items():
-                res.setdefault(k, v)
-
-        # Fold in extra elements by recursing into dictionaries
-        if self.step_class.DEEP_DEFAULTS is not None:
-            setdefault_deep(res, self.step_class.DEEP_DEFAULTS)
-
-        return res
+        self.step_class.lint(lint, defined_in=self.defined_in, name=self.name, step=self.name, args=self.args)
 
     def derive(self) -> Dict[str, Any]:
         """
@@ -207,18 +151,17 @@ class RecipeStep:
             res["id"] = self.id
         return res
 
-    def document(self, flavour: "flavours.Flavour", file: TextIO):
+    def document(self, flavour: "flavours.Flavour[Any]", file: TextIO) -> None:
         """
         Document this recipe step
         """
-        args = self.compile_args(flavour)
         print(inspect.getdoc(self.step_class), file=file)
         print(file=file)
-        if args:
+        if self.args:
             print("With arguments:", file=file)
             print("```", file=file)
             # FIXME: dump as yaml?
-            print(json.dumps(args, indent=2), file=file)
+            print(json.dumps(self.args, indent=2), file=file)
             print("```", file=file)
 
 
@@ -231,20 +174,10 @@ class RecipeSpec(BaseDataModel):
     notes: Optional[str] = None
     #: Long description for the recipe
     description: str = "Unnamed recipe"
-    #: Name of the mixer to use
-    mixer: str = "default"
     #: Informational fields about the recipe
     info: Optional[Dict[str, Any]] = None
     #: Unparsed recipe steps
     recipe: List[Dict[str, Any]] = pydantic.Field(default_factory=list)
-
-    @pydantic.validator("mixer")
-    def mixer_in_registry(cls, value):
-        from .mixers import mixers
-
-        if value not in mixers.registry:
-            raise ValueError(f"Unknown mixer: {value!r}. Use one of {', '.join(sorted(mixers.registry))}")
-        return value
 
 
 class Recipe(RootComponent[RecipeSpec]):
@@ -257,21 +190,18 @@ class Recipe(RootComponent[RecipeSpec]):
     Spec = RecipeSpec
 
     def __init__(self, *, config: Config, name: str, defined_in: str, args: Dict[str, Any]) -> None:
-        from .mixers import mixers
-
         super().__init__(config=config, name=name, defined_in=defined_in, args=args)
 
         # Parse the recipe steps
         self.steps: List[RecipeStep] = []
-        step_collection = mixers.get_steps(self.spec.mixer)
         for s in self.spec.recipe:
             args = s.copy()
             step = args.pop("step", None)
             if step is None:
                 raise RuntimeError("recipe step does not contain a 'step' name")
-            step_class = step_collection.get(step)
+            step_class = Step.step_by_name(step)
             if step_class is None:
-                raise RuntimeError(f"step {step} not found in mixer {self.spec.mixer}")
+                raise RuntimeError(f"step {step} not found")
             id = args.pop("id", None)
             self.steps.append(
                 RecipeStep(
@@ -299,7 +229,6 @@ class Recipe(RootComponent[RecipeSpec]):
         # If elements aren't specified, use those from the parent recipe
         kwargs.setdefault("notes", parent.spec.notes)
         kwargs.setdefault("description", parent.spec.description)
-        kwargs.setdefault("mixer", parent.spec.mixer)
 
         # Build the new list of steps, based on the parent list
         steps: List[Dict[str, Any]] = []
@@ -332,12 +261,10 @@ class Recipe(RootComponent[RecipeSpec]):
             "info": self.spec.info or {},
         }
 
-    def document(self, flavour: "flavours.Flavour", pantry: "pantry.Pantry", dest: str):
+    def document(self, flavour: "flavours.Flavour[Any]", pantry: "pantry.Pantry", dest: str) -> None:
         os.makedirs(os.path.dirname(dest), exist_ok=True)
         with open(dest, "w") as fd:
             print(f"# {self.name}: {self.spec.description}", file=fd)
-            print(file=fd)
-            print(f"Mixer: **{self.spec.mixer}**", file=fd)
             print(file=fd)
             if self.spec.notes:
                 print("## Notes", file=fd)
