@@ -29,6 +29,7 @@ class Component(Generic[SPEC], ABC):
         """
         Maintain the subclass registry
         """
+        super().__init_subclass__(**kwargs)
         if ABC in cls.__bases__:
             return
         if not hasattr(cls, "Spec"):

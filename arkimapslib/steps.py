@@ -1,3 +1,6 @@
+# Workaround for https://github.com/pydantic/pydantic/issues/11613
+# from __future__ import annotations
+
 from abc import ABC
 import copy
 from typing import Dict, Any, List, Optional, Set, Tuple, Union, TYPE_CHECKING, Type, TypeVar, Generic

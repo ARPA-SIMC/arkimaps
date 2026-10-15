@@ -1,3 +1,6 @@
+# Workaround for https://github.com/pydantic/pydantic/issues/11613
+# from __future__ import annotations
+
 import contextlib
 import datetime
 import logging
