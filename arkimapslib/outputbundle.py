@@ -37,7 +37,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from collections import Counter
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import IO, TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Tuple, Union, Self
 
 from . import steps
 from .models import BaseDataModel, pydantic
@@ -63,15 +63,15 @@ class Serializable(BaseDataModel):
         Return a version of this object that can be serialized to JSON, and
         deserialized with from_jsonable()
         """
-        return self.dict(by_alias=True)
+        return self.model_dump(by_alias=True)
 
     @classmethod
-    def from_jsonable(cls, data: Dict[str, Any]):
+    def from_jsonable(cls, data: Dict[str, Any]) -> Self:
         """
         Recreate an object serialized by to_jsonable
         """
         # TODO: from 3.11 we can type the return value as Self
-        return cls.parse_obj(data)
+        return cls.model_validate(data)
 
 
 class InputProcessingStats(Serializable):
@@ -95,13 +95,19 @@ class InputProcessingStats(Serializable):
         """
         self.computation_log.append((elapsed, what))
 
-    def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        res = super().dict(*args, **kwargs)
-        res["used_by"] = sorted(res["used_by"])
-        res["computation"] = res.pop("computation_log")
-        return res
+    @pydantic.field_serializer("used_by", mode="wrap")
+    def serialize_used_by(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler) -> List[str]:
+        return sorted(handler(value))
 
-    @pydantic.root_validator(pre=True, allow_reuse=True)
+    @pydantic.model_serializer(mode="wrap")
+    def serialize_model(self, handler: pydantic.SerializerFunctionWrapHandler) -> Dict[str, Any]:
+        serialized = handler(self)
+        assert isinstance(serialized, dict)
+        serialized["computation"] = serialized.pop("computation_log")
+        return serialized
+
+    @pydantic.model_validator(mode="before")
+    @classmethod
     def fix_layout(cls, values: Any) -> Any:
         if isinstance(values, dict) and "computation" in values:
             values["computation_log"] = values.pop("computation")
@@ -121,11 +127,16 @@ class InputSummary(Serializable):
     def add(self, name: str, stats: InputProcessingStats) -> None:
         self.inputs[name] = stats
 
-    def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        res = super().dict(*args, **kwargs)
-        return res["inputs"]
+    @pydantic.model_serializer(mode="wrap")
+    def serialize_model(self, handler: pydantic.SerializerFunctionWrapHandler) -> Dict[str, Any]:
+        serialized = handler(self)
+        assert isinstance(serialized, dict)
+        inputs = serialized["inputs"]
+        assert isinstance(inputs, dict)
+        return inputs
 
-    @pydantic.root_validator(pre=True, allow_reuse=True)
+    @pydantic.model_validator(mode="before")
+    @classmethod
     def fix_layout(cls, values: Any) -> Any:
         if isinstance(values, dict):
             return {"inputs": values}
@@ -168,7 +179,7 @@ class ReftimeProducts(Serializable):
         if self.legend_info is None:
             for step in order.order_steps:
                 if isinstance(step, steps.AddContour):
-                    self.legend_info = step.spec.params.dict(exclude_unset=True)
+                    self.legend_info = step.spec.params.model_dump(exclude_unset=True)
         self.render_stats.time_ns += order.render_time_ns
         order.summarize_outputs(self)
 
@@ -179,11 +190,15 @@ class ReftimeProducts(Serializable):
             self.products[relpath] = product = ProductInfo()
         product.georef = georef
 
-    def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
-        res = super().dict(*args, **kwargs)
-        res["inputs"] = sorted(res["inputs"])
-        res["steps"] = {str(k): v for k, v in res["steps"].items()}
-        return res
+    @pydantic.field_serializer("inputs", mode="wrap")
+    def serialize_inputs(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler) -> List[str]:
+        return sorted(handler(value))
+
+    @pydantic.field_serializer("steps", mode="wrap")
+    def serialize_steps(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler) -> Dict[str, Any]:
+        serialized = handler(value)
+        assert isinstance(serialized, dict)
+        return {str(k): v for k, v in serialized.items()}
 
 
 class RecipeProducts(Serializable):
@@ -307,11 +322,13 @@ class Products(Serializable):
             res[recipe] = RecipeOrders(legend_info=legend_info)
         return res
 
-    def dict(self, *args: Any, **kwargs: Any) -> Any:
-        res = super().dict(*args, **kwargs)
-        return [x[1] for x in sorted(res["products"].items())]
+    @pydantic.model_serializer(mode="wrap")
+    def serialize_model(self, handler: pydantic.SerializerFunctionWrapHandler) -> List[Dict[str, Any]]:
+        serialized = handler(self)
+        return [x[1] for x in sorted(serialized["products"].items())]
 
-    @pydantic.root_validator(pre=True, allow_reuse=True)
+    @pydantic.model_validator(mode="before")
+    @classmethod
     def fix_layout(cls, values: Any) -> Any:
         if not values:
             return {"products": {}}
@@ -320,14 +337,6 @@ class Products(Serializable):
         if isinstance(values, list):
             return {"products": {ProductKey(val["flavour"]["name"], val["recipe"]["name"]): val for val in values}}
         return values
-
-    @classmethod
-    def parse_obj(cls, obj: Any) -> "Products":
-        if isinstance(obj, list):
-            return super().parse_obj(
-                {"products": {ProductKey(val["flavour"]["name"], val["recipe"]["name"]): val for val in obj}}
-            )
-        return super().parse_obj(obj)
 
 
 class LogEntry(Serializable):
@@ -366,11 +375,16 @@ class Log(Serializable):
         """
         self.entries.append(LogEntry(ts=ts, level=level, msg=msg, name=name))
 
-    def dict(self, *args: Any, **kwargs: Any) -> Any:
-        res = super().dict(*args, **kwargs)
-        return res["entries"]
+    @pydantic.model_serializer(mode="wrap")
+    def serialize_model(self, handler: pydantic.SerializerFunctionWrapHandler) -> List[Dict[str, Any]]:
+        serialized = handler(self)
+        assert isinstance(serialized, dict)
+        inputs = serialized["entries"]
+        assert isinstance(inputs, list)
+        return inputs
 
-    @pydantic.root_validator(pre=True, allow_reuse=True)
+    @pydantic.model_validator(mode="before")
+    @classmethod
     def fix_layout(cls, values: Any) -> Any:
         if not values:
             return {"entries": []}
@@ -379,12 +393,6 @@ class Log(Serializable):
         if isinstance(values, list):
             return {"entries": values}
         return values
-
-    @classmethod
-    def parse_obj(cls, obj: Any) -> "Log":
-        if isinstance(obj, list):
-            return super().parse_obj({"entries": obj})
-        return super().parse_obj(obj)
 
 
 class Reader(ABC):

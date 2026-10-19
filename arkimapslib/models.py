@@ -1,7 +1,4 @@
-try:
-    import pydantic.v1 as pydantic
-except ImportError:
-    import pydantic as pydantic  # type: ignore
+import pydantic
 
 
 class BaseDataModel(pydantic.BaseModel):

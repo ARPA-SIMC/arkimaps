@@ -187,15 +187,15 @@ class MagicsMacroFlavourSpec(StepFlavourSpec):
 
     def select_initial(self, args: Dict[str, Any]) -> None:
         super().select_initial(args)
-        if self.params.__fields_set__:
-            args.setdefault("params", self.params.dict(exclude_unset=True))
+        if self.params.model_fields_set:
+            args.setdefault("params", self.params.model_dump(exclude_unset=True))
 
     def fill_defaults(self, args: Dict[str, Any]) -> None:
         super().fill_defaults(args)
-        if self.default_params.__fields_set__:
+        if self.default_params.model_fields_set:
             if "params" not in args:
                 args["params"] = {}
-            for k, v in self.default_params.dict(exclude_unset=True).items():
+            for k, v in self.default_params.model_dump(exclude_unset=True).items():
                 args["params"].setdefault(k, v)
 
 
@@ -212,7 +212,7 @@ class MagicsMacro(Step[MSPEC, MFSPEC], ABC):
     MACRO_URL: Optional[str] = None
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        return self.MACRO_NAME, self.spec.params.dict(exclude_unset=True)
+        return self.MACRO_NAME, self.spec.params.model_dump(exclude_unset=True)
 
 
 class LegendParamsSpec(BaseMagicsParamsSpec):
@@ -720,7 +720,8 @@ class AddContourParamsSpec(LegendParamsSpec):
     contour_grid_value_marker_index: int = 3
     contour_grid_value_position: str = "top"
 
-    @pydantic.root_validator(allow_reuse=True)
+    @pydantic.model_validator(mode="before")
+    @classmethod
     def list_sync(cls, values: Any) -> Any:
         if isinstance(values, dict):
             cll = values.get("contour_level_list")
@@ -989,7 +990,7 @@ class AddGrib(MagicsMacro[AddGribSpec, AddGribFlavourSpec]):
             setattr(self.spec.params, k, v)
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        params = self.spec.params.dict(exclude_unset=True)
+        params = self.spec.params.model_dump(exclude_unset=True)
         params["grib_input_file_name"] = str(self.grib_input.pathname)
         return self.MACRO_NAME, params
 
@@ -1054,7 +1055,7 @@ class AddUserBoundaries(MagicsMacro[AddUserBoundariesSpec, AddUserBoundariesFlav
         self.shape = inp
 
     def _run_params(self) -> Dict[str, Any]:
-        params = self.spec.params.dict(exclude_unset=True)
+        params = self.spec.params.model_dump(exclude_unset=True)
         params["map_user_layer_name"] = str(self.shape.pathname)
         return params
 
@@ -1115,7 +1116,7 @@ class AddGeopoints(MagicsMacro[AddGeopointsSpec, AddGeopointsFlavourSpec]):
         self.points = inp
 
     def as_magics_macro(self) -> Tuple[str, Dict[str, Any]]:
-        params = self.spec.params.dict(exclude_unset=True)
+        params = self.spec.params.model_dump(exclude_unset=True)
         params["geo_input_file_name"] = str(self.points.pathname)
         return self.MACRO_NAME, params
 

@@ -105,7 +105,7 @@ class TestFlavour(unittest.TestCase):
         ) as kitchen:
             order = self.make_order(kitchen, "test", "test")
             add_coastlines_fg = self.get_step(order, "add_coastlines_fg")
-            self.assertEqual(add_coastlines_fg.spec.params.dict(exclude_unset=True), test_params)
+            self.assertEqual(add_coastlines_fg.spec.params.model_dump(exclude_unset=True), test_params)
 
     def test_default_shape(self) -> None:
         with self.kitchen(
@@ -173,7 +173,7 @@ class TestFlavour(unittest.TestCase):
                 ) as kitchen:
                     order = self.make_order(kitchen, "test", "test")
                     step = order.order_steps[1]
-                    self.assertEqual(step.spec.params.dict(exclude_unset=True), expected)
+                    self.assertEqual(step.spec.params.model_dump(exclude_unset=True), expected)
 
     def test_step_filter(self) -> None:
         with self.kitchen(
@@ -346,7 +346,7 @@ class TestFlavour(unittest.TestCase):
 
             contour = self.get_step(orders[2], "add_contour")
             params = contour.spec.params
-            self.assertNotIn("contour_legend_only", params.dict(exclude_unset=True))
+            self.assertNotIn("contour_legend_only", params.model_dump(exclude_unset=True))
 
             # Legend for tiles
 

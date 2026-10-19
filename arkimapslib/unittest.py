@@ -234,7 +234,7 @@ class RecipeTestCase(KitchenTestCase, abc.ABC):
             res.magics.append((order_step.name, name, parms))
 
         add_basemap = self.get_step(order, "add_basemap")
-        self.assertEqual(add_basemap.spec.params.dict(exclude_unset=True), self.expected_basemap_args)
+        self.assertEqual(add_basemap.spec.params.model_dump(exclude_unset=True), self.expected_basemap_args)
 
         # Test rendering to Python
         script_pathname = renderer.write_render_script([order])
@@ -286,7 +286,7 @@ class RecipeTestCase(KitchenTestCase, abc.ABC):
             "ifs": ifs,
             "erg5": erg5,
         }
-        self.assertEqual(step.spec.params.dict(exclude_unset=True), expected_mgrib_args[self.model_name])
+        self.assertEqual(step.spec.params.model_dump(exclude_unset=True), expected_mgrib_args[self.model_name])
 
     def get_step(self, order, step_name: str) -> None:
         """

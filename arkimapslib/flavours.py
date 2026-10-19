@@ -53,7 +53,7 @@ class FlavourSpec(BaseDataModel):
             except KeyError:
                 raise ValueError(f"{name!r}: invalid step name")
             fspec_cls = step_cls.FlavourSpec
-            res[name] = fspec_cls.parse_obj(args)
+            res[name] = fspec_cls.model_validate(args)
         return res
 
 

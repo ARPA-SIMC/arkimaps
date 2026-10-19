@@ -133,9 +133,9 @@ class AddSymbolsTest(RecipeStepTestsBase):
             with self.subTest(fp=fp, fdp=fdp, r=r):
                 fspec = steps.AddSymbolsFlavourSpec()
                 if fp is not None:
-                    fspec.params = steps.AddSymbolsParamsSpec.parse_obj(fp)
+                    fspec.params = steps.AddSymbolsParamsSpec.model_validate(fp)
                 if fdp is not None:
-                    fspec.default_params = steps.AddSymbolsParamsSpec.parse_obj(fdp)
+                    fspec.default_params = steps.AddSymbolsParamsSpec.model_validate(fdp)
                 if r is not None:
                     rargs = {"params": r}
                 else:
