@@ -118,7 +118,7 @@ class InputSummary(Serializable):
     #: Per-input processing information indexed by input name
     inputs: Dict[str, InputProcessingStats] = pydantic.Field(default_factory=dict)
 
-    def add(self, name: str, stats: InputProcessingStats):
+    def add(self, name: str, stats: InputProcessingStats) -> None:
         self.inputs[name] = stats
 
     def dict(self, *args: Any, **kwargs: Any) -> Dict[str, Any]:
@@ -127,7 +127,9 @@ class InputSummary(Serializable):
 
     @pydantic.root_validator(pre=True, allow_reuse=True)
     def fix_layout(cls, values: Any) -> Any:
-        return {"inputs": values}
+        if isinstance(values, dict):
+            return {"inputs": values}
+        return values
 
 
 class RenderStats(Serializable):
@@ -159,7 +161,7 @@ class ReftimeProducts(Serializable):
     #: Products indexed by relative path
     products: Dict[str, ProductInfo] = pydantic.Field(default_factory=dict)
 
-    def add_order(self, order: "Order"):
+    def add_order(self, order: "Order") -> None:
         assert order.output is not None
         self.inputs.update(order.input_files.keys())
         self.steps[order.instant.step] += 1
@@ -312,10 +314,12 @@ class Products(Serializable):
     @pydantic.root_validator(pre=True, allow_reuse=True)
     def fix_layout(cls, values: Any) -> Any:
         if not values:
-            return {"products": []}
+            return {"products": {}}
         if isinstance(values, dict):
             return values
-        return {"products": {ProductKey(val["flavour"]["name"], val["recipe"]["name"]): val for val in values}}
+        if isinstance(values, list):
+            return {"products": {ProductKey(val["flavour"]["name"], val["recipe"]["name"]): val for val in values}}
+        return values
 
     @classmethod
     def parse_obj(cls, obj: Any) -> "Products":
@@ -356,7 +360,7 @@ class Log(Serializable):
     #: List of all log entries
     entries: List[LogEntry] = pydantic.Field(default_factory=list)
 
-    def append(self, *, ts: float, level: int, msg: str, name: str):
+    def append(self, *, ts: float, level: int, msg: str, name: str) -> None:
         """
         Add a log entry
         """
@@ -372,7 +376,9 @@ class Log(Serializable):
             return {"entries": []}
         if isinstance(values, dict):
             return values
-        return {"entries": values}
+        if isinstance(values, list):
+            return {"entries": values}
+        return values
 
     @classmethod
     def parse_obj(cls, obj: Any) -> "Log":

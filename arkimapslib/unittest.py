@@ -1,6 +1,7 @@
 # from __future__ import annotations
+import abc
 import contextlib
-import datetime
+import datetime as dt
 import fnmatch
 import os
 import re
@@ -60,72 +61,11 @@ class OrderResult:
         raise KeyError(f"Step {step_name} not found in debug trace of order {self.order}")
 
 
-class RecipeTestCase(unittest.TestCase):
-    expected_basemap_args = {
-        "page_id_line": False,
-        "page_x_length": 38,
-        "page_y_length": 31,
-        "output_width": 1280,
-        "subpage_map_projection": "cylindrical",
-        "subpage_lower_left_longitude": 2.5,
-        "subpage_lower_left_latitude": 35.0,
-        "subpage_upper_right_longitude": 20.0,
-        "subpage_upper_right_latitude": 50.0,
-        "subpage_x_length": 34,
-        "subpage_x_position": 2,
-        "subpage_y_length": 30,
-        "subpage_y_position": 1,
-        "super_page_x_length": 40,
-        "super_page_y_length": 32,
-        "map_grid": True,
-        "map_grid_latitude_reference": 45.0,
-        "map_grid_longitude_reference": 0.0,
-        "map_grid_longitude_increment": 2.5,
-        "map_grid_latitude_increment": 2.5,
-        "map_grid_colour": "grey",
-        "map_grid_line_style": "dash",
-        "map_label_colour": "black",
-        "map_label_height": 0.4,
-        "map_label_latitude_frequency": 1,
-    }
-
-    flavour_name = "default"
-    magics_crashes_skip_tests: ClassVar[Set[str]]
+class KitchenTestCase(unittest.TestCase):
     kitchen_class: Type[WorkingKitchen]
+    flavour_name = "default"
     recipe_name: ClassVar[str]
     model_name: ClassVar[str]
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        # There are cases in which Magics crashes, and they are outside our
-        # control (see debian bugs #985137 and #985364, and arkimaps issues #69
-        # and #71)
-        #
-        # If a .magics-crashes.yaml file is found, it is parsed and expect to
-        # be a dict. The keys are test IDs, the values are records defining
-        # when to skip a test.
-        #
-        # The values supported in the record are:
-        #
-        #  * hostname: skip the test when socket.gethostname() matches this
-        #    value
-        #
-        import socket
-
-        super().setUpClass()
-        magic_crashes: List[Dict[str, Any]]
-        try:
-            with open(".magics-crashes.yaml") as fd:
-                magics_crashes = yaml.load(fd, Loader=yaml.SafeLoader)
-        except FileNotFoundError:
-            magics_crashes = {}
-
-        cls.magics_crashes_skip_tests = set()
-        for name, match in magics_crashes.items():
-            hostname = match.get("hostname")
-            if hostname is not None:
-                if hostname == socket.gethostname():
-                    cls.magics_crashes_skip_tests.add(name)
 
     def setUp(self) -> None:
         self.defs = system_definitions()
@@ -138,11 +78,11 @@ class RecipeTestCase(unittest.TestCase):
 
     def fill_pantry(
         self,
-        reftime=datetime.datetime(2021, 1, 10),
-        step=12,
-        expected=None,
+        reftime: dt.datetime = dt.datetime(2021, 1, 10),
+        step: int = 12,
+        expected: Optional[List[str]] = None,
         flavour_name: Optional[str] = None,
-        exclude=None,
+        exclude: Optional[str] = None,
         extra_sample_dirs: Sequence[Union[str, Path]] = (),
     ) -> None:
         """
@@ -190,8 +130,8 @@ class RecipeTestCase(unittest.TestCase):
                         expected.append(f"{inp.name}_{reftime_str}+{step}.grib")
                     else:
                         expected.append(f"{self.model_name}_{inp.name}_{reftime_str}+{step}.grib")
-        for fn in expected:
-            self.assertIn(fn, os.listdir(self.kitchen.pantry.data_root))
+        for name in expected:
+            self.assertIn(name, os.listdir(self.kitchen.pantry.data_root))
 
     def make_orders(self, flavour_name=None, recipe_name=None) -> List["Order"]:
         """
@@ -207,7 +147,75 @@ class RecipeTestCase(unittest.TestCase):
         orders = flavour.make_orders(recipe, self.kitchen.pantry)
         return orders
 
-    def assertRenders(self, order, reftime=datetime.datetime(2021, 1, 10), step=12) -> None:
+
+class RecipeTestCase(KitchenTestCase, abc.ABC):
+    expected_basemap_args = {
+        "page_id_line": False,
+        "page_x_length": 38,
+        "page_y_length": 31,
+        "output_width": 1280,
+        "subpage_map_projection": "cylindrical",
+        "subpage_lower_left_longitude": 2.5,
+        "subpage_lower_left_latitude": 35.0,
+        "subpage_upper_right_longitude": 20.0,
+        "subpage_upper_right_latitude": 50.0,
+        "subpage_x_length": 34,
+        "subpage_x_position": 2,
+        "subpage_y_length": 30,
+        "subpage_y_position": 1,
+        "super_page_x_length": 40,
+        "super_page_y_length": 32,
+        "map_grid": True,
+        "map_grid_latitude_reference": 45.0,
+        "map_grid_longitude_reference": 0.0,
+        "map_grid_longitude_increment": 2.5,
+        "map_grid_latitude_increment": 2.5,
+        "map_grid_colour": "grey",
+        "map_grid_line_style": "dash",
+        "map_label_colour": "black",
+        "map_label_height": 0.4,
+        "map_label_latitude_frequency": 1,
+    }
+
+    magics_crashes_skip_tests: ClassVar[Set[str]]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        # There are cases in which Magics crashes, and they are outside our
+        # control (see debian bugs #985137 and #985364, and arkimaps issues #69
+        # and #71)
+        #
+        # If a .magics-crashes.yaml file is found, it is parsed and expect to
+        # be a dict. The keys are test IDs, the values are records defining
+        # when to skip a test.
+        #
+        # The values supported in the record are:
+        #
+        #  * hostname: skip the test when socket.gethostname() matches this
+        #    value
+        #
+        import socket
+
+        super().setUpClass()
+        magics_crashes: Dict[str, Any]
+        try:
+            with open(".magics-crashes.yaml") as fd:
+                magics_crashes = yaml.load(fd, Loader=yaml.SafeLoader)
+        except FileNotFoundError:
+            magics_crashes = {}
+
+        cls.magics_crashes_skip_tests = set()
+        for name, match in magics_crashes.items():
+            hostname = match.get("hostname")
+            if hostname is not None:
+                if hostname == socket.gethostname():
+                    cls.magics_crashes_skip_tests.add(name)
+
+    @abc.abstractmethod
+    def get_sample_path(self, input_name: str, step: int) -> str:
+        """Get the path to a sample input by the given name and step."""
+
+    def assertRenders(self, order, reftime=dt.datetime(2021, 1, 10), step=12) -> None:
         """
         Render an order, collecting a debug_trace of all steps invoked
         """
@@ -247,7 +255,7 @@ class RecipeTestCase(unittest.TestCase):
         #     f"{os.path.basename(self.recipe_name)}+{step:03d}.png",
         # )
 
-    def assertProcessLogEqual(self, log: List[str]):
+    def assertProcessLogEqual(self, log: List[str]) -> None:
         """
         Check that the process log matches the given log template.
 
@@ -267,7 +275,7 @@ class RecipeTestCase(unittest.TestCase):
             simplified_log.append(f"{e.input.name}:{e.input.__class__.__name__}:" + message)
         self.assertCountEqual(simplified_log, log)
 
-    def assertMgribArgsEqual(self, order, cosmo=None, ifs=None, erg5=None):
+    def assertMgribArgsEqual(self, order, cosmo=None, ifs=None, erg5=None) -> None:
         """
         Check that the mgrib arguments passed to add_grib match the given
         values. It has different expected values depending on the model used
@@ -280,7 +288,7 @@ class RecipeTestCase(unittest.TestCase):
         }
         self.assertEqual(step.spec.params.dict(exclude_unset=True), expected_mgrib_args[self.model_name])
 
-    def get_step(self, order, step_name: str):
+    def get_step(self, order, step_name: str) -> None:
         """
         Return the debug trace arguments of the first step in the order's
         debug_trace log with the given name.
@@ -293,40 +301,40 @@ class RecipeTestCase(unittest.TestCase):
         self.fail(f"Step {step_name} not found in debug trace of order {order}")
 
 
-class ArkimetMixin:
+class ArkimetMixin(RecipeTestCase):
     from arkimapslib.kitchen import ArkimetKitchen
 
     kitchen_class = ArkimetKitchen
 
 
-class EccodesMixin:
+class EccodesMixin(RecipeTestCase):
     from arkimapslib.kitchen import EccodesKitchen
 
     kitchen_class = EccodesKitchen
 
 
-class CosmoMixin:
+class CosmoMixin(RecipeTestCase):
     model_name = "cosmo"
 
-    def get_sample_path(self, input_name, step):
+    def get_sample_path(self, input_name: str, step: int) -> str:
         return os.path.join("testdata", self.recipe_name, f"cosmo_{input_name}+{step}.arkimet")
 
 
-class IFSMixin:
+class IFSMixin(RecipeTestCase):
     model_name = "ifs"
 
-    def get_sample_path(self, input_name, step):
+    def get_sample_path(self, input_name: str, step: int) -> str:
         return os.path.join("testdata", self.recipe_name, f"ifs_{input_name}+{step}.arkimet")
 
 
-class ERG5Mixin:
+class ERG5Mixin(RecipeTestCase):
     model_name = "erg5"
 
-    def get_sample_path(self, input_name, step):
+    def get_sample_path(self, input_name: str, step: int) -> str:
         return os.path.join("testdata", self.recipe_name, f"erg5_{input_name}+{step}.arkimet")
 
 
-def recipe_tests(recipe_name, models: Sequence[str] = ("IFS", "Cosmo")) -> Callable[[Type], Type]:
+def recipe_tests(recipe_name: str, models: Sequence[str] = ("IFS", "Cosmo")) -> Callable[[Type[RecipeTestCase]], str]:
     """
     Create test cases for the given recipe.
 
@@ -336,7 +344,8 @@ def recipe_tests(recipe_name, models: Sequence[str] = ("IFS", "Cosmo")) -> Calla
     dispatch specific-mixin, a model-specific mixin, and a test-specific mixin.
     """
 
-    def wrap(test_class: Type) -> Type:
+    def wrap(test_class: Type[RecipeTestCase]) -> str:
+        target_names: list[str] = []
         module = sys.modules[test_class.__module__]
         for dispatch in ("Arkimet", "Eccodes"):
             for model in models:
@@ -345,18 +354,19 @@ def recipe_tests(recipe_name, models: Sequence[str] = ("IFS", "Cosmo")) -> Calla
                     test_name = test_name[:-5]
 
                 cls_name = f"Test{test_name}{dispatch}{model}"
+                target_names.append(cls_name)
 
                 dispatch_mixin = globals()[f"{dispatch}Mixin"]
                 model_mixin = globals()[f"{model}Mixin"]
 
                 test_case = type(
                     cls_name,
-                    (test_class, dispatch_mixin, model_mixin, RecipeTestCase, unittest.TestCase),
+                    (test_class, dispatch_mixin, model_mixin, RecipeTestCase),
                     {"recipe_name": recipe_name},
                 )
                 test_case.__module__ = test_class.__module__
                 setattr(module, cls_name, test_case)
-        return test_class
+        return "Reimplemented as " + ", ".join(target_names)
 
     return wrap
 
@@ -379,7 +389,7 @@ class Workdir(contextlib.ExitStack):
         if test_case is not None:
             test_case.addCleanup(self.__exit__, None, None, None)
 
-    def add_yaml_file(self, relpath: str, contents: Any):
+    def add_yaml_file(self, relpath: str, contents: Any) -> None:
         abspath = self.path / relpath
         abspath.parent.mkdir(parents=True, exist_ok=True)
         with abspath.open("wt") as fd:
@@ -401,5 +411,5 @@ class Workdir(contextlib.ExitStack):
         kitchen = self.enter_context(kitchen_class(definitions=definitions))
         return kitchen
 
-    def __str__(self):
-        return self.workdir
+    def __str__(self) -> str:
+        return str(self.path)

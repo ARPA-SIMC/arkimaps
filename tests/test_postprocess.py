@@ -7,12 +7,15 @@ import unittest
 from pathlib import Path
 from typing import Any, TypeVar, cast, Tuple, Iterable, Iterator
 
+import PIL
 from PIL import Image
 import numpy as np
 
 from arkimapslib import postprocess, orders
 from arkimapslib.config import Config
 from arkimapslib.pygen import PyGen
+
+PIL_MAJOR_VERSION = int(PIL.__version__.split(".")[0])
 
 if hasattr(itertools, "batched"):
     batched = itertools.batched
@@ -137,11 +140,17 @@ class TestQuantize(unittest.TestCase):
             self.assertSmaller(q8d, orig)
             self.assertSmaller(q8, q8d)
 
-            self.assertEqual(self.count_colors(q64), 65)
+            if PIL_MAJOR_VERSION < 12:
+                self.assertEqual(self.count_colors(q64), 65)
+            else:
+                self.assertEqual(self.count_colors(q64), 64)
             self.assertSmaller(q64, orig)
             self.assertSmaller(q8, q64)
 
-            self.assertEqual(self.count_colors(q64d), 62)
+            if PIL_MAJOR_VERSION < 12:
+                self.assertEqual(self.count_colors(q64d), 62)
+            else:
+                self.assertEqual(self.count_colors(q64d), 61)
             self.assertSmaller(q64d, orig)
             self.assertSmaller(q8d, q64d)
             self.assertSmaller(q64, q64d)
@@ -187,9 +196,12 @@ class TestQuantize(unittest.TestCase):
             self.assertLessEqual(self.count_colors(q8), 9)
             self.assertSmaller(q8, orig)
 
-            self.assertLessEqual(self.count_colors(q8d), 9)
-            self.assertSmaller(q8d, orig)
-            self.assertSmaller(q8, q8d)
+            if PIL_MAJOR_VERSION < 12:
+                self.assertLessEqual(self.count_colors(q8d), 9)
+                self.assertSmaller(q8d, orig)
+                self.assertSmaller(q8, q8d)
+            else:
+                self.assertUnchanged(q8d, orig)
 
             self.assertLessEqual(self.count_colors(q64), 65)
             self.assertSmaller(q64, orig)

@@ -1,10 +1,10 @@
 # from __future__ import annotations
-from arkimapslib.unittest import recipe_tests
+from arkimapslib.unittest import recipe_tests, RecipeTestCase
 
 
 @recipe_tests("tiles/wflags10m")
-class WFLAGS10MMixin:
-    def test_dispatch(self)->None:
+class WFLAGS10MMixin(RecipeTestCase):
+    def test_dispatch(self) -> None:
         self.fill_pantry()
 
         orders = self.make_orders()

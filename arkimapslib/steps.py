@@ -722,12 +722,13 @@ class AddContourParamsSpec(LegendParamsSpec):
 
     @pydantic.root_validator(allow_reuse=True)
     def list_sync(cls, values: Any) -> Any:
-        cll = values["contour_level_list"]
-        cscl = values["contour_shade_colour_list"]
-        if cll and cscl and len(cll) != len(cscl) + 1:
-            raise ValueError(
-                f"contour_level_list has {len(cll)} items while contour_shade_colour_list has {len(cscl)} items"
-            )
+        if isinstance(values, dict):
+            cll = values.get("contour_level_list")
+            cscl = values.get("contour_shade_colour_list")
+            if cll and cscl and len(cll) != len(cscl) + 1:
+                raise ValueError(
+                    f"contour_level_list has {len(cll)} items while contour_shade_colour_list has {len(cscl)} items"
+                )
         return values
 
 
@@ -956,7 +957,7 @@ class AddGribSpec(MagicsMacroSpec):
 class AddGribFlavourSpec(MagicsMacroFlavourSpec):
     params: AddGribParamsSpec = pydantic.Field(default_factory=AddGribParamsSpec)
     default_params: AddGribParamsSpec = pydantic.Field(default_factory=AddGribParamsSpec)
-    grib: Optional[str] = pydantic.Field(description="GRIB input name")
+    grib: Optional[str] = pydantic.Field(None, description="GRIB input name")
 
     def select_initial(self, args: Dict[str, Any]) -> None:
         super().select_initial(args)

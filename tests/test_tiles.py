@@ -1,6 +1,5 @@
 # from __future__ import annotations
 import tempfile
-import unittest
 from collections import defaultdict
 from typing import Dict, Optional
 
@@ -8,10 +7,10 @@ from arkimapslib import outputbundle
 from arkimapslib.kitchen import EccodesKitchen
 from arkimapslib.orders import LegendOrder, Order, TileOrder, deg2num, num2deg
 from arkimapslib.render import Renderer
-from arkimapslib.unittest import RecipeTestCase
+from arkimapslib.unittest import KitchenTestCase
 
 
-class TestTiles(RecipeTestCase):
+class TestTiles(KitchenTestCase):
     kitchen_class = EccodesKitchen
     flavour_name = "ita_small_tiles"
     recipe_name = "t2m"

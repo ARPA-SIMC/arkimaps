@@ -393,7 +393,9 @@ class DerivedInputSpec(InputSpec):
     def string_to_list(cls, value: Any) -> List[str]:
         if isinstance(value, str):
             return [value]
-        return [str(x) for x in value]
+        elif isinstance(value, list):
+            return [str(x) for x in value]
+        return value
 
 
 DSPEC = TypeVar("DSPEC", bound=DerivedInputSpec)
@@ -453,16 +455,17 @@ class VG6DStatProDerivedcInputSpec(DerivedInputSpec, ABC):
 
     @pydantic.root_validator(pre=True, allow_reuse=True)
     def default_comp_full_steps(cls, values: Any) -> Any:
-        val = values.get("comp_full_steps")
-        if val is None:
-            val = int(values["step"]) != 24
-        else:
-            val = bool(val)
-        values["comp_full_steps"] = val
+        if isinstance(values, dict):
+            val = values.get("comp_full_steps")
+            if val is None:
+                val = int(values["step"]) != 24
+            else:
+                val = bool(val)
+            values["comp_full_steps"] = val
         return values
 
     @pydantic.validator("inputs", allow_reuse=True)
-    def only_one_input(cls, value: Any) -> Any:
+    def only_one_input(cls, value: List[str]) -> List[str]:
         if len(value) != 1:
             raise RuntimeError("only one source in put allowed")
         return value
@@ -637,7 +640,7 @@ class VG6DTransformInputSpec(DerivedInputSpec):
     args: List[str] = pydantic.Field(default_factory=list, min_items=1)
 
     @pydantic.validator("args", pre=True, allow_reuse=True)
-    def args_string_to_list(cls, value):
+    def args_string_to_list(cls, value: Any) -> Any:
         if isinstance(value, str):
             return [value]
         return value

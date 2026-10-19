@@ -1,9 +1,9 @@
 # from __future__ import annotations
-from arkimapslib.unittest import recipe_tests
+from arkimapslib.unittest import recipe_tests, RecipeTestCase
 
 
 @recipe_tests("rh2m", models=("IFS", "Cosmo"))
-class RH2MMixin:
+class RH2MMixin(RecipeTestCase):
     def test_dispatch(self) -> None:
         pantry_reftime = "2021_1_10_0_0_0"
         self.fill_pantry(
@@ -37,7 +37,7 @@ class RH2MMixin:
 
 
 @recipe_tests("rh2m", models=("ERG5",))
-class RH2MERG5Mixin:
+class RH2MERG5Mixin(RecipeTestCase):
     def test_dispatch(self) -> None:
         self.fill_pantry(step=0)
 

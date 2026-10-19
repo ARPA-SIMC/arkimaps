@@ -60,7 +60,7 @@ class Pantry(abc.ABC):
     Storage of GRIB files used as inputs to recipes
     """
 
-    def __init__(self, inputs: Inputs, **kwargs) -> None:
+    def __init__(self, inputs: Inputs, **kwargs: Any) -> None:
         # List of input definitions, indexed by name
         self.inputs = inputs
         # Log of input processing operations performed
@@ -84,7 +84,7 @@ class Pantry(abc.ABC):
             self.input_instants_to_truncate[inp].add(instant)
         instants.add(instant)
 
-    def log_input_processing(self, input: Input, message: str):
+    def log_input_processing(self, input: Input, message: str) -> None:
         """
         Trace one input processing step
         """
@@ -122,7 +122,7 @@ class DiskPantry(Pantry):
     Pantry with disk-based storage
     """
 
-    def __init__(self, *, root: Path, **kwargs) -> None:
+    def __init__(self, *, root: Path, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.data_root: Path = root / "pantry"
 
@@ -381,12 +381,12 @@ class EccodesPantry(DispatchPantry):
     eccodes-based storage of GRIB files to be processed
     """
 
-    def __init__(self, grib_input=False, **kwargs) -> None:
+    def __init__(self, grib_input=False, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.grib_input = grib_input
         self.grib_filter_rules = self.data_root / "grib_filter_rules"
 
-    def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None):
+    def fill(self, path: Optional[Path] = None, input_filter: Optional[Set[str]] = None) -> None:
         """
         Read data from standard input and acquire it into the pantry
         """
